@@ -2,39 +2,33 @@
   "name": "@ablunier/anytype-calendar",
   "version": "1.0.0",
   "description": "",
-  "main": "./out/main/index.js",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
-    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "dev": "electron-vite dev",
-    "start": "electron-vite preview",
-    "build": "electron-vite build",
-    "postinstall": "node node_modules/electron/install.js && electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "dev": "npm -w apps/desktop run dev",
+    "start": "npm -w apps/desktop run start",
+    "build": "tsc -b && npm -w apps/desktop run build",
+    "build:unpack": "npm run build && npm -w apps/desktop exec -- electron-builder --dir",
+    "build:win": "npm run build && npm -w apps/desktop exec -- electron-builder --win",
+    "build:mac": "npm run build && npm -w apps/desktop exec -- electron-builder --mac",
+    "build:linux": "npm run build && npm -w apps/desktop exec -- electron-builder --linux",
+    "typecheck": "tsc -b --force",
+    "test": "vitest run",
+    "lint:arch": "npm --prefix tools/arch-lint run cruise",
+    "lint:arch:setup": "npm --prefix tools/arch-lint install",
+    "clean": "tsc -b --clean && rm -rf apps/desktop/out apps/desktop/dist",
+    "postinstall": "node node_modules/electron/install.js && npm --prefix tools/arch-lint install && npm -w apps/desktop exec -- electron-builder install-app-deps"
   },
   "keywords": [],
   "type": "commonjs",
-  "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
-  },
   "devDependencies": {
     "@types/node": "^26.5.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "@vitejs/plugin-react": "^5.2.0",
-    "electron": "^44.3.0",
-    "electron-builder": "^26.15.3",
-    "electron-vite": "^5.0.0",
     "typescript": "^7.0.2",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=26.8.1",

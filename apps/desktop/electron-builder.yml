@@ -24,6 +24,9 @@ dmg:
 linux:
   target: AppImage
   category: Utility
+  # Mirrors win.executableName above. Without it the Linux binary is named after the npm
+  # package rather than the product.
+  executableName: calendar-for-anytype
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

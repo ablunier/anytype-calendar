@@ -1,0 +1,15 @@
+{
+  // Resolution-only tsconfig, consumed by dependency-cruiser (see .dependency-cruiser.cjs).
+  // It maps the workspace scope onto package *sources* so the architecture lint can run
+  // without a prior `tsc -b`. The real builds use project references and dist/ output,
+  // so these paths are deliberately not part of tsconfig.base.json.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@anytype-calendar/domain": ["./packages/domain/src/index.ts"],
+      "@anytype-calendar/application": ["./packages/application/src/index.ts"],
+      "@anytype-calendar/anytype": ["./packages/anytype/src/index.ts"]
+    }
+  }
+}

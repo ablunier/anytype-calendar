@@ -1,0 +1,13 @@
+{
+  "name": "@anytype-calendar/arch-lint",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isolated dependency-cruiser toolchain. Deliberately NOT an npm workspace — see README.md.",
+  "scripts": {
+    "cruise": "cd ../.. && ./tools/arch-lint/node_modules/.bin/depcruise --config .dependency-cruiser.cjs packages apps"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^18.2.0",
+    "typescript": "^6.0.3"
+  }
+}

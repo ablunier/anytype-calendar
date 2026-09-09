@@ -1,16 +1,18 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "target": "ES2022",
+    // See tsconfig.node.json: keeps `tsc -b` emit out of the source tree.
+    "outDir": "dist/tsc-web",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "strict": true,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"]
     }
   },
-  "include": ["src/renderer/src/**/*"]
+  "include": ["src/renderer/src/**/*"],
+  "references": [
+    { "path": "../../packages/domain" },
+    { "path": "../../packages/application" }
+  ]
 }

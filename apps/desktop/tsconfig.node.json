@@ -1,13 +1,19 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "target": "ES2022",
+    // The root solution tsconfig references this project, so `tsc -b` builds it for real.
+    // Without an outDir, composite emit lands next to the sources and overwrites
+    // hand-written files (src/preload/index.d.ts in particular). electron-vite produces
+    // the actual bundle; this output exists only to satisfy the compiler and is ignored.
+    "outDir": "dist/tsc-node",
     "lib": ["ES2023"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "types": ["electron-vite/node"],
-    "skipLibCheck": true,
-    "strict": true
+    "types": ["electron-vite/node"]
   },
-  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"]
+  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"],
+  "references": [
+    { "path": "../../packages/domain" },
+    { "path": "../../packages/application" },
+    { "path": "../../packages/anytype" }
+  ]
 }

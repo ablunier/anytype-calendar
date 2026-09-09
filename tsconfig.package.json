@@ -1,0 +1,18 @@
+{
+  // Shared settings for everything under packages/. Only non-path options live here:
+  // TypeScript resolves relative paths in an extended config against the directory of
+  // the file that declares them, so rootDir/outDir/include stay in each package.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "lib": ["ES2023"],
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true
+  }
+}
