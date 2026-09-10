@@ -64,7 +64,7 @@ export function Checkbox({
           description ? 'mt-2' : '',
           disabled ? 'cursor-not-allowed' : 'cursor-pointer',
           checked ? `border-transparent ${fill}` : 'border-line-strong bg-surface-card',
-          'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
+          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
           'peer-focus-visible:outline-focus-ring'
         ].join(' ')}
       >
