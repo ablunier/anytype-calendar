@@ -1,0 +1,211 @@
+/* Mock content for the UI pass — a typed port of the design project's screens/data.js.
+ *
+ * This module is imported by App.tsx and nowhere else. Every component below App takes
+ * its data through props, so replacing this with an IPC-fed source in a later pass does
+ * not touch a single component.
+ */
+
+import type { CalendarData, CalendarEvent, ObjectType, Space } from '../types'
+
+const SPACES: Space[] = [
+  { key: 'personal', name: 'Personal', category: 'teal', objects: 128 },
+  { key: 'studio', name: 'Studio', category: 'ochre', objects: 96 },
+  { key: 'reading', name: 'Reading', category: 'plum', objects: 64 },
+  { key: 'archive', name: 'Archive 2024', category: 'graphite', objects: 212 }
+]
+
+/* One entry per type per space. `from` is the mandatory start-date property, `to` the
+ * optional end date that turns the type into a range. */
+const TYPES: ObjectType[] = [
+  {
+    key: 'personal:task',
+    space: 'personal',
+    label: 'Task',
+    category: 'sage',
+    icon: 'check',
+    count: 54,
+    props: ['Due date', 'Created date', 'Done date'],
+    from: 'Due date',
+    to: null
+  },
+  {
+    key: 'personal:meeting',
+    space: 'personal',
+    label: 'Meeting',
+    category: 'teal',
+    icon: 'users',
+    count: 18,
+    props: ['Start date', 'End date', 'Created date'],
+    from: 'Start date',
+    to: 'End date'
+  },
+  {
+    key: 'personal:note',
+    space: 'personal',
+    label: 'Note',
+    category: 'dusk',
+    icon: 'file-text',
+    count: 31,
+    props: ['Created date', 'Last modified'],
+    from: 'Created date',
+    to: null
+  },
+  {
+    key: 'personal:person',
+    space: 'personal',
+    label: 'Person',
+    category: 'rose',
+    icon: 'users',
+    count: 25,
+    props: ['Custom: Meet on', 'Birthday'],
+    from: 'Custom: Meet on',
+    to: null
+  },
+  {
+    key: 'studio:project',
+    space: 'studio',
+    label: 'Project',
+    category: 'ochre',
+    icon: 'layers',
+    count: 12,
+    props: ['Start date', 'Due date', 'Shipped on'],
+    from: 'Start date',
+    to: 'Due date'
+  },
+  {
+    key: 'studio:task',
+    space: 'studio',
+    label: 'Task',
+    category: 'sage',
+    icon: 'check',
+    count: 47,
+    props: ['Due date', 'Created date'],
+    from: 'Due date',
+    to: null
+  },
+  {
+    key: 'studio:invoice',
+    space: 'studio',
+    label: 'Invoice',
+    category: 'clay',
+    icon: 'database',
+    count: 7,
+    props: ['Issued on', 'Due date'],
+    from: 'Due date',
+    to: null
+  },
+  {
+    key: 'studio:idea',
+    space: 'studio',
+    label: 'Idea',
+    category: 'graphite',
+    icon: 'star',
+    count: 30,
+    props: ['Created date'],
+    from: 'Created date',
+    to: null
+  },
+  {
+    key: 'reading:book',
+    space: 'reading',
+    label: 'Book',
+    category: 'plum',
+    icon: 'file-text',
+    count: 22,
+    props: ['Started reading', 'Finished on'],
+    from: 'Started reading',
+    to: 'Finished on'
+  },
+  {
+    key: 'reading:note',
+    space: 'reading',
+    label: 'Note',
+    category: 'dusk',
+    icon: 'file-text',
+    count: 42,
+    props: ['Created date'],
+    from: 'Created date',
+    to: null
+  },
+  {
+    key: 'archive:project',
+    space: 'archive',
+    label: 'Project',
+    category: 'ochre',
+    icon: 'layers',
+    count: 88,
+    props: ['Start date', 'Closed on'],
+    from: 'Start date',
+    to: 'Closed on'
+  },
+  {
+    key: 'archive:task',
+    space: 'archive',
+    label: 'Task',
+    category: 'sage',
+    icon: 'check',
+    count: 124,
+    props: ['Due date'],
+    from: 'Due date',
+    to: null
+  }
+]
+
+const EVENTS: CalendarEvent[] = [
+  { id: 1, day: 2, time: '10:00', title: 'Weekly planning', type: 'personal:meeting', end: '11:00' },
+  { id: 2, day: 3, time: '14:30', title: 'Draft API notes', type: 'personal:note' },
+  { id: 3, day: 4, title: 'Docs sprint', type: 'studio:project', allDay: true, until: 6 },
+  { id: 4, day: 5, time: '09:00', title: 'Standup', type: 'personal:meeting', end: '09:30' },
+  { id: 5, day: 6, time: '16:00', title: 'Ship weekly digest', type: 'studio:task', done: true },
+  { id: 6, day: 9, time: '09:30', title: 'Design review', type: 'personal:meeting', end: '10:15' },
+  { id: 7, day: 9, time: '13:00', title: 'Rewrite empty states', type: 'studio:task' },
+  { id: 8, day: 10, time: '11:00', title: 'Sync with Mara', type: 'personal:meeting', end: '11:45' },
+  { id: 9, day: 10, title: 'Field notes: local-first', type: 'personal:note' },
+  { id: 10, day: 11, time: '15:00', title: 'Ship changelog', type: 'studio:task' },
+  { id: 11, day: 12, title: 'Launch week', type: 'studio:project', allDay: true, until: 16 },
+  { id: 12, day: 12, time: '09:30', title: 'Design review', type: 'personal:meeting', end: '10:15' },
+  { id: 13, day: 12, time: '11:00', title: 'Write release notes', type: 'studio:task' },
+  { id: 14, day: 12, time: '14:00', title: 'Reply to Iris', type: 'personal:task' },
+  { id: 15, day: 13, time: '08:00', title: 'Grid rhythm experiments', type: 'studio:idea' },
+  { id: 16, day: 13, time: '17:00', title: 'Close the week', type: 'personal:task' },
+  { id: 17, day: 14, title: 'Seeing Like a State', type: 'reading:book', allDay: true, until: 21 },
+  { id: 18, day: 16, time: '10:00', title: 'Weekly planning', type: 'personal:meeting', end: '10:30' },
+  { id: 19, day: 17, time: '12:00', title: 'Lunch with Iris', type: 'personal:person' },
+  { id: 20, day: 18, time: '09:00', title: 'Sync API contract', type: 'studio:task' },
+  { id: 21, day: 20, title: 'Quarter close', type: 'studio:project', allDay: true, until: 21 },
+  { id: 22, day: 23, time: '11:30', title: 'Interview: Sofia', type: 'personal:meeting', end: '12:15' },
+  { id: 23, day: 24, time: '15:00', title: 'Prune stale objects', type: 'studio:task' },
+  { id: 24, day: 25, time: '09:00', title: 'Invoice 2026-014 due', type: 'studio:invoice' },
+  { id: 25, day: 26, time: '09:30', title: 'Weekly digest draft', type: 'personal:note' },
+  { id: 26, day: 27, time: '14:00', title: 'Roadmap pass', type: 'studio:project' },
+  { id: 27, day: 30, time: '10:00', title: 'Weekly planning', type: 'personal:meeting', end: '10:30' },
+  { id: 28, day: 31, time: '16:00', title: 'Close the month', type: 'personal:task' }
+]
+
+export const calendarData: CalendarData = {
+  spaces: SPACES,
+  types: TYPES,
+  events: EVENTS,
+  year: 2026,
+  month: 2,
+  monthLabel: 'March 2026',
+  today: 12,
+  trackedTypeKeys: [
+    'personal:task',
+    'personal:meeting',
+    'personal:note',
+    'personal:person',
+    'studio:project',
+    'studio:task',
+    'studio:invoice',
+    'studio:idea',
+    'reading:book'
+  ],
+  trackedSpaceKeys: ['personal', 'studio', 'reading']
+}
+
+/** The selection the onboarding screen starts from, before the user has chosen. */
+export const onboardingDefaults = {
+  typeKeys: ['personal:task', 'personal:meeting', 'studio:project', 'studio:task'],
+  spaceKeys: ['personal', 'studio']
+}
