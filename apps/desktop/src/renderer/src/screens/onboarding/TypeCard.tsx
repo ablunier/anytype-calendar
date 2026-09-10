@@ -1,0 +1,74 @@
+import type { ObjectType } from '../../types'
+import { TypeTile } from '../../components/app/TypeTile'
+import { Checkbox, Select } from '../../components/ui'
+
+export interface TypeCardProps {
+  type: ObjectType
+  checked: boolean
+  from: string
+  to: string | null
+  onToggle: () => void
+  onFromChange: (value: string) => void
+  onToChange: (value: string | null) => void
+}
+
+const NONE = 'None'
+
+/**
+ * One object type, with its mandatory start date and optional end date.
+ *
+ * The design nests the whole row in a clickable div with role="checkbox"; here the
+ * checkbox is the real control and carries the label, so the card is keyboard-operable
+ * and the two selects stay independently reachable.
+ */
+export function TypeCard({
+  type,
+  checked,
+  from,
+  to,
+  onToggle,
+  onFromChange,
+  onToChange
+}: TypeCardProps): React.JSX.Element {
+  return (
+    <div
+      className={[
+        'rounded-card border transition duration-base ease-standard',
+        checked
+          ? 'border-line-accent bg-surface-selected shadow-none'
+          : 'border-line-subtle bg-surface-card shadow-1'
+      ].join(' ')}
+    >
+      <div className="flex items-center gap-12 p-12">
+        <TypeTile type={type} />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="type-ui text-base text-ink-primary">{type.label}</span>
+          <span className="type-numeral text-tiny text-ink-tertiary">{type.count} dated</span>
+        </div>
+        <Checkbox
+          checked={checked}
+          onChange={onToggle}
+          ariaLabel={`Show ${type.label} objects on the calendar`}
+        />
+      </div>
+      {checked ? (
+        <div className="grid grid-cols-2 gap-8 px-12 pb-12">
+          <Select
+            size="sm"
+            label="From date"
+            options={type.props}
+            value={from}
+            onChange={onFromChange}
+          />
+          <Select
+            size="sm"
+            label="To date (optional)"
+            options={[NONE, ...type.props]}
+            value={to ?? NONE}
+            onChange={(value) => onToChange(value === NONE ? null : value)}
+          />
+        </div>
+      ) : null}
+    </div>
+  )
+}
