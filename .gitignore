@@ -4,4 +4,4 @@ dist
 build
 *.tsbuildinfo
 *.log
-.DS_Store
+CLAUDE.md
