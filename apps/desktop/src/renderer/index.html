@@ -4,7 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Calendar for Anytype</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+  <!-- style-src must be spelled out: without it styles fall back to default-src 'self', which
+       refuses the inline <style> that Vite injects for HMR and the app renders unstyled.
+       'unsafe-inline' is scoped to styles only — script-src stays 'self'. -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
 </head>
 
 <body>
