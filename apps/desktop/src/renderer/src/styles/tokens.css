@@ -1,0 +1,579 @@
+/* Design tokens — the single source of truth for colour, type, spacing, radius,
+ * elevation and motion. Values are extracted verbatim from the Claude Design system
+ * "Calendar for Anytype" (tokens/colors.css, typography.css, space.css, elevation.css,
+ * motion.css). Nothing here is invented; nothing is hardcoded in a component.
+ *
+ * Two stages, deliberately:
+ *
+ *   1. Raw values as custom properties on :root and [data-theme='dark'].
+ *   2. A NON-INLINE @theme block mapping them onto Tailwind's namespaces.
+ *
+ * `@theme inline` would substitute the raw value at build time and bake the light theme
+ * into every utility, so flipping data-theme at runtime would change nothing. Keeping
+ * @theme non-inline emits `--color-surface-card: var(--ds-surface-card)`, leaving the
+ * indirection intact for the cascade to resolve when the attribute changes.
+ *
+ * The dark selector is [data-theme='dark'] because that is what the design system's own
+ * colors.css re-points ("Dark theme. [data-theme=\"dark\"] re-points every semantic alias").
+ */
+
+/* ============================================================================
+ * Stage 1 — raw values
+ * ==========================================================================*/
+
+:root {
+  /* ---- Colour primitives: warm stone neutrals ---------------------------- */
+  --ds-stone-000: #ffffff;
+  --ds-stone-025: #fbfaf8;
+  --ds-stone-050: #f6f5f2;
+  --ds-stone-100: #efede8;
+  --ds-stone-150: #e5e2dc;
+  --ds-stone-200: #d8d4cc;
+  --ds-stone-300: #beb9af;
+  --ds-stone-400: #9c978d;
+  --ds-stone-500: #7a756b;
+  --ds-stone-600: #5c5852;
+  --ds-stone-700: #42403b;
+  --ds-stone-800: #2c2a27;
+  --ds-stone-900: #1c1b19;
+
+  /* ---- Colour primitives: moss (brand accent) ---------------------------- */
+  --ds-moss-050: #eef2ee;
+  --ds-moss-100: #dce5dd;
+  --ds-moss-200: #b9ccbd;
+  --ds-moss-300: #8fb098;
+  --ds-moss-400: #6b9277;
+  --ds-moss-500: #4e7660;
+  --ds-moss-600: #3d5e4c;
+  --ds-moss-700: #2e4739;
+
+  /* ---- Colour primitives: ochre (today, pending sync) -------------------- */
+  --ds-ochre-050: #fbf6ea;
+  --ds-ochre-100: #f7ecd8;
+  --ds-ochre-300: #e2b972;
+  --ds-ochre-500: #c08a2e;
+  --ds-ochre-600: #9a6c21;
+
+  /* ---- Colour primitives: clay (danger, now line) ------------------------ */
+  --ds-clay-050: #fbf0ec;
+  --ds-clay-100: #f4ded7;
+  --ds-clay-300: #d79b86;
+  --ds-clay-500: #b0553c;
+  --ds-clay-600: #8e4130;
+
+  /* ---- Colour primitives: dusk (informational) --------------------------- */
+  --ds-dusk-050: #eef1f5;
+  --ds-dusk-100: #dde4ec;
+  --ds-dusk-300: #94aac0;
+  --ds-dusk-500: #4e6c8a;
+  --ds-dusk-600: #3c5470;
+
+  /* ---- Category hues: one per object type, decorative only --------------- */
+  --ds-cat-sage: #6b9277;
+  --ds-cat-clay: #b06a52;
+  --ds-cat-ochre: #c08a2e;
+  --ds-cat-dusk: #5c7c99;
+  --ds-cat-plum: #7e5c7a;
+  --ds-cat-teal: #3f7d78;
+  --ds-cat-rose: #a96b80;
+  --ds-cat-graphite: #6e6a63;
+  --ds-cat-sage-soft: #e6ede7;
+  --ds-cat-clay-soft: #f5e6e0;
+  --ds-cat-ochre-soft: #f7ecd8;
+  --ds-cat-dusk-soft: #e5ebf1;
+  --ds-cat-plum-soft: #efe7ee;
+  --ds-cat-teal-soft: #e0eeed;
+  --ds-cat-rose-soft: #f2e6ea;
+  --ds-cat-graphite-soft: #eceae7;
+
+  /* ---- Semantic: ink ----------------------------------------------------- */
+  --ds-ink-primary: var(--ds-stone-900);
+  --ds-ink-body: var(--ds-stone-800);
+  --ds-ink-secondary: var(--ds-stone-600);
+  --ds-ink-tertiary: var(--ds-stone-400);
+  --ds-ink-inverse: var(--ds-stone-025);
+  --ds-ink-accent: var(--ds-moss-600);
+  --ds-ink-danger: var(--ds-clay-600);
+  --ds-ink-link: var(--ds-moss-600);
+  --ds-ink-link-hover: var(--ds-moss-700);
+
+  /* ---- Semantic: surfaces ------------------------------------------------ */
+  --ds-surface-page: var(--ds-stone-050);
+  --ds-surface-card: var(--ds-stone-000);
+  --ds-surface-raised: var(--ds-stone-000);
+  --ds-surface-sunken: var(--ds-stone-100);
+  --ds-surface-rail: var(--ds-stone-025);
+  --ds-surface-hover: rgba(28, 27, 25, 0.04);
+  --ds-surface-active: rgba(28, 27, 25, 0.07);
+  --ds-surface-selected: var(--ds-moss-050);
+  --ds-surface-accent: var(--ds-moss-500);
+  --ds-surface-accent-hover: var(--ds-moss-600);
+  --ds-surface-accent-soft: var(--ds-moss-050);
+  --ds-surface-danger-soft: var(--ds-clay-050);
+  --ds-surface-warning-soft: var(--ds-ochre-050);
+  --ds-surface-info-soft: var(--ds-dusk-050);
+
+  /* ---- Semantic: lines --------------------------------------------------- */
+  --ds-line-hairline: rgba(28, 27, 25, 0.07);
+  --ds-line-subtle: var(--ds-stone-150);
+  --ds-line-default: var(--ds-stone-200);
+  --ds-line-strong: var(--ds-stone-300);
+  --ds-line-accent: var(--ds-moss-400);
+
+  /* ---- Semantic: calendar chrome ----------------------------------------- */
+  --ds-focus-ring: var(--ds-moss-400);
+  --ds-overlay-scrim: rgba(28, 27, 25, 0.32);
+  --ds-today-ink: var(--ds-ochre-600);
+  --ds-today-wash: var(--ds-ochre-050);
+  --ds-grid-line: var(--ds-stone-150);
+  --ds-grid-line-strong: var(--ds-stone-200);
+  --ds-now-line: var(--ds-clay-500);
+
+  /* ---- Type: families ---------------------------------------------------- */
+  --ds-font-ui: 'Instrument Sans', 'Helvetica Neue', Helvetica, sans-serif;
+  --ds-font-display: 'Instrument Sans', 'Helvetica Neue', Helvetica, sans-serif;
+  --ds-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---- Type: scale ------------------------------------------------------- */
+  --ds-fs-micro: 11px;
+  --ds-fs-tiny: 12px;
+  --ds-fs-small: 13px;
+  --ds-fs-base: 15px;
+  --ds-fs-lead: 17px;
+  --ds-fs-h4: 20px;
+  --ds-fs-h3: 24px;
+  --ds-fs-h2: 30px;
+  --ds-fs-h1: 38px;
+  --ds-fs-display: 48px;
+  --ds-fs-display-lg: 64px;
+
+  /* ---- Type: line height, weight, tracking ------------------------------- */
+  --ds-lh-tight: 1.14;
+  --ds-lh-snug: 1.3;
+  --ds-lh-normal: 1.5;
+  --ds-lh-relaxed: 1.65;
+  /* The two line heights the composed roles inline rather than name. */
+  --ds-lh-ui: 1.4;
+  --ds-lh-numeral: 1.2;
+  --ds-fw-regular: 400;
+  --ds-fw-medium: 500;
+  --ds-fw-semibold: 600;
+  --ds-ls-display: -0.022em;
+  --ds-ls-heading: -0.012em;
+  --ds-ls-body: 0;
+  --ds-ls-mono: -0.01em;
+  --ds-ls-overline: 0.07em;
+
+  /* ---- Type: composed roles (font shorthand) ----------------------------- *
+   * These are `font:` shorthands, not font sizes, so they stay out of @theme —
+   * Tailwind's --text-* namespace would emit them as font-size. They are consumed
+   * through the type-* utilities in index.css instead. */
+  --ds-text-display: var(--ds-fw-semibold) var(--ds-fs-display) / var(--ds-lh-tight)
+    var(--ds-font-display);
+  --ds-text-h1: var(--ds-fw-semibold) var(--ds-fs-h1) / var(--ds-lh-tight) var(--ds-font-display);
+  --ds-text-h2: var(--ds-fw-semibold) var(--ds-fs-h2) / var(--ds-lh-snug) var(--ds-font-display);
+  --ds-text-h3: var(--ds-fw-semibold) var(--ds-fs-h3) / var(--ds-lh-snug) var(--ds-font-ui);
+  --ds-text-h4: var(--ds-fw-semibold) var(--ds-fs-h4) / var(--ds-lh-snug) var(--ds-font-ui);
+  --ds-text-lead: var(--ds-fw-regular) var(--ds-fs-lead) / var(--ds-lh-relaxed) var(--ds-font-ui);
+  --ds-text-body: var(--ds-fw-regular) var(--ds-fs-base) / var(--ds-lh-normal) var(--ds-font-ui);
+  --ds-text-ui: var(--ds-fw-medium) var(--ds-fs-small) / 1.4 var(--ds-font-ui);
+  --ds-text-caption: var(--ds-fw-regular) var(--ds-fs-tiny) / 1.4 var(--ds-font-ui);
+  --ds-text-numeral: var(--ds-fw-medium) var(--ds-fs-tiny) / 1.2 var(--ds-font-mono);
+
+  /* ---- Spacing — 2px base ------------------------------------------------ */
+  --ds-space-2: 2px;
+  --ds-space-4: 4px;
+  --ds-space-6: 6px;
+  --ds-space-8: 8px;
+  --ds-space-10: 10px;
+  --ds-space-12: 12px;
+  --ds-space-16: 16px;
+  --ds-space-20: 20px;
+  --ds-space-24: 24px;
+  --ds-space-32: 32px;
+  --ds-space-40: 40px;
+  --ds-space-56: 56px;
+  --ds-space-72: 72px;
+  --ds-space-96: 96px;
+
+  /* ---- Radii ------------------------------------------------------------- */
+  --ds-radius-2: 2px;
+  --ds-radius-4: 4px;
+  --ds-radius-6: 6px;
+  --ds-radius-8: 8px;
+  --ds-radius-10: 10px;
+  --ds-radius-14: 14px;
+  --ds-radius-pill: 999px;
+  --ds-radius-control: var(--ds-radius-8);
+  --ds-radius-chip: var(--ds-radius-6);
+  --ds-radius-card: var(--ds-radius-10);
+  --ds-radius-sheet: var(--ds-radius-14);
+
+  /* ---- Control and icon sizing ------------------------------------------- */
+  --ds-control-h-sm: 26px;
+  --ds-control-h-md: 32px;
+  --ds-control-h-lg: 40px;
+  --ds-icon-12: 12px;
+  --ds-icon-14: 14px;
+  --ds-icon-16: 16px;
+  --ds-icon-20: 20px;
+  --ds-icon-24: 24px;
+  --ds-stroke-icon: 1.75;
+
+  /* ---- Layout frame ------------------------------------------------------ */
+  --ds-rail-w: 56px;
+  --ds-sidebar-w: 264px;
+  --ds-panel-w: 380px;
+  --ds-topbar-h: 52px;
+  --ds-content-max: 1120px;
+  --ds-prose-max: 68ch;
+  --ds-row-h: 34px;
+  --ds-daycell-min-h: 112px;
+  --ds-hour-h: 48px;
+
+  /* ---- Component geometry ------------------------------------------------ *
+   * The design system tokenises colour, type, spacing, radius, elevation, motion,
+   * control heights and the layout frame — but its component sources still carry a
+   * handful of one-off pixel sizes inline (a 64px digit box, a 116px label column,
+   * the 5px chip dot). Those are lifted here so components can stay on utilities and
+   * no arbitrary value appears in JSX. Values are read off the component sources in
+   * _ds_bundle.js and the screen JSX, not invented. */
+  --ds-size-3: 3px;
+  --ds-size-5: 5px;
+  --ds-size-18: 18px;
+  --ds-size-20: 20px;
+  --ds-size-22: 22px;
+  --ds-size-24: 24px;
+  --ds-size-28: 28px;
+  --ds-size-30: 30px;
+  --ds-size-52: 52px;
+  --ds-size-64: 64px;
+  --ds-size-116: 116px;
+  --ds-size-152: 152px;
+  --ds-size-240: 240px;
+  --ds-size-320: 320px;
+  --ds-size-440: 440px;
+  --ds-size-460: 460px;
+  --ds-size-820: 820px;
+  --ds-size-1000: 1000px;
+
+  /* Icon steps. The readme documents 14 / 16 / 20 / 24; the component sources also
+   * use 10 / 11 / 12 / 13 / 18 in dense chrome, so those are carried too. */
+  --ds-icon-10: 10px;
+  --ds-icon-11: 11px;
+  --ds-icon-13: 13px;
+  --ds-icon-18: 18px;
+
+  /* ---- Elevation --------------------------------------------------------- */
+  --ds-shadow-hairline: 0 0 0 1px var(--ds-line-hairline);
+  --ds-shadow-1: 0 1px 1px rgba(28, 27, 25, 0.04), 0 1px 2px rgba(28, 27, 25, 0.05);
+  --ds-shadow-2: 0 1px 2px rgba(28, 27, 25, 0.05), 0 4px 12px -3px rgba(28, 27, 25, 0.08);
+  --ds-shadow-3: 0 2px 6px -2px rgba(28, 27, 25, 0.06), 0 12px 32px -8px rgba(28, 27, 25, 0.14);
+  --ds-shadow-focus: 0 0 0 3px color-mix(in oklab, var(--ds-focus-ring) 26%, transparent);
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ds-dur-instant: 80ms;
+  --ds-dur-fast: 120ms;
+  --ds-dur-base: 180ms;
+  --ds-dur-slow: 260ms;
+  --ds-dur-sheet: 220ms;
+  --ds-ease-standard: cubic-bezier(0.2, 0.6, 0.25, 1);
+  --ds-ease-exit: cubic-bezier(0.4, 0, 0.7, 0.2);
+  --ds-ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-press-scale: 0.985;
+  --ds-dur-spin: 900ms;
+  --ds-dur-spin-slow: 1200ms;
+}
+
+/* ---- Dark theme: re-points every semantic alias -------------------------- */
+[data-theme='dark'] {
+  --ds-ink-primary: #f2f0ec;
+  --ds-ink-body: #e4e1db;
+  --ds-ink-secondary: #a8a39a;
+  --ds-ink-tertiary: #77726a;
+  --ds-ink-inverse: #1c1b19;
+  --ds-ink-accent: #9dbca6;
+  --ds-ink-danger: #dc9880;
+  --ds-ink-link: #9dbca6;
+  --ds-ink-link-hover: #b9ccbd;
+
+  --ds-surface-page: #1a1917;
+  --ds-surface-card: #232220;
+  --ds-surface-raised: #2a2825;
+  --ds-surface-sunken: #151412;
+  --ds-surface-rail: #1f1e1c;
+  --ds-surface-hover: rgba(255, 255, 255, 0.05);
+  --ds-surface-active: rgba(255, 255, 255, 0.09);
+  --ds-surface-selected: #26332a;
+  --ds-surface-accent: #5a866c;
+  --ds-surface-accent-hover: #6b9277;
+  --ds-surface-accent-soft: #232d26;
+  --ds-surface-danger-soft: #2e211d;
+  --ds-surface-warning-soft: #2b2418;
+  --ds-surface-info-soft: #1e242c;
+
+  --ds-line-hairline: rgba(255, 255, 255, 0.07);
+  --ds-line-subtle: #312f2c;
+  --ds-line-default: #3d3a36;
+  --ds-line-strong: #524e49;
+  --ds-line-accent: #5a866c;
+
+  --ds-focus-ring: #6b9277;
+  --ds-overlay-scrim: rgba(0, 0, 0, 0.55);
+  --ds-today-ink: #e2b972;
+  --ds-today-wash: #2b2418;
+  --ds-grid-line: #2c2a27;
+  --ds-grid-line-strong: #37342f;
+  --ds-now-line: #c9704f;
+}
+
+/* Motion collapses under prefers-reduced-motion, as the system specifies. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ds-dur-instant: 0ms;
+    --ds-dur-fast: 0ms;
+    --ds-dur-base: 0ms;
+    --ds-dur-slow: 0ms;
+    --ds-dur-sheet: 0ms;
+    --ds-press-scale: 1;
+  }
+}
+
+/* ============================================================================
+ * Stage 2 — Tailwind namespace mapping. NOT @theme inline.
+ * ==========================================================================*/
+
+@theme {
+  /* Drop Tailwind's default palette, spacing multiplier and type scale so the only
+   * values reachable from a utility are the design system's. An off-scale class such
+   * as `p-5` or `bg-red-500` then generates nothing at all, which surfaces the mistake
+   * instead of silently inventing a value. */
+  --color-*: initial;
+  --spacing: initial;
+  --spacing-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --ease-*: initial;
+
+  /* ---- Colour: primitives ------------------------------------------------ */
+  --color-stone-000: var(--ds-stone-000);
+  --color-stone-025: var(--ds-stone-025);
+  --color-stone-050: var(--ds-stone-050);
+  --color-stone-100: var(--ds-stone-100);
+  --color-stone-150: var(--ds-stone-150);
+  --color-stone-200: var(--ds-stone-200);
+  --color-stone-300: var(--ds-stone-300);
+  --color-stone-400: var(--ds-stone-400);
+  --color-stone-500: var(--ds-stone-500);
+  --color-stone-600: var(--ds-stone-600);
+  --color-stone-700: var(--ds-stone-700);
+  --color-stone-800: var(--ds-stone-800);
+  --color-stone-900: var(--ds-stone-900);
+  --color-moss-050: var(--ds-moss-050);
+  --color-moss-100: var(--ds-moss-100);
+  --color-moss-200: var(--ds-moss-200);
+  --color-moss-300: var(--ds-moss-300);
+  --color-moss-400: var(--ds-moss-400);
+  --color-moss-500: var(--ds-moss-500);
+  --color-moss-600: var(--ds-moss-600);
+  --color-moss-700: var(--ds-moss-700);
+  --color-ochre-050: var(--ds-ochre-050);
+  --color-ochre-100: var(--ds-ochre-100);
+  --color-ochre-300: var(--ds-ochre-300);
+  --color-ochre-500: var(--ds-ochre-500);
+  --color-ochre-600: var(--ds-ochre-600);
+  --color-clay-050: var(--ds-clay-050);
+  --color-clay-100: var(--ds-clay-100);
+  --color-clay-300: var(--ds-clay-300);
+  --color-clay-500: var(--ds-clay-500);
+  --color-clay-600: var(--ds-clay-600);
+  --color-dusk-050: var(--ds-dusk-050);
+  --color-dusk-100: var(--ds-dusk-100);
+  --color-dusk-300: var(--ds-dusk-300);
+  --color-dusk-500: var(--ds-dusk-500);
+  --color-dusk-600: var(--ds-dusk-600);
+
+  /* ---- Colour: category hues -------------------------------------------- */
+  --color-cat-sage: var(--ds-cat-sage);
+  --color-cat-clay: var(--ds-cat-clay);
+  --color-cat-ochre: var(--ds-cat-ochre);
+  --color-cat-dusk: var(--ds-cat-dusk);
+  --color-cat-plum: var(--ds-cat-plum);
+  --color-cat-teal: var(--ds-cat-teal);
+  --color-cat-rose: var(--ds-cat-rose);
+  --color-cat-graphite: var(--ds-cat-graphite);
+  --color-cat-sage-soft: var(--ds-cat-sage-soft);
+  --color-cat-clay-soft: var(--ds-cat-clay-soft);
+  --color-cat-ochre-soft: var(--ds-cat-ochre-soft);
+  --color-cat-dusk-soft: var(--ds-cat-dusk-soft);
+  --color-cat-plum-soft: var(--ds-cat-plum-soft);
+  --color-cat-teal-soft: var(--ds-cat-teal-soft);
+  --color-cat-rose-soft: var(--ds-cat-rose-soft);
+  --color-cat-graphite-soft: var(--ds-cat-graphite-soft);
+
+  /* ---- Colour: semantic -------------------------------------------------- */
+  --color-ink-primary: var(--ds-ink-primary);
+  --color-ink-body: var(--ds-ink-body);
+  --color-ink-secondary: var(--ds-ink-secondary);
+  --color-ink-tertiary: var(--ds-ink-tertiary);
+  --color-ink-inverse: var(--ds-ink-inverse);
+  --color-ink-accent: var(--ds-ink-accent);
+  --color-ink-danger: var(--ds-ink-danger);
+  --color-ink-link: var(--ds-ink-link);
+  --color-ink-link-hover: var(--ds-ink-link-hover);
+
+  --color-surface-page: var(--ds-surface-page);
+  --color-surface-card: var(--ds-surface-card);
+  --color-surface-raised: var(--ds-surface-raised);
+  --color-surface-sunken: var(--ds-surface-sunken);
+  --color-surface-rail: var(--ds-surface-rail);
+  --color-surface-hover: var(--ds-surface-hover);
+  --color-surface-active: var(--ds-surface-active);
+  --color-surface-selected: var(--ds-surface-selected);
+  --color-surface-accent: var(--ds-surface-accent);
+  --color-surface-accent-hover: var(--ds-surface-accent-hover);
+  --color-surface-accent-soft: var(--ds-surface-accent-soft);
+  --color-surface-danger-soft: var(--ds-surface-danger-soft);
+  --color-surface-warning-soft: var(--ds-surface-warning-soft);
+  --color-surface-info-soft: var(--ds-surface-info-soft);
+
+  --color-line-hairline: var(--ds-line-hairline);
+  --color-line-subtle: var(--ds-line-subtle);
+  --color-line-default: var(--ds-line-default);
+  --color-line-strong: var(--ds-line-strong);
+  --color-line-accent: var(--ds-line-accent);
+
+  --color-focus-ring: var(--ds-focus-ring);
+  --color-overlay-scrim: var(--ds-overlay-scrim);
+  --color-today-ink: var(--ds-today-ink);
+  --color-today-wash: var(--ds-today-wash);
+  --color-grid-line: var(--ds-grid-line);
+  --color-grid-line-strong: var(--ds-grid-line-strong);
+  --color-now-line: var(--ds-now-line);
+  --color-transparent: transparent;
+
+  /* ---- Type -------------------------------------------------------------- */
+  --font-ui: var(--ds-font-ui);
+  --font-display: var(--ds-font-display);
+  --font-mono: var(--ds-font-mono);
+
+  --text-micro: var(--ds-fs-micro);
+  --text-tiny: var(--ds-fs-tiny);
+  --text-small: var(--ds-fs-small);
+  --text-base: var(--ds-fs-base);
+  --text-lead: var(--ds-fs-lead);
+  --text-h4: var(--ds-fs-h4);
+  --text-h3: var(--ds-fs-h3);
+  --text-h2: var(--ds-fs-h2);
+  --text-h1: var(--ds-fs-h1);
+  --text-display: var(--ds-fs-display);
+  --text-display-lg: var(--ds-fs-display-lg);
+
+  --font-weight-regular: var(--ds-fw-regular);
+  --font-weight-medium: var(--ds-fw-medium);
+  --font-weight-semibold: var(--ds-fw-semibold);
+
+  --leading-tight: var(--ds-lh-tight);
+  --leading-snug: var(--ds-lh-snug);
+  --leading-normal: var(--ds-lh-normal);
+  --leading-relaxed: var(--ds-lh-relaxed);
+  --leading-ui: var(--ds-lh-ui);
+  --leading-numeral: var(--ds-lh-numeral);
+
+  --tracking-display: var(--ds-ls-display);
+  --tracking-heading: var(--ds-ls-heading);
+  --tracking-body: var(--ds-ls-body);
+  --tracking-mono: var(--ds-ls-mono);
+  --tracking-overline: var(--ds-ls-overline);
+
+  /* ---- Spacing ----------------------------------------------------------- */
+  /* Zero is not part of the design's 2px scale, but dropping the default --spacing
+     multiplier above also drops every `-0` utility with it — inset-0, right-0, p-0.
+     Those are structural, not spacing decisions, so zero is restored explicitly. */
+  --spacing-0: 0px;
+  --spacing-2: var(--ds-space-2);
+  --spacing-4: var(--ds-space-4);
+  --spacing-6: var(--ds-space-6);
+  --spacing-8: var(--ds-space-8);
+  --spacing-10: var(--ds-space-10);
+  --spacing-12: var(--ds-space-12);
+  --spacing-16: var(--ds-space-16);
+  --spacing-20: var(--ds-space-20);
+  --spacing-24: var(--ds-space-24);
+  --spacing-32: var(--ds-space-32);
+  --spacing-40: var(--ds-space-40);
+  --spacing-56: var(--ds-space-56);
+  --spacing-72: var(--ds-space-72);
+  --spacing-96: var(--ds-space-96);
+
+  /* Control, icon and layout sizes reachable as h-*, w-*, min-h-* utilities. */
+  --spacing-control-sm: var(--ds-control-h-sm);
+  --spacing-control-md: var(--ds-control-h-md);
+  --spacing-control-lg: var(--ds-control-h-lg);
+  --spacing-icon-10: var(--ds-icon-10);
+  --spacing-icon-11: var(--ds-icon-11);
+  --spacing-icon-12: var(--ds-icon-12);
+  --spacing-icon-13: var(--ds-icon-13);
+  --spacing-icon-14: var(--ds-icon-14);
+  --spacing-icon-16: var(--ds-icon-16);
+  --spacing-icon-18: var(--ds-icon-18);
+  --spacing-icon-20: var(--ds-icon-20);
+  --spacing-icon-24: var(--ds-icon-24);
+
+  /* Component geometry, see the raw block above. */
+  --spacing-3: var(--ds-size-3);
+  --spacing-5: var(--ds-size-5);
+  --spacing-18: var(--ds-size-18);
+  --spacing-22: var(--ds-size-22);
+  --spacing-28: var(--ds-size-28);
+  --spacing-30: var(--ds-size-30);
+  --spacing-52: var(--ds-size-52);
+  --spacing-64: var(--ds-size-64);
+  --spacing-116: var(--ds-size-116);
+  --spacing-152: var(--ds-size-152);
+  --spacing-240: var(--ds-size-240);
+  --spacing-320: var(--ds-size-320);
+  --spacing-440: var(--ds-size-440);
+  --spacing-460: var(--ds-size-460);
+  --spacing-820: var(--ds-size-820);
+  --spacing-1000: var(--ds-size-1000);
+  --spacing-rail: var(--ds-rail-w);
+  --spacing-sidebar: var(--ds-sidebar-w);
+  --spacing-panel: var(--ds-panel-w);
+  --spacing-topbar: var(--ds-topbar-h);
+  --spacing-content-max: var(--ds-content-max);
+  --spacing-prose-max: var(--ds-prose-max);
+  --spacing-row: var(--ds-row-h);
+  --spacing-daycell: var(--ds-daycell-min-h);
+  --spacing-hour: var(--ds-hour-h);
+
+  /* ---- Radii ------------------------------------------------------------- */
+  --radius-2: var(--ds-radius-2);
+  --radius-4: var(--ds-radius-4);
+  --radius-6: var(--ds-radius-6);
+  --radius-8: var(--ds-radius-8);
+  --radius-10: var(--ds-radius-10);
+  --radius-14: var(--ds-radius-14);
+  --radius-pill: var(--ds-radius-pill);
+  --radius-control: var(--ds-radius-control);
+  --radius-chip: var(--ds-radius-chip);
+  --radius-card: var(--ds-radius-card);
+  --radius-sheet: var(--ds-radius-sheet);
+
+  /* ---- Elevation --------------------------------------------------------- */
+  --shadow-hairline: var(--ds-shadow-hairline);
+  --shadow-1: var(--ds-shadow-1);
+  --shadow-2: var(--ds-shadow-2);
+  --shadow-3: var(--ds-shadow-3);
+  --shadow-focus: var(--ds-shadow-focus);
+  --shadow-none: none;
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-standard: var(--ds-ease-standard);
+  --ease-exit: var(--ds-ease-exit);
+  --ease-inout: var(--ds-ease-inout);
+}

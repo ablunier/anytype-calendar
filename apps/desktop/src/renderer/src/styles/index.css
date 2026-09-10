@@ -1,0 +1,208 @@
+@import 'tailwindcss';
+@import './fonts.css';
+@import './tokens.css';
+
+/* The design system keys its dark theme on [data-theme="dark"], so the `dark:` variant
+ * must match that rather than Tailwind's default `.dark` class. Most theming happens
+ * through the token indirection in tokens.css — a data-theme ancestor re-points the raw
+ * values and the @theme mapping resolves them at runtime — so `dark:` is only an escape
+ * hatch for the rare rule that cannot be expressed as a token swap. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ============================================================================
+ * Type roles
+ *
+ * The design system ships its type as `font:` shorthands (--ds-text-h1 and friends).
+ * Those are deliberately NOT reproduced as shorthand utilities: the system's own
+ * components routinely set a role and then override its size (DateNavigator is
+ * `font: var(--text-h3)` at `--fs-h4`, Button is `font: var(--text-ui)` at three sizes),
+ * and a `font:` shorthand competing with a `text-*` utility has no defined winner —
+ * Tailwind orders the two independently, so the result would depend on build details.
+ *
+ * So each role sets family, weight, line-height and tracking only, and every use pairs it
+ * with an explicit text-* size. Atomic properties never collide, whatever the order.
+ * ==========================================================================*/
+
+/* h1 and the marketing display size. */
+@utility type-display {
+  font-family: var(--ds-font-display);
+  font-weight: var(--ds-fw-semibold);
+  line-height: var(--ds-lh-tight);
+  letter-spacing: var(--ds-ls-display);
+}
+
+/* h2. */
+@utility type-title {
+  font-family: var(--ds-font-display);
+  font-weight: var(--ds-fw-semibold);
+  line-height: var(--ds-lh-snug);
+  letter-spacing: var(--ds-ls-heading);
+}
+
+/* h3 and h4 — the UI face rather than the display face. */
+@utility type-heading {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-semibold);
+  line-height: var(--ds-lh-snug);
+  letter-spacing: var(--ds-ls-heading);
+}
+
+@utility type-lead {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-regular);
+  line-height: var(--ds-lh-relaxed);
+}
+
+@utility type-body {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-regular);
+  line-height: var(--ds-lh-normal);
+}
+
+/* 13px medium is the interface default. */
+@utility type-ui {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-medium);
+  line-height: var(--ds-lh-ui);
+}
+
+@utility type-caption {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-regular);
+  line-height: var(--ds-lh-ui);
+}
+
+/* Numerals: mono, tabular, slightly tightened — the system's .ds-num. */
+@utility type-numeral {
+  font-family: var(--ds-font-mono);
+  font-weight: var(--ds-fw-medium);
+  line-height: var(--ds-lh-numeral);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ds-ls-mono);
+}
+
+/* The only positive-tracked, uppercased style in the system — .ds-overline. */
+@utility type-overline {
+  font-family: var(--ds-font-ui);
+  font-weight: var(--ds-fw-medium);
+  line-height: var(--ds-lh-ui);
+  letter-spacing: var(--ds-ls-overline);
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+ * Motion utilities — the system's durations, which have no Tailwind namespace.
+ * ==========================================================================*/
+
+/* Spinners rotate at 900–1200ms, per the system's motion rules. */
+@utility animate-spinner {
+  animation: ds-spin var(--ds-dur-spin) linear infinite;
+}
+@utility animate-spinner-slow {
+  animation: ds-spin var(--ds-dur-spin-slow) linear infinite;
+}
+
+/* ============================================================================
+ * Layout utilities — grid templates the design fixes in pixels, kept out of JSX so
+ * no component carries an arbitrary value.
+ * ==========================================================================*/
+
+/* Onboarding: a fixed space list beside a fluid type grid. */
+@utility grid-picker {
+  grid-template-columns: var(--ds-size-240) minmax(0, 1fr);
+}
+
+/* The month grid and its weekday header — seven equal, shrinkable columns. */
+@utility grid-week {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+/* Caps the flow-switcher harness so it can never outgrow the window. */
+@utility max-h-flow {
+  max-height: 60vh;
+}
+
+/* Dialogs fade and rise 6px over 220ms. No bounce, no spring. */
+@utility animate-scrim {
+  animation: ds-fade var(--ds-dur-sheet) var(--ds-ease-standard);
+}
+@utility animate-sheet {
+  animation: ds-rise var(--ds-dur-sheet) var(--ds-ease-standard);
+}
+
+@utility duration-instant {
+  transition-duration: var(--ds-dur-instant);
+}
+@utility duration-fast {
+  transition-duration: var(--ds-dur-fast);
+}
+@utility duration-base {
+  transition-duration: var(--ds-dur-base);
+}
+@utility duration-slow {
+  transition-duration: var(--ds-dur-slow);
+}
+@utility duration-sheet {
+  transition-duration: var(--ds-dur-sheet);
+}
+
+/* Pressed state: 0.985 scale, collapsing to 1 under prefers-reduced-motion. */
+@utility scale-press {
+  scale: var(--ds-press-scale);
+}
+
+/* ============================================================================
+ * Element defaults — the system's tokens/base.css, minus the parts Tailwind's
+ * preflight already handles.
+ * ==========================================================================*/
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--ds-surface-page);
+    color: var(--ds-ink-body);
+    font: var(--ds-text-body);
+    letter-spacing: var(--ds-ls-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--ds-moss-100);
+  }
+
+  /* 2px moss outline at 2px offset — the system's focus rule, applied globally so
+   * every control is keyboard-visible without repeating the class. */
+  :focus-visible {
+    outline: 2px solid var(--ds-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ds-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ds-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+}
