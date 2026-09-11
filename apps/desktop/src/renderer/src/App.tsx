@@ -24,14 +24,17 @@ function App(): React.JSX.Element | null {
   const session = useSession()
   const [screen, setScreen] = useState<ConnectedScreen>('success')
 
-  /* Entering the connected phase picks the first screen. The success card only makes sense
-   * right after watching the code be verified; any other arrival — a key restored at launch,
-   * a reloaded window — goes straight to the calendar. Adjusted during render rather than in
-   * an effect, so no frame of the stale screen is ever drawn. */
+  /* Entering the connected phase picks the first screen. A window that has drawn any other
+   * phase watched the sign-in, so it shows the success card; one whose very first snapshot
+   * is already connected — a key restored at launch, a reloaded window — goes straight to
+   * the calendar. Only the first snapshot counts, never which phase came just before:
+   * pushes can land together and be rendered as one, so `verifying` may never be drawn.
+   * Adjusted during render rather than in an effect, so no frame of the stale screen is
+   * ever drawn. */
   const [phase, setPhase] = useState(session?.phase)
   if (session?.phase !== phase) {
     setPhase(session?.phase)
-    if (session?.phase === 'connected') setScreen(phase === 'verifying' ? 'success' : 'month')
+    if (session?.phase === 'connected') setScreen(phase === undefined ? 'month' : 'success')
   }
 
   if (!session) return null

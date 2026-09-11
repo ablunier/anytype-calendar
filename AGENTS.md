@@ -138,8 +138,10 @@ Standard electron-vite three-process layout:
     snapshot main pushes (`hooks/useSession.ts`), and auth buttons only send intents over
     `window.api`. Once connected, navigation between success / onboarding / config / month
     is local `useState`, not a router — four fixed screens, no URLs. Entering `connected`
-    lands on the success card only straight after `verifying`; a session restored at
-    launch (or a reloaded window) goes straight to month. The theme toggle lives in the
+    lands on the success card when the window drew the sign-in; a window whose first
+    snapshot is already connected (key restored at launch, or a reload) goes straight to
+    month. Never key this off the phase just before `connected`: pushes can be rendered
+    together, so a transient phase like `verifying` may never be drawn. The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead.
