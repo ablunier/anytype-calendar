@@ -18,10 +18,10 @@ export interface FlowSwitcherProps {
 /**
  * A harness, not part of the design.
  *
- * The flow's ten frames are not all reachable by clicking through the product — an auth
- * error only appears after a failed exchange there is no backend to produce. This pins a
- * jump list to the corner so every frame can be opened directly, in either theme. It is
- * the first thing to delete once the screens are driven by real state.
+ * Every frame is reachable by clicking through the product, but not quickly — a verifying
+ * state lasts a second, an expired code takes a minute. This pins a jump list to the corner
+ * so every frame can be opened directly, in either theme. See lib/frames.ts for how a
+ * frame is produced.
  */
 export function FlowSwitcher({
   frames,

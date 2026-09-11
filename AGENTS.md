@@ -114,24 +114,31 @@ Standard electron-vite three-process layout:
   `window.api` for the renderer too — `tsconfig.web.json` includes it.
 - `src/renderer/src` — the React app:
   - `App.tsx` is the renderer root: screen switching, theme, and the *only* module that
-    reads mock data (`mocks/index.ts`). Navigation is local `useState`, not a router — by
-    design, since the flow is four fixed screens with no URLs. When real data arrives via
-    IPC, only `App.tsx` should need to change.
-  - `types/index.ts` holds UI-local view-model types (e.g. `CalendarEvent`, `ObjectType`,
-    `Space`), deliberately kept out of the packages' domain layers — they describe what a
-    component needs to draw, not what the calendar means. These get replaced/mapped once
-    real domain types exist.
+    reads mock data (`mocks/index.ts`). **Screens derive from the session**: until it is
+    connected, the auth card shown is `authViewFor(session)` (`lib/session.ts`) of the
+    snapshot main pushes (`hooks/useSession.ts`), and auth buttons only send intents over
+    `window.api`. Once connected, navigation between success / onboarding / config / month
+    is local `useState`, not a router — four fixed screens, no URLs — and it resets to the
+    success card whenever the session leaves `connected`.
+  - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
+    components receive the UI-local `AuthView` instead.
+  - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
+    `ObjectType`, `Space`), deliberately kept out of the packages' domain layers — they
+    describe what a component needs to draw, not what the calendar means.
   - `screens/<flow>/` — one directory per screen (`auth`, `onboarding`, `config`, `month`),
     each with its own subcomponents.
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
     barrel-exported from `components/ui/index.ts`.
-  - `components/app/` — app-level chrome (e.g. `FlowSwitcher`, the dev-only harness for
-    jumping directly to any of the ten design frames — see `lib/frames.ts`).
-  - `lib/frames.ts` — maps the ten named design "frames" (auth states, onboarding, config,
-    month, detail) to/from renderer screen state; backs the `FlowSwitcher` dev harness.
+  - `components/app/` — app-level chrome (e.g. `FlowSwitcher`, the harness for jumping
+    directly to any of the ten design frames — rendered only when `import.meta.env.DEV`).
+  - `lib/frames.ts` — maps the ten named design "frames" to/from app state for the
+    `FlowSwitcher`. An auth frame is a real session, forced in main over the dev-only
+    `dev:force-session` channel; the others set local screen state on top of a forced
+    connected session.
   - `lib/calendar.ts` — calendar grid/date math for the month view.
-  - `mocks/index.ts` — the only source of sample data; stands in for the eventual
-    IPC-backed data layer.
+  - `mocks/index.ts` — sample calendar data (spaces, types, events) for everything past
+    sign-in; stands in for the eventual IPC-backed data layer. Auth is no longer mocked
+    here — it runs in main against the auth context's in-memory adapters.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as

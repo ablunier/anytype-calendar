@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import type { AuthStage, DetailTarget, ScreenId } from './types'
+import type { AuthView, ConnectedScreen, DetailTarget } from './types'
 import { FlowSwitcher } from './components/app/FlowSwitcher'
+import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
 import { DETAIL_FRAME_EVENT_ID, FRAMES, frameToState, stateToFrame } from './lib/frames'
+import { authViewFor } from './lib/session'
 import { calendarData, onboardingDefaults } from './mocks'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
@@ -13,15 +15,16 @@ import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
  * The renderer's root: the screen switcher, the theme, and the only module that reads the
  * mock data.
  *
- * Everything below here takes what it draws through props, so swapping `calendarData` for
- * an IPC-fed source in a later pass touches this file and nothing else. Navigation is
- * local state by design — the flow has four screens and no URLs, so a router would only
- * add indirection.
+ * Until the session is connected, what is on screen is derived from the auth session main
+ * pushes, and every auth button is an intent sent back over IPC. Once connected, moving
+ * between the remaining screens is local state by design — four screens and no URLs, so a
+ * router would only add indirection. Everything below here takes what it draws through
+ * props.
  */
-function App(): React.JSX.Element {
+function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
-  const [screen, setScreen] = useState<ScreenId>('auth')
-  const [authStage, setAuthStage] = useState<AuthStage>('start')
+  const session = useSession()
+  const [screen, setScreen] = useState<ConnectedScreen>('success')
   const [confirmingRevoke, setConfirmingRevoke] = useState(false)
   const [monthDetail, setMonthDetail] = useState<DetailTarget | undefined>(undefined)
   /* Remounts MonthScreen and ConfigScreen when a frame is picked, so their internal state
@@ -29,11 +32,21 @@ function App(): React.JSX.Element {
    * had left it. */
   const [frameKey, setFrameKey] = useState(0)
 
+  /* Leaving the connected phase resets local navigation, so the next sign-in lands on the
+   * success card again. Adjusted during render rather than in an effect, so no frame of
+   * the stale screen is ever drawn. */
+  const [phase, setPhase] = useState(session?.phase)
+  if (session?.phase !== phase) {
+    setPhase(session?.phase)
+    if (session?.phase !== 'connected') setScreen('success')
+  }
+
+  if (!session) return null
+
   const openFrame = (id: string): void => {
-    const next = frameToState(id)
+    const next = frameToState(id, Date.now())
     setFrameKey((key) => key + 1)
     setScreen(next.screen)
-    setAuthStage(next.authStage)
     setConfirmingRevoke(next.confirmingRevoke)
     setMonthDetail(
       next.showDetail
@@ -43,6 +56,7 @@ function App(): React.JSX.Element {
           }
         : undefined
     )
+    void window.api.dev.forceSession(next.session)
   }
 
   const goToMonth = (): void => {
@@ -51,18 +65,23 @@ function App(): React.JSX.Element {
     setScreen('month')
   }
 
+  const authView: AuthView | null =
+    authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
+
   return (
     <>
-      {screen === 'auth' ? (
+      {authView ? (
         <AuthScreen
-          stage={authStage}
+          view={authView}
           spaces={calendarData.spaces}
-          onStageChange={setAuthStage}
-          onConnected={() => setScreen('onboarding')}
+          onStart={() => void window.api.auth.start()}
+          onSubmitCode={(code) => void window.api.auth.submitCode(code)}
+          onStepBack={() => void window.api.auth.stepBack()}
+          onContinue={() => setScreen('onboarding')}
         />
       ) : null}
 
-      {screen === 'onboarding' ? (
+      {!authView && screen === 'onboarding' ? (
         <OnboardingScreen
           spaces={calendarData.spaces}
           types={calendarData.types}
@@ -73,7 +92,7 @@ function App(): React.JSX.Element {
         />
       ) : null}
 
-      {screen === 'config' ? (
+      {!authView && screen === 'config' ? (
         <ConfigScreen
           key={frameKey}
           spaces={calendarData.spaces}
@@ -82,14 +101,11 @@ function App(): React.JSX.Element {
           initialSpaceKeys={calendarData.trackedSpaceKeys}
           confirmingRevoke={confirmingRevoke}
           onBack={goToMonth}
-          onSignOut={() => {
-            setAuthStage('start')
-            setScreen('auth')
-          }}
+          onSignOut={() => void window.api.auth.signOut()}
         />
       ) : null}
 
-      {screen === 'month' ? (
+      {!authView && screen === 'month' ? (
         <MonthScreen
           key={frameKey}
           data={calendarData}
@@ -105,19 +121,22 @@ function App(): React.JSX.Element {
 
       {/* The month view carries a theme toggle in its own top bar, as the design's chrome
           allows. The other screens have nowhere to put one, so the harness carries it —
-          keeping every floating dev control in a single corner. */}
-      <FlowSwitcher
-        frames={FRAMES}
-        activeId={stateToFrame({
-          screen,
-          authStage,
-          confirmingRevoke,
-          showDetail: monthDetail !== undefined
-        })}
-        theme={theme}
-        onSelect={openFrame}
-        onToggleTheme={toggleTheme}
-      />
+          keeping every floating dev control in a single corner. Development only: its
+          frames force the session through a channel main registers only in development. */}
+      {import.meta.env.DEV ? (
+        <FlowSwitcher
+          frames={FRAMES}
+          activeId={stateToFrame({
+            session,
+            screen,
+            confirmingRevoke,
+            showDetail: monthDetail !== undefined
+          })}
+          theme={theme}
+          onSelect={openFrame}
+          onToggleTheme={toggleTheme}
+        />
+      ) : null}
     </>
   )
 }

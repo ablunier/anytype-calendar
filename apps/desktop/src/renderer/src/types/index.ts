@@ -76,9 +76,24 @@ export interface MonthCell {
   outside: boolean
 }
 
-export type ScreenId = 'auth' | 'onboarding' | 'config' | 'month'
+/**
+ * Chosen locally once the session is connected; until then the auth session in main decides
+ * what is on screen. `success` is the one-off "connected" card shown right after signing in.
+ */
+export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'month'
 
-export type AuthStage = 'start' | 'code' | 'verifying' | 'error' | 'success'
+export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable'
+
+export type AuthView =
+  | { stage: 'start' }
+  /** `expiresAt` is epoch milliseconds. */
+  | { stage: 'code'; challengeId: string; expiresAt: number }
+  | { stage: 'verifying'; code: string }
+  /** `code` is absent when no challenge could be opened. */
+  | { stage: 'error'; failure: AuthFailureKind; code?: string }
+  | { stage: 'success' }
+
+export type AuthStage = AuthView['stage']
 
 export type DetailTarget =
   | { kind: 'object'; event: CalendarEvent }

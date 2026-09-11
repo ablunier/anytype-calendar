@@ -34,10 +34,12 @@ toolchain, via the root `postinstall`.
 (some editors and terminal integrations set it), Electron starts in plain Node mode and
 `npm run dev` dies with a misleading `TypeError` about `isPackaged`.
 
-Since the app has no backend yet, it opens on the auth screen with the flow going nowhere
-real. Use the **flow switcher** in the bottom corner — a dev-only harness — to jump
-straight to any of the ten design frames, including the states the product can only reach
-through a backend (a failed code exchange, a pre-opened detail panel).
+The app opens on the auth screen. Sign-in runs through the main process against a
+simulated Anytype: start the connection, and the terminal logs the challenge and the code
+to type — always `2749`; any other code is rejected. Everything past sign-in still runs on
+mock data. In development, the **flow switcher** in the bottom corner jumps straight to
+any of the ten design frames; for the auth frames it forces the session in main, so the
+screen follows exactly as it does in the live flow.
 
 ## Scripts
 

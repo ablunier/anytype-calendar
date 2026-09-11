@@ -1,4 +1,4 @@
-import type { AuthStage, Space } from '@renderer/types'
+import type { AuthStage, AuthView, Space } from '@renderer/types'
 import { Button, Card } from '@renderer/components/ui'
 import { AuthShell } from './AuthShell'
 import { AuthCode } from './stages/AuthCode'
@@ -8,45 +8,43 @@ import { AuthSuccess } from './stages/AuthSuccess'
 import { AuthVerifying } from './stages/AuthVerifying'
 
 export interface AuthScreenProps {
-  stage: AuthStage
+  view: AuthView
   spaces: Space[]
-  onStageChange: (stage: AuthStage) => void
-  onConnected: () => void
+  onStart: () => void
+  onSubmitCode: (code: string) => void
+  onStepBack: () => void
+  onContinue: () => void
 }
 
-/**
- * Nothing here authenticates: the buttons move `stage`, and no request is made. The real
- * flow (POST /v1/auth/challenges, then /v1/auth/api_keys) arrives behind IPC in a later
- * pass and will drive the same stage prop.
- */
 export function AuthScreen({
-  stage,
+  view,
   spaces,
-  onStageChange,
-  onConnected
+  onStart,
+  onSubmitCode,
+  onStepBack,
+  onContinue
 }: AuthScreenProps): React.JSX.Element {
   return (
     <AuthShell>
       <Card padding="roomy">
-        {stage === 'start' ? <AuthStart onStart={() => onStageChange('code')} /> : null}
-        {stage === 'code' ? (
+        {view.stage === 'start' ? <AuthStart onStart={onStart} /> : null}
+        {view.stage === 'code' ? (
+          /* Keyed by challenge, so requesting a new code also clears the field. */
           <AuthCode
-            onCancel={() => onStageChange('start')}
-            onVerify={() => onStageChange('verifying')}
+            key={view.challengeId}
+            challengeId={view.challengeId}
+            expiresAt={view.expiresAt}
+            onCancel={onStepBack}
+            onVerify={onSubmitCode}
           />
         ) : null}
-        {stage === 'verifying' ? (
-          <AuthVerifying
-            onCancel={() => onStageChange('code')}
-            onSettled={(next) => onStageChange(next)}
-          />
+        {view.stage === 'verifying' ? <AuthVerifying code={view.code} onCancel={onStepBack} /> : null}
+        {view.stage === 'error' ? (
+          <AuthError failure={view.failure} code={view.code} onBack={onStepBack} onRetry={onStart} />
         ) : null}
-        {stage === 'error' ? (
-          <AuthError onBack={() => onStageChange('code')} onRetry={() => onStageChange('code')} />
-        ) : null}
-        {stage === 'success' ? <AuthSuccess spaces={spaces} onContinue={onConnected} /> : null}
+        {view.stage === 'success' ? <AuthSuccess spaces={spaces} onContinue={onContinue} /> : null}
       </Card>
-      <AuthFooter stage={stage} onRequestNew={() => onStageChange('code')} />
+      <AuthFooter stage={view.stage} onRequestNew={onStart} />
     </AuthShell>
   )
 }
