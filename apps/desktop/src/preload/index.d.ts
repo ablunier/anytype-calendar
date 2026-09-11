@@ -1,8 +1,9 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
+import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { CalendarApi } from '@shared/ipc'
 
 declare global {
   interface Window {
     electron: ElectronAPI
-    api: unknown
+    api: CalendarApi
   }
 }

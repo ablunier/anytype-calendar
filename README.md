@@ -118,6 +118,8 @@ a module's own neighbourhood reads as local and everything else is absolute, wit
 chains to recount when a file moves. The alias is declared in three places that must agree:
 `resolve.alias` in `electron.vite.config.ts` (the bundler), `paths` in `tsconfig.web.json`
 (the typechecker), and `paths` in the root `tsconfig.paths.json` (dependency-cruiser).
+`@shared/*` works the same way for `src/shared/ipc.ts`, the IPC contract between main,
+preload and renderer.
 
 ## Notes for contributors
 

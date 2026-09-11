@@ -12,6 +12,9 @@ const workspaceAlias = {
   replacement: resolve(__dirname, '../../packages/$1/$2/index.ts')
 }
 
+// The IPC contract, imported by all three processes.
+const sharedAlias = { find: '@shared', replacement: resolve(__dirname, 'src/shared') }
+
 // The contexts are listed in apps/desktop dependencies, so externalizeDepsPlugin would
 // otherwise leave them as bare `require`s that the packaged app cannot resolve. Bundle them
 // instead.
@@ -25,13 +28,13 @@ const workspaceDeps = Object.keys(dependencies).filter((name) =>
 export default defineConfig({
   main: {
     resolve: {
-      alias: [workspaceAlias]
+      alias: [sharedAlias, workspaceAlias]
     },
     plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
   },
   preload: {
     resolve: {
-      alias: [workspaceAlias]
+      alias: [sharedAlias, workspaceAlias]
     },
     plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
   },
@@ -39,6 +42,7 @@ export default defineConfig({
     resolve: {
       alias: [
         { find: '@renderer', replacement: resolve(__dirname, 'src/renderer/src') },
+        sharedAlias,
         workspaceAlias
       ]
     },

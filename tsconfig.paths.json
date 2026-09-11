@@ -9,11 +9,12 @@
     "paths": {
       // `*` captures "<context>/<layer>", e.g. auth/domain.
       "@anytype-calendar/*": ["./packages/*/index.ts"],
-      // The renderer's internal alias. Mirrors apps/desktop/tsconfig.web.json and the
+      // The desktop app's internal aliases. Mirror apps/desktop's tsconfigs and the
       // electron.vite.config.ts resolve.alias — repeated here because dependency-cruiser
       // reads only this file, and would otherwise report every aliased import as
       // unresolvable.
-      "@renderer/*": ["./apps/desktop/src/renderer/src/*"]
+      "@renderer/*": ["./apps/desktop/src/renderer/src/*"],
+      "@shared/*": ["./apps/desktop/src/shared/*"]
     }
   }
 }

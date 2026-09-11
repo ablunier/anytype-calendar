@@ -101,10 +101,17 @@ so `lint:arch` doesn't need a build either.
 ### apps/desktop structure
 
 Standard electron-vite three-process layout:
-- `src/main` — Electron main process (window creation). Intended to become the composition
-  root once packages are wired in (per `.dependency-cruiser.cjs` comments), but does not
-  import any workspace package yet.
-- `src/preload` — context-bridge preload script; currently exposes only `@electron-toolkit/preload`'s default API, no app-specific IPC yet.
+- `src/main` — Electron main process and the **composition root**. `composition.ts` is
+  the only place adapters are chosen (currently the auth context's in-memory ones, which
+  simulate Anytype: the accepted code is `2749`, and each challenge's code is logged to
+  the terminal). `src/main/<context>/` holds that context's Electron-side driving adapter,
+  e.g. `auth/auth-ipc.ts`, which registers the IPC handlers and pushes every session
+  change to all windows. A `dev:*` channel is registered only when `is.dev`.
+- `src/shared/ipc.ts` — the IPC contract used by all three processes: channel names, the
+  `SessionSnapshot` the renderer receives (never carries the API key), and `CalendarApi`.
+- `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
+  `@electron-toolkit/preload`'s default API as `window.electron`). `index.d.ts` types
+  `window.api` for the renderer too — `tsconfig.web.json` includes it.
 - `src/renderer/src` — the React app:
   - `App.tsx` is the renderer root: screen switching, theme, and the *only* module that
     reads mock data (`mocks/index.ts`). Navigation is local `useState`, not a router — by
@@ -127,11 +134,12 @@ Standard electron-vite three-process layout:
     IPC-backed data layer.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
-    same-directory imports stay relative (`./EventChip`). The alias is declared three
-    times and all three must agree — `resolve.alias` in `electron.vite.config.ts` (used by
-    `dev`/`build`), `paths` in `tsconfig.web.json` (used by `typecheck`), and `paths` in
-    the root `tsconfig.paths.json` (used by `lint:arch`; a missing entry there shows up as
-    `not-to-unresolvable` errors, not as a build failure).
+    same-directory imports stay relative (`./EventChip`). The IPC contract is reached as
+    `@shared/ipc` from every process. Each alias is declared in several places that must
+    agree — `resolve.alias` in `electron.vite.config.ts` (used by `dev`/`build`), `paths`
+    in `tsconfig.web.json` (and `tsconfig.node.json` for `@shared`; used by `typecheck`),
+    and `paths` in the root `tsconfig.paths.json` (used by `lint:arch`; a missing entry
+    there shows up as `not-to-unresolvable` errors, not as a build failure).
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 
