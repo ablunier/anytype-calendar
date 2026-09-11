@@ -11,8 +11,7 @@ export const IpcChannel = {
   authStepBack: 'auth:step-back',
   authSignOut: 'auth:sign-out',
   authRevoke: 'auth:revoke',
-  authCopyKey: 'auth:copy-key',
-  devForceSession: 'dev:force-session'
+  authCopyKey: 'auth:copy-key'
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */
@@ -33,9 +32,5 @@ export interface CalendarApi {
      * whether there was a key to copy.
      */
     copyKey(): Promise<boolean>
-  }
-  dev: {
-    /** Rejects outside development: main registers no handler there. */
-    forceSession(session: SessionSnapshot): Promise<void>
   }
 }

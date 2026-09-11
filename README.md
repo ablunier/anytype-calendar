@@ -37,9 +37,7 @@ toolchain, via the root `postinstall`.
 The app opens on the auth screen. Sign-in runs through the main process against a
 simulated Anytype: start the connection, and the terminal logs the challenge and the code
 to type — always `2749`; any other code is rejected. Everything past sign-in still runs on
-mock data. In development, the **flow switcher** in the bottom corner jumps straight to
-any of the ten design frames; for the auth frames it forces the session in main, so the
-screen follows exactly as it does in the live flow.
+mock data.
 
 ## Scripts
 
@@ -131,6 +129,6 @@ preload and renderer.
 - `tools/arch-lint/README.md` explains why the lint toolchain lives outside the npm
   workspace, and how to remove it once dependency-cruiser supports TypeScript 7.
 - Several files carry doc comments explaining *why* a structural choice was made
-  (`App.tsx`, `lib/frames.ts`, `types/index.ts`, `.dependency-cruiser.cjs`) — worth reading
+  (`App.tsx`, `lib/session.ts`, `types/index.ts`, `.dependency-cruiser.cjs`) — worth reading
   before changing their behavior.
 - `AGENTS.md` is the guidance file for AI coding agents working in this repo.

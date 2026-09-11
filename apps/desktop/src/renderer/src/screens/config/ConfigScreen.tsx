@@ -15,8 +15,6 @@ export interface ConfigScreenProps {
   initialTypeKeys: string[]
   initialSpaceKeys: string[]
   apiKey: ApiKeyView
-  /** Opens the revoke dialog on mount — the flow shows this as its own frame. */
-  confirmingRevoke?: boolean
   onBack: () => void
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
@@ -29,14 +27,13 @@ export function ConfigScreen({
   initialTypeKeys,
   initialSpaceKeys,
   apiKey,
-  confirmingRevoke = false,
   onBack,
   onCopyKey,
   onSignOut,
   onRevoke
 }: ConfigScreenProps): React.JSX.Element {
   const selection = useTypeSelection(types, initialTypeKeys, initialSpaceKeys)
-  const [revoking, setRevoking] = useState(confirmingRevoke)
+  const [revoking, setRevoking] = useState(false)
 
   return (
     <div className="flex h-full flex-col bg-surface-page">

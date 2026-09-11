@@ -114,10 +114,6 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-@utility max-h-flow {
-  max-height: 60vh;
-}
-
 /* Design rule: no bounce, no spring. */
 @utility animate-scrim {
   animation: ds-fade var(--ds-dur-sheet) var(--ds-ease-standard);

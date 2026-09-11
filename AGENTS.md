@@ -106,7 +106,7 @@ Standard electron-vite three-process layout:
   simulate Anytype: the accepted code is `2749`, and each challenge's code is logged to
   the terminal). `src/main/<context>/` holds that context's Electron-side driving adapter,
   e.g. `auth/auth-ipc.ts`, which registers the IPC handlers and pushes every session
-  change to all windows. A `dev:*` channel is registered only when `is.dev`.
+  change to all windows.
 - `src/shared/ipc.ts` — the IPC contract used by all three processes: channel names, the
   `SessionSnapshot` the renderer receives (never carries the API key), and `CalendarApi`.
 - `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
@@ -119,7 +119,8 @@ Standard electron-vite three-process layout:
     snapshot main pushes (`hooks/useSession.ts`), and auth buttons only send intents over
     `window.api`. Once connected, navigation between success / onboarding / config / month
     is local `useState`, not a router — four fixed screens, no URLs — and it resets to the
-    success card whenever the session leaves `connected`.
+    success card whenever the session leaves `connected`. The theme toggle lives in the
+    month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead.
   - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
@@ -129,12 +130,8 @@ Standard electron-vite three-process layout:
     each with its own subcomponents.
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
     barrel-exported from `components/ui/index.ts`.
-  - `components/app/` — app-level chrome (e.g. `FlowSwitcher`, the harness for jumping
-    directly to any of the ten design frames — rendered only when `import.meta.env.DEV`).
-  - `lib/frames.ts` — maps the ten named design "frames" to/from app state for the
-    `FlowSwitcher`. An auth frame is a real session, forced in main over the dev-only
-    `dev:force-session` channel; the others set local screen state on top of a forced
-    connected session.
+  - `components/app/` — app-level chrome shared across screens (`Wordmark`, `SpaceDot`,
+    `TypeTile`).
   - `lib/calendar.ts` — calendar grid/date math for the month view.
   - `mocks/index.ts` — sample calendar data (spaces, types, events) for everything past
     sign-in; stands in for the eventual IPC-backed data layer. Auth is no longer mocked
@@ -183,5 +180,5 @@ Standard electron-vite three-process layout:
   may depend on) — keep that pattern when filling in currently-empty modules or adding a
   context.
 - Prefer reading existing doc comments in a file before changing its behavior; several
-  files (e.g. `App.tsx`, `lib/frames.ts`, `types/index.ts`, `.dependency-cruiser.cjs`)
+  files (e.g. `App.tsx`, `lib/session.ts`, `types/index.ts`, `.dependency-cruiser.cjs`)
   explain *why* a structural choice was made, not just what it does.

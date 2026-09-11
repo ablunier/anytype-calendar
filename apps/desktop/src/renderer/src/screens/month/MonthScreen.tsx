@@ -10,8 +10,6 @@ import { MonthTopBar } from './MonthTopBar'
 export interface MonthScreenProps {
   data: CalendarData
   theme: 'light' | 'dark'
-  /** Opens the panel on a given object — the flow shows this as its own frame. */
-  initialDetail?: DetailTarget
   onToggleTheme: () => void
   onOpenSettings: () => void
 }
@@ -19,15 +17,12 @@ export interface MonthScreenProps {
 export function MonthScreen({
   data,
   theme,
-  initialDetail,
   onToggleTheme,
   onOpenSettings
 }: MonthScreenProps): React.JSX.Element {
   const [offset, setOffset] = useState(0)
-  const [detail, setDetail] = useState<DetailTarget | null>(initialDetail ?? null)
-  const [selectedDay, setSelectedDay] = useState<number | null>(
-    initialDetail?.kind === 'day' ? initialDetail.day : null
-  )
+  const [detail, setDetail] = useState<DetailTarget | null>(null)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [focusedDay, setFocusedDay] = useState(data.today)
 
   const typesByKey = useMemo(() => indexBy(data.types), [data.types])

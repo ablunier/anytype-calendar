@@ -1,6 +1,5 @@
 import { BrowserWindow, clipboard, ipcMain } from 'electron'
-import { is } from '@electron-toolkit/utils'
-import { IpcChannel, type SessionSnapshot } from '@shared/ipc'
+import { IpcChannel } from '@shared/ipc'
 import type { AppServices } from '../composition'
 
 export function registerAuthIpc({ authService, authSession }: AppServices): void {
@@ -23,10 +22,4 @@ export function registerAuthIpc({ authService, authSession }: AppServices): void
       window.webContents.send(IpcChannel.sessionChanged, session)
     }
   })
-
-  if (is.dev) {
-    ipcMain.handle(IpcChannel.devForceSession, (_event, session: SessionSnapshot) =>
-      authSession.set(session)
-    )
-  }
 }

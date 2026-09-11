@@ -20,9 +20,6 @@ const api: CalendarApi = {
     signOut: () => ipcRenderer.invoke(IpcChannel.authSignOut),
     revoke: () => ipcRenderer.invoke(IpcChannel.authRevoke),
     copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey)
-  },
-  dev: {
-    forceSession: (session) => ipcRenderer.invoke(IpcChannel.devForceSession, session)
   }
 }
 
