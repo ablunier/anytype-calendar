@@ -119,8 +119,12 @@ dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once
   `state` reports `schema: { phase: 'failed', failure: 'unauthorized' }`. `main-eval` can
   confirm it: Anytype answers `401 {"code":"unauthorized","message":"invalid api key"}` to
   `GET /v1/spaces`.
-- **Only the success card has real data.** Onboarding, config and the month view still
+- **Only the success card and onboarding have real data.** Config and the month view still
   draw from `src/renderer/src/mocks/index.ts`, whatever mode you are in.
+- **Onboarding shows until a selection is saved**, even for a restored key. Continue or Skip
+  writes `schema-selection-fake.json` (or `schema-selection.json` in real mode) to
+  `userData`; delete it to see onboarding again. In real mode that file is the human's own,
+  so don't press Continue or Skip there unless asked.
 - **`eval` takes an expression, not statements.** The driver wraps it as
   `(async () => (<expr>))()` so a `const` can't leak into the page's global scope (raw
   `Runtime.evaluate` of `const b = …` twice throws "Identifier 'b' has already been

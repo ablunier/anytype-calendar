@@ -9,10 +9,11 @@ calendar. It talks to the Anytype local API. npm workspaces monorepo, currently 
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
 the real Anytype local API and keeps the key across restarts. `schema` — how the user
-builds their event schema from their Anytype data — has its first slice: it reads the
-account's spaces and counts each one's dated objects, and tracks the last sync; that feeds
-the post-sign-in success card. The onboarding, config and month screens still run on mock
-data.
+builds their event schema from their Anytype data — reads each space's dated types (types
+with a user date property, and how many objects fill one in) and tracks the last sync,
+which feeds the post-sign-in success card and onboarding. It also persists the user's
+selection — which spaces and types go on the calendar, and each type's From/To date
+property — which onboarding saves. The config and month screens still run on mock data.
 
 ## Commands
 
@@ -140,15 +141,18 @@ Standard electron-vite three-process layout:
   every auth session change either syncs the schema (`connected`) or resets it (anything
   else). `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal), a separate `credential-fake.bin`, and
-  `InMemorySchemaGateway` (the design's four sample spaces). The local API cannot revoke
+  `InMemorySchemaGateway` (the design's four sample spaces). The schema selection is plain
+  JSON in `<userData>/schema-selection.json` (`schema-selection-fake.json` in fake mode,
+  since the fake space ids are not real ones), loaded alongside the key before the first
+  window opens. A missing or unreadable file means onboarding was never done. The local API cannot revoke
   keys, so there is no revoke action: users delete keys in Anytype's settings.
   `src/main/<context>/` holds that context's Electron-side glue: e.g. `auth/auth-ipc.ts`
   and `schema/schema-ipc.ts` register the IPC handlers and push every state change to all
-  windows, and `auth/credential-storage.ts` adapts `safeStorage` and the filesystem to the
-  repository's injected ports.
+  windows, and `auth/credential-storage.ts` and `schema/selection-storage.ts` adapt
+  `safeStorage` and the filesystem (`atomic-file.ts`) to the repositories' injected ports.
 - `src/shared/ipc.ts` — the IPC contract used by all three processes: channel names, the
-  `SessionSnapshot` and `SchemaSnapshot` the renderer receives (neither carries the API
-  key), and `CalendarApi`.
+  `SessionSnapshot`, `SchemaSnapshot` and `SchemaSelectionSnapshot` the renderer receives
+  (none carries the API key), and `CalendarApi`.
 - `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
   `@electron-toolkit/preload`'s default API as `window.electron`). `index.d.ts` types
   `window.api` for the renderer too — `tsconfig.web.json` includes it.
@@ -162,11 +166,17 @@ Standard electron-vite three-process layout:
     lands on the success card when the window drew the sign-in; a window whose first
     snapshot is already connected (key restored at launch, or a reload) goes straight to
     month. Never key this off the phase just before `connected`: pushes can be rendered
-    together, so a transient phase like `verifying` may never be drawn. The theme toggle lives in the
+    together, so a transient phase like `verifying` may never be drawn. One rule overrides
+    the local screen: until a selection is saved (`unset`), every screen past the success
+    card is onboarding, so a restored key that never finished it still gets it. Continue
+    saves the picks; Skip saves an empty selection on first run and saves nothing later.
+    The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
-    `SchemaSnapshot` (`hooks/useSchemaSync.ts`), turning it into `Space[]` and a `SyncView`.
+    `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`
+    (`hooks/useSchemaSelection.ts`): it turns them into `Space[]`, `ObjectType[]`, a
+    `SyncView` and `TypePicks`, and turns picks back into the `SchemaSelection` to save.
   - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
     `ObjectType`, `Space`), deliberately kept out of the packages' domain layers — they
     describe what a component needs to draw, not what the calendar means.
@@ -177,9 +187,9 @@ Standard electron-vite three-process layout:
   - `components/app/` — app-level chrome shared across screens (`Wordmark`, `SpaceDot`,
     `TypeTile`).
   - `lib/calendar.ts` — calendar grid/date math for the month view.
-  - `mocks/index.ts` — sample calendar data (spaces, types, events) for the onboarding,
-    config and month screens; stands in for the eventual IPC-backed data layer. Auth and the
-    success card's spaces are not mocked here — they run in main against the contexts'
+  - `mocks/index.ts` — sample calendar data (spaces, types, events) for the config and
+    month screens; stands in for the eventual IPC-backed data layer. Auth, the success
+    card and onboarding are not mocked here — they run in main against the contexts'
     adapters.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
