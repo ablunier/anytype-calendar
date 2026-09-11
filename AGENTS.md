@@ -7,9 +7,12 @@ This file provides guidance to AI coding agents when working with code in this r
 An Electron + React desktop app that renders Anytype objects (with date properties) on a
 calendar. It talks to the Anytype local API. npm workspaces monorepo, currently in an
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
-package per bounded context under `packages/`. `auth` is the first and is fully wired: it
-signs in against the real Anytype local API and keeps the key across restarts. Everything
-past sign-in still runs on mock data.
+package per bounded context under `packages/`. `auth` is fully wired: it signs in against
+the real Anytype local API and keeps the key across restarts. `schema` — how the user
+builds their event schema from their Anytype data — has its first slice: it reads the
+account's spaces and counts each one's dated objects, and tracks the last sync; that feeds
+the post-sign-in success card. The onboarding, config and month screens still run on mock
+data.
 
 ## Commands
 
@@ -19,8 +22,8 @@ Run from the repo root unless noted.
   **Must** be run with `env -u ELECTRON_RUN_AS_NODE` set, e.g.
   `env -u ELECTRON_RUN_AS_NODE npm run dev` — otherwise Electron launches in Node mode and
   fails with a misleading `isPackaged` TypeError. Sign-in needs the Anytype desktop app
-  running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to sign in against a simulated Anytype
-  instead (see `composition.ts`).
+  running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to run against a simulated Anytype instead —
+  sign-in and the schema reads both (see `composition.ts`).
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -40,7 +43,7 @@ Run from the repo root unless noted.
 
 ### Layout: bounded context → layer → role
 
-Each package under `packages/` is one bounded context (currently only `auth`), and its
+Each package under `packages/` is one bounded context (currently `auth` and `schema`), and its
 layers are folders inside it — except `anytype-client` (see below):
 
 ```
@@ -119,15 +122,21 @@ Standard electron-vite three-process layout:
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
-  warning. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
-  `2749`, logged to the terminal) and a separate `credential-fake.bin`. The local API
-  cannot revoke keys, so there is no revoke action: users delete keys in Anytype's
-  settings. `src/main/<context>/` holds that context's Electron-side glue: e.g.
-  `auth/auth-ipc.ts` registers the IPC handlers and pushes every session change to all
+  warning. Both contexts' Anytype gateways share one `AnytypeClient`. Schema reads the key
+  through its own `SchemaApiKeySource` port, which the composition root adapts from auth's
+  credential repository, and the composition root is also where the contexts are linked:
+  every auth session change either syncs the schema (`connected`) or resets it (anything
+  else). `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
+  `2749`, logged to the terminal), a separate `credential-fake.bin`, and
+  `InMemorySchemaGateway` (the design's four sample spaces). The local API cannot revoke
+  keys, so there is no revoke action: users delete keys in Anytype's settings.
+  `src/main/<context>/` holds that context's Electron-side glue: e.g. `auth/auth-ipc.ts`
+  and `schema/schema-ipc.ts` register the IPC handlers and push every state change to all
   windows, and `auth/credential-storage.ts` adapts `safeStorage` and the filesystem to the
   repository's injected ports.
 - `src/shared/ipc.ts` — the IPC contract used by all three processes: channel names, the
-  `SessionSnapshot` the renderer receives (never carries the API key), and `CalendarApi`.
+  `SessionSnapshot` and `SchemaSnapshot` the renderer receives (neither carries the API
+  key), and `CalendarApi`.
 - `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
   `@electron-toolkit/preload`'s default API as `window.electron`). `index.d.ts` types
   `window.api` for the renderer too — `tsconfig.web.json` includes it.
@@ -135,8 +144,8 @@ Standard electron-vite three-process layout:
   - `App.tsx` is the renderer root: screen switching, theme, and the *only* module that
     reads mock data (`mocks/index.ts`). **Screens derive from the session**: until it is
     connected, the auth card shown is `authViewFor(session)` (`lib/session.ts`) of the
-    snapshot main pushes (`hooks/useSession.ts`), and auth buttons only send intents over
-    `window.api`. Once connected, navigation between success / onboarding / config / month
+    snapshot main pushes (`hooks/useSession.ts`, over the generic `usePushedState`), and
+    auth buttons only send intents over `window.api`. Once connected, navigation between success / onboarding / config / month
     is local `useState`, not a router — four fixed screens, no URLs. Entering `connected`
     lands on the success card when the window drew the sign-in; a window whose first
     snapshot is already connected (key restored at launch, or a reload) goes straight to
@@ -144,7 +153,8 @@ Standard electron-vite three-process layout:
     together, so a transient phase like `verifying` may never be drawn. The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
-    components receive the UI-local `AuthView` instead.
+    components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
+    `SchemaSnapshot` (`hooks/useSchemaSync.ts`), turning it into `Space[]` and a `SyncView`.
   - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
     `ObjectType`, `Space`), deliberately kept out of the packages' domain layers — they
     describe what a component needs to draw, not what the calendar means.
@@ -155,9 +165,10 @@ Standard electron-vite three-process layout:
   - `components/app/` — app-level chrome shared across screens (`Wordmark`, `SpaceDot`,
     `TypeTile`).
   - `lib/calendar.ts` — calendar grid/date math for the month view.
-  - `mocks/index.ts` — sample calendar data (spaces, types, events) for everything past
-    sign-in; stands in for the eventual IPC-backed data layer. Auth is not mocked here — it
-    runs in main against the auth context's adapters.
+  - `mocks/index.ts` — sample calendar data (spaces, types, events) for the onboarding,
+    config and month screens; stands in for the eventual IPC-backed data layer. Auth and the
+    success card's spaces are not mocked here — they run in main against the contexts'
+    adapters.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as
