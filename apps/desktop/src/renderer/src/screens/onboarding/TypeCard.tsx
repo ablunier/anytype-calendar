@@ -63,7 +63,7 @@ export function TypeCard({
           <Select
             size="sm"
             label="To date (optional)"
-            options={[NONE, ...dateOptions(type)]}
+            options={[NONE, ...dateOptions(type).filter((option) => option.value !== from)]}
             value={to ?? NONE.value}
             onChange={(value) => onToChange(value === NONE.value ? null : value)}
           />

@@ -38,12 +38,12 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
   const mappingFor = (type: ObjectType): DateMapping =>
     dates[type.key] ?? { from: type.from, to: type.to }
 
-  const update = (key: string, change: Partial<DateMapping>): void => {
+  const update = (key: string, change: (mapping: DateMapping) => DateMapping): void => {
     const type = types.find((candidate) => candidate.key === key)
     if (!type) return
     setDates((current) => ({
       ...current,
-      [key]: { ...(current[key] ?? { from: type.from, to: type.to }), ...change }
+      [key]: change(current[key] ?? { from: type.from, to: type.to })
     }))
   }
 
@@ -56,7 +56,9 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     mappingFor,
     toggleSpace: (key) => setSpaceKeys((keys) => toggle(keys, key)),
     toggleType: (key) => setTypeKeys((keys) => toggle(keys, key)),
-    setFrom: (key, value) => update(key, { from: value }),
-    setTo: (key, value) => update(key, { to: value })
+    // A range from a date to itself is not a selection main accepts, so it becomes one date.
+    setFrom: (key, value) =>
+      update(key, ({ to }) => ({ from: value, to: to === value ? null : to })),
+    setTo: (key, value) => update(key, ({ from }) => ({ from, to: value }))
   }
 }

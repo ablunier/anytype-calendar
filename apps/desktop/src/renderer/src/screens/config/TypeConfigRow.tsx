@@ -60,7 +60,7 @@ export function TypeConfigRow({
         size="sm"
         className="w-152"
         ariaLabel={`To date for ${type.label}`}
-        options={[NONE, ...dateOptions(type)]}
+        options={[NONE, ...dateOptions(type).filter((option) => option.value !== from)]}
         value={to ?? NONE.value}
         disabled={!checked}
         onChange={(value) => onToChange(value === NONE.value ? null : value)}
