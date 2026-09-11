@@ -11,6 +11,12 @@ import {
   InMemoryAuthGateway,
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
+import { SchemaSyncService, SchemaSyncStore } from '@anytype-calendar/schema/application'
+import type { SchemaGateway } from '@anytype-calendar/schema/domain'
+import {
+  AnytypeSchemaGateway,
+  InMemorySchemaGateway
+} from '@anytype-calendar/schema/infrastructure'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 
 /**
@@ -22,30 +28,51 @@ const ANYTYPE_REQUEST_TIMEOUT_MS = 10_000
 export interface AppServices {
   authService: AuthService
   authSession: AuthSessionStore
+  schemaSync: SchemaSyncService
+  schemaState: SchemaSyncStore
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
 export function composeServices(): AppServices {
-  // Signs in against a simulated Anytype that accepts 2749, logging each challenge here.
-  const fakeAuth = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
+  // Swaps all of Anytype for a simulation: sign-in accepts 2749 (each challenge is logged
+  // here), and the schema reads return the design's sample account.
+  const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
+  const client = fakeAnytype ? null : anytypeClient()
+
+  // A fake key gets its own file, so it is never restored against the real Anytype.
+  const credentials = credentialRepository(fakeAnytype ? 'credential-fake.bin' : 'credential.bin')
 
   const authSession = new AuthSessionStore()
   const authService = new AuthService({
-    gateway: fakeAuth ? inMemoryAuthGateway() : anytypeAuthGateway(),
-    // A fake key gets its own file, so it is never restored against the real Anytype.
-    credentials: credentialRepository(fakeAuth ? 'credential-fake.bin' : 'credential.bin'),
+    gateway: client ? new AnytypeAuthGateway(client) : inMemoryAuthGateway(),
+    credentials,
     store: authSession,
     appName: 'Calendar for Anytype'
   })
-  return { authService, authSession }
+
+  const schemaState = new SchemaSyncStore()
+  const schemaSync = new SchemaSyncService({
+    gateway: client ? new AnytypeSchemaGateway(client) : inMemorySchemaGateway(),
+    apiKeys: { current: async () => (await credentials.load())?.apiKey ?? null },
+    store: schemaState
+  })
+
+  // Contexts never know about each other, so the link lives here: being connected — signed
+  // in just now, or a key restored at launch — is what reads the account; anything else
+  // forgets it. The session store notifies only on change, and a reset while idle is a no-op.
+  authSession.subscribe((session) => {
+    if (session.phase === 'connected') void schemaSync.sync()
+    else schemaSync.reset()
+  })
+
+  return { authService, authSession, schemaSync, schemaState }
 }
 
-function anytypeAuthGateway(): AuthGateway {
-  const client = new AnytypeClient({
+function anytypeClient(): AnytypeClient {
+  return new AnytypeClient({
     fetch: (url, init) =>
       fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) })
   })
-  return new AnytypeAuthGateway(client)
 }
 
 function inMemoryAuthGateway(): AuthGateway {
@@ -54,6 +81,10 @@ function inMemoryAuthGateway(): AuthGateway {
     log: (message) => console.info(message),
     randomId: () => randomBytes(3).toString('hex')
   })
+}
+
+function inMemorySchemaGateway(): SchemaGateway {
+  return new InMemorySchemaGateway({ sleep: (ms) => sleep(ms) })
 }
 
 /** Never writes the key in plaintext: without OS encryption it lasts only until quit. */

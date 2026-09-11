@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
+import { registerSchemaIpc } from './schema/schema-ipc'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -37,6 +38,7 @@ app.whenReady().then(async () => {
 
   const services = composeServices()
   registerAuthIpc(services)
+  registerSchemaIpc(services)
   await services.authService.restore()
 
   app.on('browser-window-created', (_, window) => {

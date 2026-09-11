@@ -1,4 +1,4 @@
-import type { AuthStage, AuthView, Space } from '@renderer/types'
+import type { AuthStage, AuthView, Space, SyncView } from '@renderer/types'
 import { Button, Card } from '@renderer/components/ui'
 import { AuthShell } from './AuthShell'
 import { AuthCode } from './stages/AuthCode'
@@ -10,18 +10,22 @@ import { AuthVerifying } from './stages/AuthVerifying'
 export interface AuthScreenProps {
   view: AuthView
   spaces: Space[]
+  sync: SyncView
   onStart: () => void
   onSubmitCode: (code: string) => void
   onStepBack: () => void
+  onRetrySync: () => void
   onContinue: () => void
 }
 
 export function AuthScreen({
   view,
   spaces,
+  sync,
   onStart,
   onSubmitCode,
   onStepBack,
+  onRetrySync,
   onContinue
 }: AuthScreenProps): React.JSX.Element {
   return (
@@ -42,7 +46,9 @@ export function AuthScreen({
         {view.stage === 'error' ? (
           <AuthError failure={view.failure} code={view.code} onBack={onStepBack} onRetry={onStart} />
         ) : null}
-        {view.stage === 'success' ? <AuthSuccess spaces={spaces} onContinue={onContinue} /> : null}
+        {view.stage === 'success' ? (
+          <AuthSuccess spaces={spaces} sync={sync} onRetry={onRetrySync} onContinue={onContinue} />
+        ) : null}
       </Card>
       <AuthFooter stage={view.stage} onRequestNew={onStart} />
     </AuthShell>

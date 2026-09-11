@@ -1,6 +1,11 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { IpcChannel, type CalendarApi, type SessionSnapshot } from '@shared/ipc'
+import {
+  IpcChannel,
+  type CalendarApi,
+  type SchemaSnapshot,
+  type SessionSnapshot
+} from '@shared/ipc'
 
 const api: CalendarApi = {
   session: {
@@ -19,6 +24,17 @@ const api: CalendarApi = {
     stepBack: () => ipcRenderer.invoke(IpcChannel.authStepBack),
     signOut: () => ipcRenderer.invoke(IpcChannel.authSignOut),
     copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey)
+  },
+  schema: {
+    get: () => ipcRenderer.invoke(IpcChannel.schemaGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: SchemaSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.schemaChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.schemaChanged, forward)
+      }
+    },
+    sync: () => ipcRenderer.invoke(IpcChannel.schemaSync)
   }
 }
 

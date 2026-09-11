@@ -95,6 +95,15 @@ export type AuthView =
 
 export type AuthStage = AuthView['stage']
 
+export type SyncState = 'synced' | 'syncing' | 'offline' | 'error'
+
+/** How the last read of the account went, ready for SyncStatus. */
+export interface SyncView {
+  state: SyncState
+  /** e.g. "just now", "Is Anytype running?". */
+  detail?: string
+}
+
 /** Enough to recognise the key by; the renderer never holds the key itself. */
 export interface ApiKeyView {
   hint: string

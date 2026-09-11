@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import type { AuthView, ConnectedScreen } from './types'
+import { useNow } from './hooks/useNow'
+import { useSchemaSync } from './hooks/useSchemaSync'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
+import { spacesFor, syncViewFor } from './lib/schema'
 import { apiKeyFor, authViewFor } from './lib/session'
 import { calendarData, onboardingDefaults } from './mocks'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
 import { MonthScreen } from './screens/month/MonthScreen'
 import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
+
+/** Often enough for "synced 3 min ago" to stay true. */
+const SYNC_AGE_TICK_MS = 30_000
 
 /**
  * The renderer's root: the screen switcher, the theme, and the only module that reads the
@@ -22,6 +28,8 @@ import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
 function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
   const session = useSession()
+  const schema = useSchemaSync()
+  const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
 
   /* Entering the connected phase picks the first screen. A window that has drawn any other
@@ -37,7 +45,7 @@ function App(): React.JSX.Element | null {
     if (session?.phase === 'connected') setScreen(phase === undefined ? 'month' : 'success')
   }
 
-  if (!session) return null
+  if (!session || !schema) return null
 
   const authView: AuthView | null =
     authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
@@ -47,10 +55,12 @@ function App(): React.JSX.Element | null {
     return (
       <AuthScreen
         view={authView}
-        spaces={calendarData.spaces}
+        spaces={spacesFor(schema)}
+        sync={syncViewFor(schema, now)}
         onStart={() => void window.api.auth.start()}
         onSubmitCode={(code) => void window.api.auth.submitCode(code)}
         onStepBack={() => void window.api.auth.stepBack()}
+        onRetrySync={() => void window.api.schema.sync()}
         onContinue={() => setScreen('onboarding')}
       />
     )

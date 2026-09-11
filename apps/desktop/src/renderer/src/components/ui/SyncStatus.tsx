@@ -1,7 +1,5 @@
-import type { IconName } from '@renderer/types'
+import type { IconName, SyncState } from '@renderer/types'
 import { Icon } from './Icon'
-
-export type SyncState = 'synced' | 'syncing' | 'offline' | 'error'
 
 interface SyncPresentation {
   icon: IconName
