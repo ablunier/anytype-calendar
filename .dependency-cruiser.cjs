@@ -1,13 +1,4 @@
 /**
- * Enforces the hexagonal dependency rule, per bounded context.
- *
- * Every package under packages/ is one bounded context, with its layers as folders:
- *
- *   packages/<ctx>/domain          -> nothing outside itself (no npm deps, no node core)
- *   packages/<ctx>/application     -> its own context's domain only
- *   packages/<ctx>/infrastructure  -> its own context's domain only
- *   apps/desktop                   -> any context's layers, plus Electron and React
- *
  * Contexts never import each other — the composition root in apps/desktop/src/main wires
  * them together. That follows from the three layer rules rather than needing its own.
  *
@@ -118,8 +109,6 @@ module.exports = {
       // directory (vite, among many) and lets a boundary breach through unnoticed.
       path: '^(packages|apps)/[^/]+/(dist|out)/|\\.test\\.ts$|electron\\.vite\\.config\\.ts$'
     },
-    // Resolution-only tsconfig mapping @anytype-calendar/* onto package sources, so the
-    // lint runs without a prior `tsc -b`.
     tsConfig: { fileName: 'tsconfig.paths.json' },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {

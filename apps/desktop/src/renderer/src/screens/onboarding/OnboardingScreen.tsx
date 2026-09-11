@@ -16,7 +16,7 @@ export interface OnboardingScreenProps {
   onSkip: () => void
 }
 
-/** First run only, skippable — which spaces, which types, and the dates they use. */
+/** Shown on first run only. */
 export function OnboardingScreen({
   spaces,
   types,

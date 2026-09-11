@@ -25,8 +25,6 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
 }
 
 /**
- * The month as a real grid.
- *
  * One role="grid" wrapping a header row of columnheaders and a row per week, which is the
  * structure assistive tech expects — the design renders the weekday strip as a separate
  * bar outside the grid, where it would not be announced as the columns' headers.

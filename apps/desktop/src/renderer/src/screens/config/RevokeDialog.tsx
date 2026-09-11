@@ -10,7 +10,7 @@ export interface RevokeDialogProps {
 
 const CONFIRM_WORD = 'revoke'
 
-/** Destructive, typed-confirm. Deleting the key in Anytype cannot be undone. */
+/** Typed confirmation, because deleting the key in Anytype cannot be undone. */
 export function RevokeDialog({
   open,
   spaceCount,

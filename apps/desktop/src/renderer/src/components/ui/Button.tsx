@@ -5,8 +5,7 @@ import { Icon, type IconSize } from './Icon'
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'quiet'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
-/* One primary per view; secondary is the workhorse. Hover darkens one step on filled
- * variants and lays a 4% ink wash on the flat ones. */
+/* Design rule: one primary per view; secondary is the workhorse. */
 const variantClass: Record<ButtonVariant, string> = {
   primary:
     'bg-surface-accent text-ink-inverse border-transparent shadow-1 hover:not-disabled:bg-surface-accent-hover',

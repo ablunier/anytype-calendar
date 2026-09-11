@@ -15,8 +15,6 @@ export interface TypeCardProps {
 const NONE = 'None'
 
 /**
- * One object type, with its mandatory start date and optional end date.
- *
  * The design nests the whole row in a clickable div with role="checkbox"; here the
  * checkbox is the real control and carries the label, so the card is keyboard-operable
  * and the two selects stay independently reachable.

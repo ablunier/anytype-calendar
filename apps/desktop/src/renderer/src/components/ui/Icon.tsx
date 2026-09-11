@@ -1,9 +1,8 @@
 import type { CSSProperties } from 'react'
 import type { IconName } from '@renderer/types'
 
-/* The 49 Lucide glyphs the product uses, vendored under assets/icons. Vite rewrites each
- * to a hashed URL at build time, so the map is resolved statically rather than by string
- * concatenation at runtime. */
+/* Vite rewrites each glyph to a hashed URL at build time, so the map is resolved
+ * statically rather than by string concatenation at runtime. */
 const modules = import.meta.glob('../../assets/icons/*.svg', {
   eager: true,
   query: '?url',
@@ -17,7 +16,7 @@ const iconUrls: Partial<Record<IconName, string>> = Object.fromEntries(
   ])
 )
 
-/** The icon steps the system uses. 14 dense rows, 16 controls, 20 headers, 24 empty states. */
+/** 14 for dense rows, 16 controls, 20 headers, 24 empty states. */
 export type IconSize = 10 | 11 | 12 | 13 | 14 | 16 | 18 | 20 | 24
 
 const sizeClass: Record<IconSize, string> = {
@@ -42,8 +41,6 @@ export interface IconProps {
 }
 
 /**
- * Monochrome glyph tinted with currentColor.
- *
  * The SVG is applied as a mask rather than inlined, so one file serves every colour and
  * the icon inherits its context's text colour — including across a theme switch.
  */

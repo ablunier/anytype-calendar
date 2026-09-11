@@ -6,7 +6,7 @@
  * domain types, and these become the view-model boundary they map onto.
  */
 
-/** The eight muted category hues. Decorative only — never the sole carrier of meaning. */
+/** Decorative only — never the sole carrier of meaning. */
 export type CategoryHue =
   | 'sage'
   | 'clay'
@@ -17,25 +17,24 @@ export type CategoryHue =
   | 'rose'
   | 'graphite'
 
-/** An Anytype space the account can see. */
 export interface Space {
   key: string
   name: string
   category: CategoryHue
-  /** Count of dated objects in the space. */
+  /** Counts only objects carrying a date. */
   objects: number
 }
 
-/** One object type within one space, and the date properties it exposes. */
+/** Scoped to a single space: the same Anytype type in two spaces is two entries. */
 export interface ObjectType {
   key: string
   space: string
   label: string
   category: CategoryHue
   icon: IconName
-  /** Count of dated objects of this type. */
+  /** Counts only objects carrying a date. */
   count: number
-  /** Every date property the type carries. */
+  /** Date properties only. */
   props: string[]
   /** The mandatory start-date property. */
   from: string
@@ -43,7 +42,7 @@ export interface ObjectType {
   to: string | null
 }
 
-/** A dated object placed on the grid. Days are day-of-month within the mock month. */
+/** `day` and `until` are days of the month within the mock month. */
 export interface CalendarEvent {
   id: number
   day: number
@@ -58,7 +57,6 @@ export interface CalendarEvent {
   done?: boolean
 }
 
-/** Everything the UI reads. Swapped for an IPC-fed equivalent in a later pass. */
 export interface CalendarData {
   spaces: Space[]
   types: ObjectType[]
@@ -68,31 +66,25 @@ export interface CalendarData {
   month: number
   monthLabel: string
   today: number
-  /** Type keys currently tracked. */
   trackedTypeKeys: string[]
-  /** Space keys currently tracked. */
   trackedSpaceKeys: string[]
 }
 
-/** One square of the month grid before events are attached. */
 export interface MonthCell {
   day: number
   /** True for the leading and trailing days borrowed from adjacent months. */
   outside: boolean
 }
 
-/** The screens in the flow. Navigation is local state — there is no router. */
 export type ScreenId = 'auth' | 'onboarding' | 'config' | 'month'
 
-/** The five states of the auth screen. */
 export type AuthStage = 'start' | 'code' | 'verifying' | 'error' | 'success'
 
-/** What the month view's detail panel is showing. */
 export type DetailTarget =
   | { kind: 'object'; event: CalendarEvent }
   | { kind: 'day'; day: number }
 
-/** Names of the vendored Lucide glyphs. Keeps Icon's `name` prop honest. */
+/** The Lucide glyphs vendored in assets/icons. Keeps Icon's `name` prop honest. */
 export type IconName =
   | 'arrow-up-right'
   | 'bell'

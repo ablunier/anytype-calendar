@@ -8,7 +8,6 @@ export interface AuthSuccessProps {
   onContinue: () => void
 }
 
-/** (e) Connected — the key covers every space on the account. */
 export function AuthSuccess({ spaces, onContinue }: AuthSuccessProps): React.JSX.Element {
   const totalObjects = spaces.reduce((total, space) => total + space.objects, 0)
   return (

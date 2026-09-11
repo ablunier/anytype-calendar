@@ -7,7 +7,6 @@ export interface SessionSectionProps {
 
 const KEY_SUMMARY = 'ak_••••••••••••4c19 · added 2026-03-01 · account-wide'
 
-/** The stored key, signing out, and the destructive revoke. */
 export function SessionSection({
   onSignOut,
   onRevokeRequest

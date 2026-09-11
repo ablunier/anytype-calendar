@@ -11,7 +11,6 @@ export interface DateNavigatorProps {
   onToday: () => void
 }
 
-/** Range title with prev/next/today — the calendar's primary orientation control. */
 export function DateNavigator({
   title,
   subtitle,

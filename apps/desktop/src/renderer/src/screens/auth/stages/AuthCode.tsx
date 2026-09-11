@@ -12,8 +12,6 @@ const CHALLENGE_ID = 'ch_8f2a41'
 const EXPIRES_IN = '0:42'
 
 /**
- * (b) Code entry.
- *
  * The design mocks this with a window keydown listener and decorative boxes. Here a real
  * (visually hidden) text input owns the value, so the field is focusable, labelled, and
  * works with paste, IME and assistive tech; DigitBoxes just draws it.
@@ -44,7 +42,6 @@ export function AuthCode({ onCancel, onVerify }: AuthCodeProps): React.JSX.Eleme
         onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 4))}
         className="sr-only"
       />
-      {/* Clicking the boxes focuses the real field behind them. */}
       <div onClick={() => inputRef.current?.focus()}>
         <DigitBoxes value={code} />
       </div>

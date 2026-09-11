@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
-/** Where the bubble sits along the trigger's edge. `end` keeps it inside a right margin. */
 export type TooltipAlign = 'center' | 'end'
 
 const sideClass: Record<TooltipSide, Record<TooltipAlign, string>> = {
@@ -33,8 +32,6 @@ export interface TooltipProps {
 }
 
 /**
- * Dark hover label for icon-only affordances. Appears after 140ms, no arrow.
- *
  * Shown on focus-within as well as hover, so the label is reachable from the keyboard —
  * the design system's version is hover-only.
  */

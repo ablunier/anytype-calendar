@@ -1,8 +1,7 @@
 {
-  // Options shared by every project in the monorepo. Deliberately identical to what the
-  // pre-monorepo app tsconfigs already used, so moving the app under apps/desktop does
-  // not change how its existing code typechecks. The packages layer additional strictness
-  // on top of this in their own tsconfig.json.
+  // Deliberately identical to what the pre-monorepo app tsconfigs already used, so moving
+  // the app under apps/desktop does not change how its existing code typechecks. The
+  // packages add strictness on top of this through tsconfig.package.json.
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

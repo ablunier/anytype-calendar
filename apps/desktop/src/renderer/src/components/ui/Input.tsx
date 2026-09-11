@@ -21,11 +21,10 @@ export interface InputProps {
   type?: 'text' | 'password' | 'email'
   size?: FieldSize
   disabled?: boolean
-  /** Render the value in the mono face — for keys and identifiers. */
+  /** For keys and identifiers. */
   mono?: boolean
 }
 
-/** Single-line text field with an optional leading icon and inline error. */
 export function Input({
   value,
   onChange,

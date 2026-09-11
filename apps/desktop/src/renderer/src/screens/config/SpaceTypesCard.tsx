@@ -10,7 +10,6 @@ export interface SpaceTypesCardProps {
   selection: TypeSelection
 }
 
-/** One space, and — when it is on — every dated type inside it. */
 export function SpaceTypesCard({
   space,
   types,

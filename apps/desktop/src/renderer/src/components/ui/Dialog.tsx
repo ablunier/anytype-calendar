@@ -22,8 +22,6 @@ export interface DialogProps {
 }
 
 /**
- * Centered modal sheet with a scrim. Escape and a scrim click both close it.
- *
  * Beyond the design system's version this moves focus into the sheet on open, restores it
  * to the invoking control on close, and keeps Tab inside the dialog while it is open —
  * without which a modal is unusable from the keyboard.

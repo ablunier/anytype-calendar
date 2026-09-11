@@ -6,7 +6,7 @@ import { Icon } from './Icon'
 export interface CheckboxProps {
   checked: boolean
   onChange: (checked: boolean) => void
-  /** Visible label. When omitted, pass `ariaLabel` so the control is still named. */
+  /** When omitted, pass `ariaLabel` so the control is still named. */
   label?: string
   description?: string
   ariaLabel?: string
@@ -16,11 +16,9 @@ export interface CheckboxProps {
 }
 
 /**
- * A real <input type="checkbox"> visually replaced by the system's 16px box.
- *
  * The design system's screens wrap a decorative box in a clickable <div> with
- * role="checkbox"; using the native input instead makes it focusable, toggleable with
- * Space, and announced with its state for free.
+ * role="checkbox"; a visually hidden native input instead makes it focusable, toggleable
+ * with Space, and announced with its state for free.
  */
 export function Checkbox({
   checked,

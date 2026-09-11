@@ -23,7 +23,6 @@ export interface IconButtonProps {
   onClick?: () => void
 }
 
-/** Square icon-only control for toolbars, rails and row affordances. */
 export function IconButton({
   icon,
   label,

@@ -12,7 +12,6 @@ export interface DayDetailProps {
   onOpenEvent: (event: CalendarEvent) => void
 }
 
-/** Every object on one day, as an agenda list. */
 export function DayDetail({
   day,
   events,

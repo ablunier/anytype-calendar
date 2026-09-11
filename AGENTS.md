@@ -157,8 +157,15 @@ Standard electron-vite three-process layout:
 
 ## Working conventions observed in this repo
 
-- Layer `index.ts` barrels carry a comment describing the layer's contract (what it may
-  depend on) — keep that pattern when filling in currently-empty modules or adding a
+- Comments only say what the code cannot: why a choice was made, a non-obvious constraint
+  or invariant, a unit (`/** Epoch milliseconds. */`), or an external fact such as an API
+  endpoint or a platform quirk. Never write a comment that restates a name, a type or the
+  body below it — `/** The number of digits in the code Anytype displays. */` above
+  `AUTH_CODE_LENGTH = 4` adds nothing. If a comment is needed to say *what* something is,
+  rename it instead. This applies to JSDoc on every export too; an undocumented function
+  with a clear name and signature is the goal, not a gap.
+- Layer `index.ts` barrels carry a one-line comment stating the layer's contract (what it
+  may depend on) — keep that pattern when filling in currently-empty modules or adding a
   context.
 - Prefer reading existing doc comments in a file before changing its behavior; several
   files (e.g. `App.tsx`, `lib/frames.ts`, `types/index.ts`, `.dependency-cruiser.cjs`)

@@ -10,7 +10,6 @@ export interface SpacePickerProps {
   onToggle: (key: string) => void
 }
 
-/** The left column: which spaces are on the calendar at all. */
 export function SpacePicker({
   spaces,
   types,

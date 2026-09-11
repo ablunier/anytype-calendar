@@ -22,10 +22,8 @@ export const MONTH_NAMES = [
   'December'
 ]
 
-/** Monday-first weekday headers. */
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-/** Index in WEEKDAYS at which the weekend starts. */
 export const FIRST_WEEKEND_INDEX = 5
 
 /**
@@ -47,21 +45,18 @@ export function buildMonthGrid(year: number, month: number): MonthCell[] {
   return cells
 }
 
-/** Events touching a given day — a ranged event covers every day from `day` to `until`. */
 export function eventsOnDay(events: CalendarEvent[], day: number): CalendarEvent[] {
   return events.filter((event) =>
     event.until !== undefined ? day >= event.day && day <= event.until : event.day === day
   )
 }
 
-/** ISO date for a day-of-month within the fixture month. Used for <time datetime>. */
 export function isoDate(year: number, month: number, day: number): string {
   const mm = String(month + 1).padStart(2, '0')
   const dd = String(day).padStart(2, '0')
   return `${year}-${mm}-${dd}`
 }
 
-/** Prose date — "12 Mar 2026" — for reading contexts rather than dense UI. */
 export function longDate(year: number, month: number, day: number): string {
   return `${day} ${MONTH_NAMES[month]} ${year}`
 }
@@ -70,7 +65,6 @@ export function indexBy<T extends { key: string }>(items: T[]): Map<string, T> {
   return new Map(items.map((item) => [item.key, item]))
 }
 
-/** Types belonging to one space, in declaration order. */
 export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[] {
   return types.filter((type) => type.space === spaceKey)
 }

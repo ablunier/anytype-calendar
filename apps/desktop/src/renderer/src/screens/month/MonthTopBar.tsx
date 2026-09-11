@@ -11,7 +11,6 @@ export interface MonthTopBarProps {
   onOpenSettings: () => void
 }
 
-/** The fixed 52px top bar: identity, scope, connection state, global actions. */
 export function MonthTopBar({
   trackedSpaces,
   totalSpaces,

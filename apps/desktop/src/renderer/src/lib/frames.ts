@@ -22,7 +22,6 @@ export const FRAMES: FlowFrame[] = [
   { id: 'month:detail', group: '4 · Month view', label: 'Object detail' }
 ]
 
-/** The object the flow's "Object detail" frame opens with. */
 export const DETAIL_FRAME_EVENT_ID = 11
 
 export interface FrameState {
@@ -32,7 +31,6 @@ export interface FrameState {
   showDetail: boolean
 }
 
-/** Parse a frame id into the screen state that renders it. */
 export function frameToState(id: string): FrameState {
   const [name, variant] = id.split(':')
   return {
@@ -45,7 +43,6 @@ export function frameToState(id: string): FrameState {
   }
 }
 
-/** The inverse: which frame the current screen state corresponds to. */
 export function stateToFrame(state: {
   screen: ScreenId
   authStage: AuthStage

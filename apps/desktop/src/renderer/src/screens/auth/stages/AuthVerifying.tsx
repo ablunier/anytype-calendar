@@ -9,7 +9,6 @@ export interface AuthVerifyingProps {
   onSettled: (stage: AuthStage) => void
 }
 
-/** (c) Verifying — waiting on the local Anytype app. */
 export function AuthVerifying({ onCancel, onSettled }: AuthVerifyingProps): React.JSX.Element {
   return (
     <>

@@ -15,7 +15,6 @@ export interface TypeConfigRowProps {
 
 const NONE = 'None'
 
-/** One dense settings row: the type, and the two date properties it maps onto. */
 export function TypeConfigRow({
   type,
   checked,

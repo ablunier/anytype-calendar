@@ -1,7 +1,4 @@
-/**
- * The brand is set in type — there is no logo. "Calendar" semibold, "for Anytype" regular
- * and tertiary, on one line.
- */
+/** The brand is set in type — there is no logo. */
 export function Wordmark(): React.JSX.Element {
   return (
     <span className="whitespace-nowrap font-display text-base tracking-heading text-ink-primary">

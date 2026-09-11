@@ -20,7 +20,6 @@ export interface ConfigScreenProps {
   onSignOut: () => void
 }
 
-/** Settings: the account, which spaces and types are on the grid, and the session. */
 export function ConfigScreen({
   spaces,
   types,

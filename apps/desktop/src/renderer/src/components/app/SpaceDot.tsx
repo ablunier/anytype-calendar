@@ -28,7 +28,6 @@ export interface SpaceChipProps {
   hues: CategoryHue[]
 }
 
-/** Read-only summary of which spaces are on the grid, for the top bar. */
 export function SpaceChip({ label, hues }: SpaceChipProps): React.JSX.Element {
   return (
     <span className="inline-flex h-control-sm items-center gap-6 rounded-6 border border-line-subtle bg-surface-card px-8 type-ui text-small text-ink-body">

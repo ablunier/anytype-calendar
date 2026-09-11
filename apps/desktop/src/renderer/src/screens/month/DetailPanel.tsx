@@ -15,7 +15,6 @@ export interface DetailPanelProps {
   onOpenEvent: (event: CalendarEvent) => void
 }
 
-/** The 380px read-only side panel: one object, or every object on one day. */
 export function DetailPanel({
   detail,
   events,

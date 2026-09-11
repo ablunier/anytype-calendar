@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ObjectType } from '@renderer/types'
 
-/** Which date properties a type is mapped onto. `to` absent means a point, not a range. */
+/** `to: null` means a point, not a range. */
 export interface DateMapping {
   from: string
   to: string | null
@@ -13,7 +13,6 @@ export interface TypeSelection {
   dates: Record<string, DateMapping>
   /** Types that are both selected and inside a selected space. */
   activeTypes: ObjectType[]
-  /** Sum of the dated-object counts across activeTypes. */
   objectCount: number
   toggleSpace: (key: string) => void
   toggleType: (key: string) => void
@@ -25,10 +24,8 @@ const toggle = (keys: string[], key: string): string[] =>
   keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]
 
 /**
- * Which spaces and types are on the grid, and the date property each type maps onto.
- *
- * This is interaction state, not data — the types themselves arrive as an argument, so the
- * screens using this hook still take everything they render through props.
+ * Interaction state, not data — the types themselves arrive as an argument, so the screens
+ * using this hook still take everything they render through props.
  */
 export function useTypeSelection(
   types: ObjectType[],

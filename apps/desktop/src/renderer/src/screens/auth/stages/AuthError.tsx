@@ -7,7 +7,6 @@ export interface AuthErrorProps {
   onRetry: () => void
 }
 
-/** (d) The code expired or was mistyped. */
 export function AuthError({ onBack, onRetry }: AuthErrorProps): React.JSX.Element {
   return (
     <>

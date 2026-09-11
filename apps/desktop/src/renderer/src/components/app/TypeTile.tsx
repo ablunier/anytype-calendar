@@ -10,7 +10,6 @@ export interface TypeTileProps {
   size?: TypeTileSize
 }
 
-/** The washed, rounded tile that carries an object type's icon. */
 export function TypeTile({ type, size = 'md' }: TypeTileProps): React.JSX.Element {
   return (
     <span

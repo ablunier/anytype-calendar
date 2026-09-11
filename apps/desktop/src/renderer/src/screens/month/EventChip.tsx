@@ -11,8 +11,6 @@ export interface EventChipProps {
 }
 
 /**
- * One dated Anytype object inside a day cell.
- *
  * A real <button>, not the design's role="button" div, so it is tabbable and fires on
  * Enter and Space. Stops propagation so opening an object does not also select the day.
  */

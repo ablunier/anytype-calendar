@@ -2,7 +2,6 @@ import type { KeyboardEvent } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { EventChip } from './EventChip'
 
-/** Chips beyond this are summarised as "+n more". */
 const MAX_CHIPS = 3
 
 export interface MonthDayCellProps {
@@ -20,7 +19,6 @@ export interface MonthDayCellProps {
   onOpenEvent: (event: CalendarEvent) => void
 }
 
-/** One square of the month grid: the date, up to three chips, and an overflow count. */
 export function MonthDayCell({
   cell,
   events,

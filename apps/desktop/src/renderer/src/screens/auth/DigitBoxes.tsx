@@ -1,16 +1,12 @@
 export interface DigitBoxesProps {
-  /** The digits typed so far, at most four. */
   value: string
   invalid?: boolean
-  /** Dims the boxes while the code is being exchanged. */
   muted?: boolean
 }
 
 const CELLS = [0, 1, 2, 3]
 
 /**
- * The four-digit code Anytype displays, rendered as separate boxes.
- *
  * Presentational only — the real input lives in AuthCode, which owns the keystrokes. The
  * boxes are marked aria-hidden so a screen reader reads the field's own value once rather
  * than four disconnected characters.

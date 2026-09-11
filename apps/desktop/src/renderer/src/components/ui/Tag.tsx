@@ -9,7 +9,6 @@ export interface TagProps {
   icon?: IconName
 }
 
-/** Category chip for Anytype object types, relations and user labels. */
 export function Tag({ children, category = 'graphite', icon }: TagProps): React.JSX.Element {
   return (
     <span

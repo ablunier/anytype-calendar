@@ -11,7 +11,6 @@ export interface AuthStartProps {
   onStart: () => void
 }
 
-/** (a) Idle — what the user has to do before a code exists. */
 export function AuthStart({ onStart }: AuthStartProps): React.JSX.Element {
   return (
     <>

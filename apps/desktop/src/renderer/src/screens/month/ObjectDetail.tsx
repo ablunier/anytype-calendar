@@ -34,8 +34,6 @@ export interface ObjectDetailProps {
 }
 
 /**
- * One object, read-only.
- *
  * Every field names the relation that surfaced it ("From · Due date") — the system's rule
  * that trust comes from being explicit about why something is on the grid.
  */

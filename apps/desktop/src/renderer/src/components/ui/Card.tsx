@@ -2,8 +2,7 @@ import type { ReactNode } from 'react'
 
 export type CardPadding = 'dense' | 'default' | 'roomy'
 
-/* White surface, hairline border, 10px radius, shadow-1. 16px padding, 12 dense,
- * 20 roomy. Never a coloured left border, never a gradient, never nested twice. */
+/* Design rule: never a coloured left border, never a gradient, never nested twice. */
 const paddingClass: Record<CardPadding, string> = {
   dense: 'p-12',
   default: 'p-16',

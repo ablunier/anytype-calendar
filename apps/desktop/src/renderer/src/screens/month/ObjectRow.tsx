@@ -13,7 +13,6 @@ export interface ObjectRowProps {
   onClick: () => void
 }
 
-/** Agenda row for one dated object. */
 export function ObjectRow({
   title,
   category,

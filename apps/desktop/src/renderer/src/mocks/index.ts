@@ -14,8 +14,6 @@ const SPACES: Space[] = [
   { key: 'archive', name: 'Archive 2024', category: 'graphite', objects: 212 }
 ]
 
-/* One entry per type per space. `from` is the mandatory start-date property, `to` the
- * optional end date that turns the type into a range. */
 const TYPES: ObjectType[] = [
   {
     key: 'personal:task',
@@ -204,7 +202,6 @@ export const calendarData: CalendarData = {
   trackedSpaceKeys: ['personal', 'studio', 'reading']
 }
 
-/** The selection the onboarding screen starts from, before the user has chosen. */
 export const onboardingDefaults = {
   typeKeys: ['personal:task', 'personal:meeting', 'studio:project', 'studio:task'],
   spaceKeys: ['personal', 'studio']

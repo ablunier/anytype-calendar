@@ -11,13 +11,10 @@ export interface AuthScreenProps {
   stage: AuthStage
   spaces: Space[]
   onStageChange: (stage: AuthStage) => void
-  /** Leaves auth for the first-run space picker. */
   onConnected: () => void
 }
 
 /**
- * The two-step challenge / code exchange, in its five states.
- *
  * Nothing here authenticates: the buttons move `stage`, and no request is made. The real
  * flow (POST /v1/auth/challenges, then /v1/auth/api_keys) arrives behind IPC in a later
  * pass and will drive the same stage prop.
@@ -59,7 +56,6 @@ interface AuthFooterProps {
   onRequestNew: () => void
 }
 
-/** The code-entry state swaps the privacy line for a "no code showing?" escape hatch. */
 function AuthFooter({ stage, onRequestNew }: AuthFooterProps): React.JSX.Element {
   if (stage === 'code') {
     return (

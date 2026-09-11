@@ -7,9 +7,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      // A context's layer entry point onto its source barrel — `*` captures "<context>/<layer>",
-      // so @anytype-calendar/auth/domain -> ./packages/auth/domain/index.ts. Covers every
-      // context without an entry per package.
+      // `*` captures "<context>/<layer>", e.g. auth/domain.
       "@anytype-calendar/*": ["./packages/*/index.ts"],
       // The renderer's internal alias. Mirrors apps/desktop/tsconfig.web.json and the
       // electron.vite.config.ts resolve.alias — repeated here because dependency-cruiser

@@ -10,7 +10,7 @@ export interface EmptyStateProps {
   compact?: boolean
 }
 
-/** Centered placeholder for a view with nothing in it. Names the next move, never "No data". */
+/** Copy rule: the title names the next move, never "No data". */
 export function EmptyState({
   title,
   icon = 'inbox',

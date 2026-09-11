@@ -16,11 +16,10 @@ export interface BadgeProps {
   children: ReactNode
   tone?: BadgeTone
   icon?: IconName
-  /** Render the label in the mono face — for counts and identifiers. */
+  /** For counts and identifiers. */
   mono?: boolean
 }
 
-/** Small status marker — counts, states, "synced", "3 conflicts". */
 export function Badge({ children, tone = 'neutral', icon, mono = false }: BadgeProps): React.JSX.Element {
   return (
     <span

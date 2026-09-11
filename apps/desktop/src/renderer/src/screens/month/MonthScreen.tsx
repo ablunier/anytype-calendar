@@ -16,7 +16,6 @@ export interface MonthScreenProps {
   onOpenSettings: () => void
 }
 
-/** The read-only core screen: a month of dated objects, and a detail panel beside it. */
 export function MonthScreen({
   data,
   theme,
@@ -36,7 +35,6 @@ export function MonthScreen({
   const cells = useMemo(() => buildMonthGrid(data.year, data.month), [data.year, data.month])
   const trackedSpaces = spacesByKeys(data.spaces, data.trackedSpaceKeys)
 
-  /* Only objects whose type is tracked and whose space is tracked reach the grid. */
   const visibleEvents = useMemo(
     () =>
       data.events.filter((event) => {

@@ -10,7 +10,7 @@ interface SyncPresentation {
   bg: string
 }
 
-/* The system's own SyncStatus asks for a `check-check` glyph, which is not one of the 49
+/* The system's own SyncStatus asks for a `check-check` glyph, which is not one of the
  * icons it vendors — it would render as an empty mask. `check` is the nearest stem that
  * actually ships, so it stands in for the synced state. */
 const presentation: Record<SyncState, SyncPresentation> = {
@@ -27,14 +27,12 @@ const presentation: Record<SyncState, SyncPresentation> = {
 
 export interface SyncStatusProps {
   state?: SyncState
-  /** Secondary line — "2 min ago", set in the mono face. */
   detail?: string
   label?: string
   /** Strips the padded, tinted pill for use inside a toolbar. */
   compact?: boolean
 }
 
-/** Connection state of the Anytype account — visible at all times in a local-first app. */
 export function SyncStatus({
   state = 'synced',
   detail,

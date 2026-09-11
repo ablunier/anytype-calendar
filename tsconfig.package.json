@@ -1,8 +1,7 @@
 {
-  // Shared settings for everything under packages/ — one tsconfig per bounded context,
-  // covering all of its layers. Only non-path options live here: TypeScript resolves
-  // relative paths in an extended config against the directory of the file that declares
-  // them, so rootDir/outDir/include stay in each context's own tsconfig.
+  // Only non-path options live here: TypeScript resolves relative paths in an extended
+  // config against the directory of the file that declares them, so rootDir/outDir/include
+  // stay in each context's own tsconfig.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
