@@ -290,6 +290,24 @@ describe('signOut', () => {
   })
 })
 
+describe('copyKeyTo', () => {
+  test('hands the stored key to the sink', async () => {
+    const { service } = await connected()
+    const write = vi.fn()
+
+    await expect(service.copyKeyTo(write)).resolves.toBe(true)
+    expect(write).toHaveBeenCalledExactlyOnceWith(API_KEY)
+  })
+
+  test('writes nothing when no key is stored', async () => {
+    const { service } = setup()
+    const write = vi.fn()
+
+    await expect(service.copyKeyTo(write)).resolves.toBe(false)
+    expect(write).not.toHaveBeenCalled()
+  })
+})
+
 describe('revoke', () => {
   test('revokes the stored key in Anytype, then signs out', async () => {
     const { service, store, gateway, stored } = await connected()

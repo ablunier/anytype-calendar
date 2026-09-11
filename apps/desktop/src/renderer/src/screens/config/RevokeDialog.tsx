@@ -5,7 +5,8 @@ export interface RevokeDialogProps {
   open: boolean
   spaceCount: number
   onClose: () => void
-  onRevoke: () => void
+  /** Rejects when the key could not be revoked, which leaves the session connected. */
+  onRevoke: () => Promise<void>
 }
 
 const CONFIRM_WORD = 'revoke'
@@ -18,12 +19,26 @@ export function RevokeDialog({
   onRevoke
 }: RevokeDialogProps): React.JSX.Element {
   const [typed, setTyped] = useState('')
+  const [pending, setPending] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const consequences = [
     'Anytype stops accepting this key',
     `All ${spaceCount} spaces drop off the calendar`,
     'Your objects and dates are untouched'
   ]
+
+  /* Success needs no handling here: the session signs out, which unmounts this screen. */
+  const revoke = async (): Promise<void> => {
+    setPending(true)
+    setFailed(false)
+    try {
+      await onRevoke()
+    } catch {
+      setFailed(true)
+      setPending(false)
+    }
+  }
 
   return (
     <Dialog
@@ -42,7 +57,8 @@ export function RevokeDialog({
             size="md"
             iconLeft="trash"
             disabled={typed !== CONFIRM_WORD}
-            onClick={onRevoke}
+            loading={pending}
+            onClick={() => void revoke()}
           >
             Revoke key
           </Button>
@@ -65,6 +81,12 @@ export function RevokeDialog({
           placeholder={CONFIRM_WORD}
           mono
         />
+        {failed ? (
+          <p className="type-caption text-tiny text-ink-danger" role="alert">
+            Could not reach Anytype, so the key was not revoked and you are still signed in. Make
+            sure the Anytype app is open, then try again.
+          </p>
+        ) : null}
       </div>
     </Dialog>
   )

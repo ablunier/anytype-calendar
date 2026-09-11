@@ -4,7 +4,7 @@ import { FlowSwitcher } from './components/app/FlowSwitcher'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
 import { DETAIL_FRAME_EVENT_ID, FRAMES, frameToState, stateToFrame } from './lib/frames'
-import { authViewFor } from './lib/session'
+import { apiKeyFor, authViewFor } from './lib/session'
 import { calendarData, onboardingDefaults } from './mocks'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
@@ -67,6 +67,7 @@ function App(): React.JSX.Element | null {
 
   const authView: AuthView | null =
     authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
+  const apiKey = apiKeyFor(session)
 
   return (
     <>
@@ -92,16 +93,19 @@ function App(): React.JSX.Element | null {
         />
       ) : null}
 
-      {!authView && screen === 'config' ? (
+      {!authView && screen === 'config' && apiKey ? (
         <ConfigScreen
           key={frameKey}
           spaces={calendarData.spaces}
           types={calendarData.types}
           initialTypeKeys={calendarData.trackedTypeKeys}
           initialSpaceKeys={calendarData.trackedSpaceKeys}
+          apiKey={apiKey}
           confirmingRevoke={confirmingRevoke}
           onBack={goToMonth}
+          onCopyKey={() => window.api.auth.copyKey()}
           onSignOut={() => void window.api.auth.signOut()}
+          onRevoke={() => window.api.auth.revoke()}
         />
       ) : null}
 

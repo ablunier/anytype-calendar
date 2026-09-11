@@ -112,6 +112,17 @@ export class AuthService {
     await this.signOut()
   }
 
+  /**
+   * Hands the stored key to `write` — a sink such as the clipboard — instead of returning
+   * it, so the key goes no further than that one call. Resolves whether there was a key.
+   */
+  async copyKeyTo(write: (apiKey: string) => void): Promise<boolean> {
+    const credential = await this.#credentials.load()
+    if (!credential) return false
+    write(credential.apiKey)
+    return true
+  }
+
   #dispatch(event: AuthEvent): AuthSession {
     this.#store.set(nextAuthSession(this.#store.get(), event))
     return this.#store.get()

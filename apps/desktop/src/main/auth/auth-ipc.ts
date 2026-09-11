@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, clipboard, ipcMain } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { IpcChannel, type SessionSnapshot } from '@shared/ipc'
 import type { AppServices } from '../composition'
@@ -14,6 +14,9 @@ export function registerAuthIpc({ authService, authSession }: AppServices): void
   ipcMain.handle(IpcChannel.authStepBack, () => authService.stepBack())
   ipcMain.handle(IpcChannel.authSignOut, () => authService.signOut())
   ipcMain.handle(IpcChannel.authRevoke, () => authService.revoke())
+  ipcMain.handle(IpcChannel.authCopyKey, () =>
+    authService.copyKeyTo((apiKey) => clipboard.writeText(apiKey))
+  )
 
   authSession.subscribe((session) => {
     for (const window of BrowserWindow.getAllWindows()) {

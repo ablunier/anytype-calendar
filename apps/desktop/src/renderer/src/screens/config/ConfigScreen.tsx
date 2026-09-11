@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ObjectType, Space } from '@renderer/types'
+import type { ApiKeyView, ObjectType, Space } from '@renderer/types'
 import { SpaceChip } from '@renderer/components/app/SpaceDot'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, SyncStatus } from '@renderer/components/ui'
@@ -14,10 +14,13 @@ export interface ConfigScreenProps {
   types: ObjectType[]
   initialTypeKeys: string[]
   initialSpaceKeys: string[]
+  apiKey: ApiKeyView
   /** Opens the revoke dialog on mount — the flow shows this as its own frame. */
   confirmingRevoke?: boolean
   onBack: () => void
+  onCopyKey: () => Promise<boolean>
   onSignOut: () => void
+  onRevoke: () => Promise<void>
 }
 
 export function ConfigScreen({
@@ -25,9 +28,12 @@ export function ConfigScreen({
   types,
   initialTypeKeys,
   initialSpaceKeys,
+  apiKey,
   confirmingRevoke = false,
   onBack,
-  onSignOut
+  onCopyKey,
+  onSignOut,
+  onRevoke
 }: ConfigScreenProps): React.JSX.Element {
   const selection = useTypeSelection(types, initialTypeKeys, initialSpaceKeys)
   const [revoking, setRevoking] = useState(confirmingRevoke)
@@ -96,7 +102,12 @@ export function ConfigScreen({
             </p>
           </section>
 
-          <SessionSection onSignOut={onSignOut} onRevokeRequest={() => setRevoking(true)} />
+          <SessionSection
+            apiKey={apiKey}
+            onCopyKey={onCopyKey}
+            onSignOut={onSignOut}
+            onRevokeRequest={() => setRevoking(true)}
+          />
         </div>
       </main>
 
@@ -104,7 +115,7 @@ export function ConfigScreen({
         open={revoking}
         spaceCount={spaces.length}
         onClose={() => setRevoking(false)}
-        onRevoke={onSignOut}
+        onRevoke={onRevoke}
       />
     </div>
   )

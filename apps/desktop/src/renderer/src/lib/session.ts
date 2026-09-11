@@ -1,7 +1,9 @@
-import type { SessionSnapshot } from '@shared/ipc'
-import type { AuthView } from '@renderer/types'
+/* The only renderer module that reads a session's shape; components get view models. */
 
-/** The only place the renderer reads a session's shape. Null once connected. */
+import type { SessionSnapshot } from '@shared/ipc'
+import type { ApiKeyView, AuthView } from '@renderer/types'
+
+/** Null once connected. */
 export function authViewFor(session: SessionSnapshot): AuthView | null {
   switch (session.phase) {
     case 'signed-out':
@@ -19,4 +21,11 @@ export function authViewFor(session: SessionSnapshot): AuthView | null {
     case 'connected':
       return null
   }
+}
+
+/** Null until connected. */
+export function apiKeyFor(session: SessionSnapshot): ApiKeyView | null {
+  return session.phase === 'connected'
+    ? { hint: session.key.hint, issuedAt: session.key.issuedAt }
+    : null
 }

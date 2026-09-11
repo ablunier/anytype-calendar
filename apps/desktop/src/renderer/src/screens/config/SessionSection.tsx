@@ -1,16 +1,42 @@
+import { useEffect, useState } from 'react'
+import type { ApiKeyView } from '@renderer/types'
 import { Button, Card, Icon, IconButton } from '@renderer/components/ui'
+import { isoDate } from '@renderer/lib/calendar'
 
 export interface SessionSectionProps {
+  apiKey: ApiKeyView
+  /** Resolves whether a key was copied. */
+  onCopyKey: () => Promise<boolean>
   onSignOut: () => void
   onRevokeRequest: () => void
 }
 
-const KEY_SUMMARY = 'ak_••••••••••••4c19 · added 2026-03-01 · account-wide'
+const COPIED_FEEDBACK_MS = 2_000
+
+function keySummary({ hint, issuedAt }: ApiKeyView): string {
+  const issued = new Date(issuedAt)
+  const added = isoDate(issued.getFullYear(), issued.getMonth(), issued.getDate())
+  return `••••••••••••${hint} · added ${added} · account-wide`
+}
 
 export function SessionSection({
+  apiKey,
+  onCopyKey,
   onSignOut,
   onRevokeRequest
 }: SessionSectionProps): React.JSX.Element {
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+    return () => clearTimeout(timer)
+  }, [copied])
+
+  const copy = async (): Promise<void> => {
+    if (await onCopyKey()) setCopied(true)
+  }
+
   return (
     <>
       <section>
@@ -21,11 +47,14 @@ export function SessionSection({
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="type-ui text-small text-ink-primary">API key</span>
               <span className="truncate type-numeral text-tiny text-ink-tertiary">
-                {KEY_SUMMARY}
+                {keySummary(apiKey)}
               </span>
             </div>
-            <IconButton icon="eye" label="Reveal key" />
-            <IconButton icon="copy" label="Copy key" />
+            <IconButton
+              icon={copied ? 'check' : 'copy'}
+              label={copied ? 'Key copied' : 'Copy key'}
+              onClick={() => void copy()}
+            />
           </div>
           <div className="flex items-center gap-12 pt-12">
             <div className="flex min-w-0 flex-1 flex-col">

@@ -95,6 +95,13 @@ export type AuthView =
 
 export type AuthStage = AuthView['stage']
 
+/** Enough to recognise the key by; the renderer never holds the key itself. */
+export interface ApiKeyView {
+  hint: string
+  /** Epoch milliseconds. */
+  issuedAt: number
+}
+
 export type DetailTarget =
   | { kind: 'object'; event: CalendarEvent }
   | { kind: 'day'; day: number }
