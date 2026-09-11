@@ -39,7 +39,11 @@ app.whenReady().then(async () => {
   const services = composeServices()
   registerAuthIpc(services)
   registerSchemaIpc(services)
-  await services.restoreAuthSession.execute()
+  // Both settle before the first window asks, so it never draws a state about to change.
+  await Promise.all([
+    services.restoreAuthSession.execute(),
+    services.loadSchemaSelection.execute()
+  ])
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

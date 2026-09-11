@@ -19,13 +19,22 @@ import {
   InMemoryAuthGateway,
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
-import { ResetSchemaSync, SchemaSyncStore, SyncSchema } from '@anytype-calendar/schema/application'
+import {
+  LoadSchemaSelection,
+  ResetSchemaSync,
+  SaveSchemaSelection,
+  SchemaSelectionStore,
+  SchemaSyncStore,
+  SyncSchema
+} from '@anytype-calendar/schema/application'
 import type { SchemaGateway } from '@anytype-calendar/schema/domain'
 import {
   AnytypeSchemaGateway,
-  InMemorySchemaGateway
+  InMemorySchemaGateway,
+  JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
+import { selectionFileAt } from './schema/selection-storage'
 
 /**
  * A closed Anytype refuses the connection at once; this bounds one that accepts it and
@@ -43,6 +52,9 @@ export interface AppServices {
   copyAuthApiKey: CopyAuthApiKey
   schemaSync: SyncSchema
   schemaState: SchemaSyncStore
+  schemaSelection: SchemaSelectionStore
+  loadSchemaSelection: LoadSchemaSelection
+  saveSchemaSelection: SaveSchemaSelection
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
@@ -76,6 +88,25 @@ export function composeServices(): AppServices {
   })
   const resetSchemaSync = new ResetSchemaSync(schemaState)
 
+  // The fake account's space ids are not the real one's, so its choices get their own file.
+  const selectionRepository = new JsonFileSchemaSelectionRepository(
+    selectionFileAt(
+      join(
+        app.getPath('userData'),
+        fakeAnytype ? 'schema-selection-fake.json' : 'schema-selection.json'
+      )
+    )
+  )
+  const schemaSelection = new SchemaSelectionStore()
+  const loadSchemaSelection = new LoadSchemaSelection({
+    repository: selectionRepository,
+    store: schemaSelection
+  })
+  const saveSchemaSelection = new SaveSchemaSelection({
+    repository: selectionRepository,
+    store: schemaSelection
+  })
+
   // Contexts never know about each other, so the link lives here: being connected — signed
   // in just now, or a key restored at launch — is what reads the account; anything else
   // forgets it. The session store notifies only on change, and a reset while idle is a no-op.
@@ -93,7 +124,10 @@ export function composeServices(): AppServices {
     signOutOfAuth,
     copyAuthApiKey,
     schemaSync,
-    schemaState
+    schemaState,
+    schemaSelection,
+    loadSchemaSelection,
+    saveSchemaSelection
   }
 }
 
