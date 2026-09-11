@@ -11,8 +11,5 @@
     }
   },
   "include": ["src/renderer/src/**/*"],
-  "references": [
-    { "path": "../../packages/domain" },
-    { "path": "../../packages/application" }
-  ]
+  "references": [{ "path": "../../packages/auth" }]
 }

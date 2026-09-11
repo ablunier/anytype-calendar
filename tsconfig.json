@@ -1,9 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/domain" },
-    { "path": "./packages/application" },
-    { "path": "./packages/anytype" },
+    { "path": "./packages/auth" },
     { "path": "./apps/desktop/tsconfig.node.json" },
     { "path": "./apps/desktop/tsconfig.web.json" }
   ]

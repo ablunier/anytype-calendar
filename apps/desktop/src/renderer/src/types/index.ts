@@ -1,6 +1,6 @@
 /* UI-local types for the renderer.
  *
- * These are deliberately defined here and not in packages/domain. This pass is a
+ * These are deliberately defined here and not in a package's domain layer. This pass is a
  * presentational one: the shapes describe what a component needs to draw, not what the
  * calendar means. When the real use cases land behind IPC they will bring their own
  * domain types, and these become the view-model boundary they map onto.

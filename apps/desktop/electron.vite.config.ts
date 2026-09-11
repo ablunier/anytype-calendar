@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
@@ -6,37 +7,44 @@ import tailwindcss from '@tailwindcss/vite'
 // The workspace packages are consumed from source rather than from their dist/ output,
 // so `dev` and `build` never require a prior `tsc -b` and edits inside packages/ trigger
 // HMR. `tsc -b` still typechecks them through project references.
-const packageSrc = (name: string): string => resolve(__dirname, `../../packages/${name}/src`)
-
-const workspaceAliases = {
-  '@anytype-calendar/domain': packageSrc('domain'),
-  '@anytype-calendar/application': packageSrc('application'),
-  '@anytype-calendar/anytype': packageSrc('anytype')
+//
+// Each bounded context exposes its layers as subpath entry points, and the pattern covers
+// every context: @anytype-calendar/auth/domain -> packages/auth/domain/index.ts. Adding a
+// context needs no change here.
+const workspaceAlias = {
+  find: /^@anytype-calendar\/([^/]+)\/(domain|application|infrastructure)$/,
+  replacement: resolve(__dirname, '../../packages/$1/$2/index.ts')
 }
 
-// They are listed in apps/desktop dependencies, so externalizeDepsPlugin would otherwise
-// leave them as bare `require`s that the packaged app cannot resolve. Bundle them instead.
-const workspaceDeps = Object.keys(workspaceAliases)
+// The contexts are listed in apps/desktop dependencies, so externalizeDepsPlugin would
+// otherwise leave them as bare `require`s that the packaged app cannot resolve. Bundle them
+// instead. Read from package.json so a new context is picked up without editing this file.
+const { dependencies } = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')) as {
+  dependencies: Record<string, string>
+}
+const workspaceDeps = Object.keys(dependencies).filter((name) =>
+  name.startsWith('@anytype-calendar/')
+)
 
 export default defineConfig({
   main: {
     resolve: {
-      alias: workspaceAliases
+      alias: [workspaceAlias]
     },
     plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
   },
   preload: {
     resolve: {
-      alias: workspaceAliases
+      alias: [workspaceAlias]
     },
     plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
   },
   renderer: {
     resolve: {
-      alias: {
-        '@renderer': resolve(__dirname, 'src/renderer/src'),
-        ...workspaceAliases
-      }
+      alias: [
+        { find: '@renderer', replacement: resolve(__dirname, 'src/renderer/src') },
+        workspaceAlias
+      ]
     },
     build: {
       // Vite inlines assets under 4 KB as data: URIs. Every icon is ~300 bytes, so all 49

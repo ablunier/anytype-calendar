@@ -7,9 +7,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@anytype-calendar/domain": ["./packages/domain/src/index.ts"],
-      "@anytype-calendar/application": ["./packages/application/src/index.ts"],
-      "@anytype-calendar/anytype": ["./packages/anytype/src/index.ts"],
+      // A context's layer entry point onto its source barrel — `*` captures "<context>/<layer>",
+      // so @anytype-calendar/auth/domain -> ./packages/auth/domain/index.ts. Covers every
+      // context without an entry per package.
+      "@anytype-calendar/*": ["./packages/*/index.ts"],
       // The renderer's internal alias. Mirrors apps/desktop/tsconfig.web.json and the
       // electron.vite.config.ts resolve.alias — repeated here because dependency-cruiser
       // reads only this file, and would otherwise report every aliased import as

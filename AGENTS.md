@@ -6,9 +6,9 @@ This file provides guidance to AI coding agents when working with code in this r
 
 An Electron + React desktop app that renders Anytype objects (with date properties) on a
 calendar. It talks to the Anytype local API. npm workspaces monorepo, currently in an
-early pass: the UI (`apps/desktop`) is fully built against mock data; the real domain,
-use-case, and Anytype-adapter layers (`packages/*`) are scaffolded but largely empty
-(`export {}` placeholders), with wiring left for a later pass.
+early pass: the UI (`apps/desktop`) is fully built against mock data; the backend is being
+built as one package per bounded context under `packages/` — `auth` is the first, and is
+still scaffolded (`export {}` placeholders), with wiring left for a later pass.
 
 ## Commands
 
@@ -21,46 +21,82 @@ Run from the repo root unless noted.
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
-- `npm test` — `vitest run` across all vitest projects (currently `packages/domain` and
-  `packages/application`; each package's tests run against its own `src`, no build needed).
+- `npm test` — `vitest run` across all vitest projects: one per layer kind (`domain`,
+  `application`, `infrastructure`), each spanning every context
+  (`packages/*/<layer>/**/*.test.ts`). Tests run against package sources, no build needed;
+  `passWithNoTests` is on so a scaffolded context with no tests yet doesn't fail the run.
   Vitest project config lives in `vitest.config.ts` at the root.
 - `npm run lint:arch` — run the hexagonal-architecture dependency-cruiser check (see
   Architecture below). First run `npm run lint:arch:setup` to install its isolated toolchain.
 - `npm run clean` — `tsc -b --clean` plus removing `apps/desktop/out` and `apps/desktop/dist`.
 - Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), `build:unpack`/`build:win`/`build:mac`/`build:linux` (electron-builder packaging).
-- Single test file: `npx vitest run packages/domain/src/index.test.ts` (or point at any `*.test.ts`).
+- Single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
+  layer across all contexts: `npx vitest run --project domain`.
 
 ## Architecture
+
+### Layout: bounded context → layer → role
+
+Each package under `packages/` is one bounded context (currently only `auth`), and its
+layers are folders inside it:
+
+```
+packages/<context>/
+  package.json        @anytype-calendar/<context>, exports ./domain ./application ./infrastructure
+  tsconfig.json       ONE tsconfig project for the whole context, `types: []`
+  domain/             grouped by role: model/, gateways/, repositories/ (services/ when needed)
+  application/        use cases, flat
+  infrastructure/     driven adapters, grouped by technology: in-memory/, anytype/
+  dist/<layer>/       tsc -b output (gitignored)
+```
+
+- From outside a context, import only its layer entry points:
+  `@anytype-calendar/auth/domain`, `…/application`, `…/infrastructure`. Inside a context,
+  layers import each other relatively through the barrel (`../domain`).
+- Each layer's `index.ts` barrel is its public surface; add modules under the role /
+  technology folders and re-export them there. Exported names carry their context
+  (`AuthSession`, not `Session`) so the composition root can import from several contexts
+  without collisions.
+- `types: []` covers the whole context, so no layer can reach `process`, `fetch`,
+  `setTimeout`, `console` and friends — dependency-cruiser only sees imports, not globals.
+  Infrastructure that needs a platform capability takes it as an injected function from
+  the composition root (`apps/desktop/src/main`).
+- Adding a context: one `package.json`, one `tsconfig.json`, and a project reference in the
+  root `tsconfig.json` and both `apps/desktop` tsconfigs, plus a dependency in
+  `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
+  pattern-based and need no edits.
 
 ### Hexagonal layering (enforced by `.dependency-cruiser.cjs`, run via `npm run lint:arch`)
 
 ```
-packages/domain        -> nothing (no npm deps, no Node core, no other package)
-packages/application    -> domain only (use cases / orchestration)
-packages/anytype        -> domain only (driven adapter: implements domain ports against the Anytype local API)
-apps/desktop            -> domain + application + anytype, plus Electron and React
+packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
+packages/<ctx>/application     -> its own context's domain only (use cases / orchestration)
+packages/<ctx>/infrastructure  -> its own context's domain only (driven adapters implementing domain ports)
+apps/desktop                   -> any context's layers, plus Electron and React
 ```
 
 Rules worth knowing before adding an import:
-- `packages/domain` is the pure center — zero runtime dependencies of any kind. Both a
+- A context's `domain` is the pure center — zero runtime dependencies of any kind. Both a
   general "no imports outside itself" rule and a dedicated "no npm/Node core deps" rule
   enforce this (the second exists purely for a clearer lint error).
-- `packages/application` is the use-case layer; adapters get wired in through domain-defined
-  ports, not imported directly.
-- `packages/anytype` is a *driven* adapter (implements domain ports); it may only reach into
-  `domain`.
+- `application` is the use-case layer; adapters get wired in through domain-defined ports,
+  not imported directly.
+- `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
+  reach into its own `domain`.
+- Contexts never import each other; the composition root in `apps/desktop/src/main` wires
+  them together. The rules capture the context name and refer back to it (`$1`), so this
+  holds for every context without a rule per package.
 - No package may import from `apps/**` (dependencies point inward only) or from
   `electron`/`react`/`react-dom` (delivery mechanisms belong solely in `apps/desktop`).
-- Each package's public surface is its `src/index.ts` barrel — add new modules under
-  `event/`, `mapping/`, `layout/`, `ports/` (domain) etc. and re-export them there.
 
-Workspace packages (`@anytype-calendar/domain`, `@anytype-calendar/application`,
-`@anytype-calendar/anytype`) are consumed **from source**, not from their built `dist/`,
-via aliases set up in both `apps/desktop/electron.vite.config.ts` and root
-`vitest.config.ts` — so `npm run dev` and `npm test` never require a prior `tsc -b`, and
-editing a package gets HMR in the running app. `tsc -b` project references are what
-actually typechecks the packages; `tsconfig.paths.json` is a separate resolution-only
-config consumed by dependency-cruiser so `lint:arch` doesn't need a build either.
+Contexts are consumed **from source**, not from their built `dist/`, via one pattern alias
+(`@anytype-calendar/<ctx>/<layer>` → `packages/<ctx>/<layer>/index.ts`) in both
+`apps/desktop/electron.vite.config.ts` and root `vitest.config.ts` — so `npm run dev` and
+`npm test` never require a prior `tsc -b`, and editing a package gets HMR in the running
+app. `tsc -b` project references are what actually typechecks the packages (apps resolve
+the entry points through each package's `exports` to its emitted declarations);
+`tsconfig.paths.json` is a separate resolution-only config consumed by dependency-cruiser
+so `lint:arch` doesn't need a build either.
 
 ### apps/desktop structure
 
@@ -75,7 +111,7 @@ Standard electron-vite three-process layout:
     design, since the flow is four fixed screens with no URLs. When real data arrives via
     IPC, only `App.tsx` should need to change.
   - `types/index.ts` holds UI-local view-model types (e.g. `CalendarEvent`, `ObjectType`,
-    `Space`), deliberately kept out of `packages/domain` for now — they describe what a
+    `Space`), deliberately kept out of the packages' domain layers — they describe what a
     component needs to draw, not what the calendar means. These get replaced/mapped once
     real domain types exist.
   - `screens/<flow>/` — one directory per screen (`auth`, `onboarding`, `config`, `month`),
@@ -121,8 +157,9 @@ Standard electron-vite three-process layout:
 
 ## Working conventions observed in this repo
 
-- Package `index.ts` barrels carry a comment describing the layer's contract (what it may
-  depend on) — keep that pattern when filling in currently-empty modules.
+- Layer `index.ts` barrels carry a comment describing the layer's contract (what it may
+  depend on) — keep that pattern when filling in currently-empty modules or adding a
+  context.
 - Prefer reading existing doc comments in a file before changing its behavior; several
   files (e.g. `App.tsx`, `lib/frames.ts`, `types/index.ts`, `.dependency-cruiser.cjs`)
   explain *why* a structural choice was made, not just what it does.

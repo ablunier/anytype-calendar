@@ -10,8 +10,9 @@ You pick which spaces and object types to track, and which date property of each
 anchors it on the grid (a type with both a start and an end property is drawn as a range).
 
 > **Status: early.** The desktop UI is fully built and navigable, but it runs entirely on
-> mock data. The domain, use-case and Anytype-adapter packages are scaffolded with their
-> layering rules in place and are still mostly empty. Nothing talks to Anytype yet.
+> mock data. The backend is organised as one package per bounded context — `auth` is the
+> first, scaffolded with its layering rules in place and still empty. Nothing talks to
+> Anytype yet.
 
 ## Requirements
 
@@ -47,47 +48,59 @@ Run from the repo root.
 | `npm run dev` | electron-vite dev server + Electron, with HMR (see the env note above) |
 | `npm run build` | `tsc -b` across all packages, then build the desktop app |
 | `npm run typecheck` | `tsc -b --force` over the whole monorepo |
-| `npm test` | `vitest run` (currently `packages/domain` and `packages/application`) |
+| `npm test` | `vitest run`, one project per layer (`domain`, `application`, `infrastructure`) across all contexts |
 | `npm run lint:arch` | dependency-cruiser check of the hexagonal layering |
 | `npm run lint:arch:setup` | install the arch-lint toolchain (only if `postinstall` was skipped) |
 | `npm run clean` | `tsc -b --clean` plus the desktop app's `out/` and `dist/` |
 | `npm run build:linux` / `:mac` / `:win` / `:unpack` | package with electron-builder |
 
-A single test file: `npx vitest run packages/domain/src/index.test.ts`.
+A single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
+layer across every context: `npx vitest run --project domain`.
 
 ## Repo layout
 
 ```
-apps/desktop        Electron app — main, preload, and the React renderer
-packages/domain     The pure center: calendar meaning, ports. Zero dependencies.
-packages/application  Use cases, orchestrating the domain through its ports
-packages/anytype    Driven adapter: the domain's ports, backed by the Anytype local API
+apps/desktop        Electron app — main (the composition root), preload, and the React renderer
+packages/<context>  One bounded context per package (currently: auth), layered inside
 tools/arch-lint     Isolated dependency-cruiser install (see its README for why)
 docs/deps-notes.md  Why several dependencies are pinned where they are
 ```
 
 ### Architecture
 
-Hexagonal, with dependencies pointing inward only:
+Organised by bounded context first, then by hexagonal layer, then by role:
 
 ```
-domain       -> nothing
-application  -> domain
-anytype      -> domain
-apps/desktop -> domain + application + anytype, plus Electron and React
+packages/auth/
+  domain/           model/, gateways/, repositories/  — the pure center
+  application/      use cases, orchestrating the domain through its ports
+  infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/)
 ```
 
-`packages/domain` has no npm dependencies and no Node core imports — it is meant to stay
-describable as plain calendar logic. Adapters are reached through ports the domain
-declares, never imported directly by the use cases. No package imports from `apps/**`, and
-`electron`/`react` belong solely to `apps/desktop`.
+Each layer is imported from outside as `@anytype-calendar/<context>/<layer>`. Dependencies
+point inward only, within a context:
+
+```
+domain          -> nothing
+application     -> its own domain
+infrastructure  -> its own domain
+apps/desktop    -> any context's layers, plus Electron and React
+```
+
+A context's domain has no npm dependencies and no Node core imports, and the whole context
+compiles with no ambient types (`types: []`), so platform globals like `process` or
+`setTimeout` are out of reach too — infrastructure receives such capabilities from the
+composition root instead. Adapters are reached through ports the domain declares, never
+imported directly by the use cases. Contexts never import each other; `apps/desktop`'s main
+process wires them together. No package imports from `apps/**`, and `electron`/`react`
+belong solely to `apps/desktop`.
 
 All of that is enforced by `.dependency-cruiser.cjs` via `npm run lint:arch`, which reads
 the rules alongside the reasoning for each one. Run it before opening a PR that adds
 imports across package boundaries.
 
 The workspace packages are consumed **from source** rather than from their built `dist/`,
-through aliases in `apps/desktop/electron.vite.config.ts` and the root `vitest.config.ts` —
+through one pattern alias in `apps/desktop/electron.vite.config.ts` and the root `vitest.config.ts` —
 so `npm run dev` and `npm test` never need a prior build, and editing a package hot-reloads
 in the running app.
 

@@ -11,9 +11,5 @@
     "types": ["electron-vite/node"]
   },
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"],
-  "references": [
-    { "path": "../../packages/domain" },
-    { "path": "../../packages/application" },
-    { "path": "../../packages/anytype" }
-  ]
+  "references": [{ "path": "../../packages/auth" }]
 }

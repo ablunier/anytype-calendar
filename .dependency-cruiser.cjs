@@ -1,10 +1,18 @@
 /**
- * Enforces the hexagonal dependency rule.
+ * Enforces the hexagonal dependency rule, per bounded context.
  *
- *   domain        -> nothing (no npm deps, no node core, no other package)
- *   application   -> domain only
- *   anytype       -> domain only
- *   apps/desktop  -> all three, plus Electron and React
+ * Every package under packages/ is one bounded context, with its layers as folders:
+ *
+ *   packages/<ctx>/domain          -> nothing outside itself (no npm deps, no node core)
+ *   packages/<ctx>/application     -> its own context's domain only
+ *   packages/<ctx>/infrastructure  -> its own context's domain only
+ *   apps/desktop                   -> any context's layers, plus Electron and React
+ *
+ * Contexts never import each other — the composition root in apps/desktop/src/main wires
+ * them together. That follows from the three layer rules rather than needing its own.
+ *
+ * The rules capture the context name in `from.path` and refer back to it as `$1` in
+ * `to.pathNot`, so each rule holds for every context, present and future, unedited.
  *
  * Run via `npm run lint:arch`, which invokes dependency-cruiser from tools/arch-lint
  * against an isolated typescript@6 — see docs/deps-notes.md for why.
@@ -16,22 +24,22 @@ module.exports = {
     {
       name: 'domain-is-pure',
       comment:
-        'packages/domain must not import anything outside itself. It is the centre of the ' +
-        'hexagon: no other package, no app, no library.',
+        "A context's domain must not import anything outside itself. It is the centre of " +
+        'the hexagon: no other layer, no other context, no app, no library.',
       severity: 'error',
-      from: { path: '^packages/domain/src' },
-      to: { pathNot: '^packages/domain/src' }
+      from: { path: '^packages/([^/]+)/domain/' },
+      to: { pathNot: '^packages/$1/domain/' }
     },
     {
       name: 'domain-no-runtime-deps',
       comment:
-        'packages/domain must not depend on npm packages or Node core modules. ' +
+        "A context's domain must not depend on npm packages or Node core modules. " +
         'domain-is-pure also catches these; this rule exists for a clearer message.',
       severity: 'error',
-      from: { path: '^packages/domain/src' },
+      from: { path: '^packages/[^/]+/domain/' },
       to: {
         // npm-no-pkg / npm-unknown matter here: a package resolved from the hoisted root
-        // node_modules but absent from packages/domain/package.json lands in those
+        // node_modules but absent from the context's package.json lands in those
         // buckets, not in 'npm'.
         dependencyTypes: [
           'npm',
@@ -46,29 +54,29 @@ module.exports = {
       }
     },
     {
-      name: 'application-only-domain',
+      name: 'application-only-own-domain',
       comment:
-        'packages/application is the use-case layer. It may import packages/domain and ' +
-        'itself, nothing else. Adapters are injected through the domain ports.',
+        "A context's application layer holds its use cases. It may import itself and its " +
+        "own context's domain, nothing else. Adapters are injected through the domain ports.",
       severity: 'error',
-      from: { path: '^packages/application/src' },
-      to: { pathNot: '^(packages/application/src|packages/domain)' }
+      from: { path: '^packages/([^/]+)/application/' },
+      to: { pathNot: '^packages/$1/(application|domain)/' }
     },
     {
-      name: 'anytype-only-domain',
+      name: 'infrastructure-only-own-domain',
       comment:
-        'packages/anytype is a driven adapter. It may import packages/domain (to implement ' +
-        'its ports) and itself, nothing else. Relax the pathNot here when it needs an HTTP ' +
-        'client beyond global fetch.',
+        "A context's infrastructure layer holds its driven adapters. It may import itself " +
+        "and its own context's domain (to implement its ports), nothing else. Relax the " +
+        'pathNot here once the shared Anytype HTTP client package exists.',
       severity: 'error',
-      from: { path: '^packages/anytype/src' },
-      to: { pathNot: '^(packages/anytype/src|packages/domain)' }
+      from: { path: '^packages/([^/]+)/infrastructure/' },
+      to: { pathNot: '^packages/$1/(infrastructure|domain)/' }
     },
     {
       name: 'packages-never-import-apps',
       comment:
         'Dependencies point inward. apps/desktop/src/main is the composition root and wires ' +
-        'the packages together; no package may reach back out into it.',
+        'the contexts together; no package may reach back out into it.',
       severity: 'error',
       from: { path: '^packages' },
       to: { path: '^apps' }
