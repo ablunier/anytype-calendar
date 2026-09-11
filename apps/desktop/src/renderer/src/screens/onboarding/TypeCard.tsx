@@ -1,6 +1,7 @@
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
+import { dateOptions } from '@renderer/lib/calendar'
 
 export interface TypeCardProps {
   type: ObjectType
@@ -12,7 +13,8 @@ export interface TypeCardProps {
   onToChange: (value: string | null) => void
 }
 
-const NONE = 'None'
+/** An empty value can never be a property key. */
+const NONE = { value: '', label: 'None' }
 
 /**
  * The design nests the whole row in a clickable div with role="checkbox"; here the
@@ -54,16 +56,16 @@ export function TypeCard({
           <Select
             size="sm"
             label="From date"
-            options={type.props}
+            options={dateOptions(type)}
             value={from}
             onChange={onFromChange}
           />
           <Select
             size="sm"
             label="To date (optional)"
-            options={[NONE, ...type.props]}
-            value={to ?? NONE}
-            onChange={(value) => onToChange(value === NONE ? null : value)}
+            options={[NONE, ...dateOptions(type)]}
+            value={to ?? NONE.value}
+            onChange={(value) => onToChange(value === NONE.value ? null : value)}
           />
         </div>
       ) : null}

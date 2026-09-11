@@ -51,8 +51,8 @@ export function SpaceTypesCard({
               key={type.key}
               type={type}
               checked={selection.typeKeys.includes(type.key)}
-              from={selection.dates[type.key].from}
-              to={selection.dates[type.key].to}
+              from={selection.mappingFor(type).from}
+              to={selection.mappingFor(type).to}
               last={index === types.length - 1}
               onToggle={() => selection.toggleType(type.key)}
               onFromChange={(value) => selection.setFrom(type.key, value)}

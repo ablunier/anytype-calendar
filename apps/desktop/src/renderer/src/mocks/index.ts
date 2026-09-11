@@ -5,7 +5,10 @@
  * not touch a single component.
  */
 
-import type { CalendarData, CalendarEvent, ObjectType, Space } from '@renderer/types'
+import type { CalendarData, CalendarEvent, DateProperty, ObjectType, Space } from '@renderer/types'
+
+const dates = (...labels: string[]): DateProperty[] =>
+  labels.map((label) => ({ key: label.toLowerCase().replace(/[^a-z0-9]+/g, '_'), label }))
 
 const SPACES: Space[] = [
   { key: 'personal', name: 'Personal', category: 'teal', objects: 128 },
@@ -22,8 +25,8 @@ const TYPES: ObjectType[] = [
     category: 'sage',
     icon: 'check',
     count: 54,
-    props: ['Due date', 'Created date', 'Done date'],
-    from: 'Due date',
+    props: dates('Due date', 'Created date', 'Done date'),
+    from: 'due_date',
     to: null
   },
   {
@@ -33,9 +36,9 @@ const TYPES: ObjectType[] = [
     category: 'teal',
     icon: 'users',
     count: 18,
-    props: ['Start date', 'End date', 'Created date'],
-    from: 'Start date',
-    to: 'End date'
+    props: dates('Start date', 'End date', 'Created date'),
+    from: 'start_date',
+    to: 'end_date'
   },
   {
     key: 'personal:note',
@@ -44,8 +47,8 @@ const TYPES: ObjectType[] = [
     category: 'dusk',
     icon: 'file-text',
     count: 31,
-    props: ['Created date', 'Last modified'],
-    from: 'Created date',
+    props: dates('Created date', 'Last modified'),
+    from: 'created_date',
     to: null
   },
   {
@@ -55,8 +58,8 @@ const TYPES: ObjectType[] = [
     category: 'rose',
     icon: 'users',
     count: 25,
-    props: ['Custom: Meet on', 'Birthday'],
-    from: 'Custom: Meet on',
+    props: dates('Custom: Meet on', 'Birthday'),
+    from: 'custom_meet_on',
     to: null
   },
   {
@@ -66,9 +69,9 @@ const TYPES: ObjectType[] = [
     category: 'ochre',
     icon: 'layers',
     count: 12,
-    props: ['Start date', 'Due date', 'Shipped on'],
-    from: 'Start date',
-    to: 'Due date'
+    props: dates('Start date', 'Due date', 'Shipped on'),
+    from: 'start_date',
+    to: 'due_date'
   },
   {
     key: 'studio:task',
@@ -77,8 +80,8 @@ const TYPES: ObjectType[] = [
     category: 'sage',
     icon: 'check',
     count: 47,
-    props: ['Due date', 'Created date'],
-    from: 'Due date',
+    props: dates('Due date', 'Created date'),
+    from: 'due_date',
     to: null
   },
   {
@@ -88,8 +91,8 @@ const TYPES: ObjectType[] = [
     category: 'clay',
     icon: 'database',
     count: 7,
-    props: ['Issued on', 'Due date'],
-    from: 'Due date',
+    props: dates('Issued on', 'Due date'),
+    from: 'due_date',
     to: null
   },
   {
@@ -99,8 +102,8 @@ const TYPES: ObjectType[] = [
     category: 'graphite',
     icon: 'star',
     count: 30,
-    props: ['Created date'],
-    from: 'Created date',
+    props: dates('Created date'),
+    from: 'created_date',
     to: null
   },
   {
@@ -110,9 +113,9 @@ const TYPES: ObjectType[] = [
     category: 'plum',
     icon: 'file-text',
     count: 22,
-    props: ['Started reading', 'Finished on'],
-    from: 'Started reading',
-    to: 'Finished on'
+    props: dates('Started reading', 'Finished on'),
+    from: 'started_reading',
+    to: 'finished_on'
   },
   {
     key: 'reading:note',
@@ -121,8 +124,8 @@ const TYPES: ObjectType[] = [
     category: 'dusk',
     icon: 'file-text',
     count: 42,
-    props: ['Created date'],
-    from: 'Created date',
+    props: dates('Created date'),
+    from: 'created_date',
     to: null
   },
   {
@@ -132,9 +135,9 @@ const TYPES: ObjectType[] = [
     category: 'ochre',
     icon: 'layers',
     count: 88,
-    props: ['Start date', 'Closed on'],
-    from: 'Start date',
-    to: 'Closed on'
+    props: dates('Start date', 'Closed on'),
+    from: 'start_date',
+    to: 'closed_on'
   },
   {
     key: 'archive:task',
@@ -143,8 +146,8 @@ const TYPES: ObjectType[] = [
     category: 'sage',
     icon: 'check',
     count: 124,
-    props: ['Due date'],
-    from: 'Due date',
+    props: dates('Due date'),
+    from: 'due_date',
     to: null
   }
 ]
@@ -200,9 +203,4 @@ export const calendarData: CalendarData = {
     'reading:book'
   ],
   trackedSpaceKeys: ['personal', 'studio', 'reading']
-}
-
-export const onboardingDefaults = {
-  typeKeys: ['personal:task', 'personal:meeting', 'studio:project', 'studio:task'],
-  spaceKeys: ['personal', 'studio']
 }

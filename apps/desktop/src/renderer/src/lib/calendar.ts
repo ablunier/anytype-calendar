@@ -69,6 +69,15 @@ export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[
   return types.filter((type) => type.space === spaceKey)
 }
 
+/** Falls back to the key for a property the type no longer has. */
+export function dateLabel(type: ObjectType, key: string): string {
+  return type.props.find((prop) => prop.key === key)?.label ?? key
+}
+
+export function dateOptions(type: ObjectType): { value: string; label: string }[] {
+  return type.props.map(({ key, label }) => ({ value: key, label }))
+}
+
 export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
   return spaces.filter((space) => keys.includes(space.key))
 }

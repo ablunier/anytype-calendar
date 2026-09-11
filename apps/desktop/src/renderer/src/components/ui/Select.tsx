@@ -2,8 +2,11 @@ import { useId } from 'react'
 import { Icon } from './Icon'
 import { fieldHeight, type FieldSize } from './Input'
 
+/** A bare string is both the value and what is shown. */
+export type SelectOption = string | { value: string; label: string }
+
 export interface SelectProps {
-  options: string[]
+  options: SelectOption[]
   value: string
   onChange: (value: string) => void
   label?: string
@@ -56,11 +59,15 @@ export function Select({
             disabled ? 'cursor-not-allowed' : 'cursor-pointer'
           ].join(' ')}
         >
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
+          {options.map((option) => {
+            const { value, label } =
+              typeof option === 'string' ? { value: option, label: option } : option
+            return (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            )
+          })}
         </select>
         <Icon
           name="chevron-down"

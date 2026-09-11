@@ -1,19 +1,15 @@
 import { useMemo, useState } from 'react'
-import type { ObjectType } from '@renderer/types'
-
-/** `to: null` means a point, not a range. */
-export interface DateMapping {
-  from: string
-  to: string | null
-}
+import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
 
 export interface TypeSelection {
   spaceKeys: string[]
   typeKeys: string[]
-  dates: Record<string, DateMapping>
   /** Types that are both selected and inside a selected space. */
   activeTypes: ObjectType[]
   objectCount: number
+  /** The picks as they stand, e.g. to save them. */
+  picks: TypePicks
+  mappingFor: (type: ObjectType) => DateMapping
   toggleSpace: (key: string) => void
   toggleType: (key: string) => void
   setFrom: (key: string, value: string) => void
@@ -25,35 +21,42 @@ const toggle = (keys: string[], key: string): string[] =>
 
 /**
  * Interaction state, not data — the types themselves arrive as an argument, so the screens
- * using this hook still take everything they render through props.
+ * using this hook still take everything they render through props. `initial` is read once,
+ * on mount. A type with no entry in `dates` uses its own `from`/`to`, which also covers
+ * types that arrive after mount.
  */
-export function useTypeSelection(
-  types: ObjectType[],
-  initialTypeKeys: string[],
-  initialSpaceKeys: string[]
-): TypeSelection {
-  const [spaceKeys, setSpaceKeys] = useState(initialSpaceKeys)
-  const [typeKeys, setTypeKeys] = useState(initialTypeKeys)
-  const [dates, setDates] = useState<Record<string, DateMapping>>(() =>
-    Object.fromEntries(types.map((type) => [type.key, { from: type.from, to: type.to }]))
-  )
+export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeSelection {
+  const [spaceKeys, setSpaceKeys] = useState(initial.spaceKeys)
+  const [typeKeys, setTypeKeys] = useState(initial.typeKeys)
+  const [dates, setDates] = useState(initial.dates)
 
   const activeTypes = useMemo(
     () => types.filter((type) => spaceKeys.includes(type.space) && typeKeys.includes(type.key)),
     [types, spaceKeys, typeKeys]
   )
 
+  const mappingFor = (type: ObjectType): DateMapping =>
+    dates[type.key] ?? { from: type.from, to: type.to }
+
+  const update = (key: string, change: Partial<DateMapping>): void => {
+    const type = types.find((candidate) => candidate.key === key)
+    if (!type) return
+    setDates((current) => ({
+      ...current,
+      [key]: { ...(current[key] ?? { from: type.from, to: type.to }), ...change }
+    }))
+  }
+
   return {
     spaceKeys,
     typeKeys,
-    dates,
     activeTypes,
     objectCount: activeTypes.reduce((total, type) => total + type.count, 0),
+    picks: { spaceKeys, typeKeys, dates },
+    mappingFor,
     toggleSpace: (key) => setSpaceKeys((keys) => toggle(keys, key)),
     toggleType: (key) => setTypeKeys((keys) => toggle(keys, key)),
-    setFrom: (key, value) =>
-      setDates((current) => ({ ...current, [key]: { ...current[key], from: value } })),
-    setTo: (key, value) =>
-      setDates((current) => ({ ...current, [key]: { ...current[key], to: value } }))
+    setFrom: (key, value) => update(key, { from: value }),
+    setTo: (key, value) => update(key, { to: value })
   }
 }

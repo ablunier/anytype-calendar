@@ -1,7 +1,7 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import { SpaceDot } from '@renderer/components/app/SpaceDot'
 import { Button, Icon, Tag } from '@renderer/components/ui'
-import { isoDate } from '@renderer/lib/calendar'
+import { dateLabel, isoDate } from '@renderer/lib/calendar'
 
 interface DetailFieldProps {
   label: string
@@ -70,8 +70,12 @@ export function ObjectDetail({
       </div>
 
       <dl className="flex flex-col gap-10 border-t border-line-hairline pt-16">
-        <DetailField label={`From · ${type?.from ?? 'date'}`} value={from} mono />
-        <DetailField label={type?.to ? `To · ${type.to}` : 'To date'} value={to} mono={!!type?.to} />
+        <DetailField label={`From · ${type ? dateLabel(type, type.from) : 'date'}`} value={from} mono />
+        <DetailField
+          label={type?.to ? `To · ${dateLabel(type, type.to)}` : 'To date'}
+          value={to}
+          mono={!!type?.to}
+        />
         <DetailField label="All day" value={event.allDay ? 'Yes' : 'No'} />
         <DetailField label="Space" value={space?.name ?? 'Unknown'} />
       </dl>

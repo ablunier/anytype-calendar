@@ -1,6 +1,7 @@
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
+import { dateOptions } from '@renderer/lib/calendar'
 
 export interface TypeConfigRowProps {
   type: ObjectType
@@ -13,7 +14,8 @@ export interface TypeConfigRowProps {
   onToChange: (value: string | null) => void
 }
 
-const NONE = 'None'
+/** An empty value can never be a property key. */
+const NONE = { value: '', label: 'None' }
 
 export function TypeConfigRow({
   type,
@@ -49,7 +51,7 @@ export function TypeConfigRow({
         size="sm"
         className="w-152"
         ariaLabel={`From date for ${type.label}`}
-        options={type.props}
+        options={dateOptions(type)}
         value={from}
         disabled={!checked}
         onChange={onFromChange}
@@ -58,10 +60,10 @@ export function TypeConfigRow({
         size="sm"
         className="w-152"
         ariaLabel={`To date for ${type.label}`}
-        options={[NONE, ...type.props]}
-        value={to ?? NONE}
+        options={[NONE, ...dateOptions(type)]}
+        value={to ?? NONE.value}
         disabled={!checked}
-        onChange={(value) => onToChange(value === NONE ? null : value)}
+        onChange={(value) => onToChange(value === NONE.value ? null : value)}
       />
     </div>
   )

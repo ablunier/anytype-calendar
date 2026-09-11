@@ -28,7 +28,11 @@ export function ConfigScreen({
   onCopyKey,
   onSignOut
 }: ConfigScreenProps): React.JSX.Element {
-  const selection = useTypeSelection(types, initialTypeKeys, initialSpaceKeys)
+  const selection = useTypeSelection(types, {
+    spaceKeys: initialSpaceKeys,
+    typeKeys: initialTypeKeys,
+    dates: {}
+  })
 
   return (
     <div className="flex h-full flex-col bg-surface-page">

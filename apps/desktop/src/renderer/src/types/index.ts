@@ -25,6 +25,11 @@ export interface Space {
   objects: number
 }
 
+export interface DateProperty {
+  key: string
+  label: string
+}
+
 /** Scoped to a single space: the same Anytype type in two spaces is two entries. */
 export interface ObjectType {
   key: string
@@ -35,11 +40,25 @@ export interface ObjectType {
   /** Counts only objects carrying a date. */
   count: number
   /** Date properties only. */
-  props: string[]
-  /** The mandatory start-date property. */
+  props: DateProperty[]
+  /** Key of the mandatory start-date property the type starts with. */
   from: string
-  /** The optional end-date property; a type with one is drawn as a range. */
+  /** Key of the optional end-date property; a type with one is drawn as a range. */
   to: string | null
+}
+
+/** `to: null` means a point, not a range. Both are property keys. */
+export interface DateMapping {
+  from: string
+  to: string | null
+}
+
+/** What the user has ticked, keyed by `Space.key` and `ObjectType.key`. */
+export interface TypePicks {
+  spaceKeys: string[]
+  typeKeys: string[]
+  /** Only types whose dates differ from their own `from`/`to` need an entry. */
+  dates: Record<string, DateMapping>
 }
 
 /** `day` and `until` are days of the month within the mock month. */
@@ -102,6 +121,8 @@ export interface SyncView {
   state: SyncState
   /** e.g. "just now", "Is Anytype running?". */
   detail?: string
+  /** Whether any read has succeeded yet, so there is something to draw. */
+  hasResult: boolean
 }
 
 /** Enough to recognise the key by; the renderer never holds the key itself. */
