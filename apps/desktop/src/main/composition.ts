@@ -3,7 +3,15 @@ import { join } from 'path'
 import { setTimeout as sleep } from 'timers/promises'
 import { app, safeStorage } from 'electron'
 import { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
-import { AuthService, AuthSessionStore } from '@anytype-calendar/auth/application'
+import {
+  AuthSessionStore,
+  CopyAuthApiKey,
+  RestoreAuthSession,
+  SignOutOfAuth,
+  StartAuthConnection,
+  StepBackAuthConnection,
+  SubmitAuthCode
+} from '@anytype-calendar/auth/application'
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
 import {
   AnytypeAuthGateway,
@@ -26,8 +34,13 @@ import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 const ANYTYPE_REQUEST_TIMEOUT_MS = 10_000
 
 export interface AppServices {
-  authService: AuthService
   authSession: AuthSessionStore
+  restoreAuthSession: RestoreAuthSession
+  startAuthConnection: StartAuthConnection
+  submitAuthCode: SubmitAuthCode
+  stepBackAuthConnection: StepBackAuthConnection
+  signOutOfAuth: SignOutOfAuth
+  copyAuthApiKey: CopyAuthApiKey
   schemaSync: SyncSchema
   schemaState: SchemaSyncStore
 }
@@ -43,12 +56,17 @@ export function composeServices(): AppServices {
   const credentials = credentialRepository(fakeAnytype ? 'credential-fake.bin' : 'credential.bin')
 
   const authSession = new AuthSessionStore()
-  const authService = new AuthService({
-    gateway: client ? new AnytypeAuthGateway(client) : inMemoryAuthGateway(),
-    credentials,
+  const authGateway = client ? new AnytypeAuthGateway(client) : inMemoryAuthGateway()
+  const restoreAuthSession = new RestoreAuthSession({ credentials, store: authSession })
+  const startAuthConnection = new StartAuthConnection({
+    gateway: authGateway,
     store: authSession,
     appName: 'Calendar for Anytype'
   })
+  const submitAuthCode = new SubmitAuthCode({ gateway: authGateway, credentials, store: authSession })
+  const stepBackAuthConnection = new StepBackAuthConnection(authSession)
+  const signOutOfAuth = new SignOutOfAuth({ credentials, store: authSession })
+  const copyAuthApiKey = new CopyAuthApiKey(credentials)
 
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
@@ -66,7 +84,17 @@ export function composeServices(): AppServices {
     else resetSchemaSync.execute()
   })
 
-  return { authService, authSession, schemaSync, schemaState }
+  return {
+    authSession,
+    restoreAuthSession,
+    startAuthConnection,
+    submitAuthCode,
+    stepBackAuthConnection,
+    signOutOfAuth,
+    copyAuthApiKey,
+    schemaSync,
+    schemaState
+  }
 }
 
 function anytypeClient(): AnytypeClient {

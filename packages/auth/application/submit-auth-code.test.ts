@@ -6,8 +6,10 @@ import {
   type AuthGateway,
   type CredentialRepository
 } from '../domain'
-import { AuthService } from './auth-service'
 import { AuthSessionStore } from './session-store'
+import { StartAuthConnection } from './start-auth-connection'
+import { StepBackAuthConnection } from './step-back-auth-connection'
+import { SubmitAuthCode } from './submit-auth-code'
 
 const VALID_CODE = '2749'
 const API_KEY = 'ak_secret_4c19'
@@ -15,12 +17,10 @@ const START = 1_000
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
+  const promise = new Promise<T>((res) => {
     resolve = res
-    reject = rej
   })
-  return { promise, resolve, reject }
+  return { promise, resolve }
 }
 
 function setup(initialCredential: AuthCredential | null = null) {
@@ -43,16 +43,19 @@ function setup(initialCredential: AuthCredential | null = null) {
     })
   }
   const store = new AuthSessionStore()
-  const service = new AuthService({
+  const startAuthConnection = new StartAuthConnection({
     gateway,
-    credentials,
     store,
     appName: 'Test app',
     now: () => time
   })
+  const submitAuthCode = new SubmitAuthCode({ gateway, credentials, store, now: () => time })
+  const stepBackAuthConnection = new StepBackAuthConnection(store)
 
   return {
-    service,
+    startAuthConnection,
+    submitAuthCode,
+    stepBackAuthConnection,
     store,
     gateway,
     credentials,
@@ -63,67 +66,12 @@ function setup(initialCredential: AuthCredential | null = null) {
   }
 }
 
-async function connected() {
-  const harness = setup()
-  await harness.service.startConnection()
-  await harness.service.submitCode(VALID_CODE)
-  return harness
-}
-
-describe('restore', () => {
-  test('stays signed out when nothing is stored', async () => {
-    const { service, store } = setup()
-    await service.restore()
-    expect(store.get()).toEqual({ phase: 'signed-out' })
-  })
-
-  test('connects from a stored credential without exposing the key', async () => {
-    const { service, store } = setup({ apiKey: API_KEY, issuedAt: 42 })
-    await service.restore()
-    expect(store.get()).toEqual({ phase: 'connected', key: { hint: '4c19', issuedAt: 42 } })
-    expect(JSON.stringify(store.get())).not.toContain(API_KEY)
-  })
-})
-
-describe('startConnection', () => {
-  test('opens a challenge under the app name, stamped with its lifetime', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
-    expect(gateway.createChallenge).toHaveBeenCalledExactlyOnceWith('Test app')
-    expect(store.get()).toEqual({
-      phase: 'awaiting-code',
-      challenge: { id: 'ch_1', expiresAt: START + AUTH_CHALLENGE_LIFETIME_MS }
-    })
-  })
-
-  test('fails as unreachable when the challenge cannot be opened', async () => {
-    const { service, store, gateway } = setup()
-    gateway.createChallenge.mockRejectedValueOnce(new Error('ECONNREFUSED'))
-    await service.startConnection()
-    expect(store.get()).toEqual({ phase: 'failed', failure: 'unreachable' })
-  })
-
-  test('drops a challenge that arrives after the user stepped back', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
-    const next = deferred<string>()
-    gateway.createChallenge.mockReturnValueOnce(next.promise)
-
-    const requesting = service.startConnection()
-    service.stepBack()
-    next.resolve('ch_2')
-    await requesting
-
-    expect(store.get()).toEqual({ phase: 'signed-out' })
-  })
-})
-
 describe('submitCode', () => {
   test('connects with the right code, storing the credential and exposing only its hint', async () => {
-    const { service, store, gateway, stored, advance } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway, stored, advance } = setup()
+    await startAuthConnection.execute()
     advance(5_000)
-    await service.submitCode(VALID_CODE)
+    await submitAuthCode.execute(VALID_CODE)
 
     expect(gateway.exchangeCode).toHaveBeenCalledExactlyOnceWith('ch_1', VALID_CODE)
     expect(stored()).toEqual({ apiKey: API_KEY, issuedAt: START + 5_000 })
@@ -135,12 +83,12 @@ describe('submitCode', () => {
   })
 
   test('is verifying while the exchange is in flight', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway } = setup()
+    await startAuthConnection.execute()
     const exchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode.mockReturnValueOnce(exchange.promise)
 
-    const submitting = service.submitCode(VALID_CODE)
+    const submitting = submitAuthCode.execute(VALID_CODE)
     expect(store.get().phase).toBe('verifying')
 
     exchange.resolve({ ok: true, apiKey: API_KEY })
@@ -149,9 +97,9 @@ describe('submitCode', () => {
   })
 
   test('fails with the attempt kept when Anytype rejects the code', async () => {
-    const { service, store, stored } = setup()
-    await service.startConnection()
-    await service.submitCode('1111')
+    const { startAuthConnection, submitAuthCode, store, stored } = setup()
+    await startAuthConnection.execute()
+    await submitAuthCode.execute('1111')
 
     expect(store.get()).toEqual({
       phase: 'failed',
@@ -162,42 +110,42 @@ describe('submitCode', () => {
   })
 
   test('fails as expired without asking Anytype once the challenge has lapsed', async () => {
-    const { service, store, gateway, advance } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway, advance } = setup()
+    await startAuthConnection.execute()
     advance(AUTH_CHALLENGE_LIFETIME_MS)
-    await service.submitCode(VALID_CODE)
+    await submitAuthCode.execute(VALID_CODE)
 
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'expired' })
     expect(gateway.exchangeCode).not.toHaveBeenCalled()
   })
 
   test('ignores a malformed code', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway } = setup()
+    await startAuthConnection.execute()
     const before = store.get()
-    await service.submitCode('27')
+    await submitAuthCode.execute('27')
 
     expect(store.get()).toBe(before)
     expect(gateway.exchangeCode).not.toHaveBeenCalled()
   })
 
   test('fails as unreachable when the exchange cannot reach Anytype', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway } = setup()
+    await startAuthConnection.execute()
     gateway.exchangeCode.mockRejectedValueOnce(new Error('ECONNREFUSED'))
-    await service.submitCode(VALID_CODE)
+    await submitAuthCode.execute(VALID_CODE)
 
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unreachable' })
   })
 
   test('a repeated submit does not start a second exchange or void the first', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, store, gateway } = setup()
+    await startAuthConnection.execute()
     const exchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode.mockReturnValueOnce(exchange.promise)
 
-    const first = service.submitCode(VALID_CODE)
-    const second = service.submitCode(VALID_CODE)
+    const first = submitAuthCode.execute(VALID_CODE)
+    const second = submitAuthCode.execute(VALID_CODE)
     exchange.resolve({ ok: true, apiKey: API_KEY })
     await Promise.all([first, second])
 
@@ -208,13 +156,14 @@ describe('submitCode', () => {
 
 describe('late exchange results', () => {
   test('a success after stepping back is never stored', async () => {
-    const { service, store, gateway, credentials } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, gateway, credentials } =
+      setup()
+    await startAuthConnection.execute()
     const exchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode.mockReturnValueOnce(exchange.promise)
 
-    const submitting = service.submitCode(VALID_CODE)
-    service.stepBack()
+    const submitting = submitAuthCode.execute(VALID_CODE)
+    stepBackAuthConnection.execute()
     exchange.resolve({ ok: true, apiKey: API_KEY })
     await submitting
 
@@ -223,13 +172,13 @@ describe('late exchange results', () => {
   })
 
   test('a failure after stepping back is dropped', async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, gateway } = setup()
+    await startAuthConnection.execute()
     const exchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode.mockReturnValueOnce(exchange.promise)
 
-    const submitting = service.submitCode('1111')
-    service.stepBack()
+    const submitting = submitAuthCode.execute('1111')
+    stepBackAuthConnection.execute()
     exchange.resolve({ ok: false, failure: 'invalid-code' })
     await submitting
 
@@ -237,17 +186,17 @@ describe('late exchange results', () => {
   })
 
   test("a superseded attempt's result never overrides the current one", async () => {
-    const { service, store, gateway } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, gateway } = setup()
+    await startAuthConnection.execute()
     const firstExchange = deferred<AuthExchangeResult>()
     const secondExchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode
       .mockReturnValueOnce(firstExchange.promise)
       .mockReturnValueOnce(secondExchange.promise)
 
-    const first = service.submitCode(VALID_CODE)
-    service.stepBack()
-    const second = service.submitCode('1111')
+    const first = submitAuthCode.execute(VALID_CODE)
+    stepBackAuthConnection.execute()
+    const second = submitAuthCode.execute('1111')
     secondExchange.resolve({ ok: false, failure: 'invalid-code' })
     await second
     firstExchange.resolve({ ok: true, apiKey: API_KEY })
@@ -257,47 +206,20 @@ describe('late exchange results', () => {
   })
 
   test('stepping back while the key is being saved un-stores it', async () => {
-    const { service, store, credentials, stored } = setup()
-    await service.startConnection()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, credentials, stored } =
+      setup()
+    await startAuthConnection.execute()
     const saving = deferred<void>()
     credentials.save.mockImplementationOnce(async () => saving.promise)
 
-    const submitting = service.submitCode(VALID_CODE)
+    const submitting = submitAuthCode.execute(VALID_CODE)
     await vi.waitFor(() => expect(credentials.save).toHaveBeenCalled())
-    service.stepBack()
+    stepBackAuthConnection.execute()
     saving.resolve()
     await submitting
 
     expect(store.get().phase).toBe('awaiting-code')
     expect(stored()).toBeNull()
     expect(credentials.clear).toHaveBeenCalledOnce()
-  })
-})
-
-describe('signOut', () => {
-  test('forgets the key and signs out', async () => {
-    const { service, store, stored } = await connected()
-    await service.signOut()
-
-    expect(store.get()).toEqual({ phase: 'signed-out' })
-    expect(stored()).toBeNull()
-  })
-})
-
-describe('copyKeyTo', () => {
-  test('hands the stored key to the sink', async () => {
-    const { service } = await connected()
-    const write = vi.fn()
-
-    await expect(service.copyKeyTo(write)).resolves.toBe(true)
-    expect(write).toHaveBeenCalledExactlyOnceWith(API_KEY)
-  })
-
-  test('writes nothing when no key is stored', async () => {
-    const { service } = setup()
-    const write = vi.fn()
-
-    await expect(service.copyKeyTo(write)).resolves.toBe(false)
-    expect(write).not.toHaveBeenCalled()
   })
 })

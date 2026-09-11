@@ -39,7 +39,7 @@ app.whenReady().then(async () => {
   const services = composeServices()
   registerAuthIpc(services)
   registerSchemaIpc(services)
-  await services.authService.restore()
+  await services.restoreAuthSession.execute()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
