@@ -9,6 +9,16 @@ const SELECTION: SchemaSelection = {
   types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }]
 }
 
+const LATER: SchemaSelection = { spaceIds: [], types: [] }
+
+function deferred() {
+  let resolve!: () => void
+  const promise = new Promise<void>((res) => {
+    resolve = res
+  })
+  return { promise, resolve }
+}
+
 function setup(stored: SchemaSelection | null = null) {
   const repository = {
     load: vi.fn<SchemaSelectionRepository['load']>(async () => stored),
@@ -55,5 +65,30 @@ describe('SaveSchemaSelection', () => {
     await expect(save.execute(SELECTION)).rejects.toThrow('disk full')
     expect(store.get()).toEqual({ phase: 'unset' })
     expect(listener).not.toHaveBeenCalled()
+  })
+
+  test('starts a save only once the one before it has finished', async () => {
+    const { repository, store, save } = setup()
+    const first = deferred()
+    repository.save.mockReturnValueOnce(first.promise)
+
+    const saving = [save.execute(SELECTION), save.execute(LATER)]
+    await Promise.resolve()
+    expect(repository.save).toHaveBeenCalledTimes(1)
+
+    first.resolve()
+    await Promise.all(saving)
+    expect(repository.save.mock.calls).toEqual([[SELECTION], [LATER]])
+    expect(store.get()).toEqual({ phase: 'saved', selection: LATER })
+  })
+
+  test('still runs a save queued behind one that fails', async () => {
+    const { repository, store, save } = setup()
+    repository.save.mockRejectedValueOnce(new Error('disk full'))
+
+    const failed = save.execute(SELECTION)
+    await expect(save.execute(LATER)).resolves.toBeUndefined()
+    await expect(failed).rejects.toThrow('disk full')
+    expect(store.get()).toEqual({ phase: 'saved', selection: LATER })
   })
 })
