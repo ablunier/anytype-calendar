@@ -1,3 +1,4 @@
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   describeCredential,
   nextAuthSession,
@@ -14,20 +15,15 @@ export interface RestoreAuthSessionDeps {
 
 export class RestoreAuthSession {
   readonly #credentials: CredentialRepository
-  readonly #store: AuthSessionStore
+  readonly #guard: DispatchGuard<AuthSession, AuthEvent>
 
   constructor({ credentials, store }: RestoreAuthSessionDeps) {
     this.#credentials = credentials
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextAuthSession)
   }
 
   async execute(): Promise<void> {
     const credential = await this.#credentials.load()
-    if (credential) this.#dispatch({ type: 'restored', key: describeCredential(credential) })
-  }
-
-  #dispatch(event: AuthEvent): AuthSession {
-    this.#store.set(nextAuthSession(this.#store.get(), event))
-    return this.#store.get()
+    if (credential) this.#guard.dispatch({ type: 'restored', key: describeCredential(credential) })
   }
 }

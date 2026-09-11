@@ -1,14 +1,15 @@
-import { nextAuthSession } from '../domain'
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
+import { nextAuthSession, type AuthEvent, type AuthSession } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
 export class StepBackAuthConnection {
-  readonly #store: AuthSessionStore
+  readonly #guard: DispatchGuard<AuthSession, AuthEvent>
 
   constructor(store: AuthSessionStore) {
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextAuthSession)
   }
 
   execute(): void {
-    this.#store.set(nextAuthSession(this.#store.get(), { type: 'stepped-back' }))
+    this.#guard.dispatch({ type: 'stepped-back' })
   }
 }

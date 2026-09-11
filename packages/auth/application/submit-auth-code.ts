@@ -1,3 +1,4 @@
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   describeCredential,
   nextAuthSession,
@@ -30,47 +31,42 @@ export interface SubmitAuthCodeDeps {
 export class SubmitAuthCode {
   readonly #gateway: AuthGateway
   readonly #credentials: CredentialRepository
-  readonly #store: AuthSessionStore
+  readonly #guard: DispatchGuard<AuthSession, AuthEvent>
   readonly #now: () => number
 
   constructor({ gateway, credentials, store, now = Date.now }: SubmitAuthCodeDeps) {
     this.#gateway = gateway
     this.#credentials = credentials
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextAuthSession)
     this.#now = now
   }
 
   async execute(code: string): Promise<void> {
-    const before = this.#store.get()
-    const verifying = this.#dispatch({ type: 'code-submitted', code, at: this.#now() })
+    const before = this.#guard.current()
+    const verifying = this.#guard.dispatch({ type: 'code-submitted', code, at: this.#now() })
     if (verifying === before || verifying.phase !== 'verifying') return
 
     let result: AuthExchangeResult
     try {
       result = await this.#gateway.exchangeCode(verifying.attempt.challenge.id, code)
     } catch {
-      if (this.#isCurrent(verifying)) this.#dispatch({ type: 'exchange-failed', failure: 'unreachable' })
+      if (this.#guard.isCurrent(verifying)) {
+        this.#guard.dispatch({ type: 'exchange-failed', failure: 'unreachable' })
+      }
       return
     }
 
     if (!result.ok) {
-      if (this.#isCurrent(verifying)) this.#dispatch({ type: 'exchange-failed', failure: result.failure })
+      if (this.#guard.isCurrent(verifying)) {
+        this.#guard.dispatch({ type: 'exchange-failed', failure: result.failure })
+      }
       return
     }
-    if (!this.#isCurrent(verifying)) return
+    if (!this.#guard.isCurrent(verifying)) return
 
     const credential: AuthCredential = { apiKey: result.apiKey, issuedAt: this.#now() }
     await this.#credentials.save(credential)
-    if (!this.#isCurrent(verifying)) return this.#credentials.clear()
-    this.#dispatch({ type: 'exchange-succeeded', key: describeCredential(credential) })
-  }
-
-  #dispatch(event: AuthEvent): AuthSession {
-    this.#store.set(nextAuthSession(this.#store.get(), event))
-    return this.#store.get()
-  }
-
-  #isCurrent(session: AuthSession): boolean {
-    return this.#store.get() === session
+    if (!this.#guard.isCurrent(verifying)) return this.#credentials.clear()
+    this.#guard.dispatch({ type: 'exchange-succeeded', key: describeCredential(credential) })
   }
 }

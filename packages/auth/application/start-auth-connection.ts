@@ -1,3 +1,4 @@
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   createAuthChallenge,
   nextAuthSession,
@@ -23,39 +24,30 @@ export interface StartAuthConnectionDeps {
  */
 export class StartAuthConnection {
   readonly #gateway: AuthGateway
-  readonly #store: AuthSessionStore
+  readonly #guard: DispatchGuard<AuthSession, AuthEvent>
   readonly #appName: string
   readonly #now: () => number
 
   constructor({ gateway, store, appName, now = Date.now }: StartAuthConnectionDeps) {
     this.#gateway = gateway
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextAuthSession)
     this.#appName = appName
     this.#now = now
   }
 
   async execute(): Promise<void> {
-    const origin = this.#store.get()
+    const origin = this.#guard.current()
     let challengeId: string
     try {
       challengeId = await this.#gateway.createChallenge(this.#appName)
     } catch {
-      if (this.#isCurrent(origin)) this.#dispatch({ type: 'challenge-failed' })
+      if (this.#guard.isCurrent(origin)) this.#guard.dispatch({ type: 'challenge-failed' })
       return
     }
-    if (!this.#isCurrent(origin)) return
-    this.#dispatch({
+    if (!this.#guard.isCurrent(origin)) return
+    this.#guard.dispatch({
       type: 'challenge-issued',
       challenge: createAuthChallenge(challengeId, this.#now())
     })
-  }
-
-  #dispatch(event: AuthEvent): AuthSession {
-    this.#store.set(nextAuthSession(this.#store.get(), event))
-    return this.#store.get()
-  }
-
-  #isCurrent(session: AuthSession): boolean {
-    return this.#store.get() === session
   }
 }

@@ -14,5 +14,5 @@
   // Tests import vitest, which would otherwise be emitted into dist/ and would breach the
   // zero-dependency rule. Vitest transpiles them directly from source.
   "exclude": ["**/*.test.ts", "dist"],
-  "references": [{ "path": "../anytype-client" }]
+  "references": [{ "path": "../anytype-client" }, { "path": "../kernel" }]
 }

@@ -1,4 +1,5 @@
-import { nextAuthSession, type CredentialRepository } from '../domain'
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
+import { nextAuthSession, type AuthEvent, type AuthSession, type CredentialRepository } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
 export interface SignOutOfAuthDeps {
@@ -8,15 +9,15 @@ export interface SignOutOfAuthDeps {
 
 export class SignOutOfAuth {
   readonly #credentials: CredentialRepository
-  readonly #store: AuthSessionStore
+  readonly #guard: DispatchGuard<AuthSession, AuthEvent>
 
   constructor({ credentials, store }: SignOutOfAuthDeps) {
     this.#credentials = credentials
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextAuthSession)
   }
 
   async execute(): Promise<void> {
     await this.#credentials.clear()
-    this.#store.set(nextAuthSession(this.#store.get(), { type: 'signed-out' }))
+    this.#guard.dispatch({ type: 'signed-out' })
   }
 }
