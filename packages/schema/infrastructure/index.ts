@@ -3,3 +3,4 @@
 
 export * from './anytype/anytype-schema-gateway'
 export * from './in-memory/in-memory-schema-gateway'
+export * from './json-file/json-file-schema-selection-repository'
