@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.package.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    // No ambient type packages, for every layer of the context. This is what keeps the
+    // context pure at compile time: `process`, `fetch`, `setTimeout`, `console` and friends
+    // are simply not in scope here — dependency-cruiser only sees imports, not globals.
+    // Infrastructure that needs a platform capability takes it as an injected function
+    // from the composition root (apps/desktop/src/main).
+    "types": []
+  },
+  "include": ["domain/**/*", "application/**/*", "infrastructure/**/*"],
+  // Tests import vitest, which would otherwise be emitted into dist/ and would breach the
+  // zero-dependency rule. Vitest transpiles them directly from source.
+  "exclude": ["**/*.test.ts", "dist"],
+  "references": [{ "path": "../anytype-client" }]
+}

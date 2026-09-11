@@ -13,5 +13,5 @@
   },
   // The preload's declaration file is what types `window.api` for the renderer.
   "include": ["src/renderer/src/**/*", "src/shared/**/*", "src/preload/index.d.ts"],
-  "references": [{ "path": "../../packages/auth" }]
+  "references": [{ "path": "../../packages/auth" }, { "path": "../../packages/schema" }]
 }

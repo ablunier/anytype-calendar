@@ -21,6 +21,7 @@
   "dependencies": {
     "@anytype-calendar/anytype-client": "*",
     "@anytype-calendar/auth": "*",
+    "@anytype-calendar/schema": "*",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "react": "^19.2.8",

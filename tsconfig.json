@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/anytype-client" },
     { "path": "./packages/auth" },
+    { "path": "./packages/schema" },
     { "path": "./apps/desktop/tsconfig.node.json" },
     { "path": "./apps/desktop/tsconfig.web.json" }
   ]
