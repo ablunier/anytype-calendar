@@ -5,7 +5,7 @@
  * work for a later pass, and the fixture data is already shaped to avoid needing it.
  */
 
-import type { CalendarEvent, MonthCell, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, DateMapping, MonthCell, ObjectType, Space } from '@renderer/types'
 
 export const MONTH_NAMES = [
   'January',
@@ -72,6 +72,12 @@ export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[
 /** Falls back to the key for a property the type no longer has. */
 export function dateLabel(type: ObjectType, key: string): string {
   return type.props.find((prop) => prop.key === key)?.label ?? key
+}
+
+/** False when the mapping names a date the type does not have, e.g. one a re-read took away. */
+export function offersDates(type: ObjectType, { from, to }: DateMapping): boolean {
+  const offers = (key: string): boolean => type.props.some((prop) => prop.key === key)
+  return offers(from) && (to === null || offers(to))
 }
 
 export function dateOptions(type: ObjectType): { value: string; label: string }[] {

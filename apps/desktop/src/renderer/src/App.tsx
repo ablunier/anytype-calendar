@@ -93,14 +93,19 @@ function App(): React.JSX.Element | null {
   }
 
   if (screen === 'config' && apiKey) {
+    const types = typesFor(schema)
     return (
       <ConfigScreen
-        spaces={calendarData.spaces}
-        types={calendarData.types}
-        initialTypeKeys={calendarData.trackedTypeKeys}
-        initialSpaceKeys={calendarData.trackedSpaceKeys}
+        spaces={spacesFor(schema)}
+        types={types}
+        sync={syncViewFor(schema, now)}
+        initial={picksFor(selection, types)}
         apiKey={apiKey}
         onBack={() => setScreen('month')}
+        onReread={() => void window.api.schema.sync()}
+        onSave={(picks) =>
+          window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))
+        }
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
       />

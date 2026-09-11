@@ -32,19 +32,24 @@ export function SpaceTypesCard({
         <SpaceDot space={space} />
         <h3 className="type-ui text-base text-ink-primary">{space.name}</h3>
         <div className="flex-1" />
-        {on ? (
+        {!on ? (
+          <span className="type-numeral text-tiny text-ink-tertiary">
+            hidden · {types.length} types
+          </span>
+        ) : types.length > 0 ? (
           <>
             <span className="w-152 type-caption text-tiny text-ink-tertiary">From date</span>
             <span className="w-152 type-caption text-tiny text-ink-tertiary">
               To date (optional)
             </span>
           </>
-        ) : (
-          <span className="type-numeral text-tiny text-ink-tertiary">
-            hidden · {types.length} types
-          </span>
-        )}
+        ) : null}
       </div>
+      {on && types.length === 0 ? (
+        <p className="pt-10 type-body text-small text-ink-tertiary">
+          No type in this space has a date property yet.
+        </p>
+      ) : null}
       {on
         ? types.map((type, index) => (
             <TypeConfigRow

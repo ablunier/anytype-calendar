@@ -17,6 +17,7 @@ import type {
   SyncView,
   TypePicks
 } from '@renderer/types'
+import { offersDates } from './calendar'
 
 /** Anytype gives spaces no colour the calendar can use, so each takes one by position. */
 const SPACE_HUES: CategoryHue[] = ['teal', 'ochre', 'plum', 'graphite', 'sage', 'clay', 'dusk', 'rose']
@@ -126,12 +127,10 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
   if (selection.phase === 'unset') return { spaceKeys: [], typeKeys: [], dates: {} }
   const byKey = new Map(types.map((type) => [type.key, type]))
   const dates: Record<string, DateMapping> = {}
-  for (const choice of selection.selection.types) {
-    const key = objectTypeKey(choice.spaceId, choice.typeKey)
+  for (const { spaceId, typeKey, from, to } of selection.selection.types) {
+    const key = objectTypeKey(spaceId, typeKey)
     const type = byKey.get(key)
-    if (type && hasDate(type, choice.from) && (choice.to === null || hasDate(type, choice.to))) {
-      dates[key] = { from: choice.from, to: choice.to }
-    }
+    if (type && offersDates(type, { from, to })) dates[key] = { from, to }
   }
   return {
     spaceKeys: selection.selection.spaceIds,
@@ -141,9 +140,11 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
 }
 
 /**
- * The picks over the synced spaces, as the selection to save. Choices in spaces this sync
- * did not see — another account's, or a space since left — are carried over from
- * `previous` untouched, so they are there again if the space comes back.
+ * The picks over the synced spaces and types, as the selection to save: only what the user
+ * can see is rewritten. Choices this sync did not see — in another account's space, a space
+ * since left, or a type since deleted or stripped of its dates — are carried over from
+ * `previous` untouched, so they are there again if it comes back. A seen type whose picked
+ * dates are gone is saved with its own, as it is drawn.
  */
 export function schemaSelectionFor(
   snapshot: SchemaSnapshot,
@@ -151,25 +152,32 @@ export function schemaSelectionFor(
   previous: SchemaSelectionSnapshot
 ): SchemaSelection {
   const spaces = syncedSpaces(snapshot)
-  const seen = new Set(spaces.map((space) => space.id))
+  const seenSpaces = new Set(spaces.map((space) => space.id))
+  const seenTypes = new Set(
+    spaces.flatMap((space) => space.types.map((type) => objectTypeKey(space.id, type.key)))
+  )
   const kept: SchemaSelection =
     previous.phase === 'saved' ? previous.selection : { spaceIds: [], types: [] }
 
   const picked = spaces.flatMap((space) =>
-    space.types.flatMap((type): SchemaTypeChoice[] => {
-      const key = objectTypeKey(space.id, type.key)
-      if (!picks.typeKeys.includes(key)) return []
-      const { from, to } = picks.dates[key] ?? defaultMapping(type)
-      return [{ spaceId: space.id, typeKey: type.key, from, to }]
+    space.types.flatMap((schemaType): SchemaTypeChoice[] => {
+      const type = objectTypeFor(space, schemaType)
+      if (!picks.typeKeys.includes(type.key)) return []
+      const mapping = picks.dates[type.key]
+      const { from, to } = mapping && offersDates(type, mapping) ? mapping : type
+      return [{ spaceId: space.id, typeKey: schemaType.key, from, to }]
     })
   )
 
   return {
     spaceIds: [
-      ...kept.spaceIds.filter((id) => !seen.has(id)),
+      ...kept.spaceIds.filter((id) => !seenSpaces.has(id)),
       ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id)
     ],
-    types: [...kept.types.filter((choice) => !seen.has(choice.spaceId)), ...picked]
+    types: [
+      ...kept.types.filter((choice) => !seenTypes.has(objectTypeKey(choice.spaceId, choice.typeKey))),
+      ...picked
+    ]
   }
 }
 
@@ -197,10 +205,6 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
 /** A newly ticked type starts on its first date, as a single day. */
 function defaultMapping(type: SchemaType): DateMapping {
   return { from: type.dateProperties[0]?.key ?? '', to: null }
-}
-
-function hasDate(type: ObjectType, key: string): boolean {
-  return type.props.some((prop) => prop.key === key)
 }
 
 function elapsedSince(at: number, now: number): string {
