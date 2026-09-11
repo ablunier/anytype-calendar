@@ -2,5 +2,6 @@
 // domain and the shared Anytype HTTP client only.
 
 export * from './anytype/anytype-auth-gateway'
+export * from './encrypted-file/encrypted-file-credential-repository'
 export * from './in-memory/in-memory-auth-gateway'
 export * from './in-memory/in-memory-credential-repository'
