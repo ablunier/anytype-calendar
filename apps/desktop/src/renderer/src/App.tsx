@@ -24,13 +24,14 @@ function App(): React.JSX.Element | null {
   const session = useSession()
   const [screen, setScreen] = useState<ConnectedScreen>('success')
 
-  /* Leaving the connected phase resets local navigation, so the next sign-in lands on the
-   * success card again. Adjusted during render rather than in an effect, so no frame of
-   * the stale screen is ever drawn. */
+  /* Entering the connected phase picks the first screen. The success card only makes sense
+   * right after watching the code be verified; any other arrival — a key restored at launch,
+   * a reloaded window — goes straight to the calendar. Adjusted during render rather than in
+   * an effect, so no frame of the stale screen is ever drawn. */
   const [phase, setPhase] = useState(session?.phase)
   if (session?.phase !== phase) {
     setPhase(session?.phase)
-    if (session?.phase !== 'connected') setScreen('success')
+    if (session?.phase === 'connected') setScreen(phase === 'verifying' ? 'success' : 'month')
   }
 
   if (!session) return null
