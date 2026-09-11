@@ -17,6 +17,9 @@
       "default": "./dist/infrastructure/index.js"
     }
   },
+  "dependencies": {
+    "@anytype-calendar/anytype-client": "*"
+  },
   "scripts": {
     "build": "tsc -b",
     "clean": "rm -rf dist tsconfig.tsbuildinfo"

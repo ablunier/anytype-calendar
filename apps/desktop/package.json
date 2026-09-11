@@ -19,6 +19,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "@anytype-calendar/anytype-client": "*",
     "@anytype-calendar/auth": "*",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",

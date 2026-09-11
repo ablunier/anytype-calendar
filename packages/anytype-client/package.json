@@ -1,0 +1,16 @@
+{
+  "name": "@anytype-calendar/anytype-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./infrastructure": {
+      "types": "./dist/infrastructure/index.d.ts",
+      "default": "./dist/infrastructure/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  }
+}

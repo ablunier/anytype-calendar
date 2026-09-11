@@ -57,11 +57,12 @@ module.exports = {
       name: 'infrastructure-only-own-domain',
       comment:
         "A context's infrastructure layer holds its driven adapters. It may import itself " +
-        "and its own context's domain (to implement its ports), nothing else. Relax the " +
-        'pathNot here once the shared Anytype HTTP client package exists.',
+        "and its own context's domain (to implement its ports), plus the shared Anytype " +
+        'HTTP client, nothing else. anytype-client is not a context: it has only an ' +
+        'infrastructure layer, so this same rule keeps it a leaf that imports no context.',
       severity: 'error',
       from: { path: '^packages/([^/]+)/infrastructure/' },
-      to: { pathNot: '^packages/$1/(infrastructure|domain)/' }
+      to: { pathNot: '^packages/(?:$1/(?:infrastructure|domain)|anytype-client/infrastructure)/' }
     },
     {
       name: 'packages-never-import-apps',

@@ -14,5 +14,8 @@
     }
   },
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
-  "references": [{ "path": "../../packages/auth" }]
+  "references": [
+    { "path": "../../packages/anytype-client" },
+    { "path": "../../packages/auth" }
+  ]
 }
