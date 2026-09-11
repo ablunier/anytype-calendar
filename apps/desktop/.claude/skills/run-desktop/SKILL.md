@@ -119,12 +119,27 @@ dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once
   `state` reports `schema: { phase: 'failed', failure: 'unauthorized' }`. `main-eval` can
   confirm it: Anytype answers `401 {"code":"unauthorized","message":"invalid api key"}` to
   `GET /v1/spaces`.
-- **Only the success card and onboarding have real data.** Config and the month view still
-  draw from `src/renderer/src/mocks/index.ts`, whatever mode you are in.
+- **Only the month view is mocked.** It draws from `src/renderer/src/mocks/index.ts`,
+  whatever mode you are in. The success card, onboarding and Settings have real data.
 - **Onboarding shows until a selection is saved**, even for a restored key. Continue or Skip
   writes `schema-selection-fake.json` (or `schema-selection.json` in real mode) to
-  `userData`; delete it to see onboarding again. In real mode that file is the human's own,
-  so don't press Continue or Skip there unless asked.
+  `userData`; delete it to see onboarding again. Settings writes the same file on **every**
+  checkbox or date change. In real mode that file is the human's own, so don't press
+  Continue or Skip, or change anything in Settings, unless asked. Opening Settings or
+  re-reading writes nothing.
+- **Checkboxes are hidden native inputs**, so `click-text` can't reach them. Click them
+  with `eval` by their aria-label, e.g.
+  `document.querySelector('input[aria-label="Show the Studio space"]').click()`. For a
+  date `<select>`, set `.value` and dispatch a bubbling `change` event.
+- **Forcing a failed read in fake mode:** `SyncSchema` reads the key from disk on every
+  sync. Rename `credential-fake.bin` aside with `main-eval` and press "Re-read account",
+  and the read fails with "Key not accepted". Rename it back afterwards.
+- **Drawing states the fake account lacks** (a space with no dated types, no spaces at
+  all, a type or date gone): push a hand-made `SchemaSnapshot` to the window with
+  `main-eval` and
+  `BrowserWindow.getAllWindows()[0].webContents.send('schema:changed', snapshot)`. The
+  renderer takes it like a real push until the next read replaces it. Main's own state
+  doesn't change, but a Settings change made meanwhile is saved against it.
 - **`eval` takes an expression, not statements.** The driver wraps it as
   `(async () => (<expr>))()` so a `const` can't leak into the page's global scope (raw
   `Runtime.evaluate` of `const b = …` twice throws "Identifier 'b' has already been
