@@ -1,0 +1,128 @@
+import {
+  createAuthChallenge,
+  describeCredential,
+  nextAuthSession,
+  type AuthCredential,
+  type AuthEvent,
+  type AuthExchangeResult,
+  type AuthGateway,
+  type AuthSession,
+  type CredentialRepository
+} from '../domain'
+import type { AuthSessionStore } from './session-store'
+
+export interface AuthServiceDeps {
+  gateway: AuthGateway
+  credentials: CredentialRepository
+  store: AuthSessionStore
+  /** Shown by Anytype when it asks the user to approve the connection. */
+  appName: string
+  now?: () => number
+}
+
+/**
+ * Async results are applied only if the store still holds the exact session the operation
+ * started from. Anything that happened meanwhile — stepping back, a re-submitted code, a
+ * forced session — replaced that object, so a late result is dropped instead of
+ * overwriting newer state. A repeated intent the domain ignores leaves the object as it
+ * was, so it does not invalidate the operation already in flight.
+ *
+ * Invariant: a credential is stored exactly when the session is connected.
+ */
+export class AuthService {
+  readonly #gateway: AuthGateway
+  readonly #credentials: CredentialRepository
+  readonly #store: AuthSessionStore
+  readonly #appName: string
+  readonly #now: () => number
+
+  constructor({ gateway, credentials, store, appName, now = Date.now }: AuthServiceDeps) {
+    this.#gateway = gateway
+    this.#credentials = credentials
+    this.#store = store
+    this.#appName = appName
+    this.#now = now
+  }
+
+  async restore(): Promise<void> {
+    const credential = await this.#credentials.load()
+    if (credential) this.#dispatch({ type: 'restored', key: describeCredential(credential) })
+  }
+
+  async startConnection(): Promise<void> {
+    const origin = this.#store.get()
+    let challengeId: string
+    try {
+      challengeId = await this.#gateway.createChallenge(this.#appName)
+    } catch {
+      if (this.#isCurrent(origin)) this.#dispatch({ type: 'challenge-failed' })
+      return
+    }
+    if (!this.#isCurrent(origin)) return
+    this.#dispatch({
+      type: 'challenge-issued',
+      challenge: createAuthChallenge(challengeId, this.#now())
+    })
+  }
+
+  async submitCode(code: string): Promise<void> {
+    const before = this.#store.get()
+    const verifying = this.#dispatch({ type: 'code-submitted', code, at: this.#now() })
+    if (verifying === before || verifying.phase !== 'verifying') return
+
+    let result: AuthExchangeResult
+    try {
+      result = await this.#gateway.exchangeCode(verifying.attempt.challenge.id, code)
+    } catch {
+      if (this.#isCurrent(verifying)) this.#dispatch({ type: 'exchange-failed', failure: 'unreachable' })
+      return
+    }
+
+    if (!result.ok) {
+      if (this.#isCurrent(verifying)) this.#dispatch({ type: 'exchange-failed', failure: result.failure })
+      return
+    }
+    if (!this.#isCurrent(verifying)) return this.#discardKey(result.apiKey)
+
+    const credential: AuthCredential = { apiKey: result.apiKey, issuedAt: this.#now() }
+    await this.#credentials.save(credential)
+    if (!this.#isCurrent(verifying)) {
+      await this.#credentials.clear()
+      return this.#discardKey(result.apiKey)
+    }
+    this.#dispatch({ type: 'exchange-succeeded', key: describeCredential(credential) })
+  }
+
+  stepBack(): void {
+    this.#dispatch({ type: 'stepped-back' })
+  }
+
+  async signOut(): Promise<void> {
+    await this.#credentials.clear()
+    this.#dispatch({ type: 'signed-out' })
+  }
+
+  /**
+   * Rejects, leaving the session connected, when Anytype cannot be reached: forgetting a
+   * key that is still valid in Anytype would leave no way to revoke it.
+   */
+  async revoke(): Promise<void> {
+    const credential = await this.#credentials.load()
+    if (credential) await this.#gateway.revokeKey(credential.apiKey)
+    await this.signOut()
+  }
+
+  #dispatch(event: AuthEvent): AuthSession {
+    this.#store.set(nextAuthSession(this.#store.get(), event))
+    return this.#store.get()
+  }
+
+  #isCurrent(session: AuthSession): boolean {
+    return this.#store.get() === session
+  }
+
+  /** A key nobody will hold should not stay valid in Anytype. Best effort. */
+  #discardKey(apiKey: string): void {
+    this.#gateway.revokeKey(apiKey).catch(() => {})
+  }
+}
