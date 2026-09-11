@@ -100,46 +100,96 @@ describe('listSpaces', () => {
   })
 })
 
-describe('listProperties', () => {
-  test("asks for the space's properties and resolves their keys and formats", async () => {
-    const { gateway, calls } = setup(
-      page([{ object: 'property', id: 'p1', key: 'due_date', name: 'Due date', format: 'date' }])
-    )
+const property = (key: string, name: string, format = 'date') => ({
+  object: 'property',
+  id: `p_${key}`,
+  key,
+  name,
+  format
+})
 
-    await expect(gateway.listProperties(API_KEY, SPACE_ID)).resolves.toEqual({
+const type = (key: string, name: string, extra: Record<string, unknown> = {}) => ({
+  object: 'type',
+  id: `t_${key}`,
+  key,
+  name,
+  archived: false,
+  icon: { format: 'icon', name: 'checkbox', color: 'lime' },
+  properties: [property('due_date', 'Due date')],
+  ...extra
+})
+
+describe('listTypes', () => {
+  test("asks for the space's types and resolves their icons and properties", async () => {
+    const { gateway, calls } = setup(page([type('task', 'Task')]))
+
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({
       ok: true,
-      value: [{ key: 'due_date', name: 'Due date', format: 'date' }]
+      value: [
+        {
+          key: 'task',
+          name: 'Task',
+          icon: { name: 'checkbox', color: 'lime' },
+          properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
+        }
+      ]
     })
-    expect(calls[0]?.url).toBe(`${BASE}/v1/spaces/${SPACE_ID}/properties?offset=0&limit=1000`)
+    expect(calls[0]?.url).toBe(`${BASE}/v1/spaces/${SPACE_ID}/types?offset=0&limit=1000`)
+  })
+
+  test('follows the pages until Anytype has no more', async () => {
+    const { gateway } = setup(page([type('task', 'Task')], true), page([type('book', 'Book')]))
+    const result = await gateway.listTypes(API_KEY, SPACE_ID)
+    expect(result.ok && result.value.map(({ key }) => key)).toEqual(['task', 'book'])
+  })
+
+  test('leaves out archived types', async () => {
+    const { gateway } = setup(page([type('task', 'Task'), type('old', 'Old', { archived: true })]))
+    const result = await gateway.listTypes(API_KEY, SPACE_ID)
+    expect(result.ok && result.value.map(({ key }) => key)).toEqual(['task'])
+  })
+
+  test('carries no icon for a type drawn with an emoji', async () => {
+    const { gateway } = setup(page([type('idea', 'Idea', { icon: { format: 'emoji', emoji: '💡' } })]))
+    const result = await gateway.listTypes(API_KEY, SPACE_ID)
+    expect(result.ok && result.value[0]?.icon).toBeNull()
   })
 
   test('resolves a refused key as unauthorized', async () => {
     const { gateway } = setup(unauthorized)
-    await expect(gateway.listProperties(API_KEY, SPACE_ID)).resolves.toEqual({
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({
       ok: false,
       failure: 'unauthorized'
     })
   })
 
+  test('rejects when a type has no properties', async () => {
+    const { gateway } = setup(page([type('task', 'Task', { properties: undefined })]))
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('types')
+  })
+
   test('rejects when a property has no format', async () => {
-    const { gateway } = setup(page([{ key: 'due_date', name: 'Due date' }]))
-    await expect(gateway.listProperties(API_KEY, SPACE_ID)).rejects.toThrow('properties')
+    const { gateway } = setup(
+      page([type('task', 'Task', { properties: [{ key: 'due_date', name: 'Due date' }] })])
+    )
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('types')
   })
 })
 
 describe('countObjectsWithAnyValue', () => {
-  test('searches for objects with any of the properties set and reads only the total', async () => {
+  test('searches for objects of the type with any of the properties set, reading only the total', async () => {
     const { gateway, calls } = setup({
       status: 200,
       body: { data: [{}], pagination: { total: 37, offset: 0, limit: 1, has_more: true } }
     })
 
     await expect(
-      gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, ['due_date', 'start_date'])
+      gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, 'project', ['due_date', 'start_date'])
     ).resolves.toEqual({ ok: true, value: 37 })
     expect(calls[0]?.url).toBe(`${BASE}/v1/spaces/${SPACE_ID}/search?offset=0&limit=1`)
     expect(calls[0]?.init.method).toBe('POST')
     expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
+      types: ['project'],
       filters: {
         operator: 'or',
         conditions: [
@@ -152,7 +202,7 @@ describe('countObjectsWithAnyValue', () => {
 
   test('resolves a refused key as unauthorized', async () => {
     const { gateway } = setup(unauthorized)
-    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, ['due_date'])).resolves.toEqual({
+    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, 'task', ['due_date'])).resolves.toEqual({
       ok: false,
       failure: 'unauthorized'
     })
@@ -160,7 +210,7 @@ describe('countObjectsWithAnyValue', () => {
 
   test('rejects when the body carries no total', async () => {
     const { gateway } = setup({ status: 200, body: { data: [] } })
-    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, ['due_date'])).rejects.toThrow(
+    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, 'task', ['due_date'])).rejects.toThrow(
       'search'
     )
   })
@@ -173,7 +223,7 @@ describe('countObjectsWithAnyValue', () => {
         }
       })
     )
-    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, ['due_date'])).rejects.toThrow(
+    await expect(gateway.countObjectsWithAnyValue(API_KEY, SPACE_ID, 'task', ['due_date'])).rejects.toThrow(
       'fetch failed'
     )
   })

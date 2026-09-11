@@ -1,13 +1,14 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   nextSchemaSync,
-  userDatePropertyKeys,
+  userDateProperties,
   type SchemaApiKeySource,
   type SchemaGateway,
   type SchemaGatewayResult,
   type SchemaSpace,
   type SchemaSync,
-  type SchemaSyncEvent
+  type SchemaSyncEvent,
+  type SchemaType
 } from '../domain'
 import type { SchemaSyncStore } from './schema-sync-store'
 
@@ -65,19 +66,27 @@ export class SyncSchema {
 
     const refs = accepted(await this.#gateway.listSpaces(apiKey))
     return Promise.all(
-      refs.map(async ({ id, name }) => ({
-        id,
-        name,
-        datedObjectCount: await this.#countDatedObjects(apiKey, id)
-      }))
+      refs.map(async ({ id, name }) => {
+        const types = await this.#fetchDatedTypes(apiKey, id)
+        const datedObjectCount = types.reduce((total, type) => total + type.datedObjectCount, 0)
+        return { id, name, types, datedObjectCount }
+      })
     )
   }
 
-  async #countDatedObjects(apiKey: string, spaceId: string): Promise<number> {
-    const properties = accepted(await this.#gateway.listProperties(apiKey, spaceId))
-    const keys = userDatePropertyKeys(properties)
-    if (keys.length === 0) return 0
-    return accepted(await this.#gateway.countObjectsWithAnyValue(apiKey, spaceId, keys))
+  async #fetchDatedTypes(apiKey: string, spaceId: string): Promise<SchemaType[]> {
+    const refs = accepted(await this.#gateway.listTypes(apiKey, spaceId))
+    const dated = refs.flatMap(({ key, name, icon, properties }) => {
+      const dateProperties = userDateProperties(properties)
+      return dateProperties.length > 0 ? [{ key, name, icon, dateProperties }] : []
+    })
+    return Promise.all(
+      dated.map(async (type) => {
+        const keys = type.dateProperties.map((property) => property.key)
+        const count = await this.#gateway.countObjectsWithAnyValue(apiKey, spaceId, type.key, keys)
+        return { ...type, datedObjectCount: accepted(count) }
+      })
+    )
   }
 }
 

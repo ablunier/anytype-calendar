@@ -1,8 +1,16 @@
 import type { SchemaProperty } from '../model/date-property'
+import type { SchemaTypeIcon } from '../model/type'
 
 export interface SchemaSpaceRef {
   id: string
   name: string
+}
+
+export interface SchemaTypeRef {
+  key: string
+  name: string
+  icon: SchemaTypeIcon | null
+  properties: SchemaProperty[]
 }
 
 /**
@@ -15,12 +23,14 @@ export interface SchemaGateway {
   /** Leaves out one-to-one chats and Anytype's own tech space. */
   listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceRef[]>>
 
-  listProperties(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaProperty[]>>
+  /** Leaves out archived types. */
+  listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>>
 
-  /** Objects with a value in at least one of `propertyKeys`, which must not be empty. */
+  /** Objects of the type with a value in at least one of `propertyKeys`, which must not be empty. */
   countObjectsWithAnyValue(
     apiKey: string,
     spaceId: string,
+    typeKey: string,
     propertyKeys: readonly string[]
   ): Promise<SchemaGatewayResult<number>>
 }

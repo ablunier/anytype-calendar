@@ -1,6 +1,10 @@
+import type { SchemaType } from './type'
+
 export interface SchemaSpace {
   id: string
   name: string
-  /** Objects with a value in at least one user date property — see userDatePropertyKeys. */
+  /** Only the types with a user date property, so only what could go on the calendar. */
+  types: SchemaType[]
+  /** The sum of its types' dated objects. */
   datedObjectCount: number
 }

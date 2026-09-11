@@ -4,8 +4,15 @@ import { InMemorySchemaGateway, type InMemorySchemaSpace } from './in-memory-sch
 const SPACE: InMemorySchemaSpace = {
   id: 'sp_1',
   name: 'Personal',
-  properties: [{ key: 'due_date', name: 'Due date', format: 'date' }],
-  datedObjectCount: 9
+  types: [
+    {
+      key: 'task',
+      name: 'Task',
+      icon: { name: 'checkbox', color: 'lime' },
+      properties: [{ key: 'due_date', name: 'Due date', format: 'date' }],
+      datedObjectCount: 9
+    }
+  ]
 }
 
 function setup() {
@@ -29,13 +36,20 @@ test('lists the seeded spaces after the simulated latency', async () => {
   expect(sleeps).toEqual([50])
 })
 
-test("answers with a space's properties and dated count", async () => {
+test("answers with a space's types and a type's dated count", async () => {
   const { gateway } = setup()
-  await expect(gateway.listProperties('ak_any', 'sp_1')).resolves.toEqual({
+  await expect(gateway.listTypes('ak_any', 'sp_1')).resolves.toEqual({
     ok: true,
-    value: SPACE.properties
+    value: [
+      {
+        key: 'task',
+        name: 'Task',
+        icon: { name: 'checkbox', color: 'lime' },
+        properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
+      }
+    ]
   })
-  await expect(gateway.countObjectsWithAnyValue('ak_any', 'sp_1')).resolves.toEqual({
+  await expect(gateway.countObjectsWithAnyValue('ak_any', 'sp_1', 'task')).resolves.toEqual({
     ok: true,
     value: 9
   })
@@ -43,7 +57,7 @@ test("answers with a space's properties and dated count", async () => {
 
 test('rejects for a space it does not know', async () => {
   const { gateway } = setup()
-  await expect(gateway.listProperties('ak_any', 'sp_missing')).rejects.toThrow('sp_missing')
+  await expect(gateway.listTypes('ak_any', 'sp_missing')).rejects.toThrow('sp_missing')
 })
 
 test('ships the design sample account by default', async () => {

@@ -4,7 +4,8 @@ import type {
   SchemaGatewayResult,
   SchemaProperty,
   SchemaSpaceRef,
-  SchemaSync
+  SchemaSync,
+  SchemaTypeRef
 } from '../domain'
 import { ResetSchemaSync } from './reset-schema-sync'
 import { SchemaSyncStore } from './schema-sync-store'
@@ -18,14 +19,22 @@ const SPACES: SchemaSpaceRef[] = [
   { id: 'sp_empty', name: 'Empty' }
 ]
 
-const PROPERTIES: Record<string, SchemaProperty[]> = {
+const CREATED: SchemaProperty = { key: 'created_date', name: 'Creation date', format: 'date' }
+const DUE: SchemaProperty = { key: 'due_date', name: 'Due date', format: 'date' }
+const START: SchemaProperty = { key: 'start_date', name: 'Start date', format: 'date' }
+const FINISH: SchemaProperty = { key: 'finish_date', name: 'Finish date', format: 'date' }
+const TAG: SchemaProperty = { key: 'tag', name: 'Tag', format: 'multi_select' }
+
+const TYPES: Record<string, SchemaTypeRef[]> = {
   sp_personal: [
-    { key: 'created_date', name: 'Creation date', format: 'date' },
-    { key: 'due_date', name: 'Due date', format: 'date' },
-    { key: 'start_date', name: 'Start date', format: 'date' }
+    { key: 'task', name: 'Task', icon: { name: 'checkbox', color: 'lime' }, properties: [TAG, DUE, CREATED] },
+    { key: 'page', name: 'Page', icon: null, properties: [TAG, CREATED] },
+    { key: 'project', name: 'Project', icon: null, properties: [START, FINISH, CREATED] }
   ],
-  sp_empty: [{ key: 'created_date', name: 'Creation date', format: 'date' }]
+  sp_empty: [{ key: 'page', name: 'Page', icon: null, properties: [CREATED] }]
 }
+
+const COUNTS: Record<string, number> = { task: 30, project: 12 }
 
 const ok = <T>(value: T): SchemaGatewayResult<T> => ({ ok: true, value })
 const unauthorized = { ok: false, failure: 'unauthorized' } as const
@@ -41,10 +50,10 @@ function deferred<T>() {
 function setup(apiKey: string | null = API_KEY) {
   const gateway = {
     listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ok(SPACES)),
-    listProperties: vi.fn<SchemaGateway['listProperties']>(async (_key, spaceId) =>
-      ok(PROPERTIES[spaceId] ?? [])
-    ),
-    countObjectsWithAnyValue: vi.fn<SchemaGateway['countObjectsWithAnyValue']>(async () => ok(42))
+    listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? [])),
+    countObjectsWithAnyValue: vi.fn<SchemaGateway['countObjectsWithAnyValue']>(
+      async (_key, _spaceId, typeKey) => ok(COUNTS[typeKey] ?? 0)
+    )
   }
   const store = new SchemaSyncStore()
   const syncSchema = new SyncSchema({
@@ -56,7 +65,7 @@ function setup(apiKey: string | null = API_KEY) {
   return { gateway, store, syncSchema }
 }
 
-test('reads every space and counts its dated objects', async () => {
+test('reads every space with its dated types and their counts', async () => {
   const { gateway, store, syncSchema } = setup()
 
   await syncSchema.execute()
@@ -66,24 +75,50 @@ test('reads every space and counts its dated objects', async () => {
     last: {
       syncedAt: NOW,
       spaces: [
-        { id: 'sp_personal', name: 'Personal', datedObjectCount: 42 },
-        { id: 'sp_empty', name: 'Empty', datedObjectCount: 0 }
+        {
+          id: 'sp_personal',
+          name: 'Personal',
+          datedObjectCount: 42,
+          types: [
+            {
+              key: 'task',
+              name: 'Task',
+              icon: { name: 'checkbox', color: 'lime' },
+              dateProperties: [{ key: 'due_date', name: 'Due date' }],
+              datedObjectCount: 30
+            },
+            {
+              key: 'project',
+              name: 'Project',
+              icon: null,
+              dateProperties: [
+                { key: 'start_date', name: 'Start date' },
+                { key: 'finish_date', name: 'Finish date' }
+              ],
+              datedObjectCount: 12
+            }
+          ]
+        },
+        { id: 'sp_empty', name: 'Empty', types: [], datedObjectCount: 0 }
       ]
     }
   })
   expect(gateway.listSpaces).toHaveBeenCalledWith(API_KEY)
-  expect(gateway.countObjectsWithAnyValue).toHaveBeenCalledWith(API_KEY, 'sp_personal', [
-    'due_date',
-    'start_date'
+  expect(gateway.listTypes).toHaveBeenCalledWith(API_KEY, 'sp_personal')
+  expect(gateway.countObjectsWithAnyValue).toHaveBeenCalledWith(API_KEY, 'sp_personal', 'project', [
+    'start_date',
+    'finish_date'
   ])
 })
 
-test('asks for no count in a space without user date properties', async () => {
+test('asks for no count for a type without user date properties', async () => {
   const { gateway, syncSchema } = setup()
   await syncSchema.execute()
+  expect(gateway.countObjectsWithAnyValue).toHaveBeenCalledTimes(2)
   expect(gateway.countObjectsWithAnyValue).not.toHaveBeenCalledWith(
     expect.anything(),
-    'sp_empty',
+    expect.anything(),
+    'page',
     expect.anything()
   )
 })
@@ -108,7 +143,7 @@ test('fails as unauthorized without a stored key, asking Anytype nothing', async
   expect(gateway.listSpaces).not.toHaveBeenCalled()
 })
 
-test.each(['listSpaces', 'listProperties', 'countObjectsWithAnyValue'] as const)(
+test.each(['listSpaces', 'listTypes', 'countObjectsWithAnyValue'] as const)(
   'fails as unauthorized when %s is refused',
   async (method) => {
     const { gateway, store, syncSchema } = setup()
@@ -120,7 +155,7 @@ test.each(['listSpaces', 'listProperties', 'countObjectsWithAnyValue'] as const)
 
 test('fails as unreachable when a request rejects', async () => {
   const { gateway, store, syncSchema } = setup()
-  gateway.listProperties.mockRejectedValue(new TypeError('fetch failed'))
+  gateway.listTypes.mockRejectedValue(new TypeError('fetch failed'))
   await syncSchema.execute()
   expect(store.get()).toEqual({ phase: 'failed', failure: 'unreachable', at: NOW })
 })

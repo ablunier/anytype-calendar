@@ -4,5 +4,6 @@
 export * from './model/date-property'
 export * from './model/space'
 export * from './model/sync'
+export * from './model/type'
 export * from './gateways/api-key-source'
 export * from './gateways/schema-gateway'

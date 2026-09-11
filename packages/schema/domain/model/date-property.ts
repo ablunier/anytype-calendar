@@ -18,8 +18,14 @@ export const SCHEMA_SYSTEM_DATE_KEYS: ReadonlySet<string> = new Set([
   'last_message_date'
 ])
 
-export function userDatePropertyKeys(properties: readonly SchemaProperty[]): string[] {
+export interface SchemaDateProperty {
+  key: string
+  name: string
+}
+
+/** In the order given, which for Anytype is the order the type lists them in. */
+export function userDateProperties(properties: readonly SchemaProperty[]): SchemaDateProperty[] {
   return properties
     .filter((property) => property.format === 'date' && !SCHEMA_SYSTEM_DATE_KEYS.has(property.key))
-    .map((property) => property.key)
+    .map(({ key, name }) => ({ key, name }))
 }

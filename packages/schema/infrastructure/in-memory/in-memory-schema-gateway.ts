@@ -2,15 +2,24 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
-  SchemaSpaceRef
+  SchemaSpaceRef,
+  SchemaTypeIcon,
+  SchemaTypeRef
 } from '../../domain'
+
+export interface InMemorySchemaType {
+  key: string
+  name: string
+  icon: SchemaTypeIcon | null
+  properties: SchemaProperty[]
+  /** What a search over the type's user date properties reports. */
+  datedObjectCount: number
+}
 
 export interface InMemorySchemaSpace {
   id: string
   name: string
-  properties: SchemaProperty[]
-  /** What a search over the space's user date properties reports. */
-  datedObjectCount: number
+  types: InMemorySchemaType[]
 }
 
 export interface InMemorySchemaGatewayOptions {
@@ -19,41 +28,93 @@ export interface InMemorySchemaGatewayOptions {
   requestLatencyMs?: number
 }
 
+const date = (key: string, name: string): SchemaProperty => ({ key, name, format: 'date' })
+
 const SYSTEM_PROPERTIES: SchemaProperty[] = [
-  { key: 'created_date', name: 'Creation date', format: 'date' },
-  { key: 'last_modified_date', name: 'Last modified date', format: 'date' },
+  date('created_date', 'Creation date'),
+  date('last_modified_date', 'Last modified date'),
   { key: 'tag', name: 'Tag', format: 'multi_select' }
 ]
 
-/** The design's sample account. */
+function type(
+  key: string,
+  name: string,
+  icon: SchemaTypeIcon,
+  dates: SchemaProperty[],
+  datedObjectCount: number
+): InMemorySchemaType {
+  return { key, name, icon, properties: [...dates, ...SYSTEM_PROPERTIES], datedObjectCount }
+}
+
+const TASK = { name: 'checkbox', color: 'lime' }
+const PROJECT = { name: 'hammer', color: 'orange' }
+
+/** The design's sample account. Each space's Note has only system dates, so it never shows. */
 export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
   {
     id: 'sp_personal',
     name: 'Personal',
-    properties: [
-      ...SYSTEM_PROPERTIES,
-      { key: 'due_date', name: 'Due date', format: 'date' },
-      { key: 'start_date', name: 'Start date', format: 'date' }
-    ],
-    datedObjectCount: 128
+    types: [
+      type('task', 'Task', TASK, [date('due_date', 'Due date')], 54),
+      type(
+        'meeting',
+        'Meeting',
+        { name: 'people', color: 'teal' },
+        [date('start_date', 'Start date'), date('end_date', 'End date')],
+        18
+      ),
+      type('contact', 'Person', { name: 'person-circle', color: 'pink' }, [date('birthday', 'Birthday')], 25),
+      type('note', 'Note', { name: 'create', color: 'yellow' }, [], 0)
+    ]
   },
   {
     id: 'sp_studio',
     name: 'Studio',
-    properties: [...SYSTEM_PROPERTIES, { key: 'due_date', name: 'Due date', format: 'date' }],
-    datedObjectCount: 96
+    types: [
+      type(
+        'project',
+        'Project',
+        PROJECT,
+        [date('start_date', 'Start date'), date('due_date', 'Due date')],
+        12
+      ),
+      type('task', 'Task', TASK, [date('due_date', 'Due date')], 47),
+      type(
+        'invoice',
+        'Invoice',
+        { name: 'receipt', color: 'red' },
+        [date('issued_on', 'Issued on'), date('due_date', 'Due date')],
+        7
+      ),
+      type('note', 'Note', { name: 'create', color: 'yellow' }, [], 0)
+    ]
   },
   {
     id: 'sp_reading',
     name: 'Reading',
-    properties: [...SYSTEM_PROPERTIES, { key: 'finish_date', name: 'Finished on', format: 'date' }],
-    datedObjectCount: 64
+    types: [
+      type(
+        'book',
+        'Book',
+        { name: 'book', color: 'purple' },
+        [date('start_date', 'Start date'), date('finish_date', 'Finish date')],
+        22
+      )
+    ]
   },
   {
     id: 'sp_archive',
     name: 'Archive 2024',
-    properties: [...SYSTEM_PROPERTIES, { key: 'closed_on', name: 'Closed on', format: 'date' }],
-    datedObjectCount: 212
+    types: [
+      type(
+        'project',
+        'Project',
+        PROJECT,
+        [date('start_date', 'Start date'), date('closed_on', 'Closed on')],
+        88
+      ),
+      type('task', 'Task', TASK, [date('due_date', 'Due date')], 124)
+    ]
   }
 ]
 
@@ -78,20 +139,25 @@ export class InMemorySchemaGateway implements SchemaGateway {
     return { ok: true, value: this.#spaces.map(({ id, name }) => ({ id, name })) }
   }
 
-  async listProperties(
-    _apiKey: string,
-    spaceId: string
-  ): Promise<SchemaGatewayResult<SchemaProperty[]>> {
+  async listTypes(_apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
     await this.#sleep(this.#requestLatencyMs)
-    return { ok: true, value: this.#space(spaceId).properties.map((property) => ({ ...property })) }
+    const types = this.#space(spaceId).types.map(({ key, name, icon, properties }) => ({
+      key,
+      name,
+      icon: icon && { ...icon },
+      properties: properties.map((property) => ({ ...property }))
+    }))
+    return { ok: true, value: types }
   }
 
   async countObjectsWithAnyValue(
     _apiKey: string,
-    spaceId: string
+    spaceId: string,
+    typeKey: string
   ): Promise<SchemaGatewayResult<number>> {
     await this.#sleep(this.#requestLatencyMs)
-    return { ok: true, value: this.#space(spaceId).datedObjectCount }
+    const type = this.#space(spaceId).types.find(({ key }) => key === typeKey)
+    return { ok: true, value: type?.datedObjectCount ?? 0 }
   }
 
   #space(spaceId: string): InMemorySchemaSpace {

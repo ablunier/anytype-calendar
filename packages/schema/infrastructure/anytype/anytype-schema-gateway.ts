@@ -3,7 +3,9 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
-  SchemaSpaceRef
+  SchemaSpaceRef,
+  SchemaTypeIcon,
+  SchemaTypeRef
 } from '../../domain'
 
 /** The largest page the local API serves. */
@@ -38,25 +40,31 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     return { ok: true, value: spaces }
   }
 
-  async listProperties(
-    apiKey: string,
-    spaceId: string
-  ): Promise<SchemaGatewayResult<SchemaProperty[]>> {
-    const path = `/v1/spaces/${encodeURIComponent(spaceId)}/properties`
-    const result = await this.#listAll(apiKey, path, 'properties')
+  async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
+    const path = `/v1/spaces/${encodeURIComponent(spaceId)}/types`
+    const result = await this.#listAll(apiKey, path, 'types')
     if (!result.ok) return result
-    const properties = result.value.map((item) => {
+    const types = result.value.flatMap((item) => {
       const key = stringField(item, 'key')
-      const format = stringField(item, 'format')
-      if (key === undefined || format === undefined) throw malformed('properties')
-      return { key, name: stringField(item, 'name') ?? '', format }
+      const properties = field(item, 'properties')
+      if (key === undefined || !Array.isArray(properties)) throw malformed('types')
+      if (field(item, 'archived') === true) return []
+      return [
+        {
+          key,
+          name: stringField(item, 'name') ?? '',
+          icon: toIcon(field(item, 'icon')),
+          properties: properties.map(toProperty)
+        }
+      ]
     })
-    return { ok: true, value: properties }
+    return { ok: true, value: types }
   }
 
   async countObjectsWithAnyValue(
     apiKey: string,
     spaceId: string,
+    typeKey: string,
     propertyKeys: readonly string[]
   ): Promise<SchemaGatewayResult<number>> {
     // Only the total is read, so one result is enough to get it.
@@ -65,6 +73,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
       path: `/v1/spaces/${encodeURIComponent(spaceId)}/search?offset=0&limit=1`,
       apiKey,
       body: {
+        types: [typeKey],
         filters: {
           operator: 'or',
           conditions: propertyKeys.map((key) => ({ property_key: key, condition: 'nempty' }))
@@ -105,6 +114,22 @@ function refused(
 ): { ok: false; failure: 'unauthorized' } {
   if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
   throw new Error(`Anytype answered ${response.status} when asked for ${what}`)
+}
+
+function toProperty(item: unknown): SchemaProperty {
+  const key = stringField(item, 'key')
+  const format = stringField(item, 'format')
+  if (key === undefined || format === undefined) throw malformed('types')
+  return { key, name: stringField(item, 'name') ?? '', format }
+}
+
+/** Anytype also draws types with an emoji or an image; only a named icon is carried. */
+function toIcon(icon: unknown): SchemaTypeIcon | null {
+  const name = stringField(icon, 'name')
+  const color = stringField(icon, 'color')
+  return field(icon, 'format') === 'icon' && name !== undefined && color !== undefined
+    ? { name, color }
+    : null
 }
 
 function toPage(body: unknown): Page | null {
