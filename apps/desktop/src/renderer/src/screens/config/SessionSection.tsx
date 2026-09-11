@@ -80,8 +80,8 @@ export function SessionSection({
               <span className="type-ui text-small text-ink-primary">Revoke API key</span>
               <span className="max-w-prose-max type-caption text-tiny text-ink-body">
                 To revoke it for every space on the account, open the Anytype app, go to
-                Settings → API Keys and delete the key ending in {apiKey.hint}. Then sign out
-                here. Reconnecting means running the 4-digit code flow again.
+                Settings → API Keys and delete Calendar for Anytype. Then sign out here.
+                Reconnecting means running the 4-digit code flow again.
               </span>
             </div>
           </div>
