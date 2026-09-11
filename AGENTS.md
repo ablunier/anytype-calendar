@@ -13,7 +13,7 @@ builds their event schema from their Anytype data — reads each space's dated t
 with a user date property, and how many objects fill one in) and tracks the last sync,
 which feeds the post-sign-in success card and onboarding. It also persists the user's
 selection — which spaces and types go on the calendar, and each type's From/To date
-property — which onboarding saves. The config and month screens still run on mock data.
+property — which onboarding and Settings save. The month screen still runs on mock data.
 
 ## Commands
 
@@ -170,6 +170,9 @@ Standard electron-vite three-process layout:
     the local screen: until a selection is saved (`unset`), every screen past the success
     card is onboarding, so a restored key that never finished it still gets it. Continue
     saves the picks; Skip saves an empty selection on first run and saves nothing later.
+    Settings (`screens/config`) saves each change as it is made, and `SaveSchemaSelection`
+    runs those saves one at a time, in order. Both screens start their picks only once the
+    account has been read: over no types, every saved date would fall back to a default.
     The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
@@ -187,10 +190,10 @@ Standard electron-vite three-process layout:
   - `components/app/` — app-level chrome shared across screens (`Wordmark`, `SpaceDot`,
     `TypeTile`).
   - `lib/calendar.ts` — calendar grid/date math for the month view.
-  - `mocks/index.ts` — sample calendar data (spaces, types, events) for the config and
-    month screens; stands in for the eventual IPC-backed data layer. Auth, the success
-    card and onboarding are not mocked here — they run in main against the contexts'
-    adapters.
+  - `mocks/index.ts` — sample calendar data (spaces, types, events, and which of them are
+    tracked) for the month screen; stands in for the eventual IPC-backed data layer. Auth,
+    the success card, onboarding and Settings are not mocked here — they run in main
+    against the contexts' adapters.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as
