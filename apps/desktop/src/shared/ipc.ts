@@ -10,7 +10,6 @@ export const IpcChannel = {
   authSubmitCode: 'auth:submit-code',
   authStepBack: 'auth:step-back',
   authSignOut: 'auth:sign-out',
-  authRevoke: 'auth:revoke',
   authCopyKey: 'auth:copy-key'
 } as const
 
@@ -25,8 +24,6 @@ export interface CalendarApi {
     submitCode(code: string): Promise<void>
     stepBack(): Promise<void>
     signOut(): Promise<void>
-    /** Rejects, leaving the session connected, when Anytype cannot be reached. */
-    revoke(): Promise<void>
     /**
      * Main writes the key to the clipboard, so it never reaches the renderer. Resolves
      * whether there was a key to copy.

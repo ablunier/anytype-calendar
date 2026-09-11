@@ -76,7 +76,6 @@ function App(): React.JSX.Element | null {
         onBack={() => setScreen('month')}
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
-        onRevoke={() => window.api.auth.revoke()}
       />
     )
   }

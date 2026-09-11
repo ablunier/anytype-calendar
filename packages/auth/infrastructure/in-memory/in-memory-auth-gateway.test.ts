@@ -79,11 +79,3 @@ describe('exchangeCode', () => {
     expect(slept).toEqual([300, 5, 5])
   })
 })
-
-describe('revokeKey', () => {
-  test('logs only the last four characters of the key', async () => {
-    const { gateway, logs } = setup()
-    await gateway.revokeKey('ak_mock_secret4c19')
-    expect(logs).toEqual(['[in-memory anytype] revoked key …4c19'])
-  })
-})

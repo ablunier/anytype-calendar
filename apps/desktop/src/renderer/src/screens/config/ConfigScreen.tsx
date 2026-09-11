@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import type { ApiKeyView, ObjectType, Space } from '@renderer/types'
 import { SpaceChip } from '@renderer/components/app/SpaceDot'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace } from '@renderer/lib/calendar'
-import { RevokeDialog } from './RevokeDialog'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -18,7 +16,6 @@ export interface ConfigScreenProps {
   onBack: () => void
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
-  onRevoke: () => Promise<void>
 }
 
 export function ConfigScreen({
@@ -29,11 +26,9 @@ export function ConfigScreen({
   apiKey,
   onBack,
   onCopyKey,
-  onSignOut,
-  onRevoke
+  onSignOut
 }: ConfigScreenProps): React.JSX.Element {
   const selection = useTypeSelection(types, initialTypeKeys, initialSpaceKeys)
-  const [revoking, setRevoking] = useState(false)
 
   return (
     <div className="flex h-full flex-col bg-surface-page">
@@ -99,21 +94,9 @@ export function ConfigScreen({
             </p>
           </section>
 
-          <SessionSection
-            apiKey={apiKey}
-            onCopyKey={onCopyKey}
-            onSignOut={onSignOut}
-            onRevokeRequest={() => setRevoking(true)}
-          />
+          <SessionSection apiKey={apiKey} onCopyKey={onCopyKey} onSignOut={onSignOut} />
         </div>
       </main>
-
-      <RevokeDialog
-        open={revoking}
-        spaceCount={spaces.length}
-        onClose={() => setRevoking(false)}
-        onRevoke={onRevoke}
-      />
     </div>
   )
 }

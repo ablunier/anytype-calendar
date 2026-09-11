@@ -58,9 +58,4 @@ export class InMemoryAuthGateway implements AuthGateway {
     this.#openChallenges.delete(challengeId)
     return { ok: true, apiKey: `ak_mock_${this.#randomId()}` }
   }
-
-  async revokeKey(apiKey: string): Promise<void> {
-    await this.#sleep(this.#requestLatencyMs)
-    this.#log(`[in-memory anytype] revoked key …${apiKey.slice(-4)}`)
-  }
 }

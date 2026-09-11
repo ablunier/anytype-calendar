@@ -18,7 +18,6 @@ const api: CalendarApi = {
     submitCode: (code) => ipcRenderer.invoke(IpcChannel.authSubmitCode, code),
     stepBack: () => ipcRenderer.invoke(IpcChannel.authStepBack),
     signOut: () => ipcRenderer.invoke(IpcChannel.authSignOut),
-    revoke: () => ipcRenderer.invoke(IpcChannel.authRevoke),
     copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey)
   }
 }

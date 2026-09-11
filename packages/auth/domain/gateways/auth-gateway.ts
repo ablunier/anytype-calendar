@@ -12,6 +12,9 @@ export type AuthExchangeResult =
  * Every method rejects when Anytype cannot be reached. There is no cancellation — the
  * domain has no AbortSignal — so a caller that stops caring about an exchange discards its
  * result instead.
+ *
+ * Nothing revokes a key: the local API has no endpoint for it. A key is deleted only by
+ * the user, in the Anytype app's API key settings.
  */
 export interface AuthGateway {
   /** POST /v1/auth/challenges. Anytype shows the user a code; resolves the challenge id. */
@@ -19,7 +22,4 @@ export interface AuthGateway {
 
   /** POST /v1/auth/api_keys. */
   exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult>
-
-  /** Deletes the key in Anytype itself, not just on this computer. */
-  revokeKey(apiKey: string): Promise<void>
 }

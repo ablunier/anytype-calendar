@@ -8,7 +8,6 @@ export interface SessionSectionProps {
   /** Resolves whether a key was copied. */
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
-  onRevokeRequest: () => void
 }
 
 const COPIED_FEEDBACK_MS = 2_000
@@ -22,8 +21,7 @@ function keySummary({ hint, issuedAt }: ApiKeyView): string {
 export function SessionSection({
   apiKey,
   onCopyKey,
-  onSignOut,
-  onRevokeRequest
+  onSignOut
 }: SessionSectionProps): React.JSX.Element {
   const [copied, setCopied] = useState(false)
 
@@ -62,8 +60,7 @@ export function SessionSection({
                 Sign out of this computer
               </span>
               <span className="type-caption text-tiny text-ink-secondary">
-                Forgets the key here. The key stays valid in Anytype, so you can sign back in
-                with it.
+                Forgets the key here. It stays valid in Anytype until you delete it there.
               </span>
             </div>
             <Button variant="secondary" size="sm" onClick={onSignOut}>
@@ -73,21 +70,22 @@ export function SessionSection({
         </Card>
       </section>
 
+      {/* The local API cannot delete keys, so revoking is done in Anytype itself. */}
       <section>
         <h2 className="mb-10 type-heading text-h4 text-ink-primary">Revoke access</h2>
-        <div className="flex items-start gap-12 rounded-card border border-clay-300 bg-surface-danger-soft p-16">
-          <Icon name="circle-alert" size={16} className="mt-2 text-clay-600" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <span className="type-ui text-small text-ink-primary">Revoke API key</span>
-            <span className="max-w-prose-max type-caption text-tiny text-ink-body">
-              Deletes the key in Anytype as well, for every space on the account. This cannot
-              be undone — you will have to run the 4-digit code flow again to reconnect.
-            </span>
+        <Card>
+          <div className="flex items-start gap-12">
+            <Icon name="info" size={16} className="mt-2 text-ink-tertiary" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <span className="type-ui text-small text-ink-primary">Revoke API key</span>
+              <span className="max-w-prose-max type-caption text-tiny text-ink-body">
+                To revoke it for every space on the account, open the Anytype app, go to
+                Settings → API Keys and delete the key ending in {apiKey.hint}. Then sign out
+                here. Reconnecting means running the 4-digit code flow again.
+              </span>
+            </div>
           </div>
-          <Button variant="danger" size="sm" iconLeft="trash" onClick={onRevokeRequest}>
-            Revoke key
-          </Button>
-        </div>
+        </Card>
       </section>
     </>
   )

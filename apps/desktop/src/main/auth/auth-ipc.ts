@@ -12,7 +12,6 @@ export function registerAuthIpc({ authService, authSession }: AppServices): void
   })
   ipcMain.handle(IpcChannel.authStepBack, () => authService.stepBack())
   ipcMain.handle(IpcChannel.authSignOut, () => authService.signOut())
-  ipcMain.handle(IpcChannel.authRevoke, () => authService.revoke())
   ipcMain.handle(IpcChannel.authCopyKey, () =>
     authService.copyKeyTo((apiKey) => clipboard.writeText(apiKey))
   )

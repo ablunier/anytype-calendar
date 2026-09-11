@@ -31,8 +31,7 @@ function setup(initialCredential: AuthCredential | null = null) {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async (_challengeId, code) =>
       code === VALID_CODE ? { ok: true, apiKey: API_KEY } : { ok: false, failure: 'invalid-code' }
-    ),
-    revokeKey: vi.fn<AuthGateway['revokeKey']>(async () => {})
+    )
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),
@@ -208,7 +207,7 @@ describe('submitCode', () => {
 })
 
 describe('late exchange results', () => {
-  test('a success after stepping back is never stored, and its key is revoked in Anytype', async () => {
+  test('a success after stepping back is never stored', async () => {
     const { service, store, gateway, credentials } = setup()
     await service.startConnection()
     const exchange = deferred<AuthExchangeResult>()
@@ -221,7 +220,6 @@ describe('late exchange results', () => {
 
     expect(store.get().phase).toBe('awaiting-code')
     expect(credentials.save).not.toHaveBeenCalled()
-    expect(gateway.revokeKey).toHaveBeenCalledExactlyOnceWith(API_KEY)
   })
 
   test('a failure after stepping back is dropped', async () => {
@@ -236,7 +234,6 @@ describe('late exchange results', () => {
     await submitting
 
     expect(store.get().phase).toBe('awaiting-code')
-    expect(gateway.revokeKey).not.toHaveBeenCalled()
   })
 
   test("a superseded attempt's result never overrides the current one", async () => {
@@ -257,11 +254,10 @@ describe('late exchange results', () => {
     await first
 
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'invalid-code' })
-    expect(gateway.revokeKey).toHaveBeenCalledExactlyOnceWith(API_KEY)
   })
 
-  test('stepping back while the key is being saved un-stores and revokes it', async () => {
-    const { service, store, gateway, credentials, stored } = setup()
+  test('stepping back while the key is being saved un-stores it', async () => {
+    const { service, store, credentials, stored } = setup()
     await service.startConnection()
     const saving = deferred<void>()
     credentials.save.mockImplementationOnce(async () => saving.promise)
@@ -275,18 +271,16 @@ describe('late exchange results', () => {
     expect(store.get().phase).toBe('awaiting-code')
     expect(stored()).toBeNull()
     expect(credentials.clear).toHaveBeenCalledOnce()
-    expect(gateway.revokeKey).toHaveBeenCalledExactlyOnceWith(API_KEY)
   })
 })
 
 describe('signOut', () => {
-  test('forgets the key locally without revoking it in Anytype', async () => {
-    const { service, store, gateway, stored } = await connected()
+  test('forgets the key and signs out', async () => {
+    const { service, store, stored } = await connected()
     await service.signOut()
 
     expect(store.get()).toEqual({ phase: 'signed-out' })
     expect(stored()).toBeNull()
-    expect(gateway.revokeKey).not.toHaveBeenCalled()
   })
 })
 
@@ -305,34 +299,5 @@ describe('copyKeyTo', () => {
 
     await expect(service.copyKeyTo(write)).resolves.toBe(false)
     expect(write).not.toHaveBeenCalled()
-  })
-})
-
-describe('revoke', () => {
-  test('revokes the stored key in Anytype, then signs out', async () => {
-    const { service, store, gateway, stored } = await connected()
-    await service.revoke()
-
-    expect(gateway.revokeKey).toHaveBeenCalledExactlyOnceWith(API_KEY)
-    expect(store.get()).toEqual({ phase: 'signed-out' })
-    expect(stored()).toBeNull()
-  })
-
-  test('signs out without calling Anytype when no key is stored', async () => {
-    const { service, store, gateway } = setup()
-    store.set({ phase: 'connected', key: { hint: '4c19', issuedAt: 0 } })
-    await service.revoke()
-
-    expect(gateway.revokeKey).not.toHaveBeenCalled()
-    expect(store.get()).toEqual({ phase: 'signed-out' })
-  })
-
-  test('stays connected, key kept, when Anytype cannot be reached', async () => {
-    const { service, store, gateway, stored } = await connected()
-    gateway.revokeKey.mockRejectedValueOnce(new Error('ECONNREFUSED'))
-
-    await expect(service.revoke()).rejects.toThrow('ECONNREFUSED')
-    expect(store.get().phase).toBe('connected')
-    expect(stored()).toEqual(expect.objectContaining({ apiKey: API_KEY }))
   })
 })
