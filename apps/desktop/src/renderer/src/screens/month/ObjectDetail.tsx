@@ -1,5 +1,5 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { dateLabel, isoDate } from '@renderer/lib/calendar'
 
@@ -62,7 +62,7 @@ export function ObjectDetail({
           ) : null}
           {space ? (
             <span className="flex items-center gap-6 type-caption text-tiny text-ink-secondary">
-              <SpaceDot space={space} size={6} />
+              <SpaceMonogram space={space} />
               {space.name}
             </span>
           ) : null}

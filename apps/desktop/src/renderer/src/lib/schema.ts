@@ -19,9 +19,6 @@ import type {
 } from '@renderer/types'
 import { offersDates } from './calendar'
 
-/** Anytype gives spaces no colour the calendar can use, so each takes one by position. */
-const SPACE_HUES: CategoryHue[] = ['teal', 'ochre', 'plum', 'graphite', 'sage', 'clay', 'dusk', 'rose']
-
 /** Anytype's ten icon colours, folded onto the calendar's eight hues. */
 const TYPE_HUES: Record<string, CategoryHue> = {
   grey: 'graphite',
@@ -80,10 +77,9 @@ const DAY_MS = 24 * HOUR_MS
 
 /** The spaces of the last successful sync; empty until there is one. */
 export function spacesFor(snapshot: SchemaSnapshot): Space[] {
-  return syncedSpaces(snapshot).map((space, index) => ({
+  return syncedSpaces(snapshot).map((space) => ({
     key: space.id,
     name: space.name,
-    category: SPACE_HUES[index % SPACE_HUES.length] ?? 'graphite',
     objects: space.datedObjectCount
   }))
 }

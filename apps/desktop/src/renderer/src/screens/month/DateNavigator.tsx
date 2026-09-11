@@ -1,5 +1,5 @@
 import type { Space } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Badge, Button, IconButton, Tooltip } from '@renderer/components/ui'
 
 export interface DateNavigatorProps {
@@ -46,7 +46,7 @@ export function DateNavigator({
               key={space.key}
               className="flex shrink-0 items-center gap-6 type-caption text-tiny text-ink-secondary"
             >
-              <SpaceDot space={space} size={6} />
+              <SpaceMonogram space={space} />
               {space.name}
             </li>
           ))}

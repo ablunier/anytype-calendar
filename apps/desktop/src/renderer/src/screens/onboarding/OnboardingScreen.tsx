@@ -1,5 +1,5 @@
 import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace } from '@renderer/lib/calendar'
@@ -113,7 +113,7 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
                 return (
                   <section key={space.key}>
                     <div className="mb-8 flex items-center gap-8">
-                      <SpaceDot space={space} />
+                      <SpaceMonogram space={space} />
                       <h2 className="type-ui text-small text-ink-primary">{space.name}</h2>
                       <span className="type-numeral text-tiny text-ink-tertiary">
                         {spaceTypes.length} dated types

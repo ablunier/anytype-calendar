@@ -1,5 +1,5 @@
 import type { Space, SyncState, SyncView } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, SyncStatus } from '@renderer/components/ui'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
 
@@ -37,7 +37,7 @@ export function AuthSuccess({
         ) : (
           spaces.map((space) => (
             <li key={space.key} className="flex items-center gap-8">
-              <SpaceDot space={space} />
+              <SpaceMonogram space={space} />
               <span className="flex-1 type-ui text-small text-ink-body">{space.name}</span>
               <span className="type-numeral text-tiny text-ink-tertiary">{space.objects} dated</span>
             </li>

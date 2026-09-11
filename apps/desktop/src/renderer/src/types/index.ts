@@ -6,7 +6,7 @@
  * domain types, and these become the view-model boundary they map onto.
  */
 
-/** Decorative only — never the sole carrier of meaning. */
+/** Decorative only — never the sole carrier of meaning. Types have one; spaces do not. */
 export type CategoryHue =
   | 'sage'
   | 'clay'
@@ -20,7 +20,6 @@ export type CategoryHue =
 export interface Space {
   key: string
   name: string
-  category: CategoryHue
   /** Counts only objects carrying a date. */
   objects: number
 }

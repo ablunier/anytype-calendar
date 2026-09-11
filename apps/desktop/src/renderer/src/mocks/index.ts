@@ -11,10 +11,10 @@ const dates = (...labels: string[]): DateProperty[] =>
   labels.map((label) => ({ key: label.toLowerCase().replace(/[^a-z0-9]+/g, '_'), label }))
 
 const SPACES: Space[] = [
-  { key: 'personal', name: 'Personal', category: 'teal', objects: 128 },
-  { key: 'studio', name: 'Studio', category: 'ochre', objects: 96 },
-  { key: 'reading', name: 'Reading', category: 'plum', objects: 64 },
-  { key: 'archive', name: 'Archive 2024', category: 'graphite', objects: 212 }
+  { key: 'personal', name: 'Personal', objects: 128 },
+  { key: 'studio', name: 'Studio', objects: 96 },
+  { key: 'reading', name: 'Reading', objects: 64 },
+  { key: 'archive', name: 'Archive 2024', objects: 212 }
 ]
 
 const TYPES: ObjectType[] = [

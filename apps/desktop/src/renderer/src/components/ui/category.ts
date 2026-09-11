@@ -5,7 +5,7 @@ import type { CategoryHue } from '@renderer/types'
  * spelled out, which is also what makes the set of legal hues checkable by the compiler.
  */
 
-/** Solid category fill — all-day chips, checkbox swatches, space dots. */
+/** Solid category fill — all-day chips, checkbox swatches, event dots. */
 export const catBg: Record<CategoryHue, string> = {
   sage: 'bg-cat-sage',
   clay: 'bg-cat-clay',

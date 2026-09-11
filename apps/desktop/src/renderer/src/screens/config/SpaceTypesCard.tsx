@@ -1,5 +1,5 @@
 import type { ObjectType, Space } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Card, Checkbox } from '@renderer/components/ui'
 import type { TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { TypeConfigRow } from './TypeConfigRow'
@@ -29,7 +29,7 @@ export function SpaceTypesCard({
           onChange={() => selection.toggleSpace(space.key)}
           ariaLabel={`Show the ${space.name} space`}
         />
-        <SpaceDot space={space} />
+        <SpaceMonogram space={space} />
         <h3 className="type-ui text-base text-ink-primary">{space.name}</h3>
         <div className="flex-1" />
         {!on ? (

@@ -1,5 +1,5 @@
 import type { ObjectType, Space } from '@renderer/types'
-import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Checkbox } from '@renderer/components/ui'
 import { typesInSpace } from '@renderer/lib/calendar'
 
@@ -35,7 +35,7 @@ export function SpacePicker({
                 onChange={() => onToggle(space.key)}
                 ariaLabel={`Show the ${space.name} space`}
               />
-              <SpaceDot space={space} />
+              <SpaceMonogram space={space} />
               <span
                 className={[
                   'min-w-0 flex-1 truncate type-ui text-small',
