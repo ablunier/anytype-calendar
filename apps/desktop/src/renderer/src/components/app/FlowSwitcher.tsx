@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { IconButton } from '../ui'
+import { IconButton } from '@renderer/components/ui'
 
 export interface FlowFrame {
   id: string

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { IconName } from '../../types'
+import type { IconName } from '@renderer/types'
 import { Icon } from './Icon'
 
 export type BadgeTone = 'neutral' | 'accent' | 'warning' | 'danger' | 'info'

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import type { CalendarEvent, MonthCell, ObjectType } from '../../types'
-import { eventsOnDay, FIRST_WEEKEND_INDEX, isoDate, WEEKDAYS } from '../../lib/calendar'
+import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import { eventsOnDay, FIRST_WEEKEND_INDEX, isoDate, WEEKDAYS } from '@renderer/lib/calendar'
 import { MonthDayCell } from './MonthDayCell'
 
 export interface MonthGridProps {

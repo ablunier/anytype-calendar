@@ -1,4 +1,4 @@
-import type { CategoryHue } from '../../types'
+import type { CategoryHue } from '@renderer/types'
 
 /* Tailwind reads class names as literal strings out of the source, so a hue can never be
  * interpolated into a class (`bg-cat-${hue}` produces no CSS). These maps keep every class

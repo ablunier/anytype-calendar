@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react'
-import type { CalendarEvent, MonthCell, ObjectType } from '../../types'
+import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { EventChip } from './EventChip'
 
 /** Chips beyond this are summarised as "+n more". */

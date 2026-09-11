@@ -1,7 +1,7 @@
-import type { ObjectType, Space } from '../../types'
-import { SpaceDot } from '../../components/app/SpaceDot'
-import { Card, Checkbox } from '../../components/ui'
-import type { TypeSelection } from '../../hooks/useTypeSelection'
+import type { ObjectType, Space } from '@renderer/types'
+import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { Card, Checkbox } from '@renderer/components/ui'
+import type { TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { TypeConfigRow } from './TypeConfigRow'
 
 export interface SpaceTypesCardProps {

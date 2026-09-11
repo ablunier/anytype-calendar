@@ -1,6 +1,6 @@
-import type { ObjectType } from '../../types'
-import { TypeTile } from '../../components/app/TypeTile'
-import { Checkbox, Select } from '../../components/ui'
+import type { ObjectType } from '@renderer/types'
+import { TypeTile } from '@renderer/components/app/TypeTile'
+import { Checkbox, Select } from '@renderer/components/ui'
 
 export interface TypeConfigRowProps {
   type: ObjectType

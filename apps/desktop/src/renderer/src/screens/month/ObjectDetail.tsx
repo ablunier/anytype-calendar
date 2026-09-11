@@ -1,7 +1,7 @@
-import type { CalendarEvent, ObjectType, Space } from '../../types'
-import { SpaceDot } from '../../components/app/SpaceDot'
-import { Button, Icon, Tag } from '../../components/ui'
-import { isoDate } from '../../lib/calendar'
+import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { Button, Icon, Tag } from '@renderer/components/ui'
+import { isoDate } from '@renderer/lib/calendar'
 
 interface DetailFieldProps {
   label: string

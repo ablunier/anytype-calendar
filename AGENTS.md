@@ -89,6 +89,13 @@ Standard electron-vite three-process layout:
   - `lib/calendar.ts` — calendar grid/date math for the month view.
   - `mocks/index.ts` — the only source of sample data; stands in for the eventual
     IPC-backed data layer.
+  - Import convention: anything outside the importing file's own directory is reached
+    through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
+    same-directory imports stay relative (`./EventChip`). The alias is declared three
+    times and all three must agree — `resolve.alias` in `electron.vite.config.ts` (used by
+    `dev`/`build`), `paths` in `tsconfig.web.json` (used by `typecheck`), and `paths` in
+    the root `tsconfig.paths.json` (used by `lint:arch`; a missing entry there shows up as
+    `not-to-unresolvable` errors, not as a build failure).
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 

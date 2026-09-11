@@ -1,4 +1,4 @@
-import type { IconName } from '../../types'
+import type { IconName } from '@renderer/types'
 import { Icon, type IconSize } from './Icon'
 
 export type IconButtonSize = 'sm' | 'md' | 'lg'

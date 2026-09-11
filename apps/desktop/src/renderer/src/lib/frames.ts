@@ -6,8 +6,8 @@
  * pre-opened detail panel), so they need to be addressable directly.
  */
 
-import type { AuthStage, ScreenId } from '../types'
-import type { FlowFrame } from '../components/app/FlowSwitcher'
+import type { AuthStage, ScreenId } from '@renderer/types'
+import type { FlowFrame } from '@renderer/components/app/FlowSwitcher'
 
 export const FRAMES: FlowFrame[] = [
   { id: 'auth:start', group: '1 · Auth', label: 'a. Start' },

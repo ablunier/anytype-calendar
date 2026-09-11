@@ -1,6 +1,6 @@
-import type { CalendarEvent, DetailTarget, ObjectType, Space } from '../../types'
-import { IconButton } from '../../components/ui'
-import { eventsOnDay } from '../../lib/calendar'
+import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/types'
+import { IconButton } from '@renderer/components/ui'
+import { eventsOnDay } from '@renderer/lib/calendar'
 import { DayDetail } from './DayDetail'
 import { ObjectDetail } from './ObjectDetail'
 

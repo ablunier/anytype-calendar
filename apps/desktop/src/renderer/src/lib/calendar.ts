@@ -5,7 +5,7 @@
  * work for a later pass, and the fixture data is already shaped to avoid needing it.
  */
 
-import type { CalendarEvent, MonthCell, ObjectType, Space } from '../types'
+import type { CalendarEvent, MonthCell, ObjectType, Space } from '@renderer/types'
 
 export const MONTH_NAMES = [
   'January',

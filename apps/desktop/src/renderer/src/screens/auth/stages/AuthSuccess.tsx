@@ -1,7 +1,7 @@
-import type { Space } from '../../../types'
-import { SpaceDot } from '../../../components/app/SpaceDot'
-import { Button, SyncStatus } from '../../../components/ui'
-import { AuthHead } from '../AuthShell'
+import type { Space } from '@renderer/types'
+import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { Button, SyncStatus } from '@renderer/components/ui'
+import { AuthHead } from '@renderer/screens/auth/AuthShell'
 
 export interface AuthSuccessProps {
   spaces: Space[]

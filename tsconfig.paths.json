@@ -9,7 +9,12 @@
     "paths": {
       "@anytype-calendar/domain": ["./packages/domain/src/index.ts"],
       "@anytype-calendar/application": ["./packages/application/src/index.ts"],
-      "@anytype-calendar/anytype": ["./packages/anytype/src/index.ts"]
+      "@anytype-calendar/anytype": ["./packages/anytype/src/index.ts"],
+      // The renderer's internal alias. Mirrors apps/desktop/tsconfig.web.json and the
+      // electron.vite.config.ts resolve.alias — repeated here because dependency-cruiser
+      // reads only this file, and would otherwise report every aliased import as
+      // unresolvable.
+      "@renderer/*": ["./apps/desktop/src/renderer/src/*"]
     }
   }
 }

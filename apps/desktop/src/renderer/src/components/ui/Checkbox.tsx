@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import type { CategoryHue } from '../../types'
+import type { CategoryHue } from '@renderer/types'
 import { catBg } from './category'
 import { Icon } from './Icon'
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { CategoryHue, IconName } from '../../types'
+import type { CategoryHue, IconName } from '@renderer/types'
 import { catBgSoft, catText } from './category'
 import { Icon } from './Icon'
 

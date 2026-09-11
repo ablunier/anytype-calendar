@@ -1,7 +1,7 @@
-import type { ObjectType, Space } from '../../types'
-import { SpaceDot } from '../../components/app/SpaceDot'
-import { Checkbox } from '../../components/ui'
-import { typesInSpace } from '../../lib/calendar'
+import type { ObjectType, Space } from '@renderer/types'
+import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { Checkbox } from '@renderer/components/ui'
+import { typesInSpace } from '@renderer/lib/calendar'
 
 export interface SpacePickerProps {
   spaces: Space[]

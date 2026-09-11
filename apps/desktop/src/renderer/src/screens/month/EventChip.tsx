@@ -1,5 +1,5 @@
-import type { CategoryHue } from '../../types'
-import { catBg, catBgSoft, catText } from '../../components/ui'
+import type { CategoryHue } from '@renderer/types'
+import { catBg, catBgSoft, catText } from '@renderer/components/ui'
 
 export interface EventChipProps {
   title: string

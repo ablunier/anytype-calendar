@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { IconName } from '../../types'
+import type { IconName } from '@renderer/types'
 
 /* The 49 Lucide glyphs the product uses, vendored under assets/icons. Vite rewrites each
  * to a hashed URL at build time, so the map is resolved statically rather than by string

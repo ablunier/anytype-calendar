@@ -1,4 +1,4 @@
-import { Button, Card, Icon, IconButton } from '../../components/ui'
+import { Button, Card, Icon, IconButton } from '@renderer/components/ui'
 
 export interface SessionSectionProps {
   onSignOut: () => void

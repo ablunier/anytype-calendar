@@ -1,5 +1,5 @@
-import type { ObjectType } from '../../types'
-import { catBgSoft, catText, Icon } from '../ui'
+import type { ObjectType } from '@renderer/types'
+import { catBgSoft, catText, Icon } from '@renderer/components/ui'
 
 export type TypeTileSize = 'sm' | 'md'
 

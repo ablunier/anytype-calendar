@@ -1,5 +1,5 @@
-import type { CalendarEvent, ObjectType, Space } from '../../types'
-import { longDate } from '../../lib/calendar'
+import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import { longDate } from '@renderer/lib/calendar'
 import { ObjectRow } from './ObjectRow'
 
 export interface DayDetailProps {

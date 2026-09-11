@@ -1,5 +1,5 @@
-import type { AuthStage, Space } from '../../types'
-import { Button, Card } from '../../components/ui'
+import type { AuthStage, Space } from '@renderer/types'
+import { Button, Card } from '@renderer/components/ui'
 import { AuthShell } from './AuthShell'
 import { AuthCode } from './stages/AuthCode'
 import { AuthError } from './stages/AuthError'

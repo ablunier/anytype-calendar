@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import type { IconName } from '../../types'
-import { Wordmark } from '../../components/app/Wordmark'
-import { Icon } from '../../components/ui'
+import type { IconName } from '@renderer/types'
+import { Wordmark } from '@renderer/components/app/Wordmark'
+import { Icon } from '@renderer/components/ui'
 
 export interface AuthShellProps {
   children: ReactNode

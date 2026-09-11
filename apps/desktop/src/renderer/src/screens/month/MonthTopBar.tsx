@@ -1,7 +1,7 @@
-import type { Space } from '../../types'
-import { SpaceChip } from '../../components/app/SpaceDot'
-import { Wordmark } from '../../components/app/Wordmark'
-import { IconButton, SyncStatus } from '../../components/ui'
+import type { Space } from '@renderer/types'
+import { SpaceChip } from '@renderer/components/app/SpaceDot'
+import { Wordmark } from '@renderer/components/app/Wordmark'
+import { IconButton, SyncStatus } from '@renderer/components/ui'
 
 export interface MonthTopBarProps {
   trackedSpaces: Space[]

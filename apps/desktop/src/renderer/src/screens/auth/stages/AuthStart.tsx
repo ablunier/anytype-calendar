@@ -1,5 +1,5 @@
-import { Button } from '../../../components/ui'
-import { AuthHead } from '../AuthShell'
+import { Button } from '@renderer/components/ui'
+import { AuthHead } from '@renderer/screens/auth/AuthShell'
 
 const STEPS = [
   'Open the Anytype desktop app',

@@ -1,6 +1,6 @@
-import type { Space } from '../../types'
-import { SpaceDot } from '../../components/app/SpaceDot'
-import { Badge, Button, IconButton, Tooltip } from '../../components/ui'
+import type { Space } from '@renderer/types'
+import { SpaceDot } from '@renderer/components/app/SpaceDot'
+import { Badge, Button, IconButton, Tooltip } from '@renderer/components/ui'
 
 export interface DateNavigatorProps {
   title: string

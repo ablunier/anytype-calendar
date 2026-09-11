@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { ObjectType } from '../types'
+import type { ObjectType } from '@renderer/types'
 
 /** Which date properties a type is mapped onto. `to` absent means a point, not a range. */
 export interface DateMapping {

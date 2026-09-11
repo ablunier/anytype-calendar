@@ -1,5 +1,5 @@
-import type { CategoryHue, Space } from '../../types'
-import { catBg } from '../ui'
+import type { CategoryHue, Space } from '@renderer/types'
+import { catBg } from '@renderer/components/ui'
 
 export type DotSize = 6 | 8
 

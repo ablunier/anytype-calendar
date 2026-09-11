@@ -1,4 +1,4 @@
-import type { IconName } from '../../types'
+import type { IconName } from '@renderer/types'
 import { Icon } from './Icon'
 
 export type SyncState = 'synced' | 'syncing' | 'offline' | 'error'

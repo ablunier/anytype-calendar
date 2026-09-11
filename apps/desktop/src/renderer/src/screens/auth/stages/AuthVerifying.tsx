@@ -1,7 +1,7 @@
-import type { AuthStage } from '../../../types'
-import { Button } from '../../../components/ui'
-import { AuthHead } from '../AuthShell'
-import { DigitBoxes } from '../DigitBoxes'
+import type { AuthStage } from '@renderer/types'
+import { Button } from '@renderer/components/ui'
+import { AuthHead } from '@renderer/screens/auth/AuthShell'
+import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
 
 export interface AuthVerifyingProps {
   onCancel: () => void

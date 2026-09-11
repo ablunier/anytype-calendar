@@ -1,5 +1,5 @@
-import type { CategoryHue } from '../../types'
-import { catBg, Tag } from '../../components/ui'
+import type { CategoryHue } from '@renderer/types'
+import { catBg, Tag } from '@renderer/components/ui'
 
 export interface ObjectRowProps {
   title: string

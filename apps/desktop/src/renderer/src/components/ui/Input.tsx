@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import type { IconName } from '../../types'
+import type { IconName } from '@renderer/types'
 import { Icon } from './Icon'
 
 export type FieldSize = 'sm' | 'md' | 'lg'

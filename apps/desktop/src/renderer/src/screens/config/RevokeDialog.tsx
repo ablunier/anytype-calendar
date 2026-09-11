@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Dialog, Input } from '../../components/ui'
+import { Button, Dialog, Input } from '@renderer/components/ui'
 
 export interface RevokeDialogProps {
   open: boolean

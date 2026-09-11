@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react'
-import { Button } from '../../../components/ui'
-import { AuthHead } from '../AuthShell'
-import { DigitBoxes } from '../DigitBoxes'
+import { Button } from '@renderer/components/ui'
+import { AuthHead } from '@renderer/screens/auth/AuthShell'
+import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
 
 export interface AuthCodeProps {
   onCancel: () => void

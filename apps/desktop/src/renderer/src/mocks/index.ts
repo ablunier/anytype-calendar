@@ -5,7 +5,7 @@
  * not touch a single component.
  */
 
-import type { CalendarData, CalendarEvent, ObjectType, Space } from '../types'
+import type { CalendarData, CalendarEvent, ObjectType, Space } from '@renderer/types'
 
 const SPACES: Space[] = [
   { key: 'personal', name: 'Personal', category: 'teal', objects: 128 },
