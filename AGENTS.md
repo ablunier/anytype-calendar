@@ -188,9 +188,9 @@ Standard electron-vite three-process layout:
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
     barrel-exported from `components/ui/index.ts`.
   - `components/app/` — app-level chrome shared across screens (`Wordmark`,
-    `SpaceMonogram`, `TypeTile`). Only types carry a hue: their Anytype icon colour
-    (`lib/schema.ts`). Anytype gives spaces no colour, so a space is marked by its initial
-    in neutral ink.
+    `SpaceMonogram`, `TypeTile`). Only types carry a hue: their Anytype icon colour, one
+    category hue per each of Anytype's ten (`lib/schema.ts`). Anytype gives spaces no
+    colour, so a space is marked by its initial in neutral ink.
   - `lib/calendar.ts` — calendar grid/date math for the month view.
   - `mocks/index.ts` — sample calendar data (spaces, types, events, and which of them are
     tracked) for the month screen; stands in for the eventual IPC-backed data layer. Auth,

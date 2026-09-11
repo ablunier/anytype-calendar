@@ -19,15 +19,15 @@ import type {
 } from '@renderer/types'
 import { offersDates } from './calendar'
 
-/** Anytype's ten icon colours, folded onto the calendar's eight hues. */
+/** Anytype's ten icon colours, one hue each, so types Anytype tells apart stay apart here. */
 const TYPE_HUES: Record<string, CategoryHue> = {
   grey: 'graphite',
-  yellow: 'ochre',
+  yellow: 'mustard',
   orange: 'ochre',
   red: 'clay',
   pink: 'rose',
   purple: 'plum',
-  blue: 'dusk',
+  blue: 'denim',
   ice: 'dusk',
   teal: 'teal',
   lime: 'sage'

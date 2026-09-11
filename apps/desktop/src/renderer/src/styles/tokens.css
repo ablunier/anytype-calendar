@@ -67,11 +67,16 @@
   --ds-dusk-500: #4e6c8a;
   --ds-dusk-600: #3c5470;
 
-  /* ---- Category hues: one per object type, decorative only --------------- */
+  /* ---- Category hues: one per Anytype icon colour, decorative only -------- */
+  /* The design system has eight; mustard and denim are this app's own, so that Anytype's
+   * ten colours stay apart. Each was fitted in OKLCH to its neighbours' lightness and
+   * chroma: mustard to ochre's, denim to dusk's and plum's. */
   --ds-cat-sage: #6b9277;
   --ds-cat-clay: #b06a52;
   --ds-cat-ochre: #c08a2e;
+  --ds-cat-mustard: #988a37;
   --ds-cat-dusk: #5c7c99;
+  --ds-cat-denim: #5f6fa1;
   --ds-cat-plum: #7e5c7a;
   --ds-cat-teal: #3f7d78;
   --ds-cat-rose: #a96b80;
@@ -79,7 +84,9 @@
   --ds-cat-sage-soft: #e6ede7;
   --ds-cat-clay-soft: #f5e6e0;
   --ds-cat-ochre-soft: #f7ecd8;
+  --ds-cat-mustard-soft: #f1edd7;
   --ds-cat-dusk-soft: #e5ebf1;
+  --ds-cat-denim-soft: #e6eaf5;
   --ds-cat-plum-soft: #efe7ee;
   --ds-cat-teal-soft: #e0eeed;
   --ds-cat-rose-soft: #f2e6ea;
@@ -385,7 +392,9 @@
   --color-cat-sage: var(--ds-cat-sage);
   --color-cat-clay: var(--ds-cat-clay);
   --color-cat-ochre: var(--ds-cat-ochre);
+  --color-cat-mustard: var(--ds-cat-mustard);
   --color-cat-dusk: var(--ds-cat-dusk);
+  --color-cat-denim: var(--ds-cat-denim);
   --color-cat-plum: var(--ds-cat-plum);
   --color-cat-teal: var(--ds-cat-teal);
   --color-cat-rose: var(--ds-cat-rose);
@@ -393,7 +402,9 @@
   --color-cat-sage-soft: var(--ds-cat-sage-soft);
   --color-cat-clay-soft: var(--ds-cat-clay-soft);
   --color-cat-ochre-soft: var(--ds-cat-ochre-soft);
+  --color-cat-mustard-soft: var(--ds-cat-mustard-soft);
   --color-cat-dusk-soft: var(--ds-cat-dusk-soft);
+  --color-cat-denim-soft: var(--ds-cat-denim-soft);
   --color-cat-plum-soft: var(--ds-cat-plum-soft);
   --color-cat-teal-soft: var(--ds-cat-teal-soft);
   --color-cat-rose-soft: var(--ds-cat-rose-soft);
