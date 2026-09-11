@@ -6,9 +6,10 @@ This file provides guidance to AI coding agents when working with code in this r
 
 An Electron + React desktop app that renders Anytype objects (with date properties) on a
 calendar. It talks to the Anytype local API. npm workspaces monorepo, currently in an
-early pass: the UI (`apps/desktop`) is fully built against mock data; the backend is being
-built as one package per bounded context under `packages/` — `auth` is the first, and is
-still scaffolded (`export {}` placeholders), with wiring left for a later pass.
+early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
+package per bounded context under `packages/`. `auth` is the first and is fully wired: it
+signs in against the real Anytype local API and keeps the key across restarts. Everything
+past sign-in still runs on mock data.
 
 ## Commands
 
@@ -17,7 +18,9 @@ Run from the repo root unless noted.
 - `npm run dev` — start the desktop app (electron-vite dev server + Electron).
   **Must** be run with `env -u ELECTRON_RUN_AS_NODE` set, e.g.
   `env -u ELECTRON_RUN_AS_NODE npm run dev` — otherwise Electron launches in Node mode and
-  fails with a misleading `isPackaged` TypeError.
+  fails with a misleading `isPackaged` TypeError. Sign-in needs the Anytype desktop app
+  running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to sign in against a simulated Anytype
+  instead (see `composition.ts`).
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -38,7 +41,7 @@ Run from the repo root unless noted.
 ### Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently only `auth`), and its
-layers are folders inside it:
+layers are folders inside it — except `anytype-client` (see below):
 
 ```
 packages/<context>/
@@ -46,9 +49,15 @@ packages/<context>/
   tsconfig.json       ONE tsconfig project for the whole context, `types: []`
   domain/             grouped by role: model/, gateways/, repositories/ (services/ when needed)
   application/        use cases, flat
-  infrastructure/     driven adapters, grouped by technology: in-memory/, anytype/
+  infrastructure/     driven adapters, grouped by technology: in-memory/, anytype/, encrypted-file/
   dist/<layer>/       tsc -b output (gitignored)
 ```
+
+`packages/anytype-client` is not a context but the one shared package: the HTTP transport
+for the Anytype local API (`AnytypeClient`) that every context's `infrastructure/anytype/`
+adapters use. It has only an `infrastructure/` layer, so the pattern-based aliases, vitest
+projects and lint rules apply to it unedited. It resolves error statuses as values and
+rejects only on transport failure; `fetch` is injected by the composition root.
 
 - From outside a context, import only its layer entry points:
   `@anytype-calendar/auth/domain`, `…/application`, `…/infrastructure`. Inside a context,
@@ -64,14 +73,16 @@ packages/<context>/
 - Adding a context: one `package.json`, one `tsconfig.json`, and a project reference in the
   root `tsconfig.json` and both `apps/desktop` tsconfigs, plus a dependency in
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
-  pattern-based and need no edits.
+  pattern-based and need no edits. A context whose adapters use `anytype-client` also
+  lists it as a dependency and references `../anytype-client` from its tsconfig, as `auth`
+  does.
 
 ### Hexagonal layering (enforced by `.dependency-cruiser.cjs`, run via `npm run lint:arch`)
 
 ```
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
 packages/<ctx>/application     -> its own context's domain only (use cases / orchestration)
-packages/<ctx>/infrastructure  -> its own context's domain only (driven adapters implementing domain ports)
+packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client (driven adapters implementing domain ports)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
 
@@ -82,7 +93,8 @@ Rules worth knowing before adding an import:
 - `application` is the use-case layer; adapters get wired in through domain-defined ports,
   not imported directly.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
-  reach into its own `domain`.
+  reach into its own `domain` and `packages/anytype-client/infrastructure`. The same rule
+  keeps `anytype-client` itself a leaf that imports no context.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires
   them together. The rules capture the context name and refer back to it (`$1`), so this
   holds for every context without a rule per package.
@@ -102,11 +114,18 @@ so `lint:arch` doesn't need a build either.
 
 Standard electron-vite three-process layout:
 - `src/main` — Electron main process and the **composition root**. `composition.ts` is
-  the only place adapters are chosen (currently the auth context's in-memory ones, which
-  simulate Anytype: the accepted code is `2749`, and each challenge's code is logged to
-  the terminal). `src/main/<context>/` holds that context's Electron-side driving adapter,
-  e.g. `auth/auth-ipc.ts`, which registers the IPC handlers and pushes every session
-  change to all windows.
+  the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
+  needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009`, and keeps
+  the key in `<userData>/credential.bin`, encrypted with `safeStorage`
+  (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
+  in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
+  warning. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
+  `2749`, logged to the terminal) and a separate `credential-fake.bin`. The local API
+  cannot revoke keys, so there is no revoke action: users delete keys in Anytype's
+  settings. `src/main/<context>/` holds that context's Electron-side glue: e.g.
+  `auth/auth-ipc.ts` registers the IPC handlers and pushes every session change to all
+  windows, and `auth/credential-storage.ts` adapts `safeStorage` and the filesystem to the
+  repository's injected ports.
 - `src/shared/ipc.ts` — the IPC contract used by all three processes: channel names, the
   `SessionSnapshot` the renderer receives (never carries the API key), and `CalendarApi`.
 - `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
@@ -118,8 +137,9 @@ Standard electron-vite three-process layout:
     connected, the auth card shown is `authViewFor(session)` (`lib/session.ts`) of the
     snapshot main pushes (`hooks/useSession.ts`), and auth buttons only send intents over
     `window.api`. Once connected, navigation between success / onboarding / config / month
-    is local `useState`, not a router — four fixed screens, no URLs — and it resets to the
-    success card whenever the session leaves `connected`. The theme toggle lives in the
+    is local `useState`, not a router — four fixed screens, no URLs. Entering `connected`
+    lands on the success card only straight after `verifying`; a session restored at
+    launch (or a reloaded window) goes straight to month. The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead.
@@ -134,8 +154,8 @@ Standard electron-vite three-process layout:
     `TypeTile`).
   - `lib/calendar.ts` — calendar grid/date math for the month view.
   - `mocks/index.ts` — sample calendar data (spaces, types, events) for everything past
-    sign-in; stands in for the eventual IPC-backed data layer. Auth is no longer mocked
-    here — it runs in main against the auth context's in-memory adapters.
+    sign-in; stands in for the eventual IPC-backed data layer. Auth is not mocked here — it
+    runs in main against the auth context's adapters.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as

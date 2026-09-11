@@ -9,16 +9,16 @@ anywhere.
 You pick which spaces and object types to track, and which date property of each type
 anchors it on the grid (a type with both a start and an end property is drawn as a range).
 
-> **Status: early.** The desktop UI is fully built and navigable, but it runs entirely on
-> mock data. The backend is organised as one package per bounded context — `auth` is the
-> first, scaffolded with its layering rules in place and still empty. Nothing talks to
-> Anytype yet.
+> **Status: early.** The desktop UI is fully built and navigable. Sign-in is real: it runs
+> the 4-digit code flow against the Anytype local API, and the key is kept, encrypted,
+> across restarts. Everything past sign-in (spaces, types, events) still runs on mock
+> data. The backend is organised as one package per bounded context — `auth` is the first.
 
 ## Requirements
 
 - Node.js ≥ 26.8.1 and npm ≥ 12.0.2 (both pinned via [Volta](https://volta.sh) in
   `package.json`; Volta will pick them up automatically if installed)
-- Anytype desktop, for anything beyond the mock UI — once the adapter lands
+- Anytype desktop, running, to sign in (or use the simulated one, below)
 
 ## Getting started
 
@@ -34,10 +34,22 @@ toolchain, via the root `postinstall`.
 (some editors and terminal integrations set it), Electron starts in plain Node mode and
 `npm run dev` dies with a misleading `TypeError` about `isPackaged`.
 
-The app opens on the auth screen. Sign-in runs through the main process against a
-simulated Anytype: start the connection, and the terminal logs the challenge and the code
-to type — always `2749`; any other code is rejected. Everything past sign-in still runs on
-mock data.
+The app opens on the auth screen. Start the connection and Anytype shows a 4-digit code;
+type it into the app. The key is then stored in the app's user-data directory
+(`~/.config/anytype-calendar-desktop/credential.bin` in dev on Linux), encrypted with the
+OS keychain through Electron's `safeStorage`. On the next launch the app opens straight on
+the calendar. Signing out deletes the file. The local API cannot revoke a key, so to revoke
+one, delete it in the Anytype app under Settings → API Keys.
+
+To work without Anytype, sign in against a simulated one:
+
+```sh
+env -u ELECTRON_RUN_AS_NODE ANYTYPE_CALENDAR_FAKE_AUTH=1 npm run dev
+```
+
+The terminal then logs each challenge and the code to type — always `2749`. The simulated
+key is kept in a separate `credential-fake.bin`, so it is never restored against the real
+Anytype.
 
 ## Scripts
 
@@ -60,10 +72,11 @@ layer across every context: `npx vitest run --project domain`.
 ## Repo layout
 
 ```
-apps/desktop        Electron app — main (the composition root), preload, and the React renderer
-packages/<context>  One bounded context per package (currently: auth), layered inside
-tools/arch-lint     Isolated dependency-cruiser install (see its README for why)
-docs/deps-notes.md  Why several dependencies are pinned where they are
+apps/desktop             Electron app — main (the composition root), preload, and the React renderer
+packages/<context>       One bounded context per package (currently: auth), layered inside
+packages/anytype-client  The shared Anytype local API HTTP client every context's adapters use
+tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
+docs/deps-notes.md       Why several dependencies are pinned where they are
 ```
 
 ### Architecture
@@ -74,7 +87,7 @@ Organised by bounded context first, then by hexagonal layer, then by role:
 packages/auth/
   domain/           model/, gateways/, repositories/  — the pure center
   application/      use cases, orchestrating the domain through its ports
-  infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/)
+  infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/, encrypted-file/)
 ```
 
 Each layer is imported from outside as `@anytype-calendar/<context>/<layer>`. Dependencies
@@ -83,7 +96,7 @@ point inward only, within a context:
 ```
 domain          -> nothing
 application     -> its own domain
-infrastructure  -> its own domain
+infrastructure  -> its own domain, plus anytype-client
 apps/desktop    -> any context's layers, plus Electron and React
 ```
 
@@ -91,7 +104,9 @@ A context's domain has no npm dependencies and no Node core imports, and the who
 compiles with no ambient types (`types: []`), so platform globals like `process` or
 `setTimeout` are out of reach too — infrastructure receives such capabilities from the
 composition root instead. Adapters are reached through ports the domain declares, never
-imported directly by the use cases. Contexts never import each other; `apps/desktop`'s main
+imported directly by the use cases. `packages/anytype-client` is the one shared package —
+not a context, just the HTTP transport — and has only an `infrastructure/` layer, which
+imports nothing else. Contexts never import each other; `apps/desktop`'s main
 process wires them together. No package imports from `apps/**`, and `electron`/`react`
 belong solely to `apps/desktop`.
 
