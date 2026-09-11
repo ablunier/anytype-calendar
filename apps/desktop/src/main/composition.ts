@@ -11,7 +11,7 @@ import {
   InMemoryAuthGateway,
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
-import { SchemaSyncService, SchemaSyncStore } from '@anytype-calendar/schema/application'
+import { ResetSchemaSync, SchemaSyncStore, SyncSchema } from '@anytype-calendar/schema/application'
 import type { SchemaGateway } from '@anytype-calendar/schema/domain'
 import {
   AnytypeSchemaGateway,
@@ -28,7 +28,7 @@ const ANYTYPE_REQUEST_TIMEOUT_MS = 10_000
 export interface AppServices {
   authService: AuthService
   authSession: AuthSessionStore
-  schemaSync: SchemaSyncService
+  schemaSync: SyncSchema
   schemaState: SchemaSyncStore
 }
 
@@ -51,18 +51,19 @@ export function composeServices(): AppServices {
   })
 
   const schemaState = new SchemaSyncStore()
-  const schemaSync = new SchemaSyncService({
+  const schemaSync = new SyncSchema({
     gateway: client ? new AnytypeSchemaGateway(client) : inMemorySchemaGateway(),
     apiKeys: { current: async () => (await credentials.load())?.apiKey ?? null },
     store: schemaState
   })
+  const resetSchemaSync = new ResetSchemaSync(schemaState)
 
   // Contexts never know about each other, so the link lives here: being connected — signed
   // in just now, or a key restored at launch — is what reads the account; anything else
   // forgets it. The session store notifies only on change, and a reset while idle is a no-op.
   authSession.subscribe((session) => {
-    if (session.phase === 'connected') void schemaSync.sync()
-    else schemaSync.reset()
+    if (session.phase === 'connected') void schemaSync.execute()
+    else resetSchemaSync.execute()
   })
 
   return { authService, authSession, schemaSync, schemaState }

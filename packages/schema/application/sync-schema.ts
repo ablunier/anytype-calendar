@@ -10,7 +10,7 @@ import {
 } from '../domain'
 import type { SchemaSyncStore } from './schema-sync-store'
 
-export interface SchemaSyncServiceDeps {
+export interface SyncSchemaDeps {
   gateway: SchemaGateway
   apiKeys: SchemaApiKeySource
   store: SchemaSyncStore
@@ -25,20 +25,20 @@ class Unauthorized extends Error {}
  * started — a reset (the user signed out) replaced it, so a late result is dropped instead
  * of repopulating a signed-out app.
  */
-export class SchemaSyncService {
+export class SyncSchema {
   readonly #gateway: SchemaGateway
   readonly #apiKeys: SchemaApiKeySource
   readonly #store: SchemaSyncStore
   readonly #now: () => number
 
-  constructor({ gateway, apiKeys, store, now = Date.now }: SchemaSyncServiceDeps) {
+  constructor({ gateway, apiKeys, store, now = Date.now }: SyncSchemaDeps) {
     this.#gateway = gateway
     this.#apiKeys = apiKeys
     this.#store = store
     this.#now = now
   }
 
-  async sync(): Promise<void> {
+  async execute(): Promise<void> {
     const before = this.#store.get()
     const syncing = this.#dispatch({ type: 'sync-started' })
     if (syncing === before) return
@@ -52,10 +52,6 @@ export class SchemaSyncService {
       return
     }
     if (this.#isCurrent(syncing)) this.#dispatch({ type: 'sync-succeeded', spaces, at: this.#now() })
-  }
-
-  reset(): void {
-    this.#dispatch({ type: 'reset' })
   }
 
   async #fetchSpaces(): Promise<SchemaSpace[]> {

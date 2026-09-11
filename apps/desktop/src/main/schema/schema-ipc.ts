@@ -4,7 +4,7 @@ import type { AppServices } from '../composition'
 
 export function registerSchemaIpc({ schemaSync, schemaState }: AppServices): void {
   ipcMain.handle(IpcChannel.schemaGet, () => schemaState.get())
-  ipcMain.handle(IpcChannel.schemaSync, () => schemaSync.sync())
+  ipcMain.handle(IpcChannel.schemaSync, () => schemaSync.execute())
 
   schemaState.subscribe((state) => {
     for (const window of BrowserWindow.getAllWindows()) {
