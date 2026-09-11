@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.package.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    // No ambient type packages, matching every context: kernel is generic use-case
+    // plumbing, never a place platform capabilities get injected from.
+    "types": []
+  },
+  "include": ["application/**/*"],
+  // Tests import vitest, which would otherwise be emitted into dist/. Vitest transpiles
+  // them directly from source.
+  "exclude": ["**/*.test.ts", "dist"]
+}

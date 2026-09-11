@@ -47,11 +47,23 @@ module.exports = {
     {
       name: 'application-only-own-domain',
       comment:
-        "A context's application layer holds its use cases. It may import itself and its " +
-        "own context's domain, nothing else. Adapters are injected through the domain ports.",
+        "A context's application layer holds its use cases. It may import itself, its own " +
+        "context's domain, and the shared dispatch-guard kernel; nothing else. Adapters " +
+        'are injected through the domain ports. kernel is not a context: it has only an ' +
+        'application layer, so this same rule keeps it a leaf that imports no context.',
       severity: 'error',
       from: { path: '^packages/([^/]+)/application/' },
-      to: { pathNot: '^packages/$1/(application|domain)/' }
+      to: { pathNot: '^packages/(?:$1/(?:application|domain)|kernel/application)/' }
+    },
+    {
+      name: 'kernel-is-pure',
+      comment:
+        'The shared kernel must not import anything beyond itself — no context, no npm ' +
+        "package, no Node core module. It exists to be safely importable from every " +
+        "context's application layer without pulling in a dependency edge of its own.",
+      severity: 'error',
+      from: { path: '^packages/kernel/application/' },
+      to: { pathNot: '^packages/kernel/application/' }
     },
     {
       name: 'infrastructure-only-own-domain',

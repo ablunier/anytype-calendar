@@ -44,7 +44,7 @@ Run from the repo root unless noted.
 ### Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently `auth` and `schema`), and its
-layers are folders inside it — except `anytype-client` (see below):
+layers are folders inside it — except `anytype-client` and `kernel` (see below):
 
 ```
 packages/<context>/
@@ -56,11 +56,18 @@ packages/<context>/
   dist/<layer>/       tsc -b output (gitignored)
 ```
 
-`packages/anytype-client` is not a context but the one shared package: the HTTP transport
-for the Anytype local API (`AnytypeClient`) that every context's `infrastructure/anytype/`
-adapters use. It has only an `infrastructure/` layer, so the pattern-based aliases, vitest
-projects and lint rules apply to it unedited. It resolves error statuses as values and
-rejects only on transport failure; `fetch` is injected by the composition root.
+`packages/anytype-client` and `packages/kernel` are not contexts but shared packages, each
+with only one layer, so the pattern-based aliases, vitest projects and lint rules apply to
+them unedited. `anytype-client` is the HTTP transport for the Anytype local API
+(`AnytypeClient`) that every context's `infrastructure/anytype/` adapters use; it resolves
+error statuses as values and rejects only on transport failure, and `fetch` is injected by
+the composition root. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+staleness-guard pattern every use case that races an async gateway call against a later
+reset or step-back repeats (see `SubmitAuthCode`, `SyncSchema`); it has only an
+`application/` layer and, unlike a context's own `application`, must import nothing at all
+— not even Node core or npm — since it is meant to be safely importable from *any*
+context's `application` layer without adding a dependency edge of its own
+(`kernel-is-pure` in `.dependency-cruiser.cjs`).
 
 - From outside a context, import only its layer entry points:
   `@anytype-calendar/auth/domain`, `…/application`, `…/infrastructure`. Inside a context,
@@ -78,13 +85,15 @@ rejects only on transport failure; `fetch` is injected by the composition root.
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
   pattern-based and need no edits. A context whose adapters use `anytype-client` also
   lists it as a dependency and references `../anytype-client` from its tsconfig, as `auth`
-  does.
+  does; likewise for `kernel` in a context's `application` layer (both `auth` and `schema`
+  do). Either way, run `npm install` afterward so npm workspaces symlinks the new package
+  into `node_modules` — without it, `tsc -b` fails with `TS2307: Cannot find module`.
 
 ### Hexagonal layering (enforced by `.dependency-cruiser.cjs`, run via `npm run lint:arch`)
 
 ```
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
-packages/<ctx>/application     -> its own context's domain only (use cases / orchestration)
+packages/<ctx>/application     -> its own context's domain, plus kernel (use cases / orchestration)
 packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client (driven adapters implementing domain ports)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
@@ -94,7 +103,10 @@ Rules worth knowing before adding an import:
   general "no imports outside itself" rule and a dedicated "no npm/Node core deps" rule
   enforce this (the second exists purely for a clearer lint error).
 - `application` is the use-case layer; adapters get wired in through domain-defined ports,
-  not imported directly.
+  not imported directly. It may also reach into `packages/kernel/application` for shared
+  use-case plumbing (currently just `DispatchGuard`); the same rule keeps `kernel` itself a
+  leaf that imports no context, and a separate `kernel-is-pure` rule additionally forbids
+  it from importing anything at all, context or otherwise.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
   reach into its own `domain` and `packages/anytype-client/infrastructure`. The same rule
   keeps `anytype-client` itself a leaf that imports no context.

@@ -1,0 +1,16 @@
+{
+  "name": "@anytype-calendar/kernel",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./application": {
+      "types": "./dist/application/index.d.ts",
+      "default": "./dist/application/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  }
+}
