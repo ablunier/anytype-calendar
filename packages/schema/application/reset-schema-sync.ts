@@ -1,14 +1,15 @@
-import { nextSchemaSync } from '../domain'
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
+import { nextSchemaSync, type SchemaSync, type SchemaSyncEvent } from '../domain'
 import type { SchemaSyncStore } from './schema-sync-store'
 
 export class ResetSchemaSync {
-  readonly #store: SchemaSyncStore
+  readonly #guard: DispatchGuard<SchemaSync, SchemaSyncEvent>
 
   constructor(store: SchemaSyncStore) {
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextSchemaSync)
   }
 
   execute(): void {
-    this.#store.set(nextSchemaSync(this.#store.get(), { type: 'reset' }))
+    this.#guard.dispatch({ type: 'reset' })
   }
 }

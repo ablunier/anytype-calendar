@@ -1,3 +1,4 @@
+import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   nextSchemaSync,
   userDatePropertyKeys,
@@ -28,19 +29,19 @@ class Unauthorized extends Error {}
 export class SyncSchema {
   readonly #gateway: SchemaGateway
   readonly #apiKeys: SchemaApiKeySource
-  readonly #store: SchemaSyncStore
+  readonly #guard: DispatchGuard<SchemaSync, SchemaSyncEvent>
   readonly #now: () => number
 
   constructor({ gateway, apiKeys, store, now = Date.now }: SyncSchemaDeps) {
     this.#gateway = gateway
     this.#apiKeys = apiKeys
-    this.#store = store
+    this.#guard = new DispatchGuard(store, nextSchemaSync)
     this.#now = now
   }
 
   async execute(): Promise<void> {
-    const before = this.#store.get()
-    const syncing = this.#dispatch({ type: 'sync-started' })
+    const before = this.#guard.current()
+    const syncing = this.#guard.dispatch({ type: 'sync-started' })
     if (syncing === before) return
 
     let spaces: SchemaSpace[]
@@ -48,10 +49,14 @@ export class SyncSchema {
       spaces = await this.#fetchSpaces()
     } catch (error) {
       const failure = error instanceof Unauthorized ? 'unauthorized' : 'unreachable'
-      if (this.#isCurrent(syncing)) this.#dispatch({ type: 'sync-failed', failure, at: this.#now() })
+      if (this.#guard.isCurrent(syncing)) {
+        this.#guard.dispatch({ type: 'sync-failed', failure, at: this.#now() })
+      }
       return
     }
-    if (this.#isCurrent(syncing)) this.#dispatch({ type: 'sync-succeeded', spaces, at: this.#now() })
+    if (this.#guard.isCurrent(syncing)) {
+      this.#guard.dispatch({ type: 'sync-succeeded', spaces, at: this.#now() })
+    }
   }
 
   async #fetchSpaces(): Promise<SchemaSpace[]> {
@@ -73,15 +78,6 @@ export class SyncSchema {
     const keys = userDatePropertyKeys(properties)
     if (keys.length === 0) return 0
     return accepted(await this.#gateway.countObjectsWithAnyValue(apiKey, spaceId, keys))
-  }
-
-  #dispatch(event: SchemaSyncEvent): SchemaSync {
-    this.#store.set(nextSchemaSync(this.#store.get(), event))
-    return this.#store.get()
-  }
-
-  #isCurrent(state: SchemaSync): boolean {
-    return this.#store.get() === state
   }
 }
 
