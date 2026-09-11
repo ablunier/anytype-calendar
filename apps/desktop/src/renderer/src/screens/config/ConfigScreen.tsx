@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApiKeyView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
-import { SpaceChip } from '@renderer/components/app/SpaceDot'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, EmptyState, Icon, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
@@ -71,14 +70,6 @@ function Settings({
     <div className="flex h-full flex-col bg-surface-page">
       <header className="flex h-topbar shrink-0 items-center gap-12 border-b border-line-subtle bg-surface-card px-16">
         <Wordmark />
-        {read && spaces.length > 0 ? (
-          <SpaceChip
-            label={`${selection.spaceKeys.length} of ${spaces.length} spaces`}
-            hues={spaces
-              .filter((space) => selection.spaceKeys.includes(space.key))
-              .map((space) => space.category)}
-          />
-        ) : null}
         <div className="flex-1" />
         <Button variant="ghost" size="sm" iconLeft="chevron-left" onClick={onBack}>
           Back to calendar

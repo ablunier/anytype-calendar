@@ -59,8 +59,6 @@ export function MonthScreen({
   return (
     <div className="flex h-full flex-col bg-surface-page">
       <MonthTopBar
-        trackedSpaces={trackedSpaces}
-        totalSpaces={data.spaces.length}
         theme={theme}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
