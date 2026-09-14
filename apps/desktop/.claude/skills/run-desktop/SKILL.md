@@ -94,8 +94,8 @@ debugging ports.
 cd ../.. && npm test && npm run typecheck && npm run lint:arch
 ```
 
-These are vitest over `packages/*` (the renderer has no tests), `tsc -b`, and the
-dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once.
+These are vitest over `packages/*`, the renderer's `lib/` and main's pure glue, `tsc -b`,
+and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once.
 
 ## Gotchas
 
@@ -119,8 +119,17 @@ dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once
   `state` reports `schema: { phase: 'failed', failure: 'unauthorized' }`. `main-eval` can
   confirm it: Anytype answers `401 {"code":"unauthorized","message":"invalid api key"}` to
   `GET /v1/spaces`.
-- **Only the month view is mocked.** It draws from `src/renderer/src/mocks/index.ts`,
-  whatever mode you are in. The success card, onboarding and Settings have real data.
+- **Nothing is mocked; the month shows only what the selection picks.** The month view
+  reads the objects of the saved selection's types (real ones in real mode, a sample seeded
+  around the current month in fake mode). A fresh fake account has no types picked, so the
+  month says "Choose what goes on the calendar"; pick some in Settings, or save a selection
+  with `eval "window.api.schemaSelection.save({ spaceIds: ['sp_studio'], types: [{ spaceId: 'sp_studio', typeKey: 'project', from: 'start_date', to: 'due_date' }] })"`.
+  `state` doesn't include the month: read it with `eval "window.api.events.get()"`. The
+  arrow buttons have no text, so click them by aria-label (`Previous month`, `Next month`).
+- **Focusing the window re-reads the account and the month**, at most once per 30 s, so
+  a state you pushed by hand can be replaced when the window is focused. Driver clicks
+  don't focus it; `main-eval "process.mainModule.require('electron').app.emit('browser-window-focus')"`
+  simulates one.
 - **Onboarding shows until a selection is saved**, even for a restored key. Continue or Skip
   writes `schema-selection-fake.json` (or `schema-selection.json` in real mode) to
   `userData`; delete it to see onboarding again. Settings writes the same file on **every**
@@ -131,9 +140,10 @@ dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:setup` once
   with `eval` by their aria-label, e.g.
   `document.querySelector('input[aria-label="Show the Studio space"]').click()`. For a
   date `<select>`, set `.value` and dispatch a bubbling `change` event.
-- **Forcing a failed read in fake mode:** `SyncSchema` reads the key from disk on every
-  sync. Rename `credential-fake.bin` aside with `main-eval` and press "Re-read account",
-  and the read fails with "Key not accepted". Rename it back afterwards.
+- **Forcing a failed read in fake mode:** `SyncSchema` and `LoadEventsMonth` read the key
+  from disk on every read. Rename `credential-fake.bin` aside with `main-eval` and press
+  "Re-read account", and both fail with "Key not accepted": the month on screen keeps its
+  objects, and a month not read yet shows "Couldn't read …". Rename it back afterwards.
 - **Drawing states the fake account lacks** (a space with no dated types, no spaces at
   all, a type or date gone): push a hand-made `SchemaSnapshot` to the window with
   `main-eval` and
