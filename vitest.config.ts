@@ -22,10 +22,34 @@ const layerProject = (layer: 'domain' | 'application' | 'infrastructure') => ({
   }
 })
 
+// Mirrors the aliases in apps/desktop/electron.vite.config.ts's `renderer` block, so these
+// tests resolve the same modules the app does. The lib/ modules under test are pure
+// functions with no DOM dependency, so `node` is enough — no jsdom/happy-dom is installed.
+const rendererProject = {
+  resolve: {
+    alias: [
+      { find: '@renderer', replacement: resolve(__dirname, 'apps/desktop/src/renderer/src') },
+      { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
+      workspaceAlias
+    ]
+  },
+  test: {
+    name: 'renderer',
+    root: __dirname,
+    environment: 'node' as const,
+    include: ['apps/desktop/src/renderer/src/**/*.test.ts']
+  }
+}
+
 export default defineConfig({
   test: {
     // Contexts are scaffolded before they have tests; an empty project is not a failure.
     passWithNoTests: true,
-    projects: [layerProject('domain'), layerProject('application'), layerProject('infrastructure')]
+    projects: [
+      layerProject('domain'),
+      layerProject('application'),
+      layerProject('infrastructure'),
+      rendererProject
+    ]
   }
 })
