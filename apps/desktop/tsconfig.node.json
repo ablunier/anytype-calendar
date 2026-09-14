@@ -17,6 +17,7 @@
   "references": [
     { "path": "../../packages/anytype-client" },
     { "path": "../../packages/auth" },
+    { "path": "../../packages/events" },
     { "path": "../../packages/schema" }
   ]
 }
