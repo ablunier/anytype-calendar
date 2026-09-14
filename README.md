@@ -9,10 +9,15 @@ anywhere.
 You pick which spaces and object types to track, and which date property of each type
 anchors it on the grid (a type with both a start and an end property is drawn as a range).
 
-> **Status: early.** The desktop UI is fully built and navigable. Sign-in is real: it runs
-> the 4-digit code flow against the Anytype local API, and the key is kept, encrypted,
-> across restarts. Everything past sign-in (spaces, types, events) still runs on mock
-> data. The backend is organised as one package per bounded context — `auth` is the first.
+> **Status: early.** The desktop UI is fully built and navigable. `auth` is fully wired: it
+> runs the 4-digit code flow against the Anytype local API, and the key is kept, encrypted,
+> across restarts. `schema` is real too — it reads each space's dated types from your
+> Anytype data and how many objects fill one in, and feeds the post-sign-in success card,
+> onboarding, and Settings, which save which spaces/types you track and each type's
+> From/To date property. The month screen still runs on mock data. The backend is
+> organised as one package per bounded context — `auth` and `schema` so far — plus two
+> shared packages, `anytype-client` (the local API HTTP transport) and `kernel` (shared
+> use-case plumbing).
 
 ## Requirements
 
@@ -37,9 +42,11 @@ toolchain, via the root `postinstall`.
 The app opens on the auth screen. Start the connection and Anytype shows a 4-digit code;
 type it into the app. The key is then stored in the app's user-data directory
 (`~/.config/anytype-calendar-desktop/credential.bin` in dev on Linux), encrypted with the
-OS keychain through Electron's `safeStorage`. On the next launch the app opens straight on
-the calendar. Signing out deletes the file. The local API cannot revoke a key, so to revoke
-one, delete it in the Anytype app under Settings → API Keys.
+OS keychain through Electron's `safeStorage`. Once connected, the app reads your spaces'
+dated types and walks you through onboarding — which spaces and types to track, and each
+type's From/To date property — or reopens straight past it if you'd already done that on a
+previous run. Signing out deletes the credential file. The local API cannot revoke a key,
+so to revoke one, delete it in the Anytype app under Settings → API Keys.
 
 To work without Anytype, sign in against a simulated one:
 
@@ -48,8 +55,8 @@ env -u ELECTRON_RUN_AS_NODE ANYTYPE_CALENDAR_FAKE_AUTH=1 npm run dev
 ```
 
 The terminal then logs each challenge and the code to type — always `2749`. The simulated
-key is kept in a separate `credential-fake.bin`, so it is never restored against the real
-Anytype.
+key is kept in a separate `credential-fake.bin`, and the schema comes from four sample
+spaces, `InMemorySchemaGateway` builds — never anything from a real Anytype instance.
 
 ## Scripts
 
@@ -73,8 +80,9 @@ layer across every context: `npx vitest run --project domain`.
 
 ```
 apps/desktop             Electron app — main (the composition root), preload, and the React renderer
-packages/<context>       One bounded context per package (currently: auth), layered inside
+packages/<context>       One bounded context per package (currently: auth, schema), layered inside
 packages/anytype-client  The shared Anytype local API HTTP client every context's adapters use
+packages/kernel          Shared use-case plumbing (DispatchGuard) any context's application layer can import
 tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
 docs/deps-notes.md       Why several dependencies are pinned where they are
 ```
@@ -85,6 +93,7 @@ Organised by bounded context first, then by hexagonal layer, then by role:
 
 ```
 packages/auth/
+packages/schema/
   domain/           model/, gateways/, repositories/  — the pure center
   application/      use cases, orchestrating the domain through its ports
   infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/, encrypted-file/)
@@ -95,7 +104,7 @@ point inward only, within a context:
 
 ```
 domain          -> nothing
-application     -> its own domain
+application     -> its own domain, plus kernel
 infrastructure  -> its own domain, plus anytype-client
 apps/desktop    -> any context's layers, plus Electron and React
 ```
@@ -104,11 +113,16 @@ A context's domain has no npm dependencies and no Node core imports, and the who
 compiles with no ambient types (`types: []`), so platform globals like `process` or
 `setTimeout` are out of reach too — infrastructure receives such capabilities from the
 composition root instead. Adapters are reached through ports the domain declares, never
-imported directly by the use cases. `packages/anytype-client` is the one shared package —
-not a context, just the HTTP transport — and has only an `infrastructure/` layer, which
-imports nothing else. Contexts never import each other; `apps/desktop`'s main
-process wires them together. No package imports from `apps/**`, and `electron`/`react`
-belong solely to `apps/desktop`.
+imported directly by the use cases. `packages/anytype-client` and `packages/kernel` are the
+two shared packages — not contexts, each with only one layer, so the same aliasing, test
+projects and lint rules apply to them unedited. `anytype-client` has only an
+`infrastructure/` layer (the HTTP transport) and imports nothing else; `kernel` has only an
+`application/` layer (the `DispatchGuard` dispatch/staleness-guard pattern used by use cases
+that race an async gateway call against a later reset) and, uniquely, imports nothing at
+all — not even Node core or npm — so it stays safely importable from any context's
+application layer without adding a dependency edge of its own. Contexts never import each
+other; `apps/desktop`'s main process wires them together. No package imports from
+`apps/**`, and `electron`/`react` belong solely to `apps/desktop`.
 
 All of that is enforced by `.dependency-cruiser.cjs` via `npm run lint:arch`, which reads
 the rules alongside the reasoning for each one. Run it before opening a PR that adds
@@ -122,10 +136,13 @@ in the running app.
 ### The renderer
 
 `apps/desktop/src/renderer/src` holds the React app: `App.tsx` is the root and the only
-module that reads the mock data, `screens/<flow>/` has one directory per screen (`auth`,
+module that reads mock data, `screens/<flow>/` has one directory per screen (`auth`,
 `onboarding`, `config`, `month`), `components/ui/` the presentational primitives, and
-`mocks/index.ts` the sample data that stands in for the eventual IPC-backed layer.
-Navigation is local `useState`, not a router — four fixed screens, no URLs.
+`mocks/index.ts` the sample data that stands in for the eventual IPC-backed layer. Auth,
+the success card, onboarding, and Settings (`config`) are not mocked — they run against
+the `auth` and `schema` contexts' real adapters over IPC; only the month view's events
+still come from `mocks/index.ts`. Navigation is local `useState`, not a router — four fixed
+screens, no URLs.
 
 Imports that leave their own directory go through the `@renderer/*` alias
 (`@renderer/components/ui`), and same-directory imports stay relative (`./EventChip`) — so
