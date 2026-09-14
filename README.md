@@ -14,10 +14,12 @@ anchors it on the grid (a type with both a start and an end property is drawn as
 > across restarts. `schema` is real too — it reads each space's dated types from your
 > Anytype data and how many objects fill one in, and feeds the post-sign-in success card,
 > onboarding, and Settings, which save which spaces/types you track and each type's
-> From/To date property. The month screen still runs on mock data. The backend is
-> organised as one package per bounded context — `auth` and `schema` so far — plus two
-> shared packages, `anytype-client` (the local API HTTP transport) and `kernel` (shared
-> use-case plumbing).
+> From/To date property. `events` puts those types' objects on the month grid: any month
+> can be browsed, a type with a To date is drawn as a range, and the month is read again
+> when you come back to the window. Editing, week and day views, recurrence and "Open in
+> Anytype" are not built yet. The backend is organised as one package per bounded context —
+> `auth`, `schema` and `events` so far — plus two shared packages, `anytype-client` (the
+> local API HTTP transport) and `kernel` (shared use-case plumbing).
 
 ## Requirements
 
@@ -45,7 +47,9 @@ type it into the app. The key is then stored in the app's user-data directory
 OS keychain through Electron's `safeStorage`. Once connected, the app reads your spaces'
 dated types and walks you through onboarding — which spaces and types to track, and each
 type's From/To date property — or reopens straight past it if you'd already done that on a
-previous run. Signing out deletes the credential file. The local API cannot revoke a key,
+previous run. The calendar then shows the current month's objects of the types you picked.
+Dates without a time are drawn as all-day, and times are shown in your computer's time
+zone. Signing out deletes the credential file. The local API cannot revoke a key,
 so to revoke one, delete it in the Anytype app under Settings → API Keys.
 
 To work without Anytype, sign in against a simulated one:
@@ -55,8 +59,9 @@ env -u ELECTRON_RUN_AS_NODE ANYTYPE_CALENDAR_FAKE_AUTH=1 npm run dev
 ```
 
 The terminal then logs each challenge and the code to type — always `2749`. The simulated
-key is kept in a separate `credential-fake.bin`, and the schema comes from four sample
-spaces, `InMemorySchemaGateway` builds — never anything from a real Anytype instance.
+key is kept in a separate `credential-fake.bin`, the schema comes from four sample spaces
+`InMemorySchemaGateway` builds, and the objects from a sample month `InMemoryEventsGateway`
+seeds around the current one — never anything from a real Anytype instance.
 
 ## Scripts
 
@@ -67,7 +72,7 @@ Run from the repo root.
 | `npm run dev` | electron-vite dev server + Electron, with HMR (see the env note above) |
 | `npm run build` | `tsc -b` across all packages, then build the desktop app |
 | `npm run typecheck` | `tsc -b --force` over the whole monorepo |
-| `npm test` | `vitest run`, one project per layer (`domain`, `application`, `infrastructure`) across all contexts |
+| `npm test` | `vitest run`: one project per layer (`domain`, `application`, `infrastructure`) across all contexts, plus the desktop app's `renderer` and `main` |
 | `npm run lint:arch` | dependency-cruiser check of the hexagonal layering |
 | `npm run lint:arch:setup` | install the arch-lint toolchain (only if `postinstall` was skipped) |
 | `npm run clean` | `tsc -b --clean` plus the desktop app's `out/` and `dist/` |
@@ -80,7 +85,7 @@ layer across every context: `npx vitest run --project domain`.
 
 ```
 apps/desktop             Electron app — main (the composition root), preload, and the React renderer
-packages/<context>       One bounded context per package (currently: auth, schema), layered inside
+packages/<context>       One bounded context per package (currently: auth, schema, events), layered inside
 packages/anytype-client  The shared Anytype local API HTTP client every context's adapters use
 packages/kernel          Shared use-case plumbing (DispatchGuard) any context's application layer can import
 tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
@@ -92,11 +97,12 @@ docs/deps-notes.md       Why several dependencies are pinned where they are
 Organised by bounded context first, then by hexagonal layer, then by role:
 
 ```
-packages/auth/
-packages/schema/
+packages/auth/     signing in, and keeping the key
+packages/schema/   the account's dated types, and which of them go on the calendar
+packages/events/   the objects of those types in the month on screen
   domain/           model/, gateways/, repositories/  — the pure center
   application/      use cases, orchestrating the domain through its ports
-  infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/, encrypted-file/)
+  infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/, encrypted-file/, local-time/)
 ```
 
 Each layer is imported from outside as `@anytype-calendar/<context>/<layer>`. Dependencies
@@ -135,14 +141,14 @@ in the running app.
 
 ### The renderer
 
-`apps/desktop/src/renderer/src` holds the React app: `App.tsx` is the root and the only
-module that reads mock data, `screens/<flow>/` has one directory per screen (`auth`,
-`onboarding`, `config`, `month`), `components/ui/` the presentational primitives, and
-`mocks/index.ts` the sample data that stands in for the eventual IPC-backed layer. Auth,
-the success card, onboarding, and Settings (`config`) are not mocked — they run against
-the `auth` and `schema` contexts' real adapters over IPC; only the month view's events
-still come from `mocks/index.ts`. Navigation is local `useState`, not a router — four fixed
-screens, no URLs.
+`apps/desktop/src/renderer/src` holds the React app: `App.tsx` is the root,
+`screens/<flow>/` has one directory per screen (`auth`, `onboarding`, `config`, `month`),
+`components/ui/` the presentational primitives, and `lib/` the pure modules that turn the
+snapshots main pushes into what the screens draw (`lib/session.ts`, `lib/schema.ts`,
+`lib/events.ts`). Nothing is mocked: every screen runs against the `auth`, `schema` and
+`events` contexts' adapters over IPC. Navigation is local `useState`, not a router — four
+fixed screens, no URLs — but the month on screen is held in main, and the arrows only ask
+for another.
 
 Imports that leave their own directory go through the `@renderer/*` alias
 (`@renderer/components/ui`), and same-directory imports stay relative (`./EventChip`) — so
