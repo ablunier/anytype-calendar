@@ -5,6 +5,12 @@ export interface SchemaTypeChoice {
   from: string
   /** Null draws each object on one date; a key draws it as a range. */
   to: string | null
+  /**
+   * Whether From/To carry a time of day. The local API never says, since a date set with no
+   * time is stored the same way as midnight (see the events context's dated-object model), so
+   * the user states it instead.
+   */
+  includesTime: boolean
 }
 
 /**
@@ -50,10 +56,11 @@ export function toSchemaSelection(value: unknown): SchemaSelection | null {
 
 function toChoice(value: unknown): SchemaTypeChoice | null {
   if (typeof value !== 'object' || value === null) return null
-  const { spaceId, typeKey, from, to } = value as Record<string, unknown>
+  const { spaceId, typeKey, from, to, includesTime } = value as Record<string, unknown>
   if (!isId(spaceId) || !isId(typeKey) || !isId(from)) return null
   if (to !== null && (!isId(to) || to === from)) return null
-  return { spaceId, typeKey, from, to }
+  if (typeof includesTime !== 'boolean') return null
+  return { spaceId, typeKey, from, to, includesTime }
 }
 
 function isId(value: unknown): value is string {

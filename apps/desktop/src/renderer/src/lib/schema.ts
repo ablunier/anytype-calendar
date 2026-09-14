@@ -130,10 +130,11 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
   if (selection.phase === 'unset') return { spaceKeys: [], typeKeys: [], dates: {} }
   const byKey = new Map(types.map((type) => [type.key, type]))
   const dates: Record<string, DateMapping> = {}
-  for (const { spaceId, typeKey, from, to } of selection.selection.types) {
+  for (const { spaceId, typeKey, from, to, includesTime } of selection.selection.types) {
     const key = objectTypeKey(spaceId, typeKey)
     const type = byKey.get(key)
-    if (type && offersDates(type, { from, to })) dates[key] = { from, to }
+    if (type && offersDates(type, { from, to, includesTime }))
+      dates[key] = { from, to, includesTime }
   }
   return {
     spaceKeys: selection.selection.spaceIds,
@@ -167,8 +168,8 @@ export function schemaSelectionFor(
       const type = objectTypeFor(space, schemaType)
       if (!picks.typeKeys.includes(type.key)) return []
       const mapping = picks.dates[type.key]
-      const { from, to } = mapping && offersDates(type, mapping) ? mapping : type
-      return [{ spaceId: space.id, typeKey: schemaType.key, from, to }]
+      const { from, to, includesTime } = mapping && offersDates(type, mapping) ? mapping : type
+      return [{ spaceId: space.id, typeKey: schemaType.key, from, to, includesTime }]
     })
   )
 
@@ -206,9 +207,9 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
   }
 }
 
-/** A newly ticked type starts on its first date, as a single day. */
+/** A newly ticked type starts on its first date, as a single all-day date. */
 function defaultMapping(type: SchemaType): DateMapping {
-  return { from: type.dateProperties[0]?.key ?? '', to: null }
+  return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false }
 }
 
 /** Both epoch milliseconds, e.g. "3 min ago". */

@@ -87,7 +87,9 @@ export function offersDates(type: ObjectType, { from, to }: DateMapping): boolea
 export function withDates(types: ObjectType[], dates: Record<string, DateMapping>): ObjectType[] {
   return types.map((type) => {
     const mapping = dates[type.key]
-    return mapping ? { ...type, from: mapping.from, to: mapping.to } : type
+    return mapping
+      ? { ...type, from: mapping.from, to: mapping.to, includesTime: mapping.includesTime }
+      : type
   })
 }
 

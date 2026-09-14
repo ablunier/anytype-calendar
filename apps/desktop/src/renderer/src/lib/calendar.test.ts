@@ -27,7 +27,8 @@ const TASK: ObjectType = {
     { key: 'start_date', label: 'Start date' }
   ],
   from: 'due_date',
-  to: null
+  to: null,
+  includesTime: false
 }
 
 describe('buildMonthGrid', () => {
@@ -159,19 +160,19 @@ describe('dateLabel', () => {
 
 describe('offersDates', () => {
   test('true for a from-only mapping the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: null })).toBe(true)
+    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false })).toBe(true)
   })
 
   test('true for a range whose both ends the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: 'start_date' })).toBe(true)
+    expect(offersDates(TASK, { from: 'due_date', to: 'start_date', includesTime: false })).toBe(true)
   })
 
   test('false when the from property is gone', () => {
-    expect(offersDates(TASK, { from: 'gone_date', to: null })).toBe(false)
+    expect(offersDates(TASK, { from: 'gone_date', to: null, includesTime: false })).toBe(false)
   })
 
   test('false when the to property is gone', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: 'gone_date' })).toBe(false)
+    expect(offersDates(TASK, { from: 'due_date', to: 'gone_date', includesTime: false })).toBe(false)
   })
 })
 
@@ -180,9 +181,9 @@ describe('withDates', () => {
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {
-      'sp_1:task': { from: 'start_date', to: 'due_date' }
+      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true }
     })
-    expect(task).toEqual({ ...TASK, from: 'start_date', to: 'due_date' })
+    expect(task).toEqual({ ...TASK, from: 'start_date', to: 'due_date', includesTime: true })
     expect(project).toBe(other)
   })
 })

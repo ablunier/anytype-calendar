@@ -45,12 +45,15 @@ export interface ObjectType {
   from: string
   /** Key of the optional end-date property; a type with one is drawn as a range. */
   to: string | null
+  /** Whether From/To carry a time of day, as the user states it; starts false (all-day). */
+  includesTime: boolean
 }
 
-/** `to: null` means a point, not a range. Both are property keys. */
+/** `to: null` means a point, not a range. `from`/`to` are property keys. */
 export interface DateMapping {
   from: string
   to: string | null
+  includesTime: boolean
 }
 
 /** What the user has ticked, keyed by `Space.key` and `ObjectType.key`. */

@@ -7,7 +7,9 @@ import {
 
 const SELECTION: SchemaSelection = {
   spaceIds: ['sp_1'],
-  types: [{ spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'finish_date' }]
+  types: [
+    { spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'finish_date', includesTime: false }
+  ]
 }
 
 function setup(initial: string | null = null) {
@@ -30,7 +32,7 @@ test('loads what it saved', async () => {
 test('writes the selection under a format version', async () => {
   const { repository, contents } = setup()
   await repository.save(SELECTION)
-  expect(JSON.parse(contents() ?? '')).toEqual({ version: 1, selection: SELECTION })
+  expect(JSON.parse(contents() ?? '')).toEqual({ version: 2, selection: SELECTION })
 })
 
 test('loads no selection when there is no file', async () => {
@@ -40,9 +42,9 @@ test('loads no selection when there is no file', async () => {
 test.each([
   ['not JSON', '{'],
   ['not an object', '"selection"'],
-  ['another version', JSON.stringify({ version: 2, selection: SELECTION })],
+  ['another version', JSON.stringify({ version: 1, selection: SELECTION })],
   ['no version', JSON.stringify({ selection: SELECTION })],
-  ['not a selection', JSON.stringify({ version: 1, selection: { spaceIds: 'sp_1' } })]
+  ['not a selection', JSON.stringify({ version: 2, selection: { spaceIds: 'sp_1' } })]
 ])('loads no selection from a file that is %s', async (_, text) => {
   await expect(setup(text).repository.load()).resolves.toBeNull()
 })

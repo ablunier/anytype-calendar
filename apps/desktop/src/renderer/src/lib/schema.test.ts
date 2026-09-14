@@ -52,7 +52,7 @@ const SYNCED_AT = 100_000
 const SYNCED: SchemaSnapshot = { phase: 'synced', last: { spaces: [SPACE], syncedAt: SYNCED_AT } }
 
 describe('tracksAnyType', () => {
-  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
+  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }
 
   test('is false until a selection is saved', () => {
     expect(tracksAnyType({ phase: 'unset' })).toBe(false)
@@ -117,7 +117,8 @@ describe('typesFor', () => {
         { key: 'start_date', label: 'Start date' }
       ],
       from: 'due_date',
-      to: null
+      to: null,
+      includesTime: false
     })
   })
 
@@ -206,7 +207,8 @@ describe('picksFor', () => {
         { key: 'start_date', label: 'Start date' }
       ],
       from: 'due_date',
-      to: null
+      to: null,
+      includesTime: false
     }
   ]
 
@@ -219,13 +221,13 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true } }
     })
   })
 
@@ -234,7 +236,7 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -249,7 +251,7 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: [],
-        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -265,7 +267,7 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }]
     })
   })
 
@@ -273,11 +275,11 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true }]
     })
   })
 
@@ -285,11 +287,11 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'gone_date', to: null } }
+      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }]
     })
   })
 
@@ -299,8 +301,8 @@ describe('schemaSelectionFor', () => {
       selection: {
         spaceIds: ['sp_1', 'sp_9'],
         types: [
-          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null },
-          { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null }
+          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false },
+          { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false }
         ]
       }
     }
@@ -309,8 +311,8 @@ describe('schemaSelectionFor', () => {
     expect(schemaSelectionFor(SYNCED, picks, previous)).toEqual({
       spaceIds: ['sp_9', 'sp_1'],
       types: [
-        { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null },
-        { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
+        { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false },
+        { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }
       ]
     })
   })

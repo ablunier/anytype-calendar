@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_SCHEMA_SELECTION, toSchemaSelection, type SchemaTypeChoice } from './selection'
 
-const TASK: SchemaTypeChoice = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
+const TASK: SchemaTypeChoice = {
+  spaceId: 'sp_1',
+  typeKey: 'task',
+  from: 'due_date',
+  to: null,
+  includesTime: false
+}
 const PROJECT: SchemaTypeChoice = {
   spaceId: 'sp_1',
   typeKey: 'project',
   from: 'start_date',
-  to: 'finish_date'
+  to: 'finish_date',
+  includesTime: true
 }
 
 describe('toSchemaSelection', () => {
@@ -51,7 +58,9 @@ describe('toSchemaSelection', () => {
     ['a type with an undefined to date', { spaceIds: [], types: [{ ...TASK, to: undefined }] }],
     ['a type with an empty to date', { spaceIds: [], types: [{ ...TASK, to: '' }] }],
     ['a range from and to the same date', { spaceIds: [], types: [{ ...TASK, to: 'due_date' }] }],
-    ['a type chosen twice', { spaceIds: [], types: [TASK, { ...TASK, from: 'other' }] }]
+    ['a type chosen twice', { spaceIds: [], types: [TASK, { ...TASK, from: 'other' }] }],
+    ['a missing includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: undefined }] }],
+    ['a non-boolean includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: 'yes' }] }]
   ])('rejects %s', (_, value) => {
     expect(toSchemaSelection(value)).toBeNull()
   })

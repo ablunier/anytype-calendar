@@ -12,9 +12,15 @@ test('keeps the chosen types of chosen spaces only', () => {
       selection: {
         spaceIds: ['sp_1'],
         types: [
-          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null },
-          { spaceId: 'sp_2', typeKey: 'task', from: 'due_date', to: null },
-          { spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'due_date' }
+          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: true },
+          { spaceId: 'sp_2', typeKey: 'task', from: 'due_date', to: null, includesTime: true },
+          {
+            spaceId: 'sp_1',
+            typeKey: 'project',
+            from: 'start_date',
+            to: 'due_date',
+            includesTime: false
+          }
         ]
       }
     })

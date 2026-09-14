@@ -132,9 +132,13 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
                             checked={selection.typeKeys.includes(type.key)}
                             from={selection.mappingFor(type).from}
                             to={selection.mappingFor(type).to}
+                            includesTime={selection.mappingFor(type).includesTime}
                             onToggle={() => selection.toggleType(type.key)}
                             onFromChange={(value) => selection.setFrom(type.key, value)}
                             onToChange={(value) => selection.setTo(type.key, value)}
+                            onIncludesTimeChange={(value) =>
+                              selection.setIncludesTime(type.key, value)
+                            }
                           />
                         ))}
                       </div>

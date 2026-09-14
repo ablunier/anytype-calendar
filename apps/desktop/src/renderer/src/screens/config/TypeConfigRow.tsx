@@ -8,10 +8,12 @@ export interface TypeConfigRowProps {
   checked: boolean
   from: string
   to: string | null
+  includesTime: boolean
   last: boolean
   onToggle: () => void
   onFromChange: (value: string) => void
   onToChange: (value: string | null) => void
+  onIncludesTimeChange: (value: boolean) => void
 }
 
 /** An empty value can never be a property key. */
@@ -22,10 +24,12 @@ export function TypeConfigRow({
   checked,
   from,
   to,
+  includesTime,
   last,
   onToggle,
   onFromChange,
-  onToChange
+  onToChange,
+  onIncludesTimeChange
 }: TypeConfigRowProps): React.JSX.Element {
   return (
     <div
@@ -65,6 +69,14 @@ export function TypeConfigRow({
         disabled={!checked}
         onChange={(value) => onToChange(value === NONE.value ? null : value)}
       />
+      <div className="flex w-56 shrink-0 justify-center">
+        <Checkbox
+          checked={includesTime}
+          onChange={onIncludesTimeChange}
+          disabled={!checked}
+          ariaLabel={`${type.label} dates include a time`}
+        />
+      </div>
     </div>
   )
 }

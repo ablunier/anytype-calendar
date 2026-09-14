@@ -42,6 +42,9 @@ export function SpaceTypesCard({
             <span className="w-152 type-caption text-tiny text-ink-tertiary">
               To date (optional)
             </span>
+            <span className="w-56 shrink-0 text-center type-caption text-tiny text-ink-tertiary">
+              Time
+            </span>
           </>
         ) : null}
       </div>
@@ -58,10 +61,12 @@ export function SpaceTypesCard({
               checked={selection.typeKeys.includes(type.key)}
               from={selection.mappingFor(type).from}
               to={selection.mappingFor(type).to}
+              includesTime={selection.mappingFor(type).includesTime}
               last={index === types.length - 1}
               onToggle={() => selection.toggleType(type.key)}
               onFromChange={(value) => selection.setFrom(type.key, value)}
               onToChange={(value) => selection.setTo(type.key, value)}
+              onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
             />
           ))
         : null}

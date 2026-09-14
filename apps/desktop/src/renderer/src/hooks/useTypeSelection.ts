@@ -15,6 +15,7 @@ export interface TypeSelection {
   toggleType: (key: string) => void
   setFrom: (key: string, value: string) => void
   setTo: (key: string, value: string | null) => void
+  setIncludesTime: (key: string, value: boolean) => void
 }
 
 const toggle = (keys: string[], key: string): string[] =>
@@ -67,13 +68,19 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
       setPicks((current) => ({ ...current, typeKeys: toggle(current.typeKeys, key) })),
     // A range from a date to itself is not a selection main accepts, so it becomes one date.
     setFrom: (key, value) =>
-      update(key, ({ to }) => ({ from: value, to: to === value ? null : to })),
-    setTo: (key, value) => update(key, ({ from }) => ({ from, to: value }))
+      update(key, ({ to, includesTime }) => ({
+        from: value,
+        to: to === value ? null : to,
+        includesTime
+      })),
+    setTo: (key, value) => update(key, ({ from, includesTime }) => ({ from, to: value, includesTime })),
+    setIncludesTime: (key, value) =>
+      update(key, ({ from, to }) => ({ from, to, includesTime: value }))
   }
 }
 
 function mappingIn(dates: TypePicks['dates'], type: ObjectType): DateMapping {
-  return dates[type.key] ?? { from: type.from, to: type.to }
+  return dates[type.key] ?? { from: type.from, to: type.to, includesTime: type.includesTime }
 }
 
 /**

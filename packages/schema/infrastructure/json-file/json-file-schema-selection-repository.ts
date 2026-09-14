@@ -7,8 +7,11 @@ export interface SchemaSelectionFile {
   write(text: string): Promise<void>
 }
 
-/** Bumped when the stored shape changes; a file of any other version loads as none. */
-const FORMAT_VERSION = 1
+/**
+ * Bumped when the stored shape changes; a file of any other version loads as none. Bumped to
+ * 2 when `SchemaTypeChoice` gained `includesTime`.
+ */
+const FORMAT_VERSION = 2
 
 /**
  * A file that cannot be read back — unreadable, not JSON, another version, or not a

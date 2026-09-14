@@ -8,9 +8,11 @@ export interface TypeCardProps {
   checked: boolean
   from: string
   to: string | null
+  includesTime: boolean
   onToggle: () => void
   onFromChange: (value: string) => void
   onToChange: (value: string | null) => void
+  onIncludesTimeChange: (value: boolean) => void
 }
 
 /** An empty value can never be a property key. */
@@ -26,9 +28,11 @@ export function TypeCard({
   checked,
   from,
   to,
+  includesTime,
   onToggle,
   onFromChange,
-  onToChange
+  onToChange,
+  onIncludesTimeChange
 }: TypeCardProps): React.JSX.Element {
   return (
     <div
@@ -52,20 +56,28 @@ export function TypeCard({
         />
       </div>
       {checked ? (
-        <div className="grid grid-cols-2 gap-8 px-12 pb-12">
-          <Select
-            size="sm"
-            label="From date"
-            options={dateOptions(type)}
-            value={from}
-            onChange={onFromChange}
-          />
-          <Select
-            size="sm"
-            label="To date (optional)"
-            options={[NONE, ...dateOptions(type).filter((option) => option.value !== from)]}
-            value={to ?? NONE.value}
-            onChange={(value) => onToChange(value === NONE.value ? null : value)}
+        <div className="flex flex-col gap-8 px-12 pb-12">
+          <div className="grid grid-cols-2 gap-8">
+            <Select
+              size="sm"
+              label="From date"
+              options={dateOptions(type)}
+              value={from}
+              onChange={onFromChange}
+            />
+            <Select
+              size="sm"
+              label="To date (optional)"
+              options={[NONE, ...dateOptions(type).filter((option) => option.value !== from)]}
+              value={to ?? NONE.value}
+              onChange={(value) => onToChange(value === NONE.value ? null : value)}
+            />
+          </div>
+          <Checkbox
+            checked={includesTime}
+            onChange={onIncludesTimeChange}
+            label="Includes time"
+            description="Off draws every date all-day, on shows the time it was set."
           />
         </div>
       ) : null}
