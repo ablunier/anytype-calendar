@@ -5,4 +5,6 @@ export interface EventsSource {
   from: string
   /** Null places each object on its From date alone. */
   to: string | null
+  /** Whether From/To carry a time of day, as the user stated when choosing the type. */
+  includesTime: boolean
 }

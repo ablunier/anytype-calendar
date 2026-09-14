@@ -82,7 +82,7 @@ export class LoadEventsMonth {
         const result = await this.#gateway.listObjects(apiKey, source, window)
         if (!result.ok) throw new Unauthorized()
         return result.value
-          .map((ref) => toEventsDatedObject(ref, source, this.#zone))
+          .map((ref) => toEventsDatedObject(ref, source))
           .filter((object) => overlapsEventsWindow(object, window))
       })
     )

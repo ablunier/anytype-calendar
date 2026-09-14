@@ -10,8 +10,20 @@ const API_KEY = 'ak_secret'
 const BASE = 'http://127.0.0.1:31009'
 const SPACE_ID = 'bafy.space'
 
-const TASKS: EventsSource = { spaceId: SPACE_ID, typeKey: 'task', from: 'due_date', to: null }
-const PROJECTS: EventsSource = { spaceId: SPACE_ID, typeKey: 'project', from: 'start_date', to: 'due_date' }
+const TASKS: EventsSource = {
+  spaceId: SPACE_ID,
+  typeKey: 'task',
+  from: 'due_date',
+  to: null,
+  includesTime: false
+}
+const PROJECTS: EventsSource = {
+  spaceId: SPACE_ID,
+  typeKey: 'project',
+  from: 'start_date',
+  to: 'due_date',
+  includesTime: false
+}
 
 /** September 2026 two hours ahead of UTC. */
 const WINDOW = { start: Date.parse('2026-08-31T22:00:00Z'), end: Date.parse('2026-09-30T21:59:59.999Z') }

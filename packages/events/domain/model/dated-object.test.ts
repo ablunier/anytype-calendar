@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-import type { EventsTimeZone } from '../gateways/time-zone'
 import {
   compareEventsDatedObjects,
   overlapsEventsWindow,
@@ -11,24 +10,20 @@ import type { EventsSource } from './source'
 const HOUR_MS = 3_600_000
 const DAY_MS = 24 * HOUR_MS
 
-/** Two hours ahead of UTC, so a local midnight is 22:00 UTC the day before. */
-const PLUS_TWO: EventsTimeZone = {
-  startOfDay: ({ year, month, day }) => Date.UTC(year, month, day) - 2 * HOUR_MS,
-  dayOf: (instant) => {
-    const date = new Date(instant + 2 * HOUR_MS)
-    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
+const ALL_DAY_SOURCE: EventsSource = {
+  spaceId: 'sp_1',
+  typeKey: 'project',
+  from: 'start_date',
+  to: 'due_date',
+  includesTime: false
 }
-
-const SOURCE: EventsSource = { spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'due_date' }
-
-const midnight = (month: number, day: number): number => PLUS_TWO.startOfDay({ year: 2026, month, day })
+const TIMED_SOURCE: EventsSource = { ...ALL_DAY_SOURCE, includesTime: true }
 
 describe('toEventsDatedObject', () => {
   test("carries the ref's id, title and dates, and the source's space and type", () => {
-    const start = midnight(8, 14)
-    const end = midnight(8, 16)
-    expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, SOURCE, PLUS_TWO)).toEqual({
+    const start = 1_000
+    const end = 2_000
+    expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE)).toEqual({
       id: 'obj_1',
       spaceId: 'sp_1',
       typeKey: 'project',
@@ -39,41 +34,30 @@ describe('toEventsDatedObject', () => {
     })
   })
 
-  test('reads a date on the first instant of a local day as all-day', () => {
-    // How Anytype stores 14 September with no time, set two hours ahead of UTC.
-    const start = Date.parse('2026-09-13T22:00:00Z')
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, SOURCE, PLUS_TWO)
+  test('reads all-day from a source with no time, regardless of the instant', () => {
+    const start = Date.parse('2026-09-08T14:20:39Z')
+    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, ALL_DAY_SOURCE)
     expect(object.allDay).toBe(true)
   })
 
-  test('reads any other instant as timed', () => {
-    const start = Date.parse('2026-09-08T14:20:39Z')
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, SOURCE, PLUS_TWO)
-    expect(object.allDay).toBe(false)
-  })
-
-  test('is timed when only the end has a time', () => {
-    const object = toEventsDatedObject(
-      { id: 'o', title: '', start: midnight(8, 14), end: midnight(8, 14) + 11 * HOUR_MS },
-      SOURCE,
-      PLUS_TWO
-    )
+  test('reads timed from a source with a time, regardless of the instant', () => {
+    const start = Date.parse('2026-09-13T22:00:00Z')
+    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, TIMED_SOURCE)
     expect(object.allDay).toBe(false)
   })
 
   test('drops an end before the start, keeping the object on its start', () => {
-    const start = midnight(8, 14)
+    const start = 10_000
     const object = toEventsDatedObject(
       { id: 'o', title: '', start, end: start - DAY_MS },
-      SOURCE,
-      PLUS_TWO
+      ALL_DAY_SOURCE
     )
     expect(object).toMatchObject({ start, end: null, allDay: true })
   })
 
   test('keeps an end equal to the start', () => {
-    const start = midnight(8, 14) + 9 * HOUR_MS
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: start }, SOURCE, PLUS_TWO)
+    const start = 10_000 + 9 * HOUR_MS
+    const object = toEventsDatedObject({ id: 'o', title: '', start, end: start }, TIMED_SOURCE)
     expect(object).toMatchObject({ start, end: start, allDay: false })
   })
 })
@@ -100,8 +84,7 @@ describe('overlapsEventsWindow', () => {
   test('an object whose end was dropped overlaps by its start alone', () => {
     const object = toEventsDatedObject(
       { id: 'o', title: '', start: 2_500, end: 1_500 },
-      SOURCE,
-      PLUS_TWO
+      ALL_DAY_SOURCE
     )
     expect(overlapsEventsWindow(object, window)).toBe(false)
   })

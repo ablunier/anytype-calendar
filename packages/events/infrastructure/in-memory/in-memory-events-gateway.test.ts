@@ -19,8 +19,20 @@ const UTC: EventsTimeZone = {
 const NOW = Date.UTC(2026, 11, 14, 9)
 const DECEMBER = { year: 2026, month: 11 }
 
-const TASKS: EventsSource = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
-const PROJECTS: EventsSource = { spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'due_date' }
+const TASKS: EventsSource = {
+  spaceId: 'sp_1',
+  typeKey: 'task',
+  from: 'due_date',
+  to: null,
+  includesTime: false
+}
+const PROJECTS: EventsSource = {
+  spaceId: 'sp_1',
+  typeKey: 'project',
+  from: 'start_date',
+  to: 'due_date',
+  includesTime: false
+}
 
 const OBJECTS: InMemoryEventsObject[] = [
   { id: 'o1', spaceId: 'sp_1', typeKey: 'task', title: 'Task', dates: { due_date: 1_000 } },

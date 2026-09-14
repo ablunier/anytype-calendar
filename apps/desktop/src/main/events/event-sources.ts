@@ -10,5 +10,11 @@ export function eventsSourcesFor(state: SchemaSelectionState): EventsSource[] {
   const { spaceIds, types } = state.selection
   return types
     .filter((choice) => spaceIds.includes(choice.spaceId))
-    .map(({ spaceId, typeKey, from, to }) => ({ spaceId, typeKey, from, to }))
+    .map(({ spaceId, typeKey, from, to, includesTime }) => ({
+      spaceId,
+      typeKey,
+      from,
+      to,
+      includesTime
+    }))
 }

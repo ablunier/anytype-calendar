@@ -27,8 +27,20 @@ const SEPTEMBER = { year: 2026, month: 8 }
 const OCTOBER = { year: 2026, month: 9 }
 const DECEMBER = { year: 2026, month: 11 }
 
-const TASKS: EventsSource = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
-const PROJECTS: EventsSource = { spaceId: 'sp_2', typeKey: 'project', from: 'start_date', to: 'due_date' }
+const TASKS: EventsSource = {
+  spaceId: 'sp_1',
+  typeKey: 'task',
+  from: 'due_date',
+  to: null,
+  includesTime: true
+}
+const PROJECTS: EventsSource = {
+  spaceId: 'sp_2',
+  typeKey: 'project',
+  from: 'start_date',
+  to: 'due_date',
+  includesTime: false
+}
 
 const ref = (id: string, start: number, end: number | null = null): EventsObjectRef => ({
   id,
@@ -315,11 +327,20 @@ describe('ResetEventsMonth', () => {
   })
 })
 
-test('a timed object at the start of an hour is not all-day', async () => {
+test('an object of a timed source is not all-day, whatever the instant', async () => {
   const { store, loadEventsMonth } = setup({
     sources: [TASKS],
-    refs: { task: [ref('standup', Date.UTC(2026, 8, 3) + 9 * HOUR_MS)] }
+    refs: { task: [ref('standup', Date.UTC(2026, 8, 3))] }
   })
   await loadEventsMonth.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: false }] } })
+})
+
+test('an object of an all-day source is all-day, whatever the instant', async () => {
+  const { store, loadEventsMonth } = setup({
+    sources: [PROJECTS],
+    refs: { project: [ref('launch', Date.UTC(2026, 8, 3) + 9 * HOUR_MS)] }
+  })
+  await loadEventsMonth.execute(SEPTEMBER)
+  expect(store.get()).toMatchObject({ last: { objects: [{ allDay: true }] } })
 })
