@@ -6,7 +6,6 @@ export interface ObjectRowProps {
   category: CategoryHue
   time?: string
   typeLabel?: string
-  /** Names the date relation that put this object on the grid. */
   relation?: string
   done?: boolean
   selected?: boolean

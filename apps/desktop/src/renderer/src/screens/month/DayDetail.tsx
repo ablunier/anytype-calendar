@@ -1,5 +1,5 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
-import { dateLabel, longDate } from '@renderer/lib/calendar'
+import { longDate } from '@renderer/lib/calendar'
 import { ObjectRow } from './ObjectRow'
 
 export interface DayDetailProps {
@@ -35,7 +35,7 @@ export function DayDetail({
               time={event.date === date ? event.time : undefined}
               typeLabel={type?.label}
               category={type?.category ?? 'graphite'}
-              relation={space && type ? `${space.name} · ${dateLabel(type, type.from)}` : undefined}
+              relation={space?.name}
               done={event.done}
               onClick={() => onOpenEvent(event)}
             />
