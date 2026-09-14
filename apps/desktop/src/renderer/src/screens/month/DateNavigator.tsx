@@ -4,7 +4,6 @@ import { Badge, Button, IconButton, Tooltip } from '@renderer/components/ui'
 
 export interface DateNavigatorProps {
   title: string
-  subtitle: string
   legendSpaces: Space[]
   onPrev: () => void
   onNext: () => void
@@ -13,7 +12,6 @@ export interface DateNavigatorProps {
 
 export function DateNavigator({
   title,
-  subtitle,
   legendSpaces,
   onPrev,
   onNext,
@@ -26,10 +24,7 @@ export function DateNavigator({
         <IconButton icon="chevron-right" label="Next month" onClick={onNext} />
       </div>
 
-      <div className="flex min-w-0 shrink-0 items-baseline gap-8">
-        <h1 className="whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
-        <span className="whitespace-nowrap font-mono text-tiny text-ink-tertiary">{subtitle}</span>
-      </div>
+      <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
 
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
         Today

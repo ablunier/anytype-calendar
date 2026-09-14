@@ -78,13 +78,6 @@ export function MonthScreen({
     setDetail({ kind: 'day', date: cell.date })
   }
 
-  const subtitle =
-    events === null
-      ? status.state === 'error'
-        ? 'Not read'
-        : 'Reading…'
-      : `${events.length} ${events.length === 1 ? 'object' : 'objects'}`
-
   return (
     <div className="flex h-full flex-col bg-surface-page">
       <MonthTopBar
@@ -97,7 +90,6 @@ export function MonthScreen({
 
       <DateNavigator
         title={label}
-        subtitle={subtitle}
         legendSpaces={trackedSpaces}
         onPrev={onPrevMonth}
         onNext={onNextMonth}
