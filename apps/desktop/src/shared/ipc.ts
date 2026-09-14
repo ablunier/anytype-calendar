@@ -1,4 +1,5 @@
 import type { AuthSession } from '@anytype-calendar/auth/domain'
+import type { EventsMonth, EventsMonthLoad } from '@anytype-calendar/events/domain'
 import type {
   SchemaSelection,
   SchemaSelectionState,
@@ -13,6 +14,9 @@ export type SchemaSnapshot = SchemaSync
 
 export type SchemaSelectionSnapshot = SchemaSelectionState
 
+/** Safe to hand to the renderer: the key is read in main and never stored in an EventsMonthLoad. */
+export type EventsSnapshot = EventsMonthLoad
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -26,7 +30,10 @@ export const IpcChannel = {
   schemaSync: 'schema:sync',
   schemaSelectionGet: 'schema-selection:get',
   schemaSelectionChanged: 'schema-selection:changed',
-  schemaSelectionSave: 'schema-selection:save'
+  schemaSelectionSave: 'schema-selection:save',
+  eventsGet: 'events:get',
+  eventsChanged: 'events:changed',
+  eventsShowMonth: 'events:show-month'
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */
@@ -57,5 +64,15 @@ export interface CalendarApi {
     onChange(listener: (state: SchemaSelectionSnapshot) => void): () => void
     /** Rejects when the selection is malformed or could not be written. */
     save(selection: SchemaSelection): Promise<void>
+  }
+  events: {
+    get(): Promise<EventsSnapshot>
+    onChange(listener: (state: EventsSnapshot) => void): () => void
+    /**
+     * Loads the month, or reads it again when it is the one shown. Main already loads on
+     * sign-in, on every read of the account and every saved selection. Rejects when the month
+     * is malformed; does nothing while signed out.
+     */
+    showMonth(month: EventsMonth): Promise<void>
   }
 }

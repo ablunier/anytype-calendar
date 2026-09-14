@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
+import { registerEventsIpc } from './events/events-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 
 function createWindow(): void {
@@ -39,6 +40,7 @@ app.whenReady().then(async () => {
   const services = composeServices()
   registerAuthIpc(services)
   registerSchemaIpc(services)
+  registerEventsIpc(services)
   // Both settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),

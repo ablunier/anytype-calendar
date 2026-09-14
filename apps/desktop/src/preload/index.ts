@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import {
   IpcChannel,
   type CalendarApi,
+  type EventsSnapshot,
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
   type SessionSnapshot
@@ -48,6 +49,17 @@ const api: CalendarApi = {
       }
     },
     save: (selection) => ipcRenderer.invoke(IpcChannel.schemaSelectionSave, selection)
+  },
+  events: {
+    get: () => ipcRenderer.invoke(IpcChannel.eventsGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: EventsSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.eventsChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.eventsChanged, forward)
+      }
+    },
+    showMonth: (month) => ipcRenderer.invoke(IpcChannel.eventsShowMonth, month)
   }
 }
 

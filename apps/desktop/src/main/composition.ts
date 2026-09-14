@@ -20,6 +20,17 @@ import {
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
 import {
+  EventsMonthStore,
+  LoadEventsMonth,
+  ResetEventsMonth
+} from '@anytype-calendar/events/application'
+import type { EventsGateway, EventsTimeZone } from '@anytype-calendar/events/domain'
+import {
+  AnytypeEventsGateway,
+  InMemoryEventsGateway,
+  LocalEventsTimeZone
+} from '@anytype-calendar/events/infrastructure'
+import {
   LoadSchemaSelection,
   ResetSchemaSync,
   SaveSchemaSelection,
@@ -34,6 +45,7 @@ import {
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
+import { eventsSourcesFor } from './events/event-sources'
 import { selectionFileAt } from './schema/selection-storage'
 
 /**
@@ -55,12 +67,14 @@ export interface AppServices {
   schemaSelection: SchemaSelectionStore
   loadSchemaSelection: LoadSchemaSelection
   saveSchemaSelection: SaveSchemaSelection
+  eventsState: EventsMonthStore
+  loadEventsMonth: LoadEventsMonth
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
 export function composeServices(): AppServices {
   // Swaps all of Anytype for a simulation: sign-in accepts 2749 (each challenge is logged
-  // here), and the schema reads return the design's sample account.
+  // here), and the schema and object reads return the design's sample account.
   const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
   const client = fakeAnytype ? null : anytypeClient()
 
@@ -80,10 +94,13 @@ export function composeServices(): AppServices {
   const signOutOfAuth = new SignOutOfAuth({ credentials, store: authSession })
   const copyAuthApiKey = new CopyAuthApiKey(credentials)
 
+  // Adapts auth's credentials to the key source port schema and events each declare.
+  const apiKeys = { current: async () => (await credentials.load())?.apiKey ?? null }
+
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
     gateway: client ? new AnytypeSchemaGateway(client) : inMemorySchemaGateway(),
-    apiKeys: { current: async () => (await credentials.load())?.apiKey ?? null },
+    apiKeys,
     store: schemaState
   })
   const resetSchemaSync = new ResetSchemaSync(schemaState)
@@ -107,12 +124,38 @@ export function composeServices(): AppServices {
     store: schemaSelection
   })
 
-  // Contexts never know about each other, so the link lives here: being connected — signed
-  // in just now, or a key restored at launch — is what reads the account; anything else
-  // forgets it. The session store notifies only on change, and a reset while idle is a no-op.
+  const zone = new LocalEventsTimeZone()
+  const eventsState = new EventsMonthStore()
+  const loadEventsMonth = new LoadEventsMonth({
+    gateway: client ? new AnytypeEventsGateway(client) : inMemoryEventsGateway(zone),
+    apiKeys,
+    sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
+    zone,
+    store: eventsState
+  })
+  const resetEventsMonth = new ResetEventsMonth(eventsState)
+
+  // Contexts never know about each other, so the links live here. Being connected — signed
+  // in just now, or a key restored at launch — is what reads the account and the month;
+  // anything else forgets both. The stores notify only on change, and a reset while idle is
+  // a no-op.
+  const connected = (): boolean => authSession.get().phase === 'connected'
   authSession.subscribe((session) => {
-    if (session.phase === 'connected') void schemaSync.execute()
-    else resetSchemaSync.execute()
+    if (session.phase === 'connected') {
+      void schemaSync.execute()
+      void loadEventsMonth.execute()
+    } else {
+      resetSchemaSync.execute()
+      resetEventsMonth.execute()
+    }
+  })
+  // A fresh read of the account, or a changed selection, may change what the month holds. A
+  // reload replaces a load still running, so a burst of Settings changes draws only the last.
+  schemaState.subscribe((state) => {
+    if (state.phase === 'synced' && connected()) void loadEventsMonth.execute()
+  })
+  schemaSelection.subscribe(() => {
+    if (connected()) void loadEventsMonth.execute()
   })
 
   return {
@@ -127,7 +170,9 @@ export function composeServices(): AppServices {
     schemaState,
     schemaSelection,
     loadSchemaSelection,
-    saveSchemaSelection
+    saveSchemaSelection,
+    eventsState,
+    loadEventsMonth
   }
 }
 
@@ -148,6 +193,10 @@ function inMemoryAuthGateway(): AuthGateway {
 
 function inMemorySchemaGateway(): SchemaGateway {
   return new InMemorySchemaGateway({ sleep: (ms) => sleep(ms) })
+}
+
+function inMemoryEventsGateway(zone: EventsTimeZone): EventsGateway {
+  return new InMemoryEventsGateway({ sleep: (ms) => sleep(ms), zone, now: Date.now })
 }
 
 /** Never writes the key in plaintext: without OS encryption it lasts only until quit. */

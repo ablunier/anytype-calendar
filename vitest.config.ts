@@ -41,6 +41,20 @@ const rendererProject = {
   }
 }
 
+// The main process's pure glue — the modules under test import neither Electron nor Node
+// core — with the aliases of electron.vite.config.ts's `main` block.
+const mainProject = {
+  resolve: {
+    alias: [{ find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') }, workspaceAlias]
+  },
+  test: {
+    name: 'main',
+    root: __dirname,
+    environment: 'node' as const,
+    include: ['apps/desktop/src/main/**/*.test.ts']
+  }
+}
+
 export default defineConfig({
   test: {
     // Contexts are scaffolded before they have tests; an empty project is not a failure.
@@ -49,7 +63,8 @@ export default defineConfig({
       layerProject('domain'),
       layerProject('application'),
       layerProject('infrastructure'),
-      rendererProject
+      rendererProject,
+      mainProject
     ]
   }
 })
