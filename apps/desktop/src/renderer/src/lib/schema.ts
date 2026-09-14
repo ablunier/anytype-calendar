@@ -115,6 +115,13 @@ export function isOnboarded(selection: SchemaSelectionSnapshot): boolean {
   return selection.phase === 'saved'
 }
 
+/** Whether any chosen type is inside a chosen space, which is what main puts on the calendar. */
+export function tracksAnyType(selection: SchemaSelectionSnapshot): boolean {
+  if (selection.phase === 'unset') return false
+  const { spaceIds, types } = selection.selection
+  return types.some((choice) => spaceIds.includes(choice.spaceId))
+}
+
 /**
  * The saved selection as picks over `types`. A saved date the type no longer has is left
  * out, so the type falls back to its own dates rather than showing a choice it cannot offer.
@@ -181,7 +188,8 @@ function syncedSpaces(snapshot: SchemaSnapshot): SchemaSpace[] {
   return snapshot.phase === 'idle' ? [] : (snapshot.last?.spaces ?? [])
 }
 
-function objectTypeKey(spaceId: string, typeKey: string): string {
+/** The key of the ObjectType for a type of a space. */
+export function objectTypeKey(spaceId: string, typeKey: string): string {
   return `${spaceId}:${typeKey}`
 }
 
@@ -203,7 +211,8 @@ function defaultMapping(type: SchemaType): DateMapping {
   return { from: type.dateProperties[0]?.key ?? '', to: null }
 }
 
-function elapsedSince(at: number, now: number): string {
+/** Both epoch milliseconds, e.g. "3 min ago". */
+export function elapsedSince(at: number, now: number): string {
   const elapsed = Math.max(0, now - at)
   if (elapsed < MINUTE_MS) return 'just now'
   if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)} min ago`

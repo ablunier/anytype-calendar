@@ -3,11 +3,14 @@ import type { SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type { ObjectType, TypePicks } from '@renderer/types'
 import {
+  elapsedSince,
   isOnboarded,
+  objectTypeKey,
   picksFor,
   schemaSelectionFor,
   spacesFor,
   syncViewFor,
+  tracksAnyType,
   typesFor
 } from './schema'
 
@@ -47,6 +50,38 @@ const SPACE: SchemaSpace = {
 
 const SYNCED_AT = 100_000
 const SYNCED: SchemaSnapshot = { phase: 'synced', last: { spaces: [SPACE], syncedAt: SYNCED_AT } }
+
+describe('tracksAnyType', () => {
+  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }
+
+  test('is false until a selection is saved', () => {
+    expect(tracksAnyType({ phase: 'unset' })).toBe(false)
+  })
+
+  test('is true for a chosen type in a chosen space', () => {
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [task] } })).toBe(true)
+  })
+
+  test('is false when the only chosen type sits in a space no longer chosen', () => {
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_2'], types: [task] } })).toBe(false)
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: [], types: [] } })).toBe(false)
+  })
+})
+
+describe('objectTypeKey', () => {
+  test('is the key typesFor gives the type', () => {
+    expect(objectTypeKey('sp_1', 'task')).toBe(typesFor(SYNCED)[0]?.key)
+  })
+})
+
+describe('elapsedSince', () => {
+  test('rounds down to the largest unit', () => {
+    expect(elapsedSince(0, 59_000)).toBe('just now')
+    expect(elapsedSince(0, 3 * 60_000)).toBe('3 min ago')
+    expect(elapsedSince(0, 5 * 3_600_000)).toBe('5 h ago')
+    expect(elapsedSince(0, 2 * 86_400_000)).toBe('2 d ago')
+  })
+})
 
 describe('spacesFor', () => {
   test('is empty before any successful sync', () => {

@@ -1,25 +1,35 @@
 import { useState } from 'react'
+import { shiftEventsMonth } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
-import type { AuthView, ConnectedScreen } from './types'
+import type { AuthView, CalendarMonth, ConnectedScreen } from './types'
+import { useEvents } from './hooks/useEvents'
 import { useNow } from './hooks/useNow'
 import { useSchemaSelection } from './hooks/useSchemaSelection'
 import { useSchemaSync } from './hooks/useSchemaSync'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
-import { isOnboarded, picksFor, schemaSelectionFor, spacesFor, syncViewFor, typesFor } from './lib/schema'
+import { withDates } from './lib/calendar'
+import { eventsFor, localDate, monthOf, monthStatusFor, shownMonthFor } from './lib/events'
+import {
+  isOnboarded,
+  picksFor,
+  schemaSelectionFor,
+  spacesFor,
+  syncViewFor,
+  tracksAnyType,
+  typesFor
+} from './lib/schema'
 import { apiKeyFor, authViewFor } from './lib/session'
-import { calendarData } from './mocks'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
 import { MonthScreen } from './screens/month/MonthScreen'
 import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
 
-/** Often enough for "synced 3 min ago" to stay true. */
+/** Often enough for "synced 3 min ago" to stay true, and for today to move soon after midnight. */
 const SYNC_AGE_TICK_MS = 30_000
 
 /**
- * The renderer's root: the screen switcher, the theme, and the only module that reads the
- * mock data.
+ * The renderer's root: the screen switcher and the theme.
  *
  * Until the session is connected, what is on screen is derived from the auth session main
  * pushes, and every auth button is an intent sent back over IPC. Once connected, moving
@@ -27,13 +37,16 @@ const SYNC_AGE_TICK_MS = 30_000
  * router would only add indirection — with one rule derived from main instead: until a
  * selection has been saved, every screen past the success card is onboarding. So a key
  * restored at launch still gets onboarding if it was never finished, and saving is what
- * lets the calendar through. Everything below here takes what it draws through props.
+ * lets the calendar through. The month on screen is main's too: the arrows ask main for
+ * another month, and the grid follows what it pushes back. Everything below here takes what
+ * it draws through props.
  */
 function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
+  const events = useEvents()
   const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
 
@@ -50,7 +63,7 @@ function App(): React.JSX.Element | null {
     if (session?.phase === 'connected') setScreen(phase === undefined ? 'month' : 'success')
   }
 
-  if (!session || !schema || !selection) return null
+  if (!session || !schema || !selection || !events) return null
 
   const authView: AuthView | null =
     authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
@@ -112,12 +125,33 @@ function App(): React.JSX.Element | null {
     )
   }
 
+  const month = shownMonthFor(events, now)
+  const showMonth = (next: CalendarMonth): void => {
+    void window.api.events.showMonth(next)
+  }
+  const types = typesFor(schema)
+  const picks = picksFor(selection, types)
   return (
     <MonthScreen
-      data={calendarData}
+      key={`${month.year}-${month.month}`}
+      month={month}
+      events={eventsFor(events, month)}
+      status={monthStatusFor(events, month, now)}
+      types={withDates(types, picks.dates)}
+      spaces={spacesFor(schema)}
+      trackedSpaceKeys={picks.spaceKeys}
+      tracksAnything={tracksAnyType(selection)}
+      today={localDate(now)}
       theme={theme}
       onToggleTheme={toggleTheme}
       onOpenSettings={() => setScreen('config')}
+      onPrevMonth={() => showMonth(shiftEventsMonth(month, -1))}
+      onNextMonth={() => showMonth(shiftEventsMonth(month, 1))}
+      onToday={() => showMonth(monthOf(Date.now()))}
+      onReread={() => {
+        void window.api.schema.sync()
+        showMonth(month)
+      }}
     />
   )
 }

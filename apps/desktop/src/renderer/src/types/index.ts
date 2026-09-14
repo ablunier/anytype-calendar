@@ -1,9 +1,8 @@
 /* UI-local types for the renderer.
  *
- * These are deliberately defined here and not in a package's domain layer. This pass is a
- * presentational one: the shapes describe what a component needs to draw, not what the
- * calendar means. When the real use cases land behind IPC they will bring their own
- * domain types, and these become the view-model boundary they map onto.
+ * These are deliberately defined here and not in a package's domain layer: the shapes
+ * describe what a component needs to draw, not what the calendar means. The lib/ modules map
+ * the snapshots main pushes onto them, so they are the view-model boundary.
  */
 
 /** Decorative only — never the sole carrier of meaning. Types have one; spaces do not. */
@@ -62,36 +61,36 @@ export interface TypePicks {
   dates: Record<string, DateMapping>
 }
 
-/** `day` and `until` are days of the month within the mock month. */
-export interface CalendarEvent {
-  id: number
-  day: number
-  title: string
-  /** Key of the owning ObjectType. */
-  type: string
-  time?: string
-  end?: string
-  allDay?: boolean
-  /** Last day of a range; absent for single-day objects. */
-  until?: number
-  done?: boolean
-}
-
-export interface CalendarData {
-  spaces: Space[]
-  types: ObjectType[]
-  events: CalendarEvent[]
+export interface CalendarMonth {
   year: number
   /** Zero-based, matching Date. */
   month: number
-  monthLabel: string
-  today: number
-  trackedTypeKeys: string[]
-  trackedSpaceKeys: string[]
+}
+
+/** Dates are local `YYYY-MM-DD` and times local `HH:MM`, so dates compare as strings. */
+export interface CalendarEvent {
+  /** Anytype's object id, the same on every read. */
+  id: string
+  title: string
+  /** Key of the owning ObjectType. */
+  type: string
+  /** Key of the owning Space. */
+  space: string
+  date: string
+  /** Absent for an all-day object. */
+  time?: string
+  /** The date a range ends on, which may be `date` itself; absent for a single date. */
+  until?: string
+  /** The time a timed range ends at. */
+  end?: string
+  allDay: boolean
+  done?: boolean
 }
 
 export interface MonthCell {
   day: number
+  /** In the month the day belongs to, which for an outside cell is an adjacent one. */
+  date: string
   /** True for the leading and trailing days borrowed from adjacent months. */
   outside: boolean
 }
@@ -135,7 +134,8 @@ export interface ApiKeyView {
 
 export type DetailTarget =
   | { kind: 'object'; event: CalendarEvent }
-  | { kind: 'day'; day: number }
+  /** `date` is `YYYY-MM-DD`. */
+  | { kind: 'day'; date: string }
 
 /** The Lucide glyphs vendored in assets/icons. Keeps Icon's `name` prop honest. */
 export type IconName =

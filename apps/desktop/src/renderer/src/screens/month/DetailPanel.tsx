@@ -9,8 +9,6 @@ export interface DetailPanelProps {
   events: CalendarEvent[]
   typesByKey: Map<string, ObjectType>
   spacesByKey: Map<string, Space>
-  year: number
-  month: number
   onClose: () => void
   onOpenEvent: (event: CalendarEvent) => void
 }
@@ -20,8 +18,6 @@ export function DetailPanel({
   events,
   typesByKey,
   spacesByKey,
-  year,
-  month,
   onClose,
   onOpenEvent
 }: DetailPanelProps): React.JSX.Element {
@@ -43,17 +39,13 @@ export function DetailPanel({
           event={detail.event}
           type={typesByKey.get(detail.event.type)}
           spacesByKey={spacesByKey}
-          year={year}
-          month={month}
         />
       ) : (
         <DayDetail
-          day={detail.day}
-          events={eventsOnDay(events, detail.day)}
+          date={detail.date}
+          events={eventsOnDay(events, detail.date)}
           typesByKey={typesByKey}
           spacesByKey={spacesByKey}
-          year={year}
-          month={month}
           onOpenEvent={onOpenEvent}
         />
       )}

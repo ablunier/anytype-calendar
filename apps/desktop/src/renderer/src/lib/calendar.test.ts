@@ -8,9 +8,11 @@ import {
   indexBy,
   isoDate,
   longDate,
+  monthLabel,
   offersDates,
   spacesByKeys,
-  typesInSpace
+  typesInSpace,
+  withDates
 } from './calendar'
 
 const TASK: ObjectType = {
@@ -33,20 +35,20 @@ describe('buildMonthGrid', () => {
     // February 2024: 1 Feb is a Thursday, so the grid borrows Mon-Wed from January.
     const grid = buildMonthGrid(2024, 1)
     expect(grid.slice(0, 3)).toEqual([
-      { day: 29, outside: true },
-      { day: 30, outside: true },
-      { day: 31, outside: true }
+      { day: 29, date: '2024-01-29', outside: true },
+      { day: 30, date: '2024-01-30', outside: true },
+      { day: 31, date: '2024-01-31', outside: true }
     ])
-    expect(grid[3]).toEqual({ day: 1, outside: false })
-    expect(grid.at(-1)).toEqual({ day: 3, outside: true })
+    expect(grid[3]).toEqual({ day: 1, date: '2024-02-01', outside: false })
+    expect(grid.at(-1)).toEqual({ day: 3, date: '2024-03-03', outside: true })
     expect(grid).toHaveLength(35)
   })
 
   test('starts on Monday with no leading days, and pads a full last row', () => {
     // September 2025: 1 Sep is a Monday; 30 days leaves the grid 2 short of a full row.
     const grid = buildMonthGrid(2025, 8)
-    expect(grid[0]).toEqual({ day: 1, outside: false })
-    expect(grid.slice(30)).toEqual([
+    expect(grid[0]).toEqual({ day: 1, date: '2025-09-01', outside: false })
+    expect(grid.slice(30).map(({ day, outside }) => ({ day, outside }))).toEqual([
       { day: 1, outside: true },
       { day: 2, outside: true },
       { day: 3, outside: true },
@@ -56,6 +58,18 @@ describe('buildMonthGrid', () => {
     expect(grid).toHaveLength(35)
   })
 
+  test('dates the borrowed days across a year change', () => {
+    // December 2026 starts on a Tuesday and ends on a Thursday.
+    const grid = buildMonthGrid(2026, 11)
+    expect(grid[0]).toEqual({ day: 30, date: '2026-11-30', outside: true })
+    expect(grid.at(-1)).toEqual({ day: 3, date: '2027-01-03', outside: true })
+  })
+
+  test('grows to six rows when the month needs them', () => {
+    // August 2026 starts on a Saturday and has 31 days.
+    expect(buildMonthGrid(2026, 7)).toHaveLength(42)
+  })
+
   test('every row is 7 long', () => {
     const grid = buildMonthGrid(2024, 1)
     expect(grid.length % 7).toBe(0)
@@ -63,20 +77,33 @@ describe('buildMonthGrid', () => {
 })
 
 describe('eventsOnDay', () => {
-  const single: CalendarEvent = { id: 1, day: 5, title: 'Single', type: TASK.key }
-  const range: CalendarEvent = { id: 2, day: 5, title: 'Range', type: TASK.key, until: 8 }
+  const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true }
+  const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
+  const range: CalendarEvent = { ...base, id: '2', date: '2026-09-05', until: '2026-09-08' }
+  const intoOctober: CalendarEvent = { ...base, id: '3', date: '2026-09-29', until: '2026-10-02' }
 
   test('matches a single-day event only on its day', () => {
-    expect(eventsOnDay([single], 5)).toEqual([single])
-    expect(eventsOnDay([single], 6)).toEqual([])
+    expect(eventsOnDay([single], '2026-09-05')).toEqual([single])
+    expect(eventsOnDay([single], '2026-09-06')).toEqual([])
   })
 
   test('matches a ranged event across its whole span', () => {
-    expect(eventsOnDay([range], 5)).toEqual([range])
-    expect(eventsOnDay([range], 7)).toEqual([range])
-    expect(eventsOnDay([range], 8)).toEqual([range])
-    expect(eventsOnDay([range], 4)).toEqual([])
-    expect(eventsOnDay([range], 9)).toEqual([])
+    expect(eventsOnDay([range], '2026-09-05')).toEqual([range])
+    expect(eventsOnDay([range], '2026-09-07')).toEqual([range])
+    expect(eventsOnDay([range], '2026-09-08')).toEqual([range])
+    expect(eventsOnDay([range], '2026-09-04')).toEqual([])
+    expect(eventsOnDay([range], '2026-09-09')).toEqual([])
+  })
+
+  test('matches a range on both sides of a month edge', () => {
+    expect(eventsOnDay([intoOctober], '2026-09-30')).toEqual([intoOctober])
+    expect(eventsOnDay([intoOctober], '2026-10-01')).toEqual([intoOctober])
+    expect(eventsOnDay([intoOctober], '2026-10-03')).toEqual([])
+  })
+
+  test('matches a range that ends on its start day', () => {
+    const sameDay: CalendarEvent = { ...base, id: '4', date: '2026-09-05', until: '2026-09-05' }
+    expect(eventsOnDay([sameDay], '2026-09-05')).toEqual([sameDay])
   })
 })
 
@@ -92,7 +119,14 @@ describe('isoDate', () => {
 
 describe('longDate', () => {
   test('spells out the month name', () => {
-    expect(longDate(2024, 0, 5)).toBe('5 January 2024')
+    expect(longDate('2024-01-05')).toBe('5 January 2024')
+    expect(longDate('2026-12-31')).toBe('31 December 2026')
+  })
+})
+
+describe('monthLabel', () => {
+  test('names the month and year', () => {
+    expect(monthLabel(2027, 0)).toBe('January 2027')
   })
 })
 
@@ -138,6 +172,18 @@ describe('offersDates', () => {
 
   test('false when the to property is gone', () => {
     expect(offersDates(TASK, { from: 'due_date', to: 'gone_date' })).toBe(false)
+  })
+})
+
+describe('withDates', () => {
+  const other: ObjectType = { ...TASK, key: 'sp_1:project' }
+
+  test('gives a type with an entry those dates, and leaves the rest as they are', () => {
+    const [task, project] = withDates([TASK, other], {
+      'sp_1:task': { from: 'start_date', to: 'due_date' }
+    })
+    expect(task).toEqual({ ...TASK, from: 'start_date', to: 'due_date' })
+    expect(project).toBe(other)
   })
 })
 

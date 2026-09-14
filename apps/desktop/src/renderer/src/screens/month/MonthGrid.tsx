@@ -1,21 +1,21 @@
 import { useEffect, useRef } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
-import { eventsOnDay, FIRST_WEEKEND_INDEX, isoDate, WEEKDAYS } from '@renderer/lib/calendar'
+import { eventsOnDay, FIRST_WEEKEND_INDEX, WEEKDAYS } from '@renderer/lib/calendar'
 import { MonthDayCell } from './MonthDayCell'
 
 export interface MonthGridProps {
   cells: MonthCell[]
   events: CalendarEvent[]
   typesByKey: Map<string, ObjectType>
-  year: number
-  month: number
-  today: number
+  /** `YYYY-MM-DD`. */
+  today: string
   selectedDay: number | null
   /** The day that owns the grid's single tab stop. */
   focusedDay: number
   onFocusDay: (day: number) => void
   onSelectDay: (day: number) => void
-  onOpenEvent: (event: CalendarEvent) => void
+  /** `day` is the day whose cell the object was opened from. */
+  onOpenEvent: (event: CalendarEvent, day: number) => void
 }
 
 function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
@@ -31,13 +31,14 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  *
  * Roving tabindex: exactly one cell is tabbable and the arrow keys move between them, so a
  * keyboard user crosses the month without tabbing through every chip on the way.
+ *
+ * Outside days get no objects: only the month's own window was read, so a range reaching into
+ * them is drawn up to the month's edge.
  */
 export function MonthGrid({
   cells,
   events,
   typesByKey,
-  year,
-  month,
   today,
   selectedDay,
   focusedDay,
@@ -98,26 +99,22 @@ export function MonthGrid({
       <div className="flex flex-1 flex-col overflow-auto border-l border-grid-line">
         {chunkWeeks(cells).map((week, weekIndex) => (
           <div key={weekIndex} role="row" className="grid flex-1 grid-week">
-            {week.map((cell, dayIndex) => {
-              const dayEvents = cell.outside ? [] : eventsOnDay(events, cell.day)
-              return (
-                <MonthDayCell
-                  key={`${weekIndex}-${dayIndex}`}
-                  cell={cell}
-                  events={dayEvents}
-                  typesByKey={typesByKey}
-                  isoDate={isoDate(year, month, cell.day)}
-                  isToday={!cell.outside && cell.day === today}
-                  isSelected={!cell.outside && cell.day === selectedDay}
-                  isWeekend={dayIndex >= FIRST_WEEKEND_INDEX}
-                  tabbable={!cell.outside && cell.day === focusedDay}
-                  onFocus={() => onFocusDay(cell.day)}
-                  onSelect={() => onSelectDay(cell.day)}
-                  onKeyDown={(event) => handleKeyDown(event, cell.day)}
-                  onOpenEvent={onOpenEvent}
-                />
-              )
-            })}
+            {week.map((cell, dayIndex) => (
+              <MonthDayCell
+                key={cell.date}
+                cell={cell}
+                events={cell.outside ? [] : eventsOnDay(events, cell.date)}
+                typesByKey={typesByKey}
+                isToday={!cell.outside && cell.date === today}
+                isSelected={!cell.outside && cell.day === selectedDay}
+                isWeekend={dayIndex >= FIRST_WEEKEND_INDEX}
+                tabbable={!cell.outside && cell.day === focusedDay}
+                onFocus={() => onFocusDay(cell.day)}
+                onSelect={() => onSelectDay(cell.day)}
+                onKeyDown={(event) => handleKeyDown(event, cell.day)}
+                onOpenEvent={(event) => onOpenEvent(event, cell.day)}
+              />
+            ))}
           </div>
         ))}
       </div>

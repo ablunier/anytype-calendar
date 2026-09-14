@@ -1,7 +1,7 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
-import { dateLabel, isoDate } from '@renderer/lib/calendar'
+import { dateLabel } from '@renderer/lib/calendar'
 
 interface DetailFieldProps {
   label: string
@@ -29,26 +29,16 @@ export interface ObjectDetailProps {
   event: CalendarEvent
   type: ObjectType | undefined
   spacesByKey: Map<string, Space>
-  year: number
-  month: number
 }
 
 /**
  * Every field names the relation that surfaced it ("From · Due date") — the system's rule
  * that trust comes from being explicit about why something is on the grid.
  */
-export function ObjectDetail({
-  event,
-  type,
-  spacesByKey,
-  year,
-  month
-}: ObjectDetailProps): React.JSX.Element {
-  const space = type ? spacesByKey.get(type.space) : undefined
-  const from = `${isoDate(year, month, event.day)}${event.time ? ` ${event.time}` : ''}`
-  const to = type?.to
-    ? `${isoDate(year, month, event.until ?? event.day)}${event.end ? ` ${event.end}` : ''}`
-    : 'Not set'
+export function ObjectDetail({ event, type, spacesByKey }: ObjectDetailProps): React.JSX.Element {
+  const space = spacesByKey.get(event.space)
+  const from = `${event.date}${event.time ? ` ${event.time}` : ''}`
+  const to = event.until ? `${event.until}${event.end ? ` ${event.end}` : ''}` : 'Not set'
 
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
@@ -74,7 +64,7 @@ export function ObjectDetail({
         <DetailField
           label={type?.to ? `To · ${dateLabel(type, type.to)}` : 'To date'}
           value={to}
-          mono={!!type?.to}
+          mono={event.until !== undefined}
         />
         <DetailField label="All day" value={event.allDay ? 'Yes' : 'No'} />
         <DetailField label="Space" value={space?.name ?? 'Unknown'} />

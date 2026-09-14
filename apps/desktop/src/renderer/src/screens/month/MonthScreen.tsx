@@ -1,118 +1,173 @@
 import { useMemo, useState } from 'react'
-import type { CalendarData, CalendarEvent, DetailTarget } from '@renderer/types'
+import type {
+  CalendarEvent,
+  CalendarMonth,
+  DetailTarget,
+  ObjectType,
+  Space,
+  SyncView
+} from '@renderer/types'
 import { Button, EmptyState } from '@renderer/components/ui'
-import { buildMonthGrid, indexBy, MONTH_NAMES, spacesByKeys } from '@renderer/lib/calendar'
+import { buildMonthGrid, indexBy, monthLabel, spacesByKeys } from '@renderer/lib/calendar'
 import { DateNavigator } from './DateNavigator'
 import { DetailPanel } from './DetailPanel'
 import { MonthGrid } from './MonthGrid'
 import { MonthTopBar } from './MonthTopBar'
 
 export interface MonthScreenProps {
-  data: CalendarData
+  month: CalendarMonth
+  /** Null until the month has been read. */
+  events: CalendarEvent[] | null
+  /** How the latest read of the month went. */
+  status: SyncView
+  /** Placed by the dates the selection saved for them. */
+  types: ObjectType[]
+  spaces: Space[]
+  trackedSpaceKeys: string[]
+  /** False when no chosen type sits in a chosen space, so no month can hold anything. */
+  tracksAnything: boolean
+  /** `YYYY-MM-DD`. */
+  today: string
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   onOpenSettings: () => void
+  onPrevMonth: () => void
+  onNextMonth: () => void
+  onToday: () => void
+  onReread: () => void
 }
 
+/** Draws one month. Keyed by it, so another month starts with no day selected and no panel. */
 export function MonthScreen({
-  data,
+  month,
+  events,
+  status,
+  types,
+  spaces,
+  trackedSpaceKeys,
+  tracksAnything,
+  today,
   theme,
   onToggleTheme,
-  onOpenSettings
+  onOpenSettings,
+  onPrevMonth,
+  onNextMonth,
+  onToday,
+  onReread
 }: MonthScreenProps): React.JSX.Element {
-  const [offset, setOffset] = useState(0)
+  const typesByKey = useMemo(() => indexBy(types), [types])
+  const spacesByKey = useMemo(() => indexBy(spaces), [spaces])
+  const cells = useMemo(() => buildMonthGrid(month.year, month.month), [month.year, month.month])
+  const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
+  const label = monthLabel(month.year, month.month)
+  const todayCell = cells.find((cell) => !cell.outside && cell.date === today)
+
   const [detail, setDetail] = useState<DetailTarget | null>(null)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
-  const [focusedDay, setFocusedDay] = useState(data.today)
+  const [focusedDay, setFocusedDay] = useState(todayCell?.day ?? 1)
 
-  const typesByKey = useMemo(() => indexBy(data.types), [data.types])
-  const spacesByKey = useMemo(() => indexBy(data.spaces), [data.spaces])
-  const cells = useMemo(() => buildMonthGrid(data.year, data.month), [data.year, data.month])
-  const trackedSpaces = spacesByKeys(data.spaces, data.trackedSpaceKeys)
-
-  const visibleEvents = useMemo(
-    () =>
-      data.events.filter((event) => {
-        const type = typesByKey.get(event.type)
-        return (
-          type !== undefined &&
-          data.trackedTypeKeys.includes(event.type) &&
-          data.trackedSpaceKeys.includes(type.space)
-        )
-      }),
-    [data.events, data.trackedTypeKeys, data.trackedSpaceKeys, typesByKey]
-  )
-
-  const label = `${MONTH_NAMES[(data.month + offset + 12) % 12]} ${data.year}`
-  const isFixtureMonth = offset === 0
-
-  const openEvent = (event: CalendarEvent): void => {
-    setSelectedDay(event.day)
+  const openEvent = (event: CalendarEvent, day?: number): void => {
+    if (day !== undefined) setSelectedDay(day)
     setDetail({ kind: 'object', event })
   }
 
   const selectDay = (day: number): void => {
+    const cell = cells.find((candidate) => !candidate.outside && candidate.day === day)
+    if (!cell) return
     setSelectedDay(day)
-    setDetail({ kind: 'day', day })
+    setDetail({ kind: 'day', date: cell.date })
   }
+
+  const subtitle =
+    events === null
+      ? status.state === 'error'
+        ? 'Not read'
+        : 'Reading…'
+      : `${events.length} ${events.length === 1 ? 'object' : 'objects'}`
 
   return (
     <div className="flex h-full flex-col bg-surface-page">
       <MonthTopBar
+        sync={status}
         theme={theme}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
+        onReread={onReread}
       />
 
       <DateNavigator
         title={label}
-        subtitle={`${isFixtureMonth ? visibleEvents.length : 0} objects`}
+        subtitle={subtitle}
         legendSpaces={trackedSpaces}
-        onPrev={() => setOffset((value) => value - 1)}
-        onNext={() => setOffset((value) => value + 1)}
-        onToday={() => setOffset(0)}
+        onPrev={onPrevMonth}
+        onNext={onNextMonth}
+        onToday={onToday}
       />
 
       <div className="flex min-h-0 flex-1">
         <main className="flex min-w-0 flex-1 flex-col">
-          {isFixtureMonth ? (
+          {!tracksAnything ? (
+            <Centered>
+              <EmptyState
+                icon="sliders-horizontal"
+                title="Choose what goes on the calendar"
+                description="Pick the spaces and types whose dates you want to see here."
+                action={
+                  <Button variant="secondary" size="sm" onClick={onOpenSettings}>
+                    Open Settings
+                  </Button>
+                }
+              />
+            </Centered>
+          ) : events === null && status.state === 'error' ? (
+            <Centered>
+              <EmptyState
+                icon="circle-alert"
+                title={`Couldn't read ${label}`}
+                description={status.detail}
+                action={
+                  <Button variant="secondary" size="sm" iconLeft="refresh-cw" onClick={onReread}>
+                    Try again
+                  </Button>
+                }
+              />
+            </Centered>
+          ) : events !== null && events.length === 0 ? (
+            <Centered>
+              <EmptyState
+                icon="calendar-days"
+                title={`Nothing dated in ${label}`}
+                description="Objects of the types you track appear here once one of their dates falls in this month."
+                action={
+                  todayCell ? undefined : (
+                    <Button variant="secondary" size="sm" onClick={onToday}>
+                      Back to today
+                    </Button>
+                  )
+                }
+              />
+            </Centered>
+          ) : (
             <MonthGrid
               cells={cells}
-              events={visibleEvents}
+              events={events ?? []}
               typesByKey={typesByKey}
-              year={data.year}
-              month={data.month}
-              today={data.today}
+              today={today}
               selectedDay={selectedDay}
               focusedDay={focusedDay}
               onFocusDay={setFocusedDay}
               onSelectDay={selectDay}
               onOpenEvent={openEvent}
             />
-          ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <EmptyState
-                icon="calendar-days"
-                title={`Nothing dated in ${label}`}
-                description="Objects appear here once they have a date relation on a tracked type."
-                action={
-                  <Button variant="secondary" size="sm" onClick={() => setOffset(0)}>
-                    Back to {data.monthLabel.split(' ')[0]}
-                  </Button>
-                }
-              />
-            </div>
           )}
         </main>
 
         {detail ? (
           <DetailPanel
             detail={detail}
-            events={visibleEvents}
+            events={events ?? []}
             typesByKey={typesByKey}
             spacesByKey={spacesByKey}
-            year={data.year}
-            month={data.month}
             onClose={() => setDetail(null)}
             onOpenEvent={openEvent}
           />
@@ -120,4 +175,8 @@ export function MonthScreen({
       </div>
     </div>
   )
+}
+
+function Centered({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <div className="flex flex-1 items-center justify-center">{children}</div>
 }

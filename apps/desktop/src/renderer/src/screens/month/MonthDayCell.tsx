@@ -8,7 +8,6 @@ export interface MonthDayCellProps {
   cell: MonthCell
   events: CalendarEvent[]
   typesByKey: Map<string, ObjectType>
-  isoDate: string
   isToday: boolean
   isSelected: boolean
   isWeekend: boolean
@@ -23,7 +22,6 @@ export function MonthDayCell({
   cell,
   events,
   typesByKey,
-  isoDate,
   isToday,
   isSelected,
   isWeekend,
@@ -65,7 +63,7 @@ export function MonthDayCell({
     >
       <div className="flex items-center justify-between gap-4">
         <time
-          dateTime={isoDate}
+          dateTime={cell.date}
           className={[
             'inline-flex h-18 min-w-18 items-center justify-center rounded-4 px-4',
             'font-mono text-tiny tabular-nums',
@@ -83,13 +81,14 @@ export function MonthDayCell({
       <div className="flex flex-col gap-2">
         {shown.map((event) => {
           const type = typesByKey.get(event.type)
-          const continued = event.until !== undefined && event.day !== cell.day
+          // A range that started on an earlier day, including one in an earlier month.
+          const continued = event.date !== cell.date
           return (
             <EventChip
               key={event.id}
               title={`${event.title}${continued ? ' (cont.)' : ''}`}
               category={type?.category ?? 'graphite'}
-              time={event.time}
+              time={continued ? undefined : event.time}
               allDay={event.allDay}
               done={event.done}
               onClick={() => onOpenEvent(event)}
