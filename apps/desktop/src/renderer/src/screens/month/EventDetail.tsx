@@ -78,7 +78,13 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
         </span>
       </p>
 
-      <Button variant="secondary" size="md" fullWidth iconRight="external-link">
+      <Button
+        variant="secondary"
+        size="md"
+        fullWidth
+        iconRight="external-link"
+        onClick={() => window.api.shell.openObject(event.id, event.space)}
+      >
         Open in Anytype
       </Button>
     </div>

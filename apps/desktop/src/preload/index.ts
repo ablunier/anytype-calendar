@@ -74,6 +74,10 @@ const api: CalendarApi = {
       }
     },
     save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme)
+  },
+  shell: {
+    openObject: (objectId, spaceId) =>
+      ipcRenderer.invoke(IpcChannel.shellOpenObject, objectId, spaceId)
   }
 }
 

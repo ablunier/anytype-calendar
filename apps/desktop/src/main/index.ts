@@ -5,6 +5,7 @@ import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
+import { registerShellIpc } from './shell/shell-ipc'
 import { registerThemeIpc } from './theme/theme-ipc'
 import icon from '../../resources/icon.png?asset'
 
@@ -47,6 +48,7 @@ app.whenReady().then(async () => {
   registerSchemaIpc(services)
   registerEventsIpc(services)
   registerThemeIpc(services)
+  registerShellIpc()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),

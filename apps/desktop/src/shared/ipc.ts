@@ -41,7 +41,8 @@ export const IpcChannel = {
   eventsShowMonth: 'events:show-month',
   themeGet: 'theme:get',
   themeChanged: 'theme:changed',
-  themeSave: 'theme:save'
+  themeSave: 'theme:save',
+  shellOpenObject: 'shell:open-object'
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */
@@ -91,5 +92,9 @@ export interface CalendarApi {
     onChange(listener: (state: ThemeSnapshot) => void): () => void
     /** Rejects when the value is not a theme. */
     save(theme: 'light' | 'dark'): Promise<void>
+  }
+  shell: {
+    /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */
+    openObject(objectId: string, spaceId: string): Promise<void>
   }
 }
