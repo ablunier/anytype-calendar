@@ -25,7 +25,7 @@ function DetailField({ label, value, mono = false }: DetailFieldProps): React.JS
   )
 }
 
-export interface ObjectDetailProps {
+export interface EventDetailProps {
   event: CalendarEvent
   type: ObjectType | undefined
   spacesByKey: Map<string, Space>
@@ -35,7 +35,7 @@ export interface ObjectDetailProps {
  * Every field names the relation that surfaced it ("From · Due date") — the system's rule
  * that trust comes from being explicit about why something is on the grid.
  */
-export function ObjectDetail({ event, type, spacesByKey }: ObjectDetailProps): React.JSX.Element {
+export function EventDetail({ event, type, spacesByKey }: EventDetailProps): React.JSX.Element {
   const space = spacesByKey.get(event.space)
   const from = `${event.date}${event.time ? ` ${event.time}` : ''}`
   const to = event.until ? `${event.until}${event.end ? ` ${event.end}` : ''}` : 'Not set'

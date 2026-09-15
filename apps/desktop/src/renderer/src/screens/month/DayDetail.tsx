@@ -1,6 +1,6 @@
 import type { CalendarEvent, ObjectType } from '@renderer/types'
 import { longDate } from '@renderer/lib/calendar'
-import { ObjectRow } from './ObjectRow'
+import { EventRow } from './EventRow'
 
 export interface DayDetailProps {
   /** `YYYY-MM-DD`. */
@@ -20,13 +20,13 @@ export function DayDetail({
     <div className="flex min-h-0 flex-col">
       <div className="px-16 pt-16 pb-8">
         <h2 className="mb-2 type-heading text-h4 text-ink-primary">{longDate(date)}</h2>
-        <span className="type-numeral text-tiny text-ink-tertiary">{events.length} objects</span>
+        <span className="type-numeral text-tiny text-ink-tertiary">{events.length} events</span>
       </div>
       <div className="overflow-auto px-8 pb-16">
         {events.map((event) => {
           const type = typesByKey.get(event.type)
           return (
-            <ObjectRow
+            <EventRow
               key={event.id}
               title={event.title}
               time={event.date === date ? event.time : undefined}

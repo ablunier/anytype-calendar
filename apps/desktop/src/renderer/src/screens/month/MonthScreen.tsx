@@ -68,7 +68,7 @@ export function MonthScreen({
 
   const openEvent = (event: CalendarEvent, day?: number): void => {
     if (day !== undefined) setSelectedDay(day)
-    setDetail({ kind: 'object', event })
+    setDetail({ kind: 'event', event })
   }
 
   const selectDay = (day: number): void => {
@@ -129,7 +129,7 @@ export function MonthScreen({
               <EmptyState
                 icon="calendar-days"
                 title={`Nothing dated in ${label}`}
-                description="Objects of the types you track appear here once one of their dates falls in this month."
+                description="Events of the types you track appear here once one of their dates falls in this month."
                 action={
                   todayCell ? undefined : (
                     <Button variant="secondary" size="sm" onClick={onToday}>

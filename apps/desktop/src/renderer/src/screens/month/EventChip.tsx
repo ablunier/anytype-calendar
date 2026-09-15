@@ -12,7 +12,7 @@ export interface EventChipProps {
 
 /**
  * A real <button>, not the design's role="button" div, so it is tabbable and fires on
- * Enter and Space. Stops propagation so opening an object does not also select the day.
+ * Enter and Space. Stops propagation so opening an event does not also select the day.
  */
 export function EventChip({
   title,

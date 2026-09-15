@@ -25,8 +25,8 @@ export function monthOf(instant: number): CalendarMonth {
 }
 
 /**
- * The month's objects, or null while it has not been read. A result kept from another month
- * does not count, so the grid never draws one month's objects on another.
+ * The month's events, or null while it has not been read. A result kept from another month
+ * does not count, so the grid never draws one month's events on another.
  */
 export function eventsFor(snapshot: EventsSnapshot, month: CalendarMonth): CalendarEvent[] | null {
   return resultFor(snapshot, month)?.objects.map(calendarEventFor) ?? null

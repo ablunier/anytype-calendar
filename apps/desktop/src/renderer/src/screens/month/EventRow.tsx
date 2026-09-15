@@ -1,7 +1,7 @@
 import type { CategoryHue } from '@renderer/types'
 import { catBg } from '@renderer/components/ui'
 
-export interface ObjectRowProps {
+export interface EventRowProps {
   title: string
   category: CategoryHue
   time?: string
@@ -10,14 +10,14 @@ export interface ObjectRowProps {
   onClick: () => void
 }
 
-export function ObjectRow({
+export function EventRow({
   title,
   category,
   time,
   done = false,
   selected = false,
   onClick
-}: ObjectRowProps): React.JSX.Element {
+}: EventRowProps): React.JSX.Element {
   return (
     <button
       type="button"

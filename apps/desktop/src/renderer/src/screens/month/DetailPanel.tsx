@@ -2,7 +2,7 @@ import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/t
 import { IconButton } from '@renderer/components/ui'
 import { eventsOnDay } from '@renderer/lib/calendar'
 import { DayDetail } from './DayDetail'
-import { ObjectDetail } from './ObjectDetail'
+import { EventDetail } from './EventDetail'
 
 export interface DetailPanelProps {
   detail: DetailTarget
@@ -23,19 +23,15 @@ export function DetailPanel({
 }: DetailPanelProps): React.JSX.Element {
   return (
     <aside
-      aria-label={detail.kind === 'object' ? 'Object detail' : 'Day detail'}
+      aria-label={detail.kind === 'event' ? 'Event detail' : 'Day detail'}
       className="flex w-panel shrink-0 flex-col border-l border-line-subtle bg-surface-card"
     >
-      <div className="flex h-topbar shrink-0 items-center gap-8 border-b border-line-subtle pr-12 pl-16">
-        <span className="type-overline text-tiny text-ink-tertiary">
-          {detail.kind === 'object' ? 'Object' : 'Day'}
-        </span>
-        <div className="flex-1" />
+      <div className="flex h-topbar shrink-0 items-center justify-end border-b border-line-subtle pr-12 pl-16">
         <IconButton icon="x" label="Close panel" onClick={onClose} />
       </div>
 
-      {detail.kind === 'object' ? (
-        <ObjectDetail
+      {detail.kind === 'event' ? (
+        <EventDetail
           event={detail.event}
           type={typesByKey.get(detail.event.type)}
           spacesByKey={spacesByKey}

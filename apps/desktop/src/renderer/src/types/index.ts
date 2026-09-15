@@ -80,7 +80,7 @@ export interface CalendarEvent {
   /** Key of the owning Space. */
   space: string
   date: string
-  /** Absent for an all-day object. */
+  /** Absent for an all-day event. */
   time?: string
   /** The date a range ends on, which may be `date` itself; absent for a single date. */
   until?: string
@@ -136,7 +136,7 @@ export interface ApiKeyView {
 }
 
 export type DetailTarget =
-  | { kind: 'object'; event: CalendarEvent }
+  | { kind: 'event'; event: CalendarEvent }
   /** `date` is `YYYY-MM-DD`. */
   | { kind: 'day'; date: string }
 

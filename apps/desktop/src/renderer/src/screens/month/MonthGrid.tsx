@@ -14,7 +14,7 @@ export interface MonthGridProps {
   focusedDay: number
   onFocusDay: (day: number) => void
   onSelectDay: (day: number) => void
-  /** `day` is the day whose cell the object was opened from. */
+  /** `day` is the day whose cell the event was opened from. */
   onOpenEvent: (event: CalendarEvent, day: number) => void
 }
 
@@ -32,7 +32,7 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * Roving tabindex: exactly one cell is tabbable and the arrow keys move between them, so a
  * keyboard user crosses the month without tabbing through every chip on the way.
  *
- * Outside days get no objects: only the month's own window was read, so a range reaching into
+ * Outside days get no events: only the month's own window was read, so a range reaching into
  * them is drawn up to the month's edge.
  */
 export function MonthGrid({
