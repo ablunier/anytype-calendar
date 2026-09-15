@@ -28,6 +28,7 @@ export function AuthCode({
   onVerify
 }: AuthCodeProps): React.JSX.Element {
   const [code, setCode] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
   const secondsLeft = useSecondsUntil(expiresAt)
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,12 +52,29 @@ export function AuthCode({
         autoComplete="one-time-code"
         autoFocus
         maxLength={4}
-        onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 4))}
+        onChange={(event) => {
+          const next = event.target.value.replace(/\D/g, '').slice(0, 4)
+          setCode(next)
+          setActiveIndex(Math.min(event.target.selectionStart ?? next.length, next.length))
+        }}
+        onSelect={(event) => {
+          const input = event.currentTarget
+          setActiveIndex(input.selectionStart ?? input.value.length)
+        }}
         className="sr-only"
       />
-      <div onClick={() => inputRef.current?.focus()}>
-        <DigitBoxes value={code} />
-      </div>
+      <DigitBoxes
+        value={code}
+        activeIndex={activeIndex}
+        onDigitClick={(index) => {
+          const input = inputRef.current
+          if (!input) return
+          const target = Math.min(index, code.length)
+          input.focus()
+          input.setSelectionRange(target, target < code.length ? target + 1 : target)
+          setActiveIndex(target)
+        }}
+      />
 
       <div className="my-12 mb-20 flex items-center justify-between">
         <div className="flex items-center gap-6 type-caption text-tiny text-ink-tertiary">
