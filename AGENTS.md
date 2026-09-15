@@ -40,7 +40,7 @@ Run from the repo root unless noted.
 - `npm run lint:arch` — run the hexagonal-architecture dependency-cruiser check (see
   Architecture below). First run `npm run lint:arch:setup` to install its isolated toolchain.
 - `npm run clean` — `tsc -b --clean` plus removing `apps/desktop/out` and `apps/desktop/dist`.
-- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), `build:unpack`/`build:win`/`build:mac`/`build:linux` (electron-builder packaging).
+- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), `build:unpack`/`build:win`/`build:mac`/`build:linux` (electron-builder packaging). `build:win` needs Wine (electron-builder shells out to it for the NSIS installer and exe icon); on a Linux machine without Wine installed, use `build:win:docker` instead, which runs the packaging step in `electronuserland/builder:wine` via `build-win-docker.sh` — needs Docker, not Wine.
 - Single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
   layer across all contexts: `npx vitest run --project domain`.
 
