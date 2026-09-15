@@ -6,6 +6,8 @@ export type AuthFailure =
   | 'expired'
   /** Usually the Anytype desktop app is not running. */
   | 'unreachable'
+  /** A pasted key Anytype does not recognise. */
+  | 'invalid-key'
 
 /** Grouped so a code never appears without the challenge it was submitted against. */
 export interface AuthAttempt {
@@ -14,15 +16,23 @@ export interface AuthAttempt {
 }
 
 /**
- * Holds no secret — a connected session carries only ApiKeyInfo, never the key — so it
- * can be handed to any process that needs to draw it.
+ * Holds no secret — a connected session carries only ApiKeyInfo, never the key, and
+ * `entering-key`/`verifying-key` hold none of the pasted key either — so it can be handed
+ * to any process that needs to draw it.
  */
 export type AuthSession =
   | { phase: 'signed-out' }
   | { phase: 'awaiting-code'; challenge: AuthChallenge }
   | { phase: 'verifying'; attempt: AuthAttempt }
-  /** `attempt` is absent when no challenge could be opened. */
-  | { phase: 'failed'; failure: AuthFailure; attempt?: AuthAttempt }
+  /** The user chose to paste a key they already hold instead of the code exchange. */
+  | { phase: 'entering-key' }
+  | { phase: 'verifying-key' }
+  /**
+   * `attempt` is absent when no challenge could be opened, or the failure came from the
+   * key path. `enteredKey` marks that latter case, so stepping back returns to pasting a
+   * key rather than to a code challenge.
+   */
+  | { phase: 'failed'; failure: AuthFailure; attempt?: AuthAttempt; enteredKey?: boolean }
   | { phase: 'connected'; key: ApiKeyInfo }
 
 export type AuthSessionPhase = AuthSession['phase']
@@ -35,6 +45,11 @@ export type AuthEvent =
   | { type: 'code-submitted'; code: string; at: number }
   | { type: 'exchange-succeeded'; key: ApiKeyInfo }
   | { type: 'exchange-failed'; failure: AuthFailure }
+  /** The user picked "I already have an API key" from the start screen. */
+  | { type: 'key-entry-opened' }
+  | { type: 'key-submitted' }
+  | { type: 'key-verified'; key: ApiKeyInfo }
+  | { type: 'key-rejected'; failure: AuthFailure }
   | { type: 'stepped-back' }
   | { type: 'restored'; key: ApiKeyInfo }
   | { type: 'signed-out' }
@@ -68,6 +83,20 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
         ? { phase: 'failed', failure: event.failure, attempt: session.attempt }
         : session
 
+    case 'key-entry-opened':
+      return session.phase === 'signed-out' ? { phase: 'entering-key' } : session
+
+    case 'key-submitted':
+      return session.phase === 'entering-key' ? { phase: 'verifying-key' } : session
+
+    case 'key-verified':
+      return session.phase === 'verifying-key' ? { phase: 'connected', key: event.key } : session
+
+    case 'key-rejected':
+      return session.phase === 'verifying-key'
+        ? { phase: 'failed', failure: event.failure, enteredKey: true }
+        : session
+
     case 'stepped-back':
       return stepBack(session)
 
@@ -93,7 +122,12 @@ function stepBack(session: AuthSession): AuthSession {
       return { phase: 'signed-out' }
     case 'verifying':
       return { phase: 'awaiting-code', challenge: session.attempt.challenge }
+    case 'entering-key':
+      return { phase: 'signed-out' }
+    case 'verifying-key':
+      return { phase: 'entering-key' }
     case 'failed':
+      if (session.enteredKey) return { phase: 'entering-key' }
       return session.attempt
         ? { phase: 'awaiting-code', challenge: session.attempt.challenge }
         : { phase: 'signed-out' }

@@ -99,3 +99,38 @@ describe('exchangeCode', () => {
     await expect(exchanging).rejects.not.toThrow('ak_secret')
   })
 })
+
+describe('verifyApiKey', () => {
+  test('sends the key as a bearer token and resolves ok on success', async () => {
+    const { gateway, calls } = setup(200, { data: [] })
+
+    await expect(gateway.verifyApiKey('ak_secret')).resolves.toEqual({ ok: true })
+    expect(calls[0]?.url).toBe('http://127.0.0.1:31009/v1/spaces')
+    expect(calls[0]?.init).toMatchObject({ method: 'GET' })
+    expect(calls[0]?.init.headers).toMatchObject({ Authorization: 'Bearer ak_secret' })
+  })
+
+  test('reads a 401 as a key Anytype does not recognise', async () => {
+    const { gateway } = setup(401, { ...authFailure, status: 401, code: 'unauthorized' })
+    await expect(gateway.verifyApiKey('ak_wrong')).resolves.toEqual({
+      ok: false,
+      failure: 'invalid-key'
+    })
+  })
+
+  test('rejects on any other error status', async () => {
+    const { gateway } = setup(500, authFailure)
+    await expect(gateway.verifyApiKey('ak_secret')).rejects.toThrow('500')
+  })
+
+  test('rejects when Anytype cannot be reached', async () => {
+    const gateway = new AnytypeAuthGateway(
+      new AnytypeClient({
+        fetch: async () => {
+          throw new TypeError('fetch failed')
+        }
+      })
+    )
+    await expect(gateway.verifyApiKey('ak_secret')).rejects.toThrow('fetch failed')
+  })
+})

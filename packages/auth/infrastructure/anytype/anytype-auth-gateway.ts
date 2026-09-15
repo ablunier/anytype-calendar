@@ -1,5 +1,5 @@
 import type { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
-import type { AuthExchangeResult, AuthGateway } from '../../domain'
+import type { AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 
 /**
  * Anytype answers a wrong code, an expired challenge and an unknown challenge alike with
@@ -8,6 +8,9 @@ import type { AuthExchangeResult, AuthGateway } from '../../domain'
  * rejected code, and anything else as Anytype misbehaving.
  */
 const REJECTED_CODE_STATUSES = new Set([400, 500])
+
+/** What every authenticated endpoint answers for a key it does not recognise. */
+const UNAUTHORIZED = 401
 
 export class AnytypeAuthGateway implements AuthGateway {
   readonly #client: AnytypeClient
@@ -39,6 +42,17 @@ export class AnytypeAuthGateway implements AuthGateway {
     const apiKey = response.ok ? stringField(response.body, 'api_key') : undefined
     if (apiKey === undefined) throw unexpected('API key', response)
     return { ok: true, apiKey }
+  }
+
+  /**
+   * The local API has no "whoami" endpoint, so this asks for something only a valid key
+   * can read; the body is ignored — only whether Anytype accepted the key matters.
+   */
+  async verifyApiKey(apiKey: string): Promise<AuthVerifyResult> {
+    const response = await this.#client.request({ method: 'GET', path: '/v1/spaces', apiKey })
+    if (response.ok) return { ok: true }
+    if (response.status === UNAUTHORIZED) return { ok: false, failure: 'invalid-key' }
+    throw unexpected('spaces list', response)
   }
 }
 

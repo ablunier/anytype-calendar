@@ -21,8 +21,11 @@ const sessions = deepFreeze({
   signedOut: { phase: 'signed-out' },
   awaitingCode: { phase: 'awaiting-code', challenge },
   verifying: { phase: 'verifying', attempt },
+  enteringKey: { phase: 'entering-key' },
+  verifyingKey: { phase: 'verifying-key' },
   failedAttempt: { phase: 'failed', failure: 'invalid-code', attempt },
   failedUnreachable: { phase: 'failed', failure: 'unreachable' },
+  failedKey: { phase: 'failed', failure: 'invalid-key', enteredKey: true },
   connected: { phase: 'connected', key }
 } satisfies Record<string, AuthSession>)
 
@@ -32,6 +35,10 @@ const events = deepFreeze({
   codeSubmitted: { type: 'code-submitted', code: '2749', at: 1_000 },
   exchangeSucceeded: { type: 'exchange-succeeded', key },
   exchangeFailed: { type: 'exchange-failed', failure: 'invalid-code' },
+  keyEntryOpened: { type: 'key-entry-opened' },
+  keySubmitted: { type: 'key-submitted' },
+  keyVerified: { type: 'key-verified', key },
+  keyRejected: { type: 'key-rejected', failure: 'invalid-key' },
   steppedBack: { type: 'stepped-back' },
   restored: { type: 'restored', key },
   signedOut: { type: 'signed-out' }
@@ -46,21 +53,31 @@ const transitions: Array<[SessionName, EventName, AuthSession]> = [
   ['awaitingCode', 'challengeIssued', { phase: 'awaiting-code', challenge: freshChallenge }],
   ['failedAttempt', 'challengeIssued', { phase: 'awaiting-code', challenge: freshChallenge }],
   ['failedUnreachable', 'challengeIssued', { phase: 'awaiting-code', challenge: freshChallenge }],
+  ['failedKey', 'challengeIssued', { phase: 'awaiting-code', challenge: freshChallenge }],
 
   ['signedOut', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
   ['awaitingCode', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
   ['failedAttempt', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
   ['failedUnreachable', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
+  ['failedKey', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
 
   ['awaitingCode', 'codeSubmitted', { phase: 'verifying', attempt }],
 
   ['verifying', 'exchangeSucceeded', { phase: 'connected', key }],
   ['verifying', 'exchangeFailed', { phase: 'failed', failure: 'invalid-code', attempt }],
 
+  ['signedOut', 'keyEntryOpened', { phase: 'entering-key' }],
+  ['enteringKey', 'keySubmitted', { phase: 'verifying-key' }],
+  ['verifyingKey', 'keyVerified', { phase: 'connected', key }],
+  ['verifyingKey', 'keyRejected', { phase: 'failed', failure: 'invalid-key', enteredKey: true }],
+
   ['awaitingCode', 'steppedBack', { phase: 'signed-out' }],
   ['verifying', 'steppedBack', { phase: 'awaiting-code', challenge }],
+  ['enteringKey', 'steppedBack', { phase: 'signed-out' }],
+  ['verifyingKey', 'steppedBack', { phase: 'entering-key' }],
   ['failedAttempt', 'steppedBack', { phase: 'awaiting-code', challenge }],
   ['failedUnreachable', 'steppedBack', { phase: 'signed-out' }],
+  ['failedKey', 'steppedBack', { phase: 'entering-key' }],
 
   ['signedOut', 'restored', { phase: 'connected', key }],
 

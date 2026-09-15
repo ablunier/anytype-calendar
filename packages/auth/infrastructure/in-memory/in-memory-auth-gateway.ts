@@ -1,4 +1,4 @@
-import type { AuthExchangeResult, AuthGateway } from '../../domain'
+import type { AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 
 export interface InMemoryAuthGatewayOptions {
   sleep: (ms: number) => Promise<void>
@@ -6,6 +6,8 @@ export interface InMemoryAuthGatewayOptions {
   log: (message: string) => void
   randomId: () => string
   acceptedCode?: string
+  /** Stands in for a key the user already holds from a previous run. */
+  acceptedApiKey?: string
   requestLatencyMs?: number
   /** Long enough for the verifying state to be seen. */
   exchangeLatencyMs?: number
@@ -20,6 +22,7 @@ export class InMemoryAuthGateway implements AuthGateway {
   readonly #log: (message: string) => void
   readonly #randomId: () => string
   readonly #acceptedCode: string
+  readonly #acceptedApiKey: string
   readonly #requestLatencyMs: number
   readonly #exchangeLatencyMs: number
   readonly #openChallenges = new Set<string>()
@@ -29,6 +32,7 @@ export class InMemoryAuthGateway implements AuthGateway {
     log,
     randomId,
     acceptedCode = '2749',
+    acceptedApiKey = 'ak_fake_2749',
     requestLatencyMs = 300,
     exchangeLatencyMs = 1_200
   }: InMemoryAuthGatewayOptions) {
@@ -36,6 +40,7 @@ export class InMemoryAuthGateway implements AuthGateway {
     this.#log = log
     this.#randomId = randomId
     this.#acceptedCode = acceptedCode
+    this.#acceptedApiKey = acceptedApiKey
     this.#requestLatencyMs = requestLatencyMs
     this.#exchangeLatencyMs = exchangeLatencyMs
   }
@@ -57,5 +62,10 @@ export class InMemoryAuthGateway implements AuthGateway {
     }
     this.#openChallenges.delete(challengeId)
     return { ok: true, apiKey: `ak_mock_${this.#randomId()}` }
+  }
+
+  async verifyApiKey(apiKey: string): Promise<AuthVerifyResult> {
+    await this.#sleep(this.#exchangeLatencyMs)
+    return apiKey === this.#acceptedApiKey ? { ok: true } : { ok: false, failure: 'invalid-key' }
   }
 }

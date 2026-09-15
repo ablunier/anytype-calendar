@@ -8,6 +8,9 @@ export type AuthExchangeResult =
   | { ok: true; apiKey: string }
   | { ok: false; failure: Exclude<AuthFailure, 'unreachable'> }
 
+/** A key Anytype does not recognise is an expected answer too, not an error. */
+export type AuthVerifyResult = { ok: true } | { ok: false; failure: 'invalid-key' }
+
 /**
  * Every method rejects when Anytype cannot be reached. There is no cancellation — the
  * domain has no AbortSignal — so a caller that stops caring about an exchange discards its
@@ -22,4 +25,7 @@ export interface AuthGateway {
 
   /** POST /v1/auth/api_keys. */
   exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult>
+
+  /** Checks a key the user already holds, e.g. issued for this app in a previous run. */
+  verifyApiKey(apiKey: string): Promise<AuthVerifyResult>
 }

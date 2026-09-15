@@ -79,3 +79,29 @@ describe('exchangeCode', () => {
     expect(slept).toEqual([300, 5, 5])
   })
 })
+
+describe('verifyApiKey', () => {
+  test('accepts the default fake key, after the exchange latency', async () => {
+    const { gateway, slept } = setup()
+
+    await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toEqual({ ok: true })
+    expect(slept).toEqual([1_200])
+  })
+
+  test('rejects any other key', async () => {
+    const { gateway } = setup()
+
+    await expect(gateway.verifyApiKey('ak_wrong')).resolves.toEqual({
+      ok: false,
+      failure: 'invalid-key'
+    })
+  })
+
+  test('honours a configured key and latency', async () => {
+    const { gateway, slept } = setup({ acceptedApiKey: 'ak_custom', exchangeLatencyMs: 5 })
+
+    await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toMatchObject({ ok: false })
+    await expect(gateway.verifyApiKey('ak_custom')).resolves.toMatchObject({ ok: true })
+    expect(slept).toEqual([5, 5])
+  })
+})
