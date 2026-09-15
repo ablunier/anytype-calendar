@@ -47,7 +47,6 @@ export function TypeCard({
         <TypeTile type={type} />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <span className="type-ui text-base text-ink-primary">{type.label}</span>
-          <span className="type-numeral text-tiny text-ink-tertiary">{type.count} dated</span>
         </div>
         <Checkbox
           checked={checked}

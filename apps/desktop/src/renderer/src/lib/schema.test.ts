@@ -21,31 +21,27 @@ const TASK_TYPE: SchemaType = {
   key: 'task',
   name: 'Task',
   icon: { name: 'checkbox', color: 'lime' },
-  dateProperties: [DUE, START],
-  datedObjectCount: 5
+  dateProperties: [DUE, START]
 }
 
 const UNKNOWN_ICON_TYPE: SchemaType = {
   key: 'note',
   name: 'Note',
   icon: { name: 'mystery-icon', color: 'mystery-color' },
-  dateProperties: [DUE],
-  datedObjectCount: 2
+  dateProperties: [DUE]
 }
 
 const NO_ICON_TYPE: SchemaType = {
   key: 'idea',
   name: 'Idea',
   icon: null,
-  dateProperties: [DUE],
-  datedObjectCount: 1
+  dateProperties: [DUE]
 }
 
 const SPACE: SchemaSpace = {
   id: 'sp_1',
   name: 'Personal',
-  types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE],
-  datedObjectCount: 8
+  types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE]
 }
 
 const SYNCED_AT = 100_000
@@ -88,13 +84,13 @@ describe('spacesFor', () => {
     expect(spacesFor({ phase: 'idle' })).toEqual([])
   })
 
-  test('maps each synced space, counting only dated objects', () => {
-    expect(spacesFor(SYNCED)).toEqual([{ key: 'sp_1', name: 'Personal', objects: 8 }])
+  test('maps each synced space', () => {
+    expect(spacesFor(SYNCED)).toEqual([{ key: 'sp_1', name: 'Personal' }])
   })
 
   test('keeps the last result while a new sync is failing', () => {
     const failed: SchemaSnapshot = { phase: 'failed', failure: 'unreachable', at: 200_000, last: SYNCED.last }
-    expect(spacesFor(failed)).toEqual([{ key: 'sp_1', name: 'Personal', objects: 8 }])
+    expect(spacesFor(failed)).toEqual([{ key: 'sp_1', name: 'Personal' }])
   })
 })
 
@@ -111,7 +107,6 @@ describe('typesFor', () => {
       label: 'Task',
       category: 'sage',
       icon: 'check',
-      count: 5,
       props: [
         { key: 'due_date', label: 'Due date' },
         { key: 'start_date', label: 'Start date' }
@@ -201,7 +196,6 @@ describe('picksFor', () => {
       label: 'Task',
       category: 'sage',
       icon: 'check',
-      count: 5,
       props: [
         { key: 'due_date', label: 'Due date' },
         { key: 'start_date', label: 'Start date' }

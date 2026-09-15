@@ -7,7 +7,6 @@ export interface TypeSelection {
   typeKeys: string[]
   /** Types that are both selected and inside a selected space. */
   activeTypes: ObjectType[]
-  objectCount: number
   /** The picks as they stand, e.g. to save them. The same object until a pick changes. */
   picks: TypePicks
   mappingFor: (type: ObjectType) => DateMapping
@@ -59,7 +58,6 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     spaceKeys,
     typeKeys,
     activeTypes,
-    objectCount: activeTypes.reduce((total, type) => total + type.count, 0),
     picks,
     mappingFor: (type) => mappingIn(dates, type),
     toggleSpace: (key) =>

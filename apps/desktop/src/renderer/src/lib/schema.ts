@@ -79,8 +79,7 @@ const DAY_MS = 24 * HOUR_MS
 export function spacesFor(snapshot: SchemaSnapshot): Space[] {
   return syncedSpaces(snapshot).map((space) => ({
     key: space.id,
-    name: space.name,
-    objects: space.datedObjectCount
+    name: space.name
   }))
 }
 
@@ -201,7 +200,6 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
     label: type.name,
     category: (type.icon && TYPE_HUES[type.icon.color]) ?? 'graphite',
     icon: (type.icon && TYPE_ICONS[type.icon.name]) ?? 'calendar',
-    count: type.datedObjectCount,
     props: type.dateProperties.map(({ key, name }) => ({ key, label: name })),
     ...defaultMapping(type)
   }

@@ -23,7 +23,6 @@ export function AuthSuccess({
   onRetry,
   onContinue
 }: AuthSuccessProps): React.JSX.Element {
-  const totalObjects = spaces.reduce((total, space) => total + space.objects, 0)
   return (
     <>
       <AuthHead
@@ -39,7 +38,6 @@ export function AuthSuccess({
             <li key={space.key} className="flex items-center gap-8">
               <SpaceMonogram space={space} />
               <span className="flex-1 type-ui text-small text-ink-body">{space.name}</span>
-              <span className="type-numeral text-tiny text-ink-tertiary">{space.objects} dated</span>
             </li>
           ))
         )}
@@ -51,9 +49,7 @@ export function AuthSuccess({
             Try again
           </Button>
         ) : spaces.length > 0 ? (
-          <span className="type-numeral text-tiny text-ink-secondary">
-            {spaces.length} spaces · {totalObjects} objects
-          </span>
+          <span className="type-numeral text-tiny text-ink-secondary">{spaces.length} spaces</span>
         ) : null}
       </div>
       <Button variant="primary" size="lg" fullWidth iconRight="chevron-right" onClick={onContinue}>

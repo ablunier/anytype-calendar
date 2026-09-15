@@ -47,9 +47,6 @@ export function TypeConfigRow({
       <TypeTile type={type} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="type-ui text-small text-ink-primary">{type.label}</span>
-        <span className="type-numeral text-tiny text-ink-tertiary">
-          {type.count} dated objects
-        </span>
       </div>
       <Select
         size="sm"

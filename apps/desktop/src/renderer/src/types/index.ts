@@ -21,8 +21,6 @@ export type CategoryHue =
 export interface Space {
   key: string
   name: string
-  /** Counts only objects carrying a date. */
-  objects: number
 }
 
 export interface DateProperty {
@@ -37,8 +35,6 @@ export interface ObjectType {
   label: string
   category: CategoryHue
   icon: IconName
-  /** Counts only objects carrying a date. */
-  count: number
   /** Date properties only. */
   props: DateProperty[]
   /** Key of the mandatory start-date property the type starts with. */

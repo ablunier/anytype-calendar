@@ -21,7 +21,6 @@ const TASK: ObjectType = {
   label: 'Task',
   category: 'denim',
   icon: 'calendar',
-  count: 3,
   props: [
     { key: 'due_date', label: 'Due date' },
     { key: 'start_date', label: 'Start date' }
@@ -198,8 +197,8 @@ describe('dateOptions', () => {
 })
 
 describe('spacesByKeys', () => {
-  const personal: Space = { key: 'sp_1', name: 'Personal', objects: 4 }
-  const work: Space = { key: 'sp_2', name: 'Work', objects: 9 }
+  const personal: Space = { key: 'sp_1', name: 'Personal' }
+  const work: Space = { key: 'sp_2', name: 'Work' }
 
   test('keeps only the spaces whose key was picked', () => {
     expect(spacesByKeys([personal, work], ['sp_2'])).toEqual([work])

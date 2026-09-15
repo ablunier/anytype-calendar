@@ -158,8 +158,7 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
 
       <footer className="flex shrink-0 items-center gap-12 border-t border-line-subtle bg-surface-card px-24 py-12">
         <span className="type-numeral text-small text-ink-secondary">
-          {chosenSpaces.length} spaces · {selection.activeTypes.length} types ·{' '}
-          {selection.objectCount} objects
+          {chosenSpaces.length} spaces · {selection.activeTypes.length} types
         </span>
         <div className="flex-1" />
         <Button variant="ghost" size="md" onClick={onSkip}>

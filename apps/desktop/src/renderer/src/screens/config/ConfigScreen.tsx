@@ -94,7 +94,7 @@ function Settings({
                 <div className="flex-1" />
                 {read ? (
                   <span className="type-numeral text-tiny text-ink-secondary">
-                    {spaces.length} spaces · {selection.objectCount} objects on the grid
+                    {spaces.length} spaces
                   </span>
                 ) : null}
                 <Button
