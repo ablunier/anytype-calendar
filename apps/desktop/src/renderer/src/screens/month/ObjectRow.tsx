@@ -1,12 +1,10 @@
 import type { CategoryHue } from '@renderer/types'
-import { catBg, Tag } from '@renderer/components/ui'
+import { catBg } from '@renderer/components/ui'
 
 export interface ObjectRowProps {
   title: string
   category: CategoryHue
   time?: string
-  typeLabel?: string
-  relation?: string
   done?: boolean
   selected?: boolean
   onClick: () => void
@@ -16,8 +14,6 @@ export function ObjectRow({
   title,
   category,
   time,
-  typeLabel,
-  relation,
   done = false,
   selected = false,
   onClick
@@ -49,12 +45,6 @@ export function ObjectRow({
       >
         {title}
       </span>
-      {relation ? (
-        <span className="whitespace-nowrap type-caption text-tiny text-ink-tertiary">
-          {relation}
-        </span>
-      ) : null}
-      {typeLabel ? <Tag category={category}>{typeLabel}</Tag> : null}
     </button>
   )
 }

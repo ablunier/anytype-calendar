@@ -45,7 +45,6 @@ export function DetailPanel({
           date={detail.date}
           events={eventsOnDay(events, detail.date)}
           typesByKey={typesByKey}
-          spacesByKey={spacesByKey}
           onOpenEvent={onOpenEvent}
         />
       )}
