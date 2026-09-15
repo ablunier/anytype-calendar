@@ -1,8 +1,12 @@
 {
   "name": "@ablunier/anytype-calendar",
   "version": "1.0.0",
-  "description": "",
+  "description": "Calendar for Anytype desktop app",
   "private": true,
+  "author": {
+    "name": "Adrian P. Blunier",
+    "email": "adrianp@blunier.me"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
