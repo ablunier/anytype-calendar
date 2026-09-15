@@ -149,10 +149,22 @@ export function composeServices(): AppServices {
       resetEventsMonth.execute()
     }
   })
+  // A key Anytype no longer accepts — usually deleted in its settings — answers unauthorized
+  // to every request from here on, so retrying it is pointless. Signing out clears it and
+  // flips the session away from `connected`, which the line above already resets both stores
+  // for, and which the renderer already reads as "show sign-in" — so a rejected key sends the
+  // user back there instead of leaving them stuck on a screen that can never read anything.
+  const handleUnauthorized = (failure: 'unreachable' | 'unauthorized'): void => {
+    if (failure === 'unauthorized' && connected()) void signOutOfAuth.execute()
+  }
   // A fresh read of the account, or a changed selection, may change what the month holds. A
   // reload replaces a load still running, so a burst of Settings changes draws only the last.
   schemaState.subscribe((state) => {
     if (state.phase === 'synced' && connected()) void loadEventsMonth.execute()
+    if (state.phase === 'failed') handleUnauthorized(state.failure)
+  })
+  eventsState.subscribe((state) => {
+    if (state.phase === 'failed') handleUnauthorized(state.failure)
   })
   schemaSelection.subscribe(() => {
     if (connected()) void loadEventsMonth.execute()
