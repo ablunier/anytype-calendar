@@ -27,6 +27,11 @@ linux:
   # Mirrors win.executableName above. Without it the Linux binary is named after the npm
   # package rather than the product.
   executableName: calendar-for-anytype
+  # Without this, the generated .desktop file's StartupWMClass falls back to productName
+  # ("Calendar for Anytype"), which doesn't match Electron's app_id (from package.json's
+  # desktopName), so GNOME/Wayland can't associate the running window with its .desktop
+  # entry and falls back to a generic icon in the taskbar.
+  syncDesktopName: true
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

@@ -4,6 +4,7 @@
   "description": "",
   "private": true,
   "main": "./out/main/index.js",
+  "desktopName": "me.blunier.anytype.calendar.desktop",
   "type": "commonjs",
   "scripts": {
     "dev": "electron-vite dev",
