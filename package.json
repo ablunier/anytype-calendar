@@ -1,6 +1,5 @@
 {
   "name": "@ablunier/anytype-calendar",
-  "version": "1.0.0",
   "description": "Calendar for Anytype desktop app",
   "private": true,
   "author": {
