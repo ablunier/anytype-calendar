@@ -100,15 +100,21 @@ export interface MonthCell {
  */
 export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'month'
 
-export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable'
+export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key'
 
 export type AuthView =
   | { stage: 'start' }
   /** `expiresAt` is epoch milliseconds. */
   | { stage: 'code'; challengeId: string; expiresAt: number }
   | { stage: 'verifying'; code: string }
-  /** `code` is absent when no challenge could be opened. */
-  | { stage: 'error'; failure: AuthFailureKind; code?: string }
+  /** Pasting a key the user already holds, instead of the code exchange. */
+  | { stage: 'entering-key' }
+  | { stage: 'verifying-key' }
+  /**
+   * `code` is absent when no challenge could be opened, or the failure came from the key
+   * path; `origin` decides where "back"/"retry" return to.
+   */
+  | { stage: 'error'; failure: AuthFailureKind; code?: string; origin: 'code' | 'key' }
   | { stage: 'success' }
 
 export type AuthStage = AuthView['stage']
@@ -165,6 +171,7 @@ export type IconName =
   | 'globe'
   | 'inbox'
   | 'info'
+  | 'key-round'
   | 'layers'
   | 'link'
   | 'list'

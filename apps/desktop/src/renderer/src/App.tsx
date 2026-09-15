@@ -76,7 +76,9 @@ function App(): React.JSX.Element | null {
         spaces={spacesFor(schema)}
         sync={syncViewFor(schema, now)}
         onStart={() => void window.api.auth.start()}
+        onEnterKey={() => void window.api.auth.enterKey()}
         onSubmitCode={(code) => void window.api.auth.submitCode(code)}
+        onSubmitApiKey={(apiKey) => void window.api.auth.submitApiKey(apiKey)}
         onStepBack={() => void window.api.auth.stepBack()}
         onRetrySync={() => void window.api.schema.sync()}
         onContinue={() => setScreen('onboarding')}

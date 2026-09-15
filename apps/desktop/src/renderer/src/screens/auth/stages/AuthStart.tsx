@@ -9,9 +9,10 @@ const STEPS = [
 
 export interface AuthStartProps {
   onStart: () => void
+  onEnterKey: () => void
 }
 
-export function AuthStart({ onStart }: AuthStartProps): React.JSX.Element {
+export function AuthStart({ onStart, onEnterKey }: AuthStartProps): React.JSX.Element {
   return (
     <>
       <AuthHead
@@ -30,6 +31,12 @@ export function AuthStart({ onStart }: AuthStartProps): React.JSX.Element {
       <Button variant="primary" size="lg" fullWidth iconLeft="link" onClick={onStart}>
         Start connection
       </Button>
+      <p className="mt-12 text-center type-caption text-tiny text-ink-tertiary">
+        Already have a key?{' '}
+        <Button variant="quiet" size="sm" onClick={onEnterKey}>
+          Paste it instead
+        </Button>
+      </p>
     </>
   )
 }

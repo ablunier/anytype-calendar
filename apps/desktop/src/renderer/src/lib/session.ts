@@ -16,8 +16,17 @@ export function authViewFor(session: SessionSnapshot): AuthView | null {
       }
     case 'verifying':
       return { stage: 'verifying', code: session.attempt.code }
+    case 'entering-key':
+      return { stage: 'entering-key' }
+    case 'verifying-key':
+      return { stage: 'verifying-key' }
     case 'failed':
-      return { stage: 'error', failure: session.failure, code: session.attempt?.code }
+      return {
+        stage: 'error',
+        failure: session.failure,
+        code: session.attempt?.code,
+        origin: session.enteredKey ? 'key' : 'code'
+      }
     case 'connected':
       return null
   }

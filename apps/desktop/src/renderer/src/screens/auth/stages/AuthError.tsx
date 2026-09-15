@@ -5,6 +5,8 @@ import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
 
 export interface AuthErrorProps {
   failure: AuthFailureKind
+  /** Decides whether "back"/retry return to the code challenge or to pasting a key. */
+  origin: 'code' | 'key'
   code?: string
   onBack: () => void
   onRetry: () => void
@@ -28,10 +30,16 @@ const COPY: Record<AuthFailureKind, { title: string; body: string; detail: strin
     body: 'Make sure the Anytype desktop app is open on this computer, then try again.',
     detail: 'The local Anytype app did not respond',
     retry: 'Try again'
+  },
+  'invalid-key': {
+    title: 'That key did not work',
+    body: "Anytype did not accept this key. Check it was pasted in full, or issue a new one in Anytype's API settings.",
+    detail: 'Invalid or unknown API key (HTTP 401)',
+    retry: 'Try again'
   }
 }
 
-export function AuthError({ failure, code, onBack, onRetry }: AuthErrorProps): React.JSX.Element {
+export function AuthError({ failure, origin, code, onBack, onRetry }: AuthErrorProps): React.JSX.Element {
   const copy = COPY[failure]
   return (
     <>
@@ -40,14 +48,21 @@ export function AuthError({ failure, code, onBack, onRetry }: AuthErrorProps): R
       <p className="mt-10 mb-20 type-caption text-tiny text-ink-danger" role="alert">
         {copy.detail}
       </p>
-      <div className="flex gap-8">
-        <Button variant="secondary" size="lg" onClick={onBack}>
-          Back
-        </Button>
-        <Button variant="primary" size="lg" fullWidth iconLeft="refresh-cw" onClick={onRetry}>
+      {origin === 'key' ? (
+        // Both "back" and "retry" land on the same paste-a-key form here, so one button does.
+        <Button variant="primary" size="lg" fullWidth iconLeft="refresh-cw" onClick={onBack}>
           {copy.retry}
         </Button>
-      </div>
+      ) : (
+        <div className="flex gap-8">
+          <Button variant="secondary" size="lg" onClick={onBack}>
+            Back
+          </Button>
+          <Button variant="primary" size="lg" fullWidth iconLeft="refresh-cw" onClick={onRetry}>
+            {copy.retry}
+          </Button>
+        </div>
+      )}
     </>
   )
 }

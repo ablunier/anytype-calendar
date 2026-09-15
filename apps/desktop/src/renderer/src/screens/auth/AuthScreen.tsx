@@ -1,18 +1,22 @@
 import type { AuthStage, AuthView, Space, SyncView } from '@renderer/types'
 import { Button, Card } from '@renderer/components/ui'
 import { AuthShell } from './AuthShell'
+import { AuthApiKey } from './stages/AuthApiKey'
 import { AuthCode } from './stages/AuthCode'
 import { AuthError } from './stages/AuthError'
 import { AuthStart } from './stages/AuthStart'
 import { AuthSuccess } from './stages/AuthSuccess'
 import { AuthVerifying } from './stages/AuthVerifying'
+import { AuthVerifyingKey } from './stages/AuthVerifyingKey'
 
 export interface AuthScreenProps {
   view: AuthView
   spaces: Space[]
   sync: SyncView
   onStart: () => void
+  onEnterKey: () => void
   onSubmitCode: (code: string) => void
+  onSubmitApiKey: (apiKey: string) => void
   onStepBack: () => void
   onRetrySync: () => void
   onContinue: () => void
@@ -23,7 +27,9 @@ export function AuthScreen({
   spaces,
   sync,
   onStart,
+  onEnterKey,
   onSubmitCode,
+  onSubmitApiKey,
   onStepBack,
   onRetrySync,
   onContinue
@@ -31,7 +37,7 @@ export function AuthScreen({
   return (
     <AuthShell>
       <Card padding="roomy">
-        {view.stage === 'start' ? <AuthStart onStart={onStart} /> : null}
+        {view.stage === 'start' ? <AuthStart onStart={onStart} onEnterKey={onEnterKey} /> : null}
         {view.stage === 'code' ? (
           /* Keyed by challenge, so requesting a new code also clears the field. */
           <AuthCode
@@ -43,8 +49,18 @@ export function AuthScreen({
           />
         ) : null}
         {view.stage === 'verifying' ? <AuthVerifying code={view.code} onCancel={onStepBack} /> : null}
+        {view.stage === 'entering-key' ? (
+          <AuthApiKey onCancel={onStepBack} onConnect={onSubmitApiKey} />
+        ) : null}
+        {view.stage === 'verifying-key' ? <AuthVerifyingKey onCancel={onStepBack} /> : null}
         {view.stage === 'error' ? (
-          <AuthError failure={view.failure} code={view.code} onBack={onStepBack} onRetry={onStart} />
+          <AuthError
+            failure={view.failure}
+            origin={view.origin}
+            code={view.code}
+            onBack={onStepBack}
+            onRetry={onStart}
+          />
         ) : null}
         {view.stage === 'success' ? (
           <AuthSuccess spaces={spaces} sync={sync} onRetry={onRetrySync} onContinue={onContinue} />
