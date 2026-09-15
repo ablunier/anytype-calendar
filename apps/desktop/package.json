@@ -1,8 +1,12 @@
 {
   "name": "anytype-calendar-desktop",
   "version": "1.0.0",
-  "description": "",
+  "description": "Calendar for Anytype desktop app",
   "private": true,
+  "author": {
+    "name": "Adrian P. Blunier",
+    "email": "adrianp@blunier.me"
+  },
   "main": "./out/main/index.js",
   "desktopName": "me.blunier.anytype.calendar.desktop",
   "type": "commonjs",
