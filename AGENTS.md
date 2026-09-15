@@ -10,8 +10,8 @@ early pass: the UI (`apps/desktop`) is fully built; the backend is being built a
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
 the real Anytype local API and keeps the key across restarts. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
-with a user date property, and how many objects fill one in) and tracks the last sync,
-which feeds the post-sign-in success card and onboarding. It also persists the user's
+with a user date property) and tracks the last sync, which feeds the post-sign-in success
+card and onboarding. It also persists the user's
 selection — which spaces and types go on the calendar, each type's From/To date property,
 and whether that type's dates carry a time of day — which onboarding and Settings save.
 `events` reads, for the month on screen, the objects of the selected types whose dates fall
