@@ -46,6 +46,8 @@ import {
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
+import { appConfigStore } from './app-config-file'
+import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 import { eventsSourcesFor } from './events/event-sources'
 import { selectionFileAt } from './schema/selection-storage'
@@ -112,15 +114,17 @@ export function composeServices(): AppServices {
   })
   const resetSchemaSync = new ResetSchemaSync(schemaState)
 
-  // The fake account's space ids are not the real one's, so its choices get their own file.
-  const selectionRepository = new JsonFileSchemaSelectionRepository(
-    selectionFileAt(
-      join(
-        app.getPath('userData'),
-        fakeAnytype ? 'schema-selection-fake.json' : 'schema-selection.json'
-      )
+  // One file holds every non-secret setting: the schema selection, the theme, and anything
+  // added later. The fake account's ids are not the real one's, so it gets its own file,
+  // like the credential.
+  const appConfig = appConfigStore(
+    atomicFileAt(
+      join(app.getPath('userData'), fakeAnytype ? 'app-config-fake.json' : 'app-config.json'),
+      0o644
     )
   )
+
+  const selectionRepository = new JsonFileSchemaSelectionRepository(selectionFileAt(appConfig))
   const schemaSelection = new SchemaSelectionStore()
   const loadSchemaSelection = new LoadSchemaSelection({
     repository: selectionRepository,

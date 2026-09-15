@@ -1,10 +1,15 @@
 import type { SchemaSelectionFile } from '@anytype-calendar/schema/infrastructure'
-import { atomicFileAt } from '../atomic-file'
+import type { AppConfigStore } from '../app-config-file'
 
-export function selectionFileAt(path: string): SchemaSelectionFile {
-  const file = atomicFileAt(path, 0o644)
+const SECTION = 'schemaSelection'
+
+/** Adapts the schema selection section of the shared app config file. */
+export function selectionFileAt(store: AppConfigStore): SchemaSelectionFile {
   return {
-    read: async () => (await file.read())?.toString('utf8') ?? null,
-    write: (text) => file.write(Buffer.from(text, 'utf8'))
+    read: async () => {
+      const value = await store.readSection(SECTION)
+      return value === null ? null : JSON.stringify(value)
+    },
+    write: (text) => store.writeSection(SECTION, JSON.parse(text))
   }
 }
