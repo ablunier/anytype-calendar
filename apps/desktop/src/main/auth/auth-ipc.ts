@@ -6,6 +6,8 @@ export function registerAuthIpc({
   authSession,
   startAuthConnection,
   submitAuthCode,
+  startAuthKeyEntry,
+  submitAuthApiKey,
   stepBackAuthConnection,
   signOutOfAuth,
   copyAuthApiKey
@@ -16,6 +18,11 @@ export function registerAuthIpc({
     // Renderer input is untrusted; the domain ignores a malformed code, but not a non-string.
     if (typeof code !== 'string') throw new TypeError('auth code must be a string')
     return submitAuthCode.execute(code)
+  })
+  ipcMain.handle(IpcChannel.authEnterKey, () => startAuthKeyEntry.execute())
+  ipcMain.handle(IpcChannel.authSubmitApiKey, (_event, apiKey: unknown) => {
+    if (typeof apiKey !== 'string') throw new TypeError('API key must be a string')
+    return submitAuthApiKey.execute(apiKey)
   })
   ipcMain.handle(IpcChannel.authStepBack, () => stepBackAuthConnection.execute())
   ipcMain.handle(IpcChannel.authSignOut, () => signOutOfAuth.execute())

@@ -22,6 +22,8 @@ export const IpcChannel = {
   sessionChanged: 'session:changed',
   authStart: 'auth:start',
   authSubmitCode: 'auth:submit-code',
+  authEnterKey: 'auth:enter-key',
+  authSubmitApiKey: 'auth:submit-api-key',
   authStepBack: 'auth:step-back',
   authSignOut: 'auth:sign-out',
   authCopyKey: 'auth:copy-key',
@@ -45,6 +47,9 @@ export interface CalendarApi {
   auth: {
     start(): Promise<void>
     submitCode(code: string): Promise<void>
+    /** Switches the start screen to pasting a key the user already holds. */
+    enterKey(): Promise<void>
+    submitApiKey(apiKey: string): Promise<void>
     stepBack(): Promise<void>
     signOut(): Promise<void>
     /**

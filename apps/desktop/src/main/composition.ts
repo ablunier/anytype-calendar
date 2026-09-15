@@ -9,7 +9,9 @@ import {
   RestoreAuthSession,
   SignOutOfAuth,
   StartAuthConnection,
+  StartAuthKeyEntry,
   StepBackAuthConnection,
+  SubmitAuthApiKey,
   SubmitAuthCode
 } from '@anytype-calendar/auth/application'
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
@@ -59,6 +61,8 @@ export interface AppServices {
   restoreAuthSession: RestoreAuthSession
   startAuthConnection: StartAuthConnection
   submitAuthCode: SubmitAuthCode
+  startAuthKeyEntry: StartAuthKeyEntry
+  submitAuthApiKey: SubmitAuthApiKey
   stepBackAuthConnection: StepBackAuthConnection
   signOutOfAuth: SignOutOfAuth
   copyAuthApiKey: CopyAuthApiKey
@@ -74,7 +78,8 @@ export interface AppServices {
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
 export function composeServices(): AppServices {
   // Swaps all of Anytype for a simulation: sign-in accepts 2749 (each challenge is logged
-  // here), and the schema and object reads return the design's sample account.
+  // here), or the API key ak_fake_2749 pasted directly, and the schema and object reads
+  // return the design's sample account.
   const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
   const client = fakeAnytype ? null : anytypeClient()
 
@@ -90,6 +95,8 @@ export function composeServices(): AppServices {
     appName: 'Calendar for Anytype'
   })
   const submitAuthCode = new SubmitAuthCode({ gateway: authGateway, credentials, store: authSession })
+  const startAuthKeyEntry = new StartAuthKeyEntry(authSession)
+  const submitAuthApiKey = new SubmitAuthApiKey({ gateway: authGateway, credentials, store: authSession })
   const stepBackAuthConnection = new StepBackAuthConnection(authSession)
   const signOutOfAuth = new SignOutOfAuth({ credentials, store: authSession })
   const copyAuthApiKey = new CopyAuthApiKey(credentials)
@@ -175,6 +182,8 @@ export function composeServices(): AppServices {
     restoreAuthSession,
     startAuthConnection,
     submitAuthCode,
+    startAuthKeyEntry,
+    submitAuthApiKey,
     stepBackAuthConnection,
     signOutOfAuth,
     copyAuthApiKey,

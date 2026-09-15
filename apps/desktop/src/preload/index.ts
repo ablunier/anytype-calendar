@@ -23,6 +23,8 @@ const api: CalendarApi = {
   auth: {
     start: () => ipcRenderer.invoke(IpcChannel.authStart),
     submitCode: (code) => ipcRenderer.invoke(IpcChannel.authSubmitCode, code),
+    enterKey: () => ipcRenderer.invoke(IpcChannel.authEnterKey),
+    submitApiKey: (apiKey) => ipcRenderer.invoke(IpcChannel.authSubmitApiKey, apiKey),
     stepBack: () => ipcRenderer.invoke(IpcChannel.authStepBack),
     signOut: () => ipcRenderer.invoke(IpcChannel.authSignOut),
     copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey)
