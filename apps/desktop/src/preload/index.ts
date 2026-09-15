@@ -6,7 +6,8 @@ import {
   type EventsSnapshot,
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
-  type SessionSnapshot
+  type SessionSnapshot,
+  type ThemeSnapshot
 } from '@shared/ipc'
 
 const api: CalendarApi = {
@@ -62,6 +63,17 @@ const api: CalendarApi = {
       }
     },
     showMonth: (month) => ipcRenderer.invoke(IpcChannel.eventsShowMonth, month)
+  },
+  theme: {
+    get: () => ipcRenderer.invoke(IpcChannel.themeGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: ThemeSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.themeChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.themeChanged, forward)
+      }
+    },
+    save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme)
   }
 }
 

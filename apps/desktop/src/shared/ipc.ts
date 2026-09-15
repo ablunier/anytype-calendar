@@ -17,6 +17,9 @@ export type SchemaSelectionSnapshot = SchemaSelectionState
 /** Safe to hand to the renderer: the key is read in main and never stored in an EventsMonthLoad. */
 export type EventsSnapshot = EventsMonthLoad
 
+/** Null: no theme was ever saved, so the renderer follows the OS setting. */
+export type ThemeSnapshot = 'light' | 'dark' | null
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -35,7 +38,10 @@ export const IpcChannel = {
   schemaSelectionSave: 'schema-selection:save',
   eventsGet: 'events:get',
   eventsChanged: 'events:changed',
-  eventsShowMonth: 'events:show-month'
+  eventsShowMonth: 'events:show-month',
+  themeGet: 'theme:get',
+  themeChanged: 'theme:changed',
+  themeSave: 'theme:save'
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */
@@ -79,5 +85,11 @@ export interface CalendarApi {
      * is malformed; does nothing while signed out.
      */
     showMonth(month: EventsMonth): Promise<void>
+  }
+  theme: {
+    get(): Promise<ThemeSnapshot>
+    onChange(listener: (state: ThemeSnapshot) => void): () => void
+    /** Rejects when the value is not a theme. */
+    save(theme: 'light' | 'dark'): Promise<void>
   }
 }

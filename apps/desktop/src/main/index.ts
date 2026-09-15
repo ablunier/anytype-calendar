@@ -5,6 +5,7 @@ import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
+import { registerThemeIpc } from './theme/theme-ipc'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
@@ -45,10 +46,12 @@ app.whenReady().then(async () => {
   registerAuthIpc(services)
   registerSchemaIpc(services)
   registerEventsIpc(services)
-  // Both settle before the first window asks, so it never draws a state about to change.
+  registerThemeIpc(services)
+  // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),
-    services.loadSchemaSelection.execute()
+    services.loadSchemaSelection.execute(),
+    services.loadTheme.execute()
   ])
 
   app.on('browser-window-created', (_, window) => {

@@ -51,6 +51,9 @@ import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 import { eventsSourcesFor } from './events/event-sources'
 import { selectionFileAt } from './schema/selection-storage'
+import { LoadTheme } from './theme/load-theme'
+import { SaveTheme } from './theme/save-theme'
+import { ThemeStore } from './theme/theme-store'
 
 /**
  * A closed Anytype refuses the connection at once; this bounds one that accepts it and
@@ -75,6 +78,9 @@ export interface AppServices {
   saveSchemaSelection: SaveSchemaSelection
   eventsState: EventsMonthStore
   loadEventsMonth: LoadEventsMonth
+  themeState: ThemeStore
+  loadTheme: LoadTheme
+  saveTheme: SaveTheme
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
@@ -146,6 +152,10 @@ export function composeServices(): AppServices {
   })
   const resetEventsMonth = new ResetEventsMonth(eventsState)
 
+  const themeState = new ThemeStore()
+  const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
+  const saveTheme = new SaveTheme({ config: appConfig, store: themeState })
+
   // Contexts never know about each other, so the links live here. Being connected — signed
   // in just now, or a key restored at launch — is what reads the account and the month;
   // anything else forgets both. The stores notify only on change, and a reset while idle is
@@ -197,7 +207,10 @@ export function composeServices(): AppServices {
     loadSchemaSelection,
     saveSchemaSelection,
     eventsState,
-    loadEventsMonth
+    loadEventsMonth,
+    themeState,
+    loadTheme,
+    saveTheme
   }
 }
 
