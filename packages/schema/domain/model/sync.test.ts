@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import type { SchemaSpace } from './space'
 import { nextSchemaSync, type SchemaSync, type SchemaSyncResult } from './sync'
 
-const SPACES: SchemaSpace[] = [{ id: 'sp_1', name: 'Personal', types: [], datedObjectCount: 12 }]
+const SPACES: SchemaSpace[] = [{ id: 'sp_1', name: 'Personal', types: [] }]
 const LAST: SchemaSyncResult = { spaces: SPACES, syncedAt: 1_000 }
 
 const idle: SchemaSync = { phase: 'idle' }

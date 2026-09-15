@@ -68,25 +68,17 @@ export class SyncSchema {
     return Promise.all(
       refs.map(async ({ id, name }) => {
         const types = await this.#fetchDatedTypes(apiKey, id)
-        const datedObjectCount = types.reduce((total, type) => total + type.datedObjectCount, 0)
-        return { id, name, types, datedObjectCount }
+        return { id, name, types }
       })
     )
   }
 
   async #fetchDatedTypes(apiKey: string, spaceId: string): Promise<SchemaType[]> {
     const refs = accepted(await this.#gateway.listTypes(apiKey, spaceId))
-    const dated = refs.flatMap(({ key, name, icon, properties }) => {
+    return refs.flatMap(({ key, name, icon, properties }) => {
       const dateProperties = userDateProperties(properties)
       return dateProperties.length > 0 ? [{ key, name, icon, dateProperties }] : []
     })
-    return Promise.all(
-      dated.map(async (type) => {
-        const keys = type.dateProperties.map((property) => property.key)
-        const count = await this.#gateway.countObjectsWithAnyValue(apiKey, spaceId, type.key, keys)
-        return { ...type, datedObjectCount: accepted(count) }
-      })
-    )
   }
 }
 

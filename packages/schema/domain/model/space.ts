@@ -5,6 +5,4 @@ export interface SchemaSpace {
   name: string
   /** Only the types with a user date property, so only what could go on the calendar. */
   types: SchemaType[]
-  /** The sum of its types' dated objects. */
-  datedObjectCount: number
 }

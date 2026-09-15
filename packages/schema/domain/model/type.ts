@@ -15,6 +15,4 @@ export interface SchemaType {
   icon: SchemaTypeIcon | null
   /** Never empty — see userDateProperties. */
   dateProperties: SchemaDateProperty[]
-  /** Objects of this type with a value in at least one of its date properties. */
-  datedObjectCount: number
 }

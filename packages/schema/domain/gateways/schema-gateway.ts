@@ -25,12 +25,4 @@ export interface SchemaGateway {
 
   /** Leaves out archived types. */
   listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>>
-
-  /** Objects of the type with a value in at least one of `propertyKeys`, which must not be empty. */
-  countObjectsWithAnyValue(
-    apiKey: string,
-    spaceId: string,
-    typeKey: string,
-    propertyKeys: readonly string[]
-  ): Promise<SchemaGatewayResult<number>>
 }

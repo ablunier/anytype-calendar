@@ -9,11 +9,7 @@ const API_KEY = 'ak_secret'
 function setup() {
   const gateway = {
     listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ({ ok: true, value: [] })),
-    listTypes: vi.fn<SchemaGateway['listTypes']>(async () => ({ ok: true, value: [] })),
-    countObjectsWithAnyValue: vi.fn<SchemaGateway['countObjectsWithAnyValue']>(async () => ({
-      ok: true,
-      value: 0
-    }))
+    listTypes: vi.fn<SchemaGateway['listTypes']>(async () => ({ ok: true, value: [] }))
   }
   const store = new SchemaSyncStore()
   const syncSchema = new SyncSchema({ gateway, apiKeys: { current: async () => API_KEY }, store })

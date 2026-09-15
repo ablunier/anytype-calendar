@@ -61,31 +61,6 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     return { ok: true, value: types }
   }
 
-  async countObjectsWithAnyValue(
-    apiKey: string,
-    spaceId: string,
-    typeKey: string,
-    propertyKeys: readonly string[]
-  ): Promise<SchemaGatewayResult<number>> {
-    // Only the total is read, so one result is enough to get it.
-    const response = await this.#client.request({
-      method: 'POST',
-      path: `/v1/spaces/${encodeURIComponent(spaceId)}/search?offset=0&limit=1`,
-      apiKey,
-      body: {
-        types: [typeKey],
-        filters: {
-          operator: 'or',
-          conditions: propertyKeys.map((key) => ({ property_key: key, condition: 'nempty' }))
-        }
-      }
-    })
-    if (!response.ok) return refused(response, 'search')
-    const total = numberField(field(response.body, 'pagination'), 'total')
-    if (total === undefined) throw malformed('search')
-    return { ok: true, value: total }
-  }
-
   async #listAll(
     apiKey: string,
     path: string,
@@ -148,11 +123,6 @@ function field(value: unknown, name: string): unknown {
 function stringField(value: unknown, name: string): string | undefined {
   const found = field(value, name)
   return typeof found === 'string' && found !== '' ? found : undefined
-}
-
-function numberField(value: unknown, name: string): number | undefined {
-  const found = field(value, name)
-  return typeof found === 'number' && Number.isInteger(found) && found >= 0 ? found : undefined
 }
 
 function malformed(what: string): Error {
