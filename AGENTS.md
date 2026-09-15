@@ -8,7 +8,8 @@ An Electron + React desktop app that renders Anytype objects (with date properti
 calendar. It talks to the Anytype local API. npm workspaces monorepo, currently in an
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
-the real Anytype local API and keeps the key across restarts. `schema` — how the user
+the real Anytype local API, either through the challenge/code exchange or by pasting a key
+the user already holds, and keeps the key across restarts. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property) and tracks the last sync, which feeds the post-sign-in success
 card and onboarding. It also persists the user's
@@ -152,7 +153,8 @@ Standard electron-vite three-process layout:
   re-runs both, at most once per 30 s (`events/events-ipc.ts`). `LoadEventsMonth` lets the
   newest load win, so leaving a month or changing Settings mid-load never draws a stale
   result. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
-  `2749`, logged to the terminal), a separate `credential-fake.bin`,
+  `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
+  separate `credential-fake.bin`,
   `InMemorySchemaGateway` (the design's four sample spaces) and `InMemoryEventsGateway`
   (the design's sample month, seeded around the current month). The schema selection is plain
   JSON in `<userData>/schema-selection.json` (`schema-selection-fake.json` in fake mode,
