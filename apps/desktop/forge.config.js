@@ -54,17 +54,6 @@ module.exports = {
     { name: '@electron-forge/maker-zip', platforms: ['darwin'] },
     { name: '@electron-forge/maker-deb', config: { options: linuxOptions } }
   ],
-  publishers: [
-    {
-      name: '@electron-forge/publisher-github',
-      config: {
-        repository: { owner: 'ablunier', name: 'anytype-calendar' },
-        // The release workflow creates the draft before the per-OS jobs upload into it, and
-        // publishes it once all of them have.
-        draft: true
-      }
-    }
-  ],
   plugins: [
     // Also re-applies the ad-hoc signature flipping invalidates, without which macOS on Apple
     // silicon refuses to open an app that has no real signature.

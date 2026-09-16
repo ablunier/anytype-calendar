@@ -30,8 +30,7 @@ jobs:
             exit 1
           fi
 
-      # Forge creates the release when it finds none, so three OS jobs starting together would
-      # create three. The releases list is used because the by-tag endpoint skips drafts, which
+      # Created once here so the OS jobs only ever upload into it. The releases list is used because the by-tag endpoint skips drafts, which
       # a re-run finds already there.
       - name: Create the draft release
         if: github.ref_type == 'tag'
@@ -58,15 +57,33 @@ jobs:
 
       - run: npm ci
 
+      - name: Make installers
+        run: npm run make
+
+      # One file at a time. An upload can reach GitHub and still fail on the client, and its
+      # retry is then refused as a duplicate, so a failed upload that left an asset of the
+      # file's size counts as done. GitHub renames assets as `sed` does below.
       - name: Upload installers to the draft release
         if: github.ref_type == 'tag'
-        run: npm run publish
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Make installers
-        if: github.ref_type != 'tag'
-        run: npm run make
+        shell: bash
+        run: |
+          find apps/desktop/dist/make -type f | while IFS= read -r file; do
+            name="$(basename "$file" | sed -E 's/[^A-Za-z0-9_.@+-]+/./g; s/\.+/./g; s/^\.//; s/\.$//')"
+            size="$(wc -c < "$file" | tr -d ' ')"
+            for attempt in 1 2 3; do
+              if gh release upload "$GITHUB_REF_NAME" "$file" --clobber; then
+                continue 2
+              fi
+              present="$(gh release view "$GITHUB_REF_NAME" --json assets \
+                --jq ".assets[] | select(.name == \"$name\" and .size == $size and .state == \"uploaded\") | .name")"
+              if [ -n "$present" ]; then
+                continue 2
+              fi
+              sleep 10
+            done
+            echo "Could not upload $file" >&2
+            exit 1
+          done
 
       - uses: actions/upload-artifact@v4
         if: github.ref_type != 'tag'

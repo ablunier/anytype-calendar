@@ -16,7 +16,6 @@
     "build": "tsc -b && npm -w apps/desktop run build",
     "package": "tsc -b && npm -w apps/desktop run package",
     "make": "tsc -b && npm -w apps/desktop run make",
-    "publish": "tsc -b && npm -w apps/desktop run publish",
     "typecheck": "tsc -b --force",
     "test": "vitest run",
     "lint:arch": "npm --prefix tools/arch-lint run cruise",

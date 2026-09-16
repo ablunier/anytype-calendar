@@ -85,7 +85,7 @@ Run from the repo root.
 | `npm run lint:arch` | dependency-cruiser check of the hexagonal layering |
 | `npm run lint:arch:setup` | install the arch-lint toolchain (only if `postinstall` was skipped) |
 | `npm run clean` | `tsc -b --clean` plus the desktop app's `out/` and `dist/` |
-| `npm run package` / `make` / `publish` | package, build installers for, or publish to GitHub the desktop app for this OS with Electron Forge, into `apps/desktop/dist` |
+| `npm run package` / `make` | package, or build installers for, the desktop app for this OS with Electron Forge, into `apps/desktop/dist` |
 
 A single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
 layer across every context: `npx vitest run --project domain`.
