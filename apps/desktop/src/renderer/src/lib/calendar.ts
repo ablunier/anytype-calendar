@@ -60,6 +60,13 @@ export function longDate(date: string): string {
   return `${day} ${MONTH_NAMES[month - 1]} ${year}`
 }
 
+/** `date` is `YYYY-MM-DD`. Weekday and month abbreviated, e.g. `Fri Sep 4`; no year. */
+export function shortDate(date: string): string {
+  const [year, month = 1, day] = date.split('-').map(Number)
+  const weekday = WEEKDAYS[(new Date(year, month - 1, day).getDay() + 6) % 7]
+  return `${weekday} ${MONTH_NAMES[month - 1].slice(0, 3)} ${day}`
+}
+
 export function monthLabel(year: number, month: number): string {
   return `${MONTH_NAMES[month]} ${year}`
 }

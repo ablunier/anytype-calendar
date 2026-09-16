@@ -10,6 +10,7 @@ import {
   longDate,
   monthLabel,
   offersDates,
+  shortDate,
   spacesByKeys,
   typesInSpace,
   withDates
@@ -121,6 +122,13 @@ describe('longDate', () => {
   test('spells out the month name', () => {
     expect(longDate('2024-01-05')).toBe('5 January 2024')
     expect(longDate('2026-12-31')).toBe('31 December 2026')
+  })
+})
+
+describe('shortDate', () => {
+  test('abbreviates the weekday and month, with no year', () => {
+    expect(shortDate('2024-01-05')).toBe('Fri Jan 5')
+    expect(shortDate('2026-12-31')).toBe('Thu Dec 31')
   })
 })
 

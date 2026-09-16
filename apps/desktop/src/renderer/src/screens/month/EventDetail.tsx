@@ -1,26 +1,51 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
-import { dateLabel } from '@renderer/lib/calendar'
+import { dateLabel, shortDate } from '@renderer/lib/calendar'
 
-interface DetailFieldProps {
-  label: string
-  value: string
-  mono?: boolean
+interface DetailDateProps {
+  date: string
+  /** Absent for an all-day event, so the date sits alone at the top of the column. */
+  time?: string
+  caption: string
 }
 
-function DetailField({ label, value, mono = false }: DetailFieldProps): React.JSX.Element {
+/**
+ * Time, date and caption stack in one column so a From/To pair lines up: two side-by-side
+ * flex rows (a time row above a date row) don't share column widths on their own, since
+ * each row's cells size to that row's own content.
+ */
+function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element {
   return (
-    <div className="flex items-baseline gap-12">
-      <dt className="w-116 shrink-0 type-caption text-tiny text-ink-tertiary">{label}</dt>
-      <dd
+    <div className="flex flex-col gap-2">
+      {time ? <span className="type-numeral text-small text-ink-body">{time}</span> : null}
+      <span className="type-numeral text-small text-ink-body">{shortDate(date)}</span>
+      <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
+    </div>
+  )
+}
+
+interface ReadOnlyToggleProps {
+  checked: boolean
+  label: string
+}
+
+/** A read-only stand-in for a toggle switch: this panel never writes back to Anytype. */
+function ReadOnlyToggle({ checked, label }: ReadOnlyToggleProps): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-10">
+      <span
+        role="switch"
+        aria-checked={checked}
+        aria-readonly
         className={[
-          'min-w-0 flex-1 text-small text-ink-body',
-          mono ? 'type-numeral' : 'type-ui'
+          'flex h-18 w-30 shrink-0 items-center rounded-pill p-2',
+          checked ? 'justify-end bg-surface-accent' : 'justify-start bg-surface-sunken border border-line-strong'
         ].join(' ')}
       >
-        {value}
-      </dd>
+        <span className="size-icon-14 rounded-pill bg-surface-card shadow-1" />
+      </span>
+      <span className="type-ui text-small text-ink-body">{label}</span>
     </div>
   )
 }
@@ -32,13 +57,11 @@ export interface EventDetailProps {
 }
 
 /**
- * Every field names the relation that surfaced it ("From · Due date") — the system's rule
- * that trust comes from being explicit about why something is on the grid.
+ * Every date names the relation that surfaced it ("Due date") — the system's rule that
+ * trust comes from being explicit about why something is on the grid.
  */
 export function EventDetail({ event, type, spacesByKey }: EventDetailProps): React.JSX.Element {
   const space = spacesByKey.get(event.space)
-  const from = `${event.date}${event.time ? ` ${event.time}` : ''}`
-  const to = event.until ? `${event.until}${event.end ? ` ${event.end}` : ''}` : 'Not set'
 
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
@@ -59,16 +82,30 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
         </div>
       </div>
 
-      <dl className="flex flex-col gap-10 border-t border-line-hairline pt-16">
-        <DetailField label={`From · ${type ? dateLabel(type, type.from) : 'date'}`} value={from} mono />
-        <DetailField
-          label={type?.to ? `To · ${dateLabel(type, type.to)}` : 'To date'}
-          value={to}
-          mono={event.until !== undefined}
-        />
-        <DetailField label="All day" value={event.allDay ? 'Yes' : 'No'} />
-        <DetailField label="Space" value={space?.name ?? 'Unknown'} />
-      </dl>
+      <div className="flex flex-col gap-16 border-t border-line-hairline pt-16">
+        <div className="flex items-start gap-10">
+          <Icon name="clock" size={16} className="mt-2 text-ink-tertiary" />
+          <div className="flex items-start gap-16">
+            <DetailDate
+              date={event.date}
+              time={!event.allDay ? event.time : undefined}
+              caption={type ? dateLabel(type, type.from) : 'From date'}
+            />
+            {event.until ? (
+              <>
+                <Icon name="chevron-right" size={12} className="mt-4 shrink-0 text-ink-tertiary" />
+                <DetailDate
+                  date={event.until}
+                  time={!event.allDay ? (event.end ?? event.time) : undefined}
+                  caption={type?.to ? dateLabel(type, type.to) : 'To date'}
+                />
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <ReadOnlyToggle checked={event.allDay} label="All day" />
+      </div>
 
       <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">
         <Icon name="info" size={14} className="mt-2 text-ink-tertiary" />
