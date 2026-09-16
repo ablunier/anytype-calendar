@@ -1,5 +1,7 @@
 # Calendar for Anytype
 
+![Calendar for Anytype demo](docs/demo.gif)
+
 A desktop calendar for [Anytype](https://anytype.io). It reads objects from your local
 Anytype account through the local API and lays the ones carrying date properties onto a
 month grid — so a `Task` with a due date, a `Meeting` with a start and end, and a `Note`
