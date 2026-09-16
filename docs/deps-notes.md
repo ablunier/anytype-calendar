@@ -8,17 +8,10 @@ Conditions that currently block installing everything at `@latest`:
   with the `vite@^7` pin above — so plugin-react must be pinned to `^5.2.0`, the last
   5.x line that supports vite 7 (`vite: '^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0'`).
 
-- `electron` must be an **exact** version, not a range. electron-builder computes the
-  Electron version by looking for `node_modules/electron` in the project directory, and
-  under npm workspaces Electron hoists to the repo root, so `apps/desktop/node_modules`
-  does not exist. With a range it fails outright:
-
-  > Electron version "^44.3.0" is a range, not a fixed version. […] Cannot compute
-  > electron version from installed node modules
-
-  An exact version lets electron-builder read it straight from `package.json` without
-  resolving the module, which keeps a single source of truth. Setting `electronVersion`
-  in `electron-builder.yml` would also work but duplicates the number.
+- `electron` is an **exact** version. electron-builder, which packaged the app before
+  Electron Forge, needed that: under npm workspaces Electron hoists to the repo root, and
+  electron-builder could not resolve a range from `apps/desktop`. Forge reads the installed
+  `node_modules/electron` next to the lockfile, so a range would now work too.
 
 Pinned versions in use:
 
@@ -26,8 +19,35 @@ Pinned versions in use:
 - `@vitejs/plugin-react@^5.2.0`
 - `electron@44.3.0` (exact)
 
-Everything else (`electron-builder`, `electron-vite`, `typescript`, `@types/*`)
+Everything else (`@electron-forge/*`, `electron-vite`, `typescript`, `@types/*`)
 installs fine at `@latest`.
+
+## Electron Forge 7 on npm 12 and Node 26
+
+Two of Forge 7.11's transitive dependencies are replaced through the root `overrides`:
+
+- `@electron/rebuild` → `^4.2.0`. Forge asks for `^3.7.0`, and 3.x depends on
+  `@electron/node-gyp` straight from a GitHub commit. npm 12 refuses git dependencies by
+  default (`EALLOWGIT`), so the install fails outright. 4.x depends on `node-gyp` from the
+  registry instead. It is ESM-only, which Forge's `require()` handles on Node ≥22.12.
+- `yauzl` → `^3.4.0`. `@electron/packager` 18 unzips the Electron binary with
+  `extract-zip` 2.0.1 (unmaintained since 2023), which asks for `yauzl@^2.10.0`. On that
+  combination under Node 26 the extraction stops partway with nothing left to keep the
+  event loop alive, so `electron-forge package` exits 0 during "Finalizing package" having
+  written nothing. With `yauzl` 3 the same `extract-zip` unpacks the whole archive.
+  `extract-zip` is its only consumer here.
+
+  Swapping `extract-zip` itself for `@electron-internal/extract-zip` (what
+  `@electron/packager` 20 uses) through an `npm:` alias override does not work on npm 12:
+  it drops the dependency without installing the alias.
+
+An override only applies when npm resolves the package afresh. A copy already recorded
+in `package-lock.json` keeps its locked version, so after changing `overrides`, check the
+lockfile actually moved.
+
+Nothing here reaches the packaged app, which bundles its dependencies and ships no
+`node_modules`. Re-check both when upgrading Forge: once it depends on
+`@electron/packager` ≥20 and `@electron/rebuild` ≥4, the overrides can go.
 
 Re-check these pins when bumping `electron-vite` or `@vitejs/plugin-react` — once
 `electron-vite` adds vite 8 support, the plugin-react pin can likely move to `^6` too.
@@ -44,21 +64,16 @@ That breaks `electron-vite`: it reads `node_modules/electron/path.txt` directly
 (to resolve the binary path) instead of requiring the module, so the lazy download
 never fires. Running `electron-vite dev` then fails with `Error: Electron uninstall`.
 
-`electron-builder install-app-deps` does **not** fix this either — it only rebuilds
-native modules against the Electron ABI, it doesn't fetch Electron's own binary.
-
-Fix: the root `postinstall` script explicitly runs Electron's installer before
-`electron-builder install-app-deps`:
+Fix: the root `postinstall` script explicitly runs Electron's installer:
 
 ```json
-"postinstall": "node node_modules/electron/install.js && npm --prefix tools/arch-lint install && npm -w apps/desktop exec -- electron-builder install-app-deps"
+"postinstall": "node node_modules/electron/install.js && npm --prefix tools/arch-lint install"
 ```
 
 Under npm workspaces Electron still hoists to the repo root, so
-`node_modules/electron/install.js` resolves from the root unchanged.
-`install-app-deps` is scoped to `apps/desktop` because that is where
-`electron-builder.yml` lives, and the `tools/arch-lint` install is chained in because
-that directory is intentionally outside the workspaces (see below).
+`node_modules/electron/install.js` resolves from the root unchanged. The
+`tools/arch-lint` install is chained in because that directory is intentionally outside
+the workspaces (see below).
 
 Re-check this when bumping the `electron` major version — if a future release restores
 the traditional postinstall-download behavior, this explicit step becomes redundant
@@ -92,11 +107,13 @@ TypeScript 7.1 ships a public API.
 ## The desktop app's package name is unscoped
 
 `apps/desktop` is named `anytype-calendar-desktop`, not `@anytype-calendar/desktop`,
-while the three libraries under `packages/` do use the scope. electron-builder feeds
-the package name into `${name}` for artifact filenames and into the Linux executable
-name, and a scoped name produces artifacts like `@anytype-calendardesktop`. Nothing
-imports the desktop app, so it gains nothing from the scope.
+while the libraries under `packages/` do use the scope. Forge's makers derive names from
+it: the Squirrel maker uses it, with `-` swapped for `_`, as the package id, and a scope's
+`@` and `/` are not valid there, nor in deb and rpm package names. Nothing imports the
+desktop app, so it gains nothing from the scope.
 
-`linux.executableName` is also set explicitly in `electron-builder.yml`, mirroring the
-`win.executableName` that was already there, so the binary is named after the product
-rather than the package either way.
+`forge.config.js` sets `executableName` and the deb/rpm `name` to `calendar-for-anytype`
+explicitly, so the binary and Linux packages are named after the product rather than the
+package. Squirrel's id is also written out in `squirrelAppUserModelId`
+(`src/main/squirrel-startup.ts`): the running app must claim the AppUserModelID Squirrel
+gives its shortcuts, so renaming the package means updating that constant.

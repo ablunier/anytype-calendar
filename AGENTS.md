@@ -41,7 +41,8 @@ Run from the repo root unless noted.
 - `npm run lint:arch` — run the hexagonal-architecture dependency-cruiser check (see
   Architecture below). First run `npm run lint:arch:setup` to install its isolated toolchain.
 - `npm run clean` — `tsc -b --clean` plus removing `apps/desktop/out` and `apps/desktop/dist`.
-- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), `build:unpack`/`build:win`/`build:mac`/`build:linux` (electron-builder packaging). `build:win` needs Wine (electron-builder shells out to it for the NSIS installer and exe icon); on a Linux machine without Wine installed, use `build:win:docker` instead, which runs the packaging step in `electronuserland/builder:wine` via `build-win-docker.sh` — needs Docker, not Wine.
+- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), and `package`/`make`/`publish` (Electron Forge, configured in `apps/desktop/forge.config.js`; the root scripts of the same names run `tsc -b` first). Forge writes to `apps/desktop/dist`, since electron-vite owns `out/`, and builds for the host OS only: a `.deb` and `.rpm` on Linux (the `.rpm` needs `rpmbuild`), a Squirrel `Setup.exe` on Windows, a `.dmg` and `.zip` on macOS. Nothing is code-signed yet.
+- Releasing: bump `apps/desktop/package.json`'s `version`, then push a matching `v<version>` tag. `.github/workflows/release.yml` creates a draft release, runs `publish` on Linux, Windows and macOS runners into it, and publishes it once all three have uploaded. Running the workflow by hand only makes the installers, as workflow artifacts.
 - Single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
   layer across all contexts: `npx vitest run --project domain`.
 
@@ -247,9 +248,16 @@ Checked against a real account on API version `2025-11-08`:
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 
-- `electron` is pinned to an **exact** version (not a range) — electron-builder computes
-  the packaged Electron version by reading `node_modules/electron`, which npm workspaces
-  hoist to the repo root, and it cannot resolve a range there.
+- The packaged app ships no `node_modules`: main and preload bundle every dependency
+  (`externalizeDeps: false` in `electron.vite.config.ts`), and `forge.config.js` packages
+  only `out/`, `resources/` and `package.json`. npm workspaces hoist `node_modules` out of
+  `apps/desktop`, so Forge could not assemble them anyway. A dependency that cannot be
+  bundled (a native module) would need that revisited.
+- The root `overrides` replace two of Forge 7's transitive dependencies: `@electron/rebuild`
+  goes to `^4`, since 3.x pulls `@electron/node-gyp` from git, which npm 12 refuses to fetch;
+  `yauzl` goes to `^3.4`, since on the 2.x that `@electron/packager` 18's `extract-zip` asks
+  for, unzipping Electron stops partway on Node 26 and `package` exits 0 having produced
+  nothing. Re-check both when upgrading Forge.
 - `vite` is pinned to `^7` and `@vitejs/plugin-react` to `^5.2.0` — newer majors of either
   break the electron-vite/vite peer chain.
 - The root `postinstall` explicitly runs `node node_modules/electron/install.js` — Electron
@@ -264,8 +272,10 @@ Checked against a real account on API version `2025-11-08`:
   root `devDependencies` — see `tools/arch-lint/README.md` for the removal plan once
   dependency-cruiser supports TS 7.1.
 - `apps/desktop`'s package name is deliberately unscoped (`anytype-calendar-desktop`, not
-  `@anytype-calendar/desktop`) because electron-builder feeds the package name straight
-  into artifact filenames and the Linux executable name; a scoped name would corrupt those.
+  `@anytype-calendar/desktop`) because Forge's makers derive the deb and rpm package names
+  and Squirrel's package id from it, and a scoped name would corrupt those. Squirrel's id
+  is also spelled out in `squirrelAppUserModelId` (`src/main/squirrel-startup.ts`), so
+  renaming the package means updating that too.
 
 ## Working conventions observed in this repo
 

@@ -76,10 +76,28 @@ Run from the repo root.
 | `npm run lint:arch` | dependency-cruiser check of the hexagonal layering |
 | `npm run lint:arch:setup` | install the arch-lint toolchain (only if `postinstall` was skipped) |
 | `npm run clean` | `tsc -b --clean` plus the desktop app's `out/` and `dist/` |
-| `npm run build:linux` / `:mac` / `:win` / `:unpack` | package with electron-builder |
+| `npm run package` / `make` / `publish` | package, build installers for, or publish to GitHub the desktop app for this OS with Electron Forge, into `apps/desktop/dist` |
 
 A single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
 layer across every context: `npx vitest run --project domain`.
+
+## Releasing
+
+Bump `version` in `apps/desktop/package.json`, commit, then tag and push:
+
+```sh
+git tag v1.2.3 && git push origin v1.2.3
+```
+
+The `Release` workflow checks the tag matches that version, builds the Linux (`.deb`,
+`.rpm`), Windows (Squirrel `Setup.exe`) and macOS (`.dmg`, `.zip`) installers on their own
+runners, uploads them to a draft GitHub release and publishes it once all three are in. To
+build the installers without releasing, run the workflow by hand from the Actions tab; they
+are kept as workflow artifacts.
+
+The builds are not code-signed. Windows SmartScreen warns on first run ("More info" → "Run
+anyway"). macOS refuses to open the app at first: try once, then allow it under System
+Settings → Privacy & Security → "Open Anyway".
 
 ## Repo layout
 
