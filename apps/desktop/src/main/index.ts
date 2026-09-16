@@ -6,8 +6,11 @@ import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
+import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
 import { registerThemeIpc } from './theme/theme-ipc'
 import icon from '../../resources/icon.png?asset'
+
+const isSquirrelEvent = handleSquirrelEvent()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,7 +44,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('me.blunier.anytype.calendar')
+  // The app is only quitting once Update.exe has done its shortcuts.
+  if (isSquirrelEvent) return
+
+  electronApp.setAppUserModelId(squirrelAppUserModelId)
 
   const services = composeServices()
   registerAuthIpc(services)
