@@ -49,6 +49,7 @@
     "electron": "44.3.0",
     "electron-vite": "^5.0.0",
     "tailwindcss": "^4.3.3",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "which": "^7.0.0"
   }
 }
