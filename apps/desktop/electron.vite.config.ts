@@ -1,6 +1,5 @@
-import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -15,28 +14,23 @@ const workspaceAlias = {
 // The IPC contract, imported by all three processes.
 const sharedAlias = { find: '@shared', replacement: resolve(__dirname, 'src/shared') }
 
-// The contexts are listed in apps/desktop dependencies, so externalizeDepsPlugin would
-// otherwise leave them as bare `require`s that the packaged app cannot resolve. Bundle them
-// instead.
-const { dependencies } = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8')) as {
-  dependencies: Record<string, string>
-}
-const workspaceDeps = Object.keys(dependencies).filter((name) =>
-  name.startsWith('@anytype-calendar/')
-)
+// Main and preload bundle every dependency, leaving only `electron` and Node core as
+// `require`s. The packaged app therefore ships no node_modules (see forge.config.js), which
+// Forge could not assemble anyway: npm workspaces hoist them to the repo root.
+const bundleDeps = { externalizeDeps: false }
 
 export default defineConfig({
   main: {
     resolve: {
       alias: [sharedAlias, workspaceAlias]
     },
-    plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
+    build: bundleDeps
   },
   preload: {
     resolve: {
       alias: [sharedAlias, workspaceAlias]
     },
-    plugins: [externalizeDepsPlugin({ exclude: workspaceDeps })]
+    build: bundleDeps
   },
   renderer: {
     resolve: {

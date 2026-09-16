@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=<%= productName %>
+<% if (description) { %>Comment=<%= description %>
+<% } %><% if (genericName) { %>GenericName=<%= genericName %>
+<% } %>Exec=<%= name %> %U
+Icon=<%= name %>
+Type=Application
+StartupNotify=true
+StartupWMClass=me.blunier.anytype.calendar
+<% if (categories && categories.length) { %>Categories=<%= categories.join(';') %>;
+<% } %>
