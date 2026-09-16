@@ -186,6 +186,28 @@ chains to recount when a file moves. The alias is declared in three places that 
 `@shared/*` works the same way for `src/shared/ipc.ts`, the IPC contract between main,
 preload and renderer.
 
+## Roadmap
+
+Not built yet, roughly grouped:
+
+### Config
+
+- Toggle for week numbers
+- Selector for the start-of-week day
+- i18n
+- 12h/24h time format selector
+- Configurable mapping of which Anytype properties show in the event detail panel
+
+### Calendar
+
+- Day, week and year views (month is the only one today)
+- Per-space toggle for whether its events show on the calendar
+
+### General
+
+- Keyboard shortcuts / command palette
+- System notifications for upcoming events
+
 ## Notes for contributors
 
 - `docs/deps-notes.md` explains the version pins (`electron` exact, `vite@^7`,
