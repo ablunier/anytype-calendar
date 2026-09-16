@@ -10,16 +10,19 @@ You pick which spaces and object types to track, and which date property of each
 anchors it on the grid (a type with both a start and an end property is drawn as a range).
 
 > **Status: early.** The desktop UI is fully built and navigable. `auth` is fully wired: it
-> runs the 4-digit code flow against the Anytype local API, and the key is kept, encrypted,
-> across restarts. `schema` is real too — it reads each space's dated types from your
-> Anytype data and how many objects fill one in, and feeds the post-sign-in success card,
-> onboarding, and Settings, which save which spaces/types you track and each type's
-> From/To date property. `events` puts those types' objects on the month grid: any month
-> can be browsed, a type with a To date is drawn as a range, and the month is read again
-> when you come back to the window. Editing, week and day views, recurrence and "Open in
-> Anytype" are not built yet. The backend is organised as one package per bounded context —
-> `auth`, `schema` and `events` so far — plus two shared packages, `anytype-client` (the
-> local API HTTP transport) and `kernel` (shared use-case plumbing).
+> signs in against the real Anytype local API, either through the 4-digit challenge/code
+> flow or by pasting a key you already hold, and keeps the key, encrypted, across restarts.
+> `schema` is real too — it reads each space's dated types from your Anytype data and feeds
+> the post-sign-in success card, onboarding, and Settings, which save which spaces/types you
+> track and each type's From/To date property. `events` puts those types' objects on the
+> month grid: any month can be browsed, a type with a To date is drawn as one continuous bar
+> across the days it spans, the event detail panel can open the object in Anytype, and the
+> month is read again when you come back to the window. The app remembers your light/dark
+> choice across restarts. The installers are packaged with Electron Forge and published from
+> a GitHub Actions release workflow. Editing, week and day views, and recurrence are not
+> built yet. The backend is organised as one package per bounded context — `auth`, `schema`
+> and `events` so far — plus two shared packages, `anytype-client` (the local API HTTP
+> transport) and `kernel` (shared use-case plumbing).
 
 ## Requirements
 
@@ -42,14 +45,19 @@ toolchain, via the root `postinstall`.
 `npm run dev` dies with a misleading `TypeError` about `isPackaged`.
 
 The app opens on the auth screen. Start the connection and Anytype shows a 4-digit code;
-type it into the app. The key is then stored in the app's user-data directory
+type it into the app. If you already hold an API key (from a previous session, or minted
+directly in Anytype under Settings → API Keys), you can paste it instead of running the
+code flow. The key is then stored in the app's user-data directory
 (`~/.config/anytype-calendar-desktop/credential.bin` in dev on Linux), encrypted with the
 OS keychain through Electron's `safeStorage`. Once connected, the app reads your spaces'
 dated types and walks you through onboarding — which spaces and types to track, and each
 type's From/To date property — or reopens straight past it if you'd already done that on a
-previous run. The calendar then shows the current month's objects of the types you picked.
+previous run. The calendar then shows the current month's objects of the types you picked:
+a type with a To date is drawn as one continuous bar across the days it spans, and clicking
+into a day opens the event detail panel, which can open the object directly in Anytype.
 Dates without a time are drawn as all-day, and times are shown in your computer's time
-zone. Signing out deletes the credential file. The local API cannot revoke a key,
+zone. The month view's top bar also has a light/dark theme toggle, remembered across
+restarts. Signing out deletes the credential file. The local API cannot revoke a key,
 so to revoke one, delete it in the Anytype app under Settings → API Keys.
 
 To work without Anytype, sign in against a simulated one:
@@ -58,8 +66,9 @@ To work without Anytype, sign in against a simulated one:
 env -u ELECTRON_RUN_AS_NODE ANYTYPE_CALENDAR_FAKE_AUTH=1 npm run dev
 ```
 
-The terminal then logs each challenge and the code to type — always `2749`. The simulated
-key is kept in a separate `credential-fake.bin`, the schema comes from four sample spaces
+The terminal then logs each challenge and the code to type — always `2749` (or paste the
+API key `ak_fake_2749` directly). The simulated key is kept in a separate
+`credential-fake.bin`, the schema comes from four sample spaces
 `InMemorySchemaGateway` builds, and the objects from a sample month `InMemoryEventsGateway`
 seeds around the current one — never anything from a real Anytype instance.
 
