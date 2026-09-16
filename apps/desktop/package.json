@@ -1,6 +1,6 @@
 {
   "name": "anytype-calendar-desktop",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "Calendar for Anytype desktop app",
   "private": true,
   "author": {
