@@ -41,7 +41,7 @@ Run from the repo root unless noted.
 - `npm run lint:arch` — run the hexagonal-architecture dependency-cruiser check (see
   Architecture below). First run `npm run lint:arch:setup` to install its isolated toolchain.
 - `npm run clean` — `tsc -b --clean` plus removing `apps/desktop/out` and `apps/desktop/dist`.
-- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), and `package`/`make`/`publish` (Electron Forge, configured in `apps/desktop/forge.config.js`; the root scripts of the same names run `tsc -b` first). Forge writes to `apps/desktop/dist`, since electron-vite owns `out/`, and builds for the host OS only: a `.deb` and `.rpm` on Linux (the `.rpm` needs `rpmbuild`), a Squirrel `Setup.exe` on Windows, a `.dmg` and `.zip` on macOS. Nothing is code-signed yet.
+- Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), and `package`/`make`/`publish` (Electron Forge, configured in `apps/desktop/forge.config.js`; the root scripts of the same names run `tsc -b` first). Forge writes to `apps/desktop/dist`, since electron-vite owns `out/`, and builds for the host OS only: a `.deb` on Linux, a Squirrel `Setup.exe` on Windows, a `.dmg` and `.zip` on macOS. Nothing is code-signed yet.
 - Releasing: bump `apps/desktop/package.json`'s `version`, then push a matching `v<version>` tag. `.github/workflows/release.yml` creates a draft release, runs `publish` on Linux, Windows and macOS runners into it, and publishes it once all three have uploaded. Running the workflow by hand only makes the installers, as workflow artifacts.
 - Single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
   layer across all contexts: `npx vitest run --project domain`.
@@ -280,7 +280,7 @@ Checked against a real account on API version `2025-11-08`:
   root `devDependencies` — see `tools/arch-lint/README.md` for the removal plan once
   dependency-cruiser supports TS 7.1.
 - `apps/desktop`'s package name is deliberately unscoped (`anytype-calendar-desktop`, not
-  `@anytype-calendar/desktop`) because Forge's makers derive the deb and rpm package names
+  `@anytype-calendar/desktop`) because Forge's makers derive the deb package name
   and Squirrel's package id from it, and a scoped name would corrupt those. Squirrel's id
   is also spelled out in `squirrelAppUserModelId` (`src/main/squirrel-startup.ts`), so
   renaming the package means updating that too.

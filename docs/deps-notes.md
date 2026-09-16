@@ -109,10 +109,10 @@ TypeScript 7.1 ships a public API.
 `apps/desktop` is named `anytype-calendar-desktop`, not `@anytype-calendar/desktop`,
 while the libraries under `packages/` do use the scope. Forge's makers derive names from
 it: the Squirrel maker uses it, with `-` swapped for `_`, as the package id, and a scope's
-`@` and `/` are not valid there, nor in deb and rpm package names. Nothing imports the
+`@` and `/` are not valid there, nor in deb package names. Nothing imports the
 desktop app, so it gains nothing from the scope.
 
-`forge.config.js` sets `executableName` and the deb/rpm `name` to `calendar-for-anytype`
+`forge.config.js` sets `executableName` and the deb `name` to `calendar-for-anytype`
 explicitly, so the binary and Linux packages are named after the product rather than the
 package. Squirrel's id is also written out in `squirrelAppUserModelId`
 (`src/main/squirrel-startup.ts`): the running app must claim the AppUserModelID Squirrel

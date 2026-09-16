@@ -56,10 +56,6 @@ jobs:
           node-version: '26.8.1'
           cache: npm
 
-      - name: Install rpmbuild
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y rpm
-
       - run: npm ci
 
       - name: Upload installers to the draft release

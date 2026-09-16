@@ -98,8 +98,8 @@ Bump `version` in `apps/desktop/package.json`, commit, then tag and push:
 git tag v1.2.3 && git push origin v1.2.3
 ```
 
-The `Release` workflow checks the tag matches that version, builds the Linux (`.deb`,
-`.rpm`), Windows (Squirrel `Setup.exe`) and macOS (`.dmg`, `.zip`) installers on their own
+The `Release` workflow checks the tag matches that version, builds the Linux (`.deb`),
+Windows (Squirrel `Setup.exe`) and macOS (`.dmg`, `.zip`) installers on their own
 runners, uploads them to a draft GitHub release and publishes it once all three are in. To
 build the installers without releasing, run the workflow by hand from the Actions tab; they
 are kept as workflow artifacts.

@@ -52,8 +52,7 @@ module.exports = {
     },
     { name: '@electron-forge/maker-dmg', config: { icon: resolve(__dirname, 'build/icon.icns') } },
     { name: '@electron-forge/maker-zip', platforms: ['darwin'] },
-    { name: '@electron-forge/maker-deb', config: { options: linuxOptions } },
-    { name: '@electron-forge/maker-rpm', config: { options: linuxOptions } }
+    { name: '@electron-forge/maker-deb', config: { options: linuxOptions } }
   ],
   publishers: [
     {
