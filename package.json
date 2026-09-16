@@ -2,6 +2,7 @@
   "name": "@ablunier/anytype-calendar",
   "description": "Calendar for Anytype desktop app",
   "private": true,
+  "license": "MIT",
   "author": {
     "name": "Adrian P. Blunier",
     "email": "adrianp@blunier.me"

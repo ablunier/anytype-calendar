@@ -3,6 +3,7 @@
   "version": "1.0.0-beta.1",
   "description": "Calendar for Anytype desktop app",
   "private": true,
+  "license": "MIT",
   "author": {
     "name": "Adrian P. Blunier",
     "email": "adrianp@blunier.me"
