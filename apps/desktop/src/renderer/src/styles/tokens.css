@@ -252,6 +252,9 @@
   --ds-size-820: 820px;
   --ds-size-1000: 1000px;
 
+  /* One lane of the month grid: a chip and the gap to the lane below it. */
+  --ds-lane-stride: calc(var(--ds-size-20) + var(--ds-space-2));
+
   /* Icon steps. The readme documents 14 / 16 / 20 / 24; the component sources also
    * use 10 / 11 / 12 / 13 / 18 in dense chrome, so those are carried too. */
   --ds-icon-10: 10px;

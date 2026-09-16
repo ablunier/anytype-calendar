@@ -1,7 +1,10 @@
+import type { CSSProperties } from 'react'
 import type { CategoryHue } from '@renderer/types'
+import type { EventSegment } from '@renderer/lib/month-layout'
 import { catBg, catBgSoft, catText } from '@renderer/components/ui'
 
 export interface EventChipProps {
+  segment: EventSegment
   title: string
   category: CategoryHue
   time?: string
@@ -13,8 +16,13 @@ export interface EventChipProps {
 /**
  * A real <button>, not the design's role="button" div, so it is tabbable and fires on
  * Enter and Space. Stops propagation so opening an event does not also select the day.
+ *
+ * It is positioned over its week row, which is what lets it run past the day it sits in. A
+ * side the range continues past is squared off and runs flush into the column's edge; a side
+ * where the range really starts or ends keeps the chip radius and its inset.
  */
 export function EventChip({
+  segment,
   title,
   category,
   time,
@@ -22,6 +30,8 @@ export function EventChip({
   done = false,
   onClick
 }: EventChipProps): React.JSX.Element {
+  const { column, span, lane, continuesBefore, continuesAfter } = segment
+
   return (
     <button
       type="button"
@@ -29,9 +39,12 @@ export function EventChip({
         event.stopPropagation()
         onClick()
       }}
+      style={{ '--column': column, '--span': span, '--lane': lane } as CSSProperties}
       className={[
-        'flex min-h-20 w-full items-center gap-6 rounded-chip border border-transparent px-6 py-2',
+        'event-span flex min-h-20 items-center gap-6 border border-transparent px-6 py-2',
         'text-left transition-shadow duration-fast ease-standard hover:shadow-1',
+        continuesBefore ? 'event-span-open-start' : 'rounded-l-chip',
+        continuesAfter ? 'event-span-open-end' : 'rounded-r-chip',
         allDay ? `${catBg[category]} text-stone-000` : `${catBgSoft[category]} ${catText[category]}`,
         done ? 'opacity-55' : ''
       ].join(' ')}

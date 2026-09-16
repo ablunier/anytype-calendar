@@ -1,7 +1,7 @@
 /* Pure helpers over data the caller already holds. Calendar dates are local `YYYY-MM-DD`
  * strings, so they compare in order as strings.
  *
- * Recurrence and overlap resolution are deliberately absent.
+ * Recurrence is deliberately absent; overlap is resolved into lanes by `month-layout.ts`.
  */
 
 import type { CalendarEvent, DateMapping, MonthCell, ObjectType, Space } from '@renderer/types'

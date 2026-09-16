@@ -1,12 +1,16 @@
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import type { EventSegment } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
-
-const MAX_CHIPS = 3
 
 export interface MonthDayCellProps {
   cell: MonthCell
-  events: CalendarEvent[]
+  /** The week's segments that start in this cell; each may reach across the ones after it. */
+  segments: EventSegment[]
+  /** Lanes the whole week draws, so every cell of it reserves the same height. */
+  lanes: number
+  /** Events the week's lane cap dropped on this day. */
+  hidden: number
   typesByKey: Map<string, ObjectType>
   isToday: boolean
   isSelected: boolean
@@ -20,7 +24,9 @@ export interface MonthDayCellProps {
 
 export function MonthDayCell({
   cell,
-  events,
+  segments,
+  lanes,
+  hidden,
   typesByKey,
   isToday,
   isSelected,
@@ -31,13 +37,12 @@ export function MonthDayCell({
   onKeyDown,
   onOpenEvent
 }: MonthDayCellProps): React.JSX.Element {
-  const shown = events.slice(0, MAX_CHIPS)
-  const overflow = events.length - shown.length
-
   /* Outside days belong to the adjacent month: shown for continuity, but not selectable
    * and not part of the roving tab order. */
   const interactive = !cell.outside
 
+  /* The cell is deliberately left unpositioned: a bar has to reach across the columns after
+   * this one, so it resolves against the week row. The lane stack reserves its height here. */
   return (
     <div
       role="gridcell"
@@ -78,28 +83,29 @@ export function MonthDayCell({
         </time>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {shown.map((event) => {
-          const type = typesByKey.get(event.type)
-          // A range that started on an earlier day, including one in an earlier month.
-          const continued = event.date !== cell.date
-          return (
-            <EventChip
-              key={event.id}
-              title={`${event.title}${continued ? ' (cont.)' : ''}`}
-              category={type?.category ?? 'graphite'}
-              time={continued ? undefined : event.time}
-              allDay={event.allDay}
-              done={event.done}
-              onClick={() => onOpenEvent(event)}
-            />
-          )
-        })}
-      </div>
-
-      {overflow > 0 ? (
-        <span className="pl-2 type-caption text-micro text-ink-tertiary">+{overflow} more</span>
+      {lanes > 0 ? (
+        <div className="lane-stack" style={{ '--lanes': lanes } as CSSProperties} />
       ) : null}
+
+      {hidden > 0 ? (
+        <span className="pl-2 type-caption text-micro text-ink-tertiary">+{hidden} more</span>
+      ) : null}
+
+      {segments.map((segment) => {
+        const type = typesByKey.get(segment.event.type)
+        return (
+          <EventChip
+            key={segment.event.id}
+            segment={segment}
+            title={segment.event.title}
+            category={type?.category ?? 'graphite'}
+            time={segment.continuesBefore ? undefined : segment.event.time}
+            allDay={segment.event.allDay}
+            done={segment.event.done}
+            onClick={() => onOpenEvent(segment.event)}
+          />
+        )
+      })}
     </div>
   )
 }

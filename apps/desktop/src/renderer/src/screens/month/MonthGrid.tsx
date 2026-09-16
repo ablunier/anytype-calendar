@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
-import { eventsOnDay, FIRST_WEEKEND_INDEX, WEEKDAYS } from '@renderer/lib/calendar'
+import { FIRST_WEEKEND_INDEX, WEEKDAYS } from '@renderer/lib/calendar'
+import { layOutWeek } from '@renderer/lib/month-layout'
 import { MonthDayCell } from './MonthDayCell'
 
 export interface MonthGridProps {
@@ -32,8 +33,10 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * Roving tabindex: exactly one cell is tabbable and the arrow keys move between them, so a
  * keyboard user crosses the month without tabbing through every chip on the way.
  *
- * Outside days get no events: only the month's own window was read, so a range reaching into
- * them is drawn up to the month's edge.
+ * A range is drawn as one bar per week, cut at the week's edges and at the month's — only the
+ * month's own window was read, so outside days draw nothing. Each bar is a child of the cell
+ * its week's segment starts in, which keeps the grid's rows and cells intact, and is
+ * positioned against the week row, whose seven equal columns it needs to span.
  */
 export function MonthGrid({
   cells,
@@ -48,6 +51,11 @@ export function MonthGrid({
 }: MonthGridProps): React.JSX.Element {
   const gridRef = useRef<HTMLDivElement>(null)
   const shouldRefocus = useRef(false)
+
+  const weeks = useMemo(() => {
+    const chunks = chunkWeeks(cells)
+    return chunks.map((week) => ({ week, layout: layOutWeek(events, week) }))
+  }, [cells, events])
 
   useEffect(() => {
     if (!shouldRefocus.current) return
@@ -97,13 +105,15 @@ export function MonthGrid({
       </div>
 
       <div className="flex flex-1 flex-col overflow-auto border-l border-grid-line">
-        {chunkWeeks(cells).map((week, weekIndex) => (
-          <div key={weekIndex} role="row" className="grid flex-1 grid-week">
+        {weeks.map(({ week, layout }, weekIndex) => (
+          <div key={weekIndex} role="row" className="relative grid flex-1 grid-week">
             {week.map((cell, dayIndex) => (
               <MonthDayCell
                 key={cell.date}
                 cell={cell}
-                events={cell.outside ? [] : eventsOnDay(events, cell.date)}
+                segments={layout.segments.filter((segment) => segment.column === dayIndex)}
+                lanes={layout.lanes}
+                hidden={layout.hidden[dayIndex]}
                 typesByKey={typesByKey}
                 isToday={!cell.outside && cell.date === today}
                 isSelected={!cell.outside && cell.day === selectedDay}

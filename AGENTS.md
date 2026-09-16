@@ -215,8 +215,16 @@ Standard electron-vite three-process layout:
     category hue per each of Anytype's ten (`lib/schema.ts`). Anytype gives spaces no
     colour, so a space is marked by its initial in neutral ink.
   - `lib/calendar.ts` — calendar grid/date math for the month view, over local
-    `YYYY-MM-DD` dates, which compare in order as strings. A range is drawn on every day of
-    the month it covers, clipped at the month's edges; outside days draw no objects.
+    `YYYY-MM-DD` dates, which compare in order as strings.
+  - `lib/month-layout.ts` — where a week's objects are drawn: one segment per object per
+    week (`layOutWeek`), so a range is one continuous bar from its first day to its last,
+    cut only at a week's edges and at the month's — outside days draw no objects, since only
+    the month's own window was read, and a cut side is squared off and runs flush. Segments
+    are packed into lanes so a bar keeps one vertical slot all week; past `MAX_LANES` an
+    object is dropped and counted in the `+N more` of each day it covers. The bar is drawn
+    by the cell its segment starts in, keeping the grid's rows and cells intact, but is
+    positioned against the week row, whose seven columns it has to span (`event-span` in
+    `styles/index.css`).
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as

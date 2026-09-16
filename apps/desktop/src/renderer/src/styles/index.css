@@ -114,6 +114,35 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
+/* A month bar covers `--span` of the week row's seven equal columns from column `--column`,
+ * on lane `--lane`. Its top clears the day cell's own padding, its date and the gap below,
+ * in the same tokens the cell uses, so it follows any change to them. */
+@utility event-span {
+  --lead-inset: var(--ds-space-2);
+  --trail-inset: var(--ds-space-2);
+  position: absolute;
+  left: calc(var(--column) * 100% / 7 + var(--lead-inset));
+  width: calc(var(--span) * 100% / 7 - var(--lead-inset) - var(--trail-inset));
+  top: calc(
+    var(--ds-space-6) + var(--ds-size-18) + var(--ds-space-4) + var(--lane) *
+      var(--ds-lane-stride)
+  );
+}
+
+/* Cut sides run flush into the column's edge. Declared after `event-span`, which is what
+ * makes them win the inset they drop. */
+@utility event-span-open-start {
+  --lead-inset: 0px;
+}
+@utility event-span-open-end {
+  --trail-inset: 0px;
+}
+
+/* The height a day cell reserves for `--lanes` bars, which are out of its flow. */
+@utility lane-stack {
+  height: calc(var(--lanes) * var(--ds-lane-stride));
+}
+
 /* Design rule: no bounce, no spring. */
 @utility animate-scrim {
   animation: ds-fade var(--ds-dur-sheet) var(--ds-ease-standard);
