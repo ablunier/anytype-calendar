@@ -30,6 +30,7 @@ export interface MonthScreenProps {
   today: string
   theme: 'light' | 'dark'
   showWeekNumbers: boolean
+  weekStart: number
   onToggleTheme: () => void
   onOpenSettings: () => void
   onPrevMonth: () => void
@@ -50,6 +51,7 @@ export function MonthScreen({
   today,
   theme,
   showWeekNumbers,
+  weekStart,
   onToggleTheme,
   onOpenSettings,
   onPrevMonth,
@@ -59,7 +61,10 @@ export function MonthScreen({
 }: MonthScreenProps): React.JSX.Element {
   const typesByKey = useMemo(() => indexBy(types), [types])
   const spacesByKey = useMemo(() => indexBy(spaces), [spaces])
-  const cells = useMemo(() => buildMonthGrid(month.year, month.month), [month.year, month.month])
+  const cells = useMemo(
+    () => buildMonthGrid(month.year, month.month, weekStart),
+    [month.year, month.month, weekStart]
+  )
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
   const label = monthLabel(month.year, month.month)
   const todayCell = cells.find((cell) => !cell.outside && cell.date === today)
@@ -148,6 +153,7 @@ export function MonthScreen({
               typesByKey={typesByKey}
               today={today}
               showWeekNumbers={showWeekNumbers}
+              weekStart={weekStart}
               selectedDay={selectedDay}
               focusedDay={focusedDay}
               onFocusDay={setFocusedDay}

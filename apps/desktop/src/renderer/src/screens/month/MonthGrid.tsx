@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
-import { FIRST_WEEKEND_INDEX, isoWeekNumber, WEEKDAYS } from '@renderer/lib/calendar'
+import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { MonthDayCell } from './MonthDayCell'
 
@@ -11,6 +11,8 @@ export interface MonthGridProps {
   /** `YYYY-MM-DD`. */
   today: string
   showWeekNumbers: boolean
+  /** Monday is 0, Sunday 6. */
+  weekStart: number
   selectedDay: number | null
   /** The day that owns the grid's single tab stop. */
   focusedDay: number
@@ -46,6 +48,7 @@ export function MonthGrid({
   typesByKey,
   today,
   showWeekNumbers,
+  weekStart,
   selectedDay,
   focusedDay,
   onFocusDay,
@@ -95,13 +98,13 @@ export function MonthGrid({
       <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
         {showWeekNumbers ? <span aria-hidden className="week-number-gutter shrink-0" /> : null}
         <div className="grid flex-1 grid-week">
-          {WEEKDAYS.map((weekday, index) => (
+          {weekdaysFrom(weekStart).map((weekday, index) => (
             <span
               key={weekday}
               role="columnheader"
               className={[
                 'px-8 py-6 type-overline text-micro',
-                index >= FIRST_WEEKEND_INDEX ? 'text-ink-tertiary' : 'text-ink-secondary'
+                isWeekendColumn(weekStart, index) ? 'text-ink-tertiary' : 'text-ink-secondary'
               ].join(' ')}
             >
               {weekday}
@@ -118,7 +121,7 @@ export function MonthGrid({
                 aria-hidden
                 className="week-number-gutter shrink-0 px-4 py-6 text-center type-numeral text-micro text-ink-tertiary"
               >
-                {isoWeekNumber(week[3].date)}
+                {isoWeekNumber(week[(10 - weekStart) % 7].date)}
               </span>
             ) : null}
             <div role="row" className="relative grid flex-1 grid-week">
@@ -132,7 +135,7 @@ export function MonthGrid({
                   typesByKey={typesByKey}
                   isToday={!cell.outside && cell.date === today}
                   isSelected={!cell.outside && cell.day === selectedDay}
-                  isWeekend={dayIndex >= FIRST_WEEKEND_INDEX}
+                  isWeekend={isWeekendColumn(weekStart, dayIndex)}
                   tabbable={!cell.outside && cell.day === focusedDay}
                   onFocus={() => onFocusDay(cell.day)}
                   onSelect={() => onSelectDay(cell.day)}

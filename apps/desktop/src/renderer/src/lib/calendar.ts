@@ -21,16 +21,40 @@ export const MONTH_NAMES = [
   'December'
 ]
 
+/** Monday first. A week start is an index into this: Monday is 0, Sunday 6. */
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export const FIRST_WEEKEND_INDEX = 5
+export const WEEKDAY_NAMES = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday'
+]
+
+const FIRST_WEEKEND_INDEX = 5
+
+/** The weekday (Monday is 0) shown in `column` of a week that starts on `weekStart`. */
+function weekdayAt(weekStart: number, column: number): number {
+  return (weekStart + column) % 7
+}
+
+export function weekdaysFrom(weekStart: number): string[] {
+  return WEEKDAYS.map((_, column) => WEEKDAYS[weekdayAt(weekStart, column)])
+}
+
+export function isWeekendColumn(weekStart: number, column: number): boolean {
+  return weekdayAt(weekStart, column) >= FIRST_WEEKEND_INDEX
+}
 
 /**
  * The 7-column grid for a month, padded with the adjacent months' days so the first row
- * starts on a Monday and the last row is full.
+ * starts on `weekStart` and the last row is full.
  */
-export function buildMonthGrid(year: number, month: number): MonthCell[] {
-  const shift = (new Date(year, month, 1).getDay() + 6) % 7
+export function buildMonthGrid(year: number, month: number, weekStart = 0): MonthCell[] {
+  const shift = (new Date(year, month, 1).getDay() + 6 - weekStart) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const length = Math.ceil((shift + daysInMonth) / 7) * 7
   return Array.from({ length }, (_, index) => {

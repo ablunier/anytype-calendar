@@ -54,6 +54,9 @@ import { selectionFileAt } from './schema/selection-storage'
 import { LoadTheme } from './theme/load-theme'
 import { SaveTheme } from './theme/save-theme'
 import { ThemeStore } from './theme/theme-store'
+import { LoadWeekStart } from './week-start/load-week-start'
+import { SaveWeekStart } from './week-start/save-week-start'
+import { WeekStartStore } from './week-start/week-start-store'
 import { LoadWeekNumbers } from './week-numbers/load-week-numbers'
 import { SaveWeekNumbers } from './week-numbers/save-week-numbers'
 import { WeekNumbersStore } from './week-numbers/week-numbers-store'
@@ -87,6 +90,9 @@ export interface AppServices {
   weekNumbersState: WeekNumbersStore
   loadWeekNumbers: LoadWeekNumbers
   saveWeekNumbers: SaveWeekNumbers
+  weekStartState: WeekStartStore
+  loadWeekStart: LoadWeekStart
+  saveWeekStart: SaveWeekStart
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
@@ -166,6 +172,10 @@ export function composeServices(): AppServices {
   const loadWeekNumbers = new LoadWeekNumbers({ config: appConfig, store: weekNumbersState })
   const saveWeekNumbers = new SaveWeekNumbers({ config: appConfig, store: weekNumbersState })
 
+  const weekStartState = new WeekStartStore()
+  const loadWeekStart = new LoadWeekStart({ config: appConfig, store: weekStartState })
+  const saveWeekStart = new SaveWeekStart({ config: appConfig, store: weekStartState })
+
   // Contexts never know about each other, so the links live here. Being connected — signed
   // in just now, or a key restored at launch — is what reads the account and the month;
   // anything else forgets both. The stores notify only on change, and a reset while idle is
@@ -223,7 +233,10 @@ export function composeServices(): AppServices {
     saveTheme,
     weekNumbersState,
     loadWeekNumbers,
-    saveWeekNumbers
+    saveWeekNumbers,
+    weekStartState,
+    loadWeekStart,
+    saveWeekStart
   }
 }
 

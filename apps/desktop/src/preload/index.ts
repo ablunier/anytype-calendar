@@ -8,7 +8,8 @@ import {
   type SchemaSnapshot,
   type SessionSnapshot,
   type ThemeSnapshot,
-  type WeekNumbersSnapshot
+  type WeekNumbersSnapshot,
+  type WeekStartSnapshot
 } from '@shared/ipc'
 
 const api: CalendarApi = {
@@ -87,6 +88,17 @@ const api: CalendarApi = {
       }
     },
     save: (shown) => ipcRenderer.invoke(IpcChannel.weekNumbersSave, shown)
+  },
+  weekStart: {
+    get: () => ipcRenderer.invoke(IpcChannel.weekStartGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, day: WeekStartSnapshot): void => listener(day)
+      ipcRenderer.on(IpcChannel.weekStartChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.weekStartChanged, forward)
+      }
+    },
+    save: (day) => ipcRenderer.invoke(IpcChannel.weekStartSave, day)
   },
   shell: {
     openObject: (objectId, spaceId) =>

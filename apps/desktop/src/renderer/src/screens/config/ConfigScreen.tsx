@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApiKeyView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
-import { Button, Card, Checkbox, EmptyState, Icon, SyncStatus } from '@renderer/components/ui'
+import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
-import { typesInSpace } from '@renderer/lib/calendar'
+import { typesInSpace, WEEKDAY_NAMES } from '@renderer/lib/calendar'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -16,6 +16,9 @@ export interface ConfigScreenProps {
   apiKey: ApiKeyView
   showWeekNumbers: boolean
   onShowWeekNumbers: (shown: boolean) => void
+  /** Monday is 0, Sunday 6. */
+  weekStart: number
+  onWeekStart: (day: number) => void
   onBack: () => void
   onReread: () => void
   /** Rejects when the picks could not be saved. */
@@ -41,6 +44,8 @@ function Settings({
   apiKey,
   showWeekNumbers,
   onShowWeekNumbers,
+  weekStart,
+  onWeekStart,
   onBack,
   onReread,
   onSave,
@@ -164,7 +169,13 @@ function Settings({
 
           <section>
             <h2 className="mb-10 type-heading text-h4 text-ink-primary">Calendar</h2>
-            <Card>
+            <Card className="flex flex-col gap-16">
+              <Select
+                label="First day of the week"
+                options={WEEKDAY_NAMES.map((name, index) => ({ value: String(index), label: name }))}
+                value={String(weekStart)}
+                onChange={(value) => onWeekStart(Number(value))}
+              />
               <Checkbox
                 checked={showWeekNumbers}
                 onChange={onShowWeekNumbers}

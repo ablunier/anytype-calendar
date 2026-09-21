@@ -8,12 +8,14 @@ import {
   indexBy,
   isoDate,
   isoWeekNumber,
+  isWeekendColumn,
   longDate,
   monthLabel,
   offersDates,
   shortDate,
   spacesByKeys,
   typesInSpace,
+  weekdaysFrom,
   withDates
 } from './calendar'
 
@@ -75,6 +77,33 @@ describe('buildMonthGrid', () => {
   test('every row is 7 long', () => {
     const grid = buildMonthGrid(2024, 1)
     expect(grid.length % 7).toBe(0)
+  })
+})
+
+describe('buildMonthGrid with another week start', () => {
+  test('starts the first row on a Sunday', () => {
+    // February 2024: 1 Feb is a Thursday, so a Sunday-first grid borrows Sun-Wed from January.
+    const grid = buildMonthGrid(2024, 1, 6)
+    expect(grid[0]).toEqual({ day: 28, date: '2024-01-28', outside: true })
+    expect(grid[4]).toEqual({ day: 1, date: '2024-02-01', outside: false })
+    expect(grid).toHaveLength(35)
+  })
+
+  test('adds no padding when the month starts on the week start', () => {
+    // 1 Feb 2024 is a Thursday.
+    expect(buildMonthGrid(2024, 1, 3)[0].date).toBe('2024-02-01')
+  })
+})
+
+describe('weekdaysFrom and isWeekendColumn', () => {
+  test('rotates the weekdays to start on the given day', () => {
+    expect(weekdaysFrom(0)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    expect(weekdaysFrom(6)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'])
+  })
+
+  test('marks Saturday and Sunday wherever they fall', () => {
+    expect([0, 1, 2, 3, 4, 5, 6].filter((c) => isWeekendColumn(6, c))).toEqual([0, 6])
+    expect([0, 1, 2, 3, 4, 5, 6].filter((c) => isWeekendColumn(0, c))).toEqual([5, 6])
   })
 })
 

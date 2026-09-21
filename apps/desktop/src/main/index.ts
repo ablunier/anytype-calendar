@@ -9,6 +9,7 @@ import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
 import { registerThemeIpc } from './theme/theme-ipc'
 import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
+import { registerWeekStartIpc } from './week-start/week-start-ipc'
 import icon from '../../resources/icon.png?asset'
 
 const isSquirrelEvent = handleSquirrelEvent()
@@ -56,13 +57,15 @@ app.whenReady().then(async () => {
   registerEventsIpc(services)
   registerThemeIpc(services)
   registerWeekNumbersIpc(services)
+  registerWeekStartIpc(services)
   registerShellIpc()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),
     services.loadSchemaSelection.execute(),
     services.loadTheme.execute(),
-    services.loadWeekNumbers.execute()
+    services.loadWeekNumbers.execute(),
+    services.loadWeekStart.execute()
   ])
 
   app.on('browser-window-created', (_, window) => {

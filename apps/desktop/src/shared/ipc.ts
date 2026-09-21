@@ -22,6 +22,9 @@ export type ThemeSnapshot = 'light' | 'dark' | null
 
 export type WeekNumbersSnapshot = boolean
 
+/** Monday is 0, Sunday 6. */
+export type WeekStartSnapshot = number
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -47,6 +50,9 @@ export const IpcChannel = {
   weekNumbersGet: 'weekNumbers:get',
   weekNumbersChanged: 'weekNumbers:changed',
   weekNumbersSave: 'weekNumbers:save',
+  weekStartGet: 'weekStart:get',
+  weekStartChanged: 'weekStart:changed',
+  weekStartSave: 'weekStart:save',
   shellOpenObject: 'shell:open-object'
 } as const
 
@@ -103,6 +109,12 @@ export interface CalendarApi {
     onChange(listener: (shown: WeekNumbersSnapshot) => void): () => void
     /** Rejects when the value is not a boolean. */
     save(shown: boolean): Promise<void>
+  }
+  weekStart: {
+    get(): Promise<WeekStartSnapshot>
+    onChange(listener: (day: WeekStartSnapshot) => void): () => void
+    /** Rejects when the value is not an integer from 0 to 6. */
+    save(day: WeekStartSnapshot): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

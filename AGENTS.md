@@ -197,7 +197,10 @@ Standard electron-vite three-process layout:
     The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the
     theme, in the `weekNumbers` section of `app-config.json` (`main/week-numbers/`). The month grid
     draws it in a gutter beside each week row, never as a column of it: bars are positioned as
-    `100% / 7` of that row.
+    `100% / 7` of that row. The first day of the week (Settings → Calendar, Monday by default) is
+    saved the same way, in the `weekStart` section (`main/week-start/`), as an index with
+    Monday 0 and Sunday 6; the grid, its headers and its weekend shading follow it, and a row's
+    week number is that of its Thursday.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`
