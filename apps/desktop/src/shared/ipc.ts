@@ -25,6 +25,8 @@ export type WeekNumbersSnapshot = boolean
 /** Monday is 0, Sunday 6. */
 export type WeekStartSnapshot = number
 
+export type TimeFormatSnapshot = '24h' | '12h'
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -53,6 +55,9 @@ export const IpcChannel = {
   weekStartGet: 'weekStart:get',
   weekStartChanged: 'weekStart:changed',
   weekStartSave: 'weekStart:save',
+  timeFormatGet: 'timeFormat:get',
+  timeFormatChanged: 'timeFormat:changed',
+  timeFormatSave: 'timeFormat:save',
   shellOpenObject: 'shell:open-object'
 } as const
 
@@ -115,6 +120,12 @@ export interface CalendarApi {
     onChange(listener: (day: WeekStartSnapshot) => void): () => void
     /** Rejects when the value is not an integer from 0 to 6. */
     save(day: WeekStartSnapshot): Promise<void>
+  }
+  timeFormat: {
+    get(): Promise<TimeFormatSnapshot>
+    onChange(listener: (format: TimeFormatSnapshot) => void): () => void
+    /** Rejects when the value is not `24h` or `12h`. */
+    save(format: TimeFormatSnapshot): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

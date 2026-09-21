@@ -4,6 +4,7 @@ import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace, WEEKDAY_NAMES } from '@renderer/lib/calendar'
+import type { TimeFormatSnapshot } from '@shared/ipc'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -19,6 +20,8 @@ export interface ConfigScreenProps {
   /** Monday is 0, Sunday 6. */
   weekStart: number
   onWeekStart: (day: number) => void
+  timeFormat: TimeFormatSnapshot
+  onTimeFormat: (format: TimeFormatSnapshot) => void
   onBack: () => void
   onReread: () => void
   /** Rejects when the picks could not be saved. */
@@ -46,6 +49,8 @@ function Settings({
   onShowWeekNumbers,
   weekStart,
   onWeekStart,
+  timeFormat,
+  onTimeFormat,
   onBack,
   onReread,
   onSave,
@@ -175,6 +180,15 @@ function Settings({
                 options={WEEKDAY_NAMES.map((name, index) => ({ value: String(index), label: name }))}
                 value={String(weekStart)}
                 onChange={(value) => onWeekStart(Number(value))}
+              />
+              <Select
+                label="Time format"
+                options={[
+                  { value: '24h', label: '24-hour (13:30)' },
+                  { value: '12h', label: '12-hour (1:30 PM)' }
+                ]}
+                value={timeFormat}
+                onChange={(value) => onTimeFormat(value === '12h' ? '12h' : '24h')}
               />
               <Checkbox
                 checked={showWeekNumbers}

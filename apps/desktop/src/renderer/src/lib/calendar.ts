@@ -149,3 +149,10 @@ export function dateOptions(type: ObjectType): { value: string; label: string }[
 export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
   return spaces.filter((space) => keys.includes(space.key))
 }
+
+/** `HH:MM` in local time, drawn the way the user chose to read the clock. */
+export function formatTime(time: string, format: '24h' | '12h'): string {
+  if (format === '24h') return time
+  const [hours, minutes] = time.split(':').map(Number)
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'AM' : 'PM'}`
+}

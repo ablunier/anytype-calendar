@@ -1,7 +1,8 @@
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
-import { dateLabel, shortDate } from '@renderer/lib/calendar'
+import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
+import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
 
 interface DetailDateProps {
   date: string
@@ -16,9 +17,10 @@ interface DetailDateProps {
  * each row's cells size to that row's own content.
  */
 function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element {
+  const timeFormat = useTimeFormatValue()
   return (
     <div className="flex flex-col gap-2">
-      {time ? <span className="type-numeral text-small text-ink-body">{time}</span> : null}
+      {time ? <span className="type-numeral text-small text-ink-body">{formatTime(time, timeFormat)}</span> : null}
       <span className="type-numeral text-small text-ink-body">{shortDate(date)}</span>
       <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
     </div>

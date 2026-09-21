@@ -1,5 +1,7 @@
 import type { CategoryHue } from '@renderer/types'
 import { catBg } from '@renderer/components/ui'
+import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
+import { formatTime } from '@renderer/lib/calendar'
 
 export interface EventRowProps {
   title: string
@@ -18,6 +20,7 @@ export function EventRow({
   selected = false,
   onClick
 }: EventRowProps): React.JSX.Element {
+  const timeFormat = useTimeFormatValue()
   return (
     <button
       type="button"
@@ -30,11 +33,11 @@ export function EventRow({
     >
       <span
         className={[
-          'w-52 shrink-0 font-mono text-tiny tabular-nums',
+          'w-64 shrink-0 font-mono text-tiny tabular-nums',
           time ? 'text-ink-secondary' : 'text-ink-tertiary'
         ].join(' ')}
       >
-        {time ?? 'all-day'}
+        {time ? formatTime(time, timeFormat) : 'all-day'}
       </span>
       <span aria-hidden className={['size-6 shrink-0 rounded-pill', catBg[category]].join(' ')} />
       <span

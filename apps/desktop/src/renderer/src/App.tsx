@@ -8,6 +8,8 @@ import { useSchemaSelection } from './hooks/useSchemaSelection'
 import { useSchemaSync } from './hooks/useSchemaSync'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
+import { TimeFormatContext } from './hooks/TimeFormatContext'
+import { useTimeFormat } from './hooks/useTimeFormat'
 import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { useWeekStart } from './hooks/useWeekStart'
 import { withDates } from './lib/calendar'
@@ -47,6 +49,7 @@ function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
   const [showWeekNumbers, setShowWeekNumbers] = useWeekNumbers()
   const [weekStart, setWeekStart] = useWeekStart()
+  const [timeFormat, setTimeFormat] = useTimeFormat()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -124,6 +127,8 @@ function App(): React.JSX.Element | null {
         onShowWeekNumbers={setShowWeekNumbers}
         weekStart={weekStart}
         onWeekStart={setWeekStart}
+        timeFormat={timeFormat}
+        onTimeFormat={setTimeFormat}
         onBack={() => setScreen('month')}
         onReread={() => void window.api.schema.sync()}
         onSave={(picks) =>
@@ -142,29 +147,31 @@ function App(): React.JSX.Element | null {
   const types = typesFor(schema)
   const picks = picksFor(selection, types)
   return (
-    <MonthScreen
-      key={`${month.year}-${month.month}`}
-      month={month}
-      events={eventsFor(events, month)}
-      status={monthStatusFor(events, month, now)}
-      types={withDates(types, picks.dates)}
-      spaces={spacesFor(schema)}
-      trackedSpaceKeys={picks.spaceKeys}
-      tracksAnything={tracksAnyType(selection)}
-      today={localDate(now)}
-      theme={theme}
-      showWeekNumbers={showWeekNumbers}
-      weekStart={weekStart}
-      onToggleTheme={toggleTheme}
-      onOpenSettings={() => setScreen('config')}
-      onPrevMonth={() => showMonth(shiftEventsMonth(month, -1))}
-      onNextMonth={() => showMonth(shiftEventsMonth(month, 1))}
-      onToday={() => showMonth(monthOf(Date.now()))}
-      onReread={() => {
-        void window.api.schema.sync()
-        showMonth(month)
-      }}
-    />
+    <TimeFormatContext value={timeFormat}>
+      <MonthScreen
+        key={`${month.year}-${month.month}`}
+        month={month}
+        events={eventsFor(events, month)}
+        status={monthStatusFor(events, month, now)}
+        types={withDates(types, picks.dates)}
+        spaces={spacesFor(schema)}
+        trackedSpaceKeys={picks.spaceKeys}
+        tracksAnything={tracksAnyType(selection)}
+        today={localDate(now)}
+        theme={theme}
+        showWeekNumbers={showWeekNumbers}
+        weekStart={weekStart}
+        onToggleTheme={toggleTheme}
+        onOpenSettings={() => setScreen('config')}
+        onPrevMonth={() => showMonth(shiftEventsMonth(month, -1))}
+        onNextMonth={() => showMonth(shiftEventsMonth(month, 1))}
+        onToday={() => showMonth(monthOf(Date.now()))}
+        onReread={() => {
+          void window.api.schema.sync()
+          showMonth(month)
+        }}
+      />
+    </TimeFormatContext>
   )
 }
 

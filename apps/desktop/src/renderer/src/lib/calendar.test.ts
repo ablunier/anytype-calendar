@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import {
+  formatTime,
   buildMonthGrid,
   dateLabel,
   dateOptions,
@@ -300,5 +301,21 @@ describe('isoWeekNumber', () => {
     expect(isoWeekNumber('2024-12-29')).toBe(52)
     expect(isoWeekNumber('2024-12-30')).toBe(1)
     expect(isoWeekNumber('2025-12-29')).toBe(1)
+  })
+})
+
+describe('formatTime', () => {
+  test('leaves a 24-hour time as it is', () => {
+    expect(formatTime('13:05', '24h')).toBe('13:05')
+  })
+
+  test('draws afternoon hours as PM', () => {
+    expect(formatTime('13:05', '12h')).toBe('1:05 PM')
+    expect(formatTime('12:00', '12h')).toBe('12:00 PM')
+  })
+
+  test('draws midnight as 12 AM and the morning as AM', () => {
+    expect(formatTime('00:30', '12h')).toBe('12:30 AM')
+    expect(formatTime('09:00', '12h')).toBe('9:00 AM')
   })
 })

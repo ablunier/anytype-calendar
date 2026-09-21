@@ -201,6 +201,9 @@ Standard electron-vite three-process layout:
     saved the same way, in the `weekStart` section (`main/week-start/`), as an index with
     Monday 0 and Sunday 6; the grid, its headers and its weekend shading follow it, and a row's
     week number is that of its Thursday.
+    The time format (Settings → Calendar, 24-hour by default) is saved likewise, in the `timeFormat`
+    section (`main/time-format/`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
+    `formatTime` (`lib/calendar.ts`) draws them, reading the format from `TimeFormatContext`.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`

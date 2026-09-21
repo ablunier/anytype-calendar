@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react'
 import type { CategoryHue } from '@renderer/types'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { catBg, catBgSoft, catText } from '@renderer/components/ui'
+import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
+import { formatTime } from '@renderer/lib/calendar'
 
 export interface EventChipProps {
   segment: EventSegment
@@ -30,6 +32,7 @@ export function EventChip({
   done = false,
   onClick
 }: EventChipProps): React.JSX.Element {
+  const timeFormat = useTimeFormatValue()
   const { column, span, lane, continuesBefore, continuesAfter } = segment
 
   return (
@@ -53,7 +56,7 @@ export function EventChip({
         <span aria-hidden className={['size-5 shrink-0 rounded-pill', catBg[category]].join(' ')} />
       ) : null}
       {time ? (
-        <span className="font-mono text-micro tracking-mono opacity-85">{time}</span>
+        <span className="font-mono text-micro tracking-mono opacity-85">{formatTime(time, timeFormat)}</span>
       ) : null}
       <span
         className={[

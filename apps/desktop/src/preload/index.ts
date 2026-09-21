@@ -8,6 +8,7 @@ import {
   type SchemaSnapshot,
   type SessionSnapshot,
   type ThemeSnapshot,
+  type TimeFormatSnapshot,
   type WeekNumbersSnapshot,
   type WeekStartSnapshot
 } from '@shared/ipc'
@@ -99,6 +100,18 @@ const api: CalendarApi = {
       }
     },
     save: (day) => ipcRenderer.invoke(IpcChannel.weekStartSave, day)
+  },
+  timeFormat: {
+    get: () => ipcRenderer.invoke(IpcChannel.timeFormatGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, format: TimeFormatSnapshot): void =>
+        listener(format)
+      ipcRenderer.on(IpcChannel.timeFormatChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.timeFormatChanged, forward)
+      }
+    },
+    save: (format) => ipcRenderer.invoke(IpcChannel.timeFormatSave, format)
   },
   shell: {
     openObject: (objectId, spaceId) =>
