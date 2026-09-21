@@ -110,6 +110,12 @@ The builds are not code-signed. Windows SmartScreen warns on first run ("More in
 anyway"). macOS refuses to open the app at first: try once, then allow it under System
 Settings → Privacy & Security → "Open Anyway".
 
+Installed Windows and macOS builds update themselves: once an hour the app asks
+[update.electronjs.org](https://update.electronjs.org) for a newer published release of this
+repository (which must stay public) and offers to restart into it. Linux has no updater.
+macOS only applies updates to a code-signed app, so they will not take effect there until
+signing is added.
+
 ## Repo layout
 
 ```

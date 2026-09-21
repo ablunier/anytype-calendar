@@ -42,7 +42,10 @@ Run from the repo root unless noted.
   Architecture below). First run `npm run lint:arch:setup` to install its isolated toolchain.
 - `npm run clean` — `tsc -b --clean` plus removing `apps/desktop/out` and `apps/desktop/dist`.
 - Per-app desktop commands (run with `npm -w apps/desktop run <script>` from root, or `npm run <script>` from `apps/desktop/`): `typecheck:node`, `typecheck:web` (split because main/preload and renderer use different tsconfigs), and `package`/`make` (Electron Forge, configured in `apps/desktop/forge.config.js`; the root scripts of the same names run `tsc -b` first). Forge writes to `apps/desktop/dist`, since electron-vite owns `out/`, and builds for the host OS only: a `.deb` on Linux, a Squirrel `Setup.exe` on Windows, a `.dmg` and `.zip` on macOS. Nothing is code-signed yet.
-- Releasing: bump `apps/desktop/package.json`'s `version`, then push a matching `v<version>` tag. `.github/workflows/release.yml` creates a draft release, runs `make` on Linux, Windows and macOS runners, uploads each one's installers into it with `gh release upload`, and publishes it once all three have uploaded. Forge's GitHub publisher is not used: its retried uploads failed as duplicates. Running the workflow by hand only makes the installers, as workflow artifacts.
+- Releasing: bump `apps/desktop/package.json`'s `version`, then push a matching `v<version>` tag. `.github/workflows/release.yml` creates a draft release, runs `make` on Linux, Windows and macOS runners, uploads each one's installers into it with `gh release upload`, and publishes it once all three have uploaded. Forge's GitHub publisher is not used: its retried uploads failed as duplicates. Running the workflow by hand only makes the installers, as workflow artifacts. Installed
+  builds update themselves from those releases through update.electronjs.org
+  (`src/main/updates/auto-update.ts`, `update-electron-app`): packaged Windows and macOS only,
+  the repo must stay public, and macOS applies nothing until the app is code-signed.
 - Single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
   layer across all contexts: `npx vitest run --project domain`.
 
