@@ -78,16 +78,16 @@ seeds around the current one — never anything from a real Anytype instance.
 
 Run from the repo root.
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | electron-vite dev server + Electron, with HMR (see the env note above) |
-| `npm run build` | `tsc -b` across all packages, then build the desktop app |
-| `npm run typecheck` | `tsc -b --force` over the whole monorepo |
-| `npm test` | `vitest run`: one project per layer (`domain`, `application`, `infrastructure`) across all contexts, plus the desktop app's `renderer` and `main` |
-| `npm run lint:arch` | dependency-cruiser check of the hexagonal layering |
-| `npm run lint:arch:setup` | install the arch-lint toolchain (only if `postinstall` was skipped) |
-| `npm run clean` | `tsc -b --clean` plus the desktop app's `out/` and `dist/` |
-| `npm run package` / `make` | package, or build installers for, the desktop app for this OS with Electron Forge, into `apps/desktop/dist` |
+| Command                    | What it does                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`              | electron-vite dev server + Electron, with HMR (see the env note above)                                                                            |
+| `npm run build`            | `tsc -b` across all packages, then build the desktop app                                                                                          |
+| `npm run typecheck`        | `tsc -b --force` over the whole monorepo                                                                                                          |
+| `npm test`                 | `vitest run`: one project per layer (`domain`, `application`, `infrastructure`) across all contexts, plus the desktop app's `renderer` and `main` |
+| `npm run lint:arch`        | dependency-cruiser check of the hexagonal layering                                                                                                |
+| `npm run lint:arch:setup`  | install the arch-lint toolchain (only if `postinstall` was skipped)                                                                               |
+| `npm run clean`            | `tsc -b --clean` plus the desktop app's `out/` and `dist/`                                                                                        |
+| `npm run package` / `make` | package, or build installers for, the desktop app for this OS with Electron Forge, into `apps/desktop/dist`                                       |
 
 A single test file: `npx vitest run packages/<context>/<layer>/path/to/file.test.ts`; one
 layer across every context: `npx vitest run --project domain`.
@@ -200,10 +200,7 @@ Not built yet, roughly grouped:
 
 ### Config
 
-- Toggle for week numbers
-- Selector for the start-of-week day
 - i18n
-- 12h/24h time format selector
 - Configurable mapping of which Anytype properties show in the event detail panel
 
 ### Calendar
@@ -223,7 +220,7 @@ Not built yet, roughly grouped:
   those — several are load-bearing in non-obvious ways.
 - `tools/arch-lint/README.md` explains why the lint toolchain lives outside the npm
   workspace, and how to remove it once dependency-cruiser supports TypeScript 7.
-- Several files carry doc comments explaining *why* a structural choice was made
+- Several files carry doc comments explaining _why_ a structural choice was made
   (`App.tsx`, `lib/session.ts`, `types/index.ts`, `.dependency-cruiser.cjs`) — worth reading
   before changing their behavior.
 - `AGENTS.md` is the guidance file for AI coding agents working in this repo.
