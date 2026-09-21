@@ -194,6 +194,10 @@ Standard electron-vite three-process layout:
     the month main pushes back, so another month starts with no day selected and no panel
     open. The theme toggle lives in the
     month view's top bar only; other screens follow the system theme until it is used.
+    The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the
+    theme, in the `weekNumbers` section of `app-config.json` (`main/week-numbers/`). The month grid
+    draws it in a gutter beside each week row, never as a column of it: bars are positioned as
+    `100% / 7` of that row.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`

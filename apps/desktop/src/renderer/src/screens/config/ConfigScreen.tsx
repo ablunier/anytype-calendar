@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ApiKeyView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
-import { Button, Card, EmptyState, Icon, SyncStatus } from '@renderer/components/ui'
+import { Button, Card, Checkbox, EmptyState, Icon, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace } from '@renderer/lib/calendar'
 import { SessionSection } from './SessionSection'
@@ -14,6 +14,8 @@ export interface ConfigScreenProps {
   /** Read once, when the account has first been read. */
   initial: TypePicks
   apiKey: ApiKeyView
+  showWeekNumbers: boolean
+  onShowWeekNumbers: (shown: boolean) => void
   onBack: () => void
   onReread: () => void
   /** Rejects when the picks could not be saved. */
@@ -37,6 +39,8 @@ function Settings({
   sync,
   initial,
   apiKey,
+  showWeekNumbers,
+  onShowWeekNumbers,
   onBack,
   onReread,
   onSave,
@@ -81,8 +85,8 @@ function Settings({
           <div>
             <h1 className="mb-4 type-heading text-h3 text-ink-primary">Settings</h1>
             <p className="type-body text-small text-ink-secondary">
-              One key, read through the Anytype app on this computer. It covers every space on
-              the account.
+              One key, read through the Anytype app on this computer. It covers every space on the
+              account.
             </p>
           </div>
 
@@ -136,7 +140,12 @@ function Settings({
                     title="Read your spaces again"
                     description={`Your spaces could not be read. ${sync.detail ?? ''}`}
                     action={
-                      <Button variant="secondary" size="md" iconLeft="refresh-cw" onClick={onReread}>
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        iconLeft="refresh-cw"
+                        onClick={onReread}
+                      >
                         Try again
                       </Button>
                     }
@@ -151,6 +160,18 @@ function Settings({
                 )}
               </Card>
             )}
+          </section>
+
+          <section>
+            <h2 className="mb-10 type-heading text-h4 text-ink-primary">Calendar</h2>
+            <Card>
+              <Checkbox
+                checked={showWeekNumbers}
+                onChange={onShowWeekNumbers}
+                label="Show week numbers"
+                description="ISO weeks, beside each row of the month"
+              />
+            </Card>
           </section>
 
           <SessionSection apiKey={apiKey} onCopyKey={onCopyKey} onSignOut={onSignOut} />

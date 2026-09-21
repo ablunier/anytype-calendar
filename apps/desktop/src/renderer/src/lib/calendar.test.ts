@@ -7,6 +7,7 @@ import {
   eventsOnDay,
   indexBy,
   isoDate,
+  isoWeekNumber,
   longDate,
   monthLabel,
   offersDates,
@@ -80,8 +81,18 @@ describe('buildMonthGrid', () => {
 describe('eventsOnDay', () => {
   const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true }
   const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
-  const range: CalendarEvent = { ...base, id: '2', date: '2026-09-05', until: '2026-09-08' }
-  const intoOctober: CalendarEvent = { ...base, id: '3', date: '2026-09-29', until: '2026-10-02' }
+  const range: CalendarEvent = {
+    ...base,
+    id: '2',
+    date: '2026-09-05',
+    until: '2026-09-08'
+  }
+  const intoOctober: CalendarEvent = {
+    ...base,
+    id: '3',
+    date: '2026-09-29',
+    until: '2026-10-02'
+  }
 
   test('matches a single-day event only on its day', () => {
     expect(eventsOnDay([single], '2026-09-05')).toEqual([single])
@@ -103,7 +114,12 @@ describe('eventsOnDay', () => {
   })
 
   test('matches a range that ends on its start day', () => {
-    const sameDay: CalendarEvent = { ...base, id: '4', date: '2026-09-05', until: '2026-09-05' }
+    const sameDay: CalendarEvent = {
+      ...base,
+      id: '4',
+      date: '2026-09-05',
+      until: '2026-09-05'
+    }
     expect(eventsOnDay([sameDay], '2026-09-05')).toEqual([sameDay])
   })
 })
@@ -171,7 +187,13 @@ describe('offersDates', () => {
   })
 
   test('true for a range whose both ends the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: 'start_date', includesTime: false })).toBe(true)
+    expect(
+      offersDates(TASK, {
+        from: 'due_date',
+        to: 'start_date',
+        includesTime: false
+      })
+    ).toBe(true)
   })
 
   test('false when the from property is gone', () => {
@@ -179,7 +201,13 @@ describe('offersDates', () => {
   })
 
   test('false when the to property is gone', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: 'gone_date', includesTime: false })).toBe(false)
+    expect(
+      offersDates(TASK, {
+        from: 'due_date',
+        to: 'gone_date',
+        includesTime: false
+      })
+    ).toBe(false)
   })
 })
 
@@ -190,7 +218,12 @@ describe('withDates', () => {
     const [task, project] = withDates([TASK, other], {
       'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true }
     })
-    expect(task).toEqual({ ...TASK, from: 'start_date', to: 'due_date', includesTime: true })
+    expect(task).toEqual({
+      ...TASK,
+      from: 'start_date',
+      to: 'due_date',
+      includesTime: true
+    })
     expect(project).toBe(other)
   })
 })
@@ -218,5 +251,25 @@ describe('spacesByKeys', () => {
 
   test('ignores a picked key with no matching space', () => {
     expect(spacesByKeys([personal], ['sp_9'])).toEqual([])
+  })
+})
+
+describe('isoWeekNumber', () => {
+  test('counts ordinary weeks from Monday', () => {
+    expect(isoWeekNumber('2026-09-21')).toBe(39)
+    expect(isoWeekNumber('2026-09-27')).toBe(39)
+    expect(isoWeekNumber('2026-09-28')).toBe(40)
+  })
+
+  test("puts the days before the first Thursday in the previous year's last week", () => {
+    expect(isoWeekNumber('2021-01-01')).toBe(53)
+    expect(isoWeekNumber('2021-01-03')).toBe(53)
+    expect(isoWeekNumber('2021-01-04')).toBe(1)
+  })
+
+  test("puts the last days of December in week 1 when their week holds January's first Thursday", () => {
+    expect(isoWeekNumber('2024-12-29')).toBe(52)
+    expect(isoWeekNumber('2024-12-30')).toBe(1)
+    expect(isoWeekNumber('2025-12-29')).toBe(1)
   })
 })

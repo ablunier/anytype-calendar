@@ -7,7 +7,8 @@ import {
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
   type SessionSnapshot,
-  type ThemeSnapshot
+  type ThemeSnapshot,
+  type WeekNumbersSnapshot
 } from '@shared/ipc'
 
 const api: CalendarApi = {
@@ -74,6 +75,18 @@ const api: CalendarApi = {
       }
     },
     save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme)
+  },
+  weekNumbers: {
+    get: () => ipcRenderer.invoke(IpcChannel.weekNumbersGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, shown: WeekNumbersSnapshot): void =>
+        listener(shown)
+      ipcRenderer.on(IpcChannel.weekNumbersChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.weekNumbersChanged, forward)
+      }
+    },
+    save: (shown) => ipcRenderer.invoke(IpcChannel.weekNumbersSave, shown)
   },
   shell: {
     openObject: (objectId, spaceId) =>

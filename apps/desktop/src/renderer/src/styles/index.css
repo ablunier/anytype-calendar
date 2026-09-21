@@ -110,6 +110,10 @@
   grid-template-columns: var(--ds-size-240) minmax(0, 1fr);
 }
 
+@utility week-number-gutter {
+  width: var(--ds-size-28);
+}
+
 @utility grid-week {
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }

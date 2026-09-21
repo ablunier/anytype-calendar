@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
-import { FIRST_WEEKEND_INDEX, WEEKDAYS } from '@renderer/lib/calendar'
+import { FIRST_WEEKEND_INDEX, isoWeekNumber, WEEKDAYS } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { MonthDayCell } from './MonthDayCell'
 
@@ -10,6 +10,7 @@ export interface MonthGridProps {
   typesByKey: Map<string, ObjectType>
   /** `YYYY-MM-DD`. */
   today: string
+  showWeekNumbers: boolean
   selectedDay: number | null
   /** The day that owns the grid's single tab stop. */
   focusedDay: number
@@ -36,13 +37,15 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * A range is drawn as one bar per week, cut at the week's edges and at the month's — only the
  * month's own window was read, so outside days draw nothing. Each bar is a child of the cell
  * its week's segment starts in, which keeps the grid's rows and cells intact, and is
- * positioned against the week row, whose seven equal columns it needs to span.
+ * positioned against the week row, whose seven equal columns it needs to span. That is why
+ * the week numbers sit beside the row, in a gutter of their own, and not in a column of it.
  */
 export function MonthGrid({
   cells,
   events,
   typesByKey,
   today,
+  showWeekNumbers,
   selectedDay,
   focusedDay,
   onFocusDay,
@@ -89,42 +92,55 @@ export function MonthGrid({
 
   return (
     <div ref={gridRef} role="grid" aria-label="Month" className="flex min-h-0 flex-1 flex-col">
-      <div role="row" className="grid grid-week border-b border-grid-line-strong bg-surface-card">
-        {WEEKDAYS.map((weekday, index) => (
-          <span
-            key={weekday}
-            role="columnheader"
-            className={[
-              'px-8 py-6 type-overline text-micro',
-              index >= FIRST_WEEKEND_INDEX ? 'text-ink-tertiary' : 'text-ink-secondary'
-            ].join(' ')}
-          >
-            {weekday}
-          </span>
-        ))}
+      <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
+        {showWeekNumbers ? <span aria-hidden className="week-number-gutter shrink-0" /> : null}
+        <div className="grid flex-1 grid-week">
+          {WEEKDAYS.map((weekday, index) => (
+            <span
+              key={weekday}
+              role="columnheader"
+              className={[
+                'px-8 py-6 type-overline text-micro',
+                index >= FIRST_WEEKEND_INDEX ? 'text-ink-tertiary' : 'text-ink-secondary'
+              ].join(' ')}
+            >
+              {weekday}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col overflow-auto border-l border-grid-line">
         {weeks.map(({ week, layout }, weekIndex) => (
-          <div key={weekIndex} role="row" className="relative grid flex-1 grid-week">
-            {week.map((cell, dayIndex) => (
-              <MonthDayCell
-                key={cell.date}
-                cell={cell}
-                segments={layout.segments.filter((segment) => segment.column === dayIndex)}
-                lanes={layout.lanes}
-                hidden={layout.hidden[dayIndex]}
-                typesByKey={typesByKey}
-                isToday={!cell.outside && cell.date === today}
-                isSelected={!cell.outside && cell.day === selectedDay}
-                isWeekend={dayIndex >= FIRST_WEEKEND_INDEX}
-                tabbable={!cell.outside && cell.day === focusedDay}
-                onFocus={() => onFocusDay(cell.day)}
-                onSelect={() => onSelectDay(cell.day)}
-                onKeyDown={(event) => handleKeyDown(event, cell.day)}
-                onOpenEvent={(event) => onOpenEvent(event, cell.day)}
-              />
-            ))}
+          <div key={weekIndex} className="flex flex-1">
+            {showWeekNumbers ? (
+              <span
+                aria-hidden
+                className="week-number-gutter shrink-0 px-4 py-6 text-center type-numeral text-micro text-ink-tertiary"
+              >
+                {isoWeekNumber(week[3].date)}
+              </span>
+            ) : null}
+            <div role="row" className="relative grid flex-1 grid-week">
+              {week.map((cell, dayIndex) => (
+                <MonthDayCell
+                  key={cell.date}
+                  cell={cell}
+                  segments={layout.segments.filter((segment) => segment.column === dayIndex)}
+                  lanes={layout.lanes}
+                  hidden={layout.hidden[dayIndex]}
+                  typesByKey={typesByKey}
+                  isToday={!cell.outside && cell.date === today}
+                  isSelected={!cell.outside && cell.day === selectedDay}
+                  isWeekend={dayIndex >= FIRST_WEEKEND_INDEX}
+                  tabbable={!cell.outside && cell.day === focusedDay}
+                  onFocus={() => onFocusDay(cell.day)}
+                  onSelect={() => onSelectDay(cell.day)}
+                  onKeyDown={(event) => handleKeyDown(event, cell.day)}
+                  onOpenEvent={(event) => onOpenEvent(event, cell.day)}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </div>

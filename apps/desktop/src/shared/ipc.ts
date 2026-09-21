@@ -20,6 +20,8 @@ export type EventsSnapshot = EventsMonthLoad
 /** Null: no theme was ever saved, so the renderer follows the OS setting. */
 export type ThemeSnapshot = 'light' | 'dark' | null
 
+export type WeekNumbersSnapshot = boolean
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -42,6 +44,9 @@ export const IpcChannel = {
   themeGet: 'theme:get',
   themeChanged: 'theme:changed',
   themeSave: 'theme:save',
+  weekNumbersGet: 'weekNumbers:get',
+  weekNumbersChanged: 'weekNumbers:changed',
+  weekNumbersSave: 'weekNumbers:save',
   shellOpenObject: 'shell:open-object'
 } as const
 
@@ -92,6 +97,12 @@ export interface CalendarApi {
     onChange(listener: (state: ThemeSnapshot) => void): () => void
     /** Rejects when the value is not a theme. */
     save(theme: 'light' | 'dark'): Promise<void>
+  }
+  weekNumbers: {
+    get(): Promise<WeekNumbersSnapshot>
+    onChange(listener: (shown: WeekNumbersSnapshot) => void): () => void
+    /** Rejects when the value is not a boolean. */
+    save(shown: boolean): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

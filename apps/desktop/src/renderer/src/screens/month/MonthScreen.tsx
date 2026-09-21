@@ -29,6 +29,7 @@ export interface MonthScreenProps {
   /** `YYYY-MM-DD`. */
   today: string
   theme: 'light' | 'dark'
+  showWeekNumbers: boolean
   onToggleTheme: () => void
   onOpenSettings: () => void
   onPrevMonth: () => void
@@ -48,6 +49,7 @@ export function MonthScreen({
   tracksAnything,
   today,
   theme,
+  showWeekNumbers,
   onToggleTheme,
   onOpenSettings,
   onPrevMonth,
@@ -145,6 +147,7 @@ export function MonthScreen({
               events={events ?? []}
               typesByKey={typesByKey}
               today={today}
+              showWeekNumbers={showWeekNumbers}
               selectedDay={selectedDay}
               focusedDay={focusedDay}
               onFocusDay={setFocusedDay}

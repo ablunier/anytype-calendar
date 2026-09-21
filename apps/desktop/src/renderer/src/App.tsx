@@ -8,6 +8,7 @@ import { useSchemaSelection } from './hooks/useSchemaSelection'
 import { useSchemaSync } from './hooks/useSchemaSync'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
+import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { withDates } from './lib/calendar'
 import { eventsFor, localDate, monthOf, monthStatusFor, shownMonthFor } from './lib/events'
 import {
@@ -43,6 +44,7 @@ const SYNC_AGE_TICK_MS = 30_000
  */
 function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
+  const [showWeekNumbers, setShowWeekNumbers] = useWeekNumbers()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -116,6 +118,8 @@ function App(): React.JSX.Element | null {
         sync={syncViewFor(schema, now)}
         initial={picksFor(selection, types)}
         apiKey={apiKey}
+        showWeekNumbers={showWeekNumbers}
+        onShowWeekNumbers={setShowWeekNumbers}
         onBack={() => setScreen('month')}
         onReread={() => void window.api.schema.sync()}
         onSave={(picks) =>
@@ -145,6 +149,7 @@ function App(): React.JSX.Element | null {
       tracksAnything={tracksAnyType(selection)}
       today={localDate(now)}
       theme={theme}
+      showWeekNumbers={showWeekNumbers}
       onToggleTheme={toggleTheme}
       onOpenSettings={() => setScreen('config')}
       onPrevMonth={() => showMonth(shiftEventsMonth(month, -1))}

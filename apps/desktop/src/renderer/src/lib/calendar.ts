@@ -43,6 +43,19 @@ export function buildMonthGrid(year: number, month: number): MonthCell[] {
   })
 }
 
+/**
+ * The ISO 8601 week (Monday first, week 1 holds the year's first Thursday) of a `YYYY-MM-DD`
+ * date. Worked out in UTC so a daylight-saving change never moves the day.
+ */
+export function isoWeekNumber(date: string): number {
+  const [year, month, day] = date.split('-').map(Number)
+  const thursday = new Date(Date.UTC(year, month - 1, day))
+  thursday.setUTCDate(thursday.getUTCDate() + 3 - ((thursday.getUTCDay() + 6) % 7))
+  const dayMs = 24 * 60 * 60 * 1000
+  const yearStart = Date.UTC(thursday.getUTCFullYear(), 0, 1)
+  return Math.ceil(((thursday.getTime() - yearStart) / dayMs + 1) / 7)
+}
+
 /** `date` is `YYYY-MM-DD`. A range matches every date from its start to its end. */
 export function eventsOnDay(events: CalendarEvent[], date: string): CalendarEvent[] {
   return events.filter((event) => event.date <= date && date <= (event.until ?? event.date))
@@ -95,7 +108,12 @@ export function withDates(types: ObjectType[], dates: Record<string, DateMapping
   return types.map((type) => {
     const mapping = dates[type.key]
     return mapping
-      ? { ...type, from: mapping.from, to: mapping.to, includesTime: mapping.includesTime }
+      ? {
+          ...type,
+          from: mapping.from,
+          to: mapping.to,
+          includesTime: mapping.includesTime
+        }
       : type
   })
 }
