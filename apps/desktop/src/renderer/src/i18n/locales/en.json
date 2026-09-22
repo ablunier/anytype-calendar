@@ -1,0 +1,225 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "back": "Back",
+    "tryAgain": "Try again",
+    "untitled": "Untitled",
+    "none": "None",
+    "showSpace": "Show the {{name}} space",
+    "showTypeObjects": "Show {{label}} objects on the calendar",
+    "fromDate": "From date",
+    "toDateOptional": "To date (optional)",
+    "readAgain": "Read your spaces again",
+    "reading": "Reading your spaces…",
+    "readingDescription": "Your types and their dates show here in a moment.",
+    "spacesUnreadable": "Your spaces could not be read. {{detail}}",
+    "noDatedType": "No type in this space has a date property yet.",
+    "spacesCount_one": "{{count}} space",
+    "spacesCount_other": "{{count}} spaces"
+  },
+  "sync": {
+    "status": {
+      "synced": "Synced",
+      "syncing": "Syncing",
+      "offline": "Offline",
+      "error": "Sync failed"
+    },
+    "elapsed": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}} min ago",
+      "hoursAgo": "{{count}} h ago",
+      "daysAgo": "{{count}} d ago"
+    },
+    "failure": {
+      "unauthorized": "Key not accepted",
+      "unreachable": "Is Anytype running?"
+    }
+  },
+  "auth": {
+    "footer": {
+      "noCode": "No code showing?",
+      "requestNew": "Request a new one",
+      "privacyNote": "Keys are stored on this computer only. No account, no server copy."
+    },
+    "start": {
+      "step1": "Open the Anytype desktop app",
+      "step2": "Start the connection below",
+      "step3": "Type the 4-digit code Anytype shows you",
+      "title": "Connect to Anytype",
+      "body": "Open Anytype on this computer and leave it running. One key connects your whole account — every space you own — and the calendar reads through the local app.",
+      "startConnection": "Start connection",
+      "alreadyHaveKey": "Already have a key?",
+      "pasteItInstead": "Paste it instead"
+    },
+    "code": {
+      "title": "Enter the code from Anytype",
+      "body": "Anytype is showing a 4-digit code on this computer. Type it here to issue a key for your account.",
+      "srLabel": "4-digit code from Anytype",
+      "challenge": "Challenge",
+      "expiresIn": "expires in {{time}}",
+      "expired": "expired",
+      "verify": "Verify code"
+    },
+    "apiKey": {
+      "title": "Paste your API key",
+      "body": "Already issued a key for this app in Anytype's API settings? Paste it here to connect without the code step.",
+      "label": "API key",
+      "connect": "Connect"
+    },
+    "verifyingKey": {
+      "title": "Verifying key",
+      "body": "Checking this key against your local Anytype app."
+    },
+    "verifying": {
+      "title": "Verifying code",
+      "body": "Exchanging the code for an API key with your local Anytype app."
+    },
+    "waitingForAnytype": "Waiting for Anytype…",
+    "error": {
+      "invalidCode": {
+        "title": "That code did not work",
+        "body": "The code expired or was mistyped. Codes last 60 seconds — request a new one and Anytype will show a fresh code.",
+        "detail": "Invalid or expired code (HTTP 400)",
+        "retry": "Request a new code"
+      },
+      "expired": {
+        "title": "That code expired",
+        "body": "Codes last 60 seconds. Request a new one and Anytype will show a fresh code.",
+        "detail": "Submitted after the code expired",
+        "retry": "Request a new code"
+      },
+      "unreachable": {
+        "title": "Could not reach Anytype",
+        "body": "Make sure the Anytype desktop app is open on this computer, then try again.",
+        "detail": "The local Anytype app did not respond",
+        "retry": "Try again"
+      },
+      "invalidKey": {
+        "title": "That key did not work",
+        "body": "Anytype did not accept this key. Check it was pasted in full, or issue a new one in Anytype's API settings.",
+        "detail": "Invalid or unknown API key (HTTP 401)",
+        "retry": "Try again"
+      }
+    },
+    "success": {
+      "title": "Connected to your account",
+      "body": "The key is saved on this computer and covers every space on the account. Pick which ones to show next.",
+      "emptyList": {
+        "syncing": "Reading your spaces…",
+        "synced": "No spaces on this account yet.",
+        "offline": "Your spaces will show once Anytype is back.",
+        "error": "Your spaces could not be read."
+      },
+      "continue": "Choose spaces and types"
+    }
+  },
+  "onboarding": {
+    "label": "Onboarding",
+    "skip": "Skip",
+    "heading": "Which objects belong on the calendar?",
+    "lead": "Your key covers every space on this account. Pick the spaces you want to see, then the types inside them. Each type needs one date to start from; a second date turns it into a range.",
+    "datedTypesCount_one": "{{count}} dated type",
+    "datedTypesCount_other": "{{count}} dated types",
+    "pickSpace": "Pick a space to see the types inside it.",
+    "typesCount_one": "{{count}} type",
+    "typesCount_other": "{{count}} types",
+    "skipForNow": "Skip for now",
+    "continue": "Continue",
+    "spacePicker": {
+      "heading": "Spaces",
+      "note": "Unchecked spaces stay hidden. Nothing is written back to Anytype."
+    },
+    "typeCard": {
+      "includesTime": "Includes time",
+      "includesTimeDescription": "Off draws every date all-day, on shows the time it was set."
+    }
+  },
+  "config": {
+    "backToCalendar": "Back to calendar",
+    "title": "Settings",
+    "intro": "One key, read through the Anytype app on this computer. It covers every space on the account.",
+    "account": "Account",
+    "rereadAccount": "Re-read account",
+    "spacesAndTypes": "Spaces and types",
+    "spacesAndTypesDescription": "Which types generate events, and which dates they use",
+    "calendar": "Calendar",
+    "language": "Language",
+    "languageSystem": "System default",
+    "firstDayOfWeek": "First day of the week",
+    "timeFormat": "Time format",
+    "timeFormat24h": "24-hour (13:30)",
+    "timeFormat12h": "12-hour (1:30 PM)",
+    "showWeekNumbers": "Show week numbers",
+    "showWeekNumbersDescription": "ISO weeks, beside each row of the month",
+    "createSpace": "Create a space in Anytype",
+    "createSpaceDescription": "This account has no spaces yet. Read it again once it has one.",
+    "lastChangeFailed": "Your last change could not be saved.",
+    "changesApply": "Changes apply to the grid immediately. A type with a to date is drawn as a range.",
+    "hiddenTypesCount_one": "hidden · {{count}} type",
+    "hiddenTypesCount_other": "hidden · {{count}} types",
+    "time": "Time",
+    "fromDateFor": "From date for {{label}}",
+    "toDateFor": "To date for {{label}}",
+    "typeIncludesTime": "{{label}} dates include a time",
+    "session": {
+      "heading": "Session",
+      "apiKey": "API key",
+      "keySummary": "••••••••••••{{hint}} · added {{added}} · account-wide",
+      "keyCopied": "Key copied",
+      "copyKey": "Copy key",
+      "signOutTitle": "Sign out of this computer",
+      "signOutDescription": "Forgets the key here. It stays valid in Anytype until you delete it there.",
+      "signOut": "Sign out",
+      "revokeHeading": "Revoke access",
+      "revokeTitle": "Revoke API key",
+      "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
+    }
+  },
+  "month": {
+    "couldntRead": "Couldn't read {{month}}",
+    "nothingDated": "Nothing dated in {{month}}",
+    "nothingDatedDescription": "Events of the types you track appear here once one of their dates falls in this month.",
+    "chooseWhatGoesOn": "Choose what goes on the calendar",
+    "chooseWhatGoesOnDescription": "Pick the spaces and types whose dates you want to see here.",
+    "openSettings": "Open Settings",
+    "backToToday": "Back to today",
+    "topbar": {
+      "rereadAccount": "Re-read account",
+      "switchToLight": "Switch to light theme",
+      "switchToDark": "Switch to dark theme",
+      "settings": "Settings"
+    },
+    "nav": {
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "today": "Today",
+      "readOnlyTooltip": "MVP: month view only, no editing",
+      "readOnly": "Read-only"
+    },
+    "grid": {
+      "ariaLabel": "Month"
+    },
+    "dayCell": {
+      "hiddenMore": "+{{count}} more"
+    },
+    "dayDetail": {
+      "eventCount_one": "{{count}} event",
+      "eventCount_other": "{{count}} events"
+    },
+    "eventRow": {
+      "allDay": "all-day"
+    },
+    "eventDetail": {
+      "fromDateFallback": "From date",
+      "toDateFallback": "To date",
+      "allDay": "All day",
+      "readOnlyNotice": "This view is read-only. Edit the object in Anytype and it updates here on the next read.",
+      "openInAnytype": "Open in Anytype"
+    },
+    "detailPanel": {
+      "eventDetailLabel": "Event detail",
+      "dayDetailLabel": "Day detail",
+      "close": "Close panel"
+    }
+  }
+}

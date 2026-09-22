@@ -29,8 +29,10 @@
     "@anytype-calendar/schema": "*",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "i18next": "^26.4.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.15",
     "update-electron-app": "^3.3.0"
   },
   "devDependencies": {

@@ -1,0 +1,225 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "back": "Atrás",
+    "tryAgain": "Reintentar",
+    "untitled": "Sin título",
+    "none": "Ninguna",
+    "showSpace": "Mostrar el espacio {{name}}",
+    "showTypeObjects": "Mostrar objetos de {{label}} en el calendario",
+    "fromDate": "Fecha de inicio",
+    "toDateOptional": "Fecha de fin (opcional)",
+    "readAgain": "Leer los espacios de nuevo",
+    "reading": "Leyendo tus espacios…",
+    "readingDescription": "Tus tipos y sus fechas aparecerán aquí en un momento.",
+    "spacesUnreadable": "No se pudieron leer tus espacios. {{detail}}",
+    "noDatedType": "Ningún tipo de este espacio tiene todavía una propiedad de fecha.",
+    "spacesCount_one": "{{count}} espacio",
+    "spacesCount_other": "{{count}} espacios"
+  },
+  "sync": {
+    "status": {
+      "synced": "Sincronizado",
+      "syncing": "Sincronizando",
+      "offline": "Sin conexión",
+      "error": "Error de sincronización"
+    },
+    "elapsed": {
+      "justNow": "justo ahora",
+      "minutesAgo": "hace {{count}} min",
+      "hoursAgo": "hace {{count}} h",
+      "daysAgo": "hace {{count}} d"
+    },
+    "failure": {
+      "unauthorized": "Clave no aceptada",
+      "unreachable": "¿Está Anytype abierto?"
+    }
+  },
+  "auth": {
+    "footer": {
+      "noCode": "¿No ves el código?",
+      "requestNew": "Solicitar uno nuevo",
+      "privacyNote": "Las claves se guardan solo en este ordenador. Sin cuenta, sin copia en servidor."
+    },
+    "start": {
+      "step1": "Abre la aplicación de escritorio de Anytype",
+      "step2": "Inicia la conexión a continuación",
+      "step3": "Escribe el código de 4 dígitos que muestra Anytype",
+      "title": "Conectar con Anytype",
+      "body": "Abre Anytype en este ordenador y déjalo en ejecución. Una sola clave conecta toda tu cuenta —cada espacio que posees— y el calendario los lee a través de la aplicación local.",
+      "startConnection": "Iniciar conexión",
+      "alreadyHaveKey": "¿Ya tienes una clave?",
+      "pasteItInstead": "Pégala en su lugar"
+    },
+    "code": {
+      "title": "Introduce el código de Anytype",
+      "body": "Anytype está mostrando un código de 4 dígitos en este ordenador. Escríbelo aquí para emitir una clave para tu cuenta.",
+      "srLabel": "Código de 4 dígitos de Anytype",
+      "challenge": "Desafío",
+      "expiresIn": "caduca en {{time}}",
+      "expired": "caducado",
+      "verify": "Verificar código"
+    },
+    "apiKey": {
+      "title": "Pega tu clave de API",
+      "body": "¿Ya emitiste una clave para esta aplicación en los ajustes de API de Anytype? Pégala aquí para conectar sin pasar por el código.",
+      "label": "Clave de API",
+      "connect": "Conectar"
+    },
+    "verifyingKey": {
+      "title": "Verificando clave",
+      "body": "Comprobando esta clave con tu aplicación local de Anytype."
+    },
+    "verifying": {
+      "title": "Verificando código",
+      "body": "Intercambiando el código por una clave de API con tu aplicación local de Anytype."
+    },
+    "waitingForAnytype": "Esperando a Anytype…",
+    "error": {
+      "invalidCode": {
+        "title": "Ese código no funcionó",
+        "body": "El código caducó o se escribió mal. Los códigos duran 60 segundos: solicita uno nuevo y Anytype mostrará otro.",
+        "detail": "Código inválido o caducado (HTTP 400)",
+        "retry": "Solicitar un código nuevo"
+      },
+      "expired": {
+        "title": "Ese código caducó",
+        "body": "Los códigos duran 60 segundos. Solicita uno nuevo y Anytype mostrará otro.",
+        "detail": "Enviado después de caducar el código",
+        "retry": "Solicitar un código nuevo"
+      },
+      "unreachable": {
+        "title": "No se pudo conectar con Anytype",
+        "body": "Asegúrate de que la aplicación de escritorio de Anytype esté abierta en este ordenador y vuelve a intentarlo.",
+        "detail": "La aplicación local de Anytype no respondió",
+        "retry": "Reintentar"
+      },
+      "invalidKey": {
+        "title": "Esa clave no funcionó",
+        "body": "Anytype no aceptó esta clave. Comprueba que la pegaste completa, o genera una nueva en los ajustes de API de Anytype.",
+        "detail": "Clave de API inválida o desconocida (HTTP 401)",
+        "retry": "Reintentar"
+      }
+    },
+    "success": {
+      "title": "Conectado a tu cuenta",
+      "body": "La clave se ha guardado en este ordenador y cubre todos los espacios de la cuenta. Elige cuáles mostrar a continuación.",
+      "emptyList": {
+        "syncing": "Leyendo tus espacios…",
+        "synced": "Esta cuenta aún no tiene espacios.",
+        "offline": "Tus espacios aparecerán cuando Anytype vuelva a estar disponible.",
+        "error": "No se pudieron leer tus espacios."
+      },
+      "continue": "Elegir espacios y tipos"
+    }
+  },
+  "onboarding": {
+    "label": "Configuración inicial",
+    "skip": "Omitir",
+    "heading": "¿Qué objetos pertenecen al calendario?",
+    "lead": "Tu clave cubre todos los espacios de esta cuenta. Elige los espacios que quieres ver y luego los tipos que contienen. Cada tipo necesita una fecha de inicio; una segunda fecha lo convierte en un rango.",
+    "datedTypesCount_one": "{{count}} tipo con fecha",
+    "datedTypesCount_other": "{{count}} tipos con fecha",
+    "pickSpace": "Elige un espacio para ver los tipos que contiene.",
+    "typesCount_one": "{{count}} tipo",
+    "typesCount_other": "{{count}} tipos",
+    "skipForNow": "Omitir por ahora",
+    "continue": "Continuar",
+    "spacePicker": {
+      "heading": "Espacios",
+      "note": "Los espacios sin marcar permanecen ocultos. Nada se escribe de vuelta en Anytype."
+    },
+    "typeCard": {
+      "includesTime": "Incluye hora",
+      "includesTimeDescription": "Desactivado muestra cada fecha como de todo el día; activado muestra la hora en que se definió."
+    }
+  },
+  "config": {
+    "backToCalendar": "Volver al calendario",
+    "title": "Ajustes",
+    "intro": "Una sola clave, leída a través de la aplicación de Anytype en este ordenador. Cubre todos los espacios de la cuenta.",
+    "account": "Cuenta",
+    "rereadAccount": "Releer cuenta",
+    "spacesAndTypes": "Espacios y tipos",
+    "spacesAndTypesDescription": "Qué tipos generan eventos y qué fechas utilizan",
+    "calendar": "Calendario",
+    "language": "Idioma",
+    "languageSystem": "Predeterminado del sistema",
+    "firstDayOfWeek": "Primer día de la semana",
+    "timeFormat": "Formato de hora",
+    "timeFormat24h": "24 horas (13:30)",
+    "timeFormat12h": "12 horas (1:30 p. m.)",
+    "showWeekNumbers": "Mostrar números de semana",
+    "showWeekNumbersDescription": "Semanas ISO, junto a cada fila del mes",
+    "createSpace": "Crea un espacio en Anytype",
+    "createSpaceDescription": "Esta cuenta todavía no tiene espacios. Vuelve a leerla cuando tenga uno.",
+    "lastChangeFailed": "Tu último cambio no se pudo guardar.",
+    "changesApply": "Los cambios se aplican al calendario de inmediato. Un tipo con fecha de fin se dibuja como un rango.",
+    "hiddenTypesCount_one": "oculto · {{count}} tipo",
+    "hiddenTypesCount_other": "oculto · {{count}} tipos",
+    "time": "Hora",
+    "fromDateFor": "Fecha de inicio de {{label}}",
+    "toDateFor": "Fecha de fin de {{label}}",
+    "typeIncludesTime": "Las fechas de {{label}} incluyen una hora",
+    "session": {
+      "heading": "Sesión",
+      "apiKey": "Clave de API",
+      "keySummary": "••••••••••••{{hint}} · añadida el {{added}} · para toda la cuenta",
+      "keyCopied": "Clave copiada",
+      "copyKey": "Copiar clave",
+      "signOutTitle": "Cerrar sesión en este ordenador",
+      "signOutDescription": "Olvida la clave aquí. Sigue siendo válida en Anytype hasta que la elimines allí.",
+      "signOut": "Cerrar sesión",
+      "revokeHeading": "Revocar acceso",
+      "revokeTitle": "Revocar clave de API",
+      "revokeInstructions": "Para revocarla en todos los espacios de la cuenta, abre la aplicación de Anytype, ve a {{breadcrumb}} y revoca Calendar for Anytype. Luego cierra sesión aquí. Reconectar implica repetir el proceso del código de 4 dígitos."
+    }
+  },
+  "month": {
+    "couldntRead": "No se pudo leer {{month}}",
+    "nothingDated": "Nada con fecha en {{month}}",
+    "nothingDatedDescription": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en este mes.",
+    "chooseWhatGoesOn": "Elige qué aparece en el calendario",
+    "chooseWhatGoesOnDescription": "Elige los espacios y tipos cuyas fechas quieres ver aquí.",
+    "openSettings": "Abrir ajustes",
+    "backToToday": "Volver a hoy",
+    "topbar": {
+      "rereadAccount": "Releer cuenta",
+      "switchToLight": "Cambiar a tema claro",
+      "switchToDark": "Cambiar a tema oscuro",
+      "settings": "Ajustes"
+    },
+    "nav": {
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "today": "Hoy",
+      "readOnlyTooltip": "MVP: solo vista mensual, sin edición",
+      "readOnly": "Solo lectura"
+    },
+    "grid": {
+      "ariaLabel": "Mes"
+    },
+    "dayCell": {
+      "hiddenMore": "+{{count}} más"
+    },
+    "dayDetail": {
+      "eventCount_one": "{{count}} evento",
+      "eventCount_other": "{{count}} eventos"
+    },
+    "eventRow": {
+      "allDay": "todo el día"
+    },
+    "eventDetail": {
+      "fromDateFallback": "Fecha de inicio",
+      "toDateFallback": "Fecha de fin",
+      "allDay": "Todo el día",
+      "readOnlyNotice": "Esta vista es de solo lectura. Edita el objeto en Anytype y se actualizará aquí en la próxima lectura.",
+      "openInAnytype": "Abrir en Anytype"
+    },
+    "detailPanel": {
+      "eventDetailLabel": "Detalle del evento",
+      "dayDetailLabel": "Detalle del día",
+      "close": "Cerrar panel"
+    }
+  }
+}
