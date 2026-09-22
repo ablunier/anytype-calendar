@@ -11,8 +11,67 @@ const FIRST_WEEKEND_INDEX = 5
 /** A Monday, used only to read weekday names off `Intl.DateTimeFormat` in order. */
 const REFERENCE_MONDAY = Date.UTC(2024, 0, 1)
 
+/**
+ * Electron bundles Chromium's own ICU data, not Node's — and unlike `es`, Chromium's copy
+ * carries no data for `gl` at all: every `Intl` call for it silently falls back to Chromium's
+ * default locale instead of throwing (confirmed via `Intl.DateTimeFormat.supportedLocalesOf`,
+ * which comes back empty for `gl`/`gl-ES`). This table is Galician's calendar vocabulary,
+ * used only when `Intl` itself cannot supply it.
+ */
+const GALICIAN_CALENDAR = {
+  months: [
+    'xaneiro',
+    'febreiro',
+    'marzo',
+    'abril',
+    'maio',
+    'xuño',
+    'xullo',
+    'agosto',
+    'setembro',
+    'outubro',
+    'novembro',
+    'decembro'
+  ],
+  monthsShort: [
+    'xan.',
+    'feb.',
+    'mar.',
+    'abr.',
+    'maio',
+    'xuño',
+    'xul.',
+    'ago.',
+    'set.',
+    'out.',
+    'nov.',
+    'dec.'
+  ],
+  weekdaysLong: ['luns', 'martes', 'mércores', 'xoves', 'venres', 'sábado', 'domingo'],
+  weekdaysShort: ['luns', 'mar.', 'mér.', 'xov.', 'ven.', 'sáb.', 'dom.'],
+  meridiem: { am: 'a.m.', pm: 'p.m.' }
+}
+
+const localeSupport = new Map<string, boolean>()
+
+function supportsLocale(locale: string): boolean {
+  let supported = localeSupport.get(locale)
+  if (supported === undefined) {
+    supported = Intl.DateTimeFormat.supportedLocalesOf([locale]).length > 0
+    localeSupport.set(locale, supported)
+  }
+  return supported
+}
+
+function usesGalicianFallback(locale: string): boolean {
+  return locale === 'gl' && !supportsLocale(locale)
+}
+
 /** Monday first, in `locale`'s own names — e.g. `style: 'long'` gives `WEEKDAY_NAMES`'s old role. */
 export function weekdayNames(locale: string, style: 'short' | 'long'): string[] {
+  if (usesGalicianFallback(locale)) {
+    return style === 'long' ? GALICIAN_CALENDAR.weekdaysLong : GALICIAN_CALENDAR.weekdaysShort
+  }
   const format = new Intl.DateTimeFormat(locale, { weekday: style, timeZone: 'UTC' })
   return Array.from({ length: 7 }, (_, day) =>
     format.format(new Date(REFERENCE_MONDAY + day * 86_400_000))
@@ -78,6 +137,9 @@ export function isoDate(year: number, month: number, day: number): string {
 /** `date` is `YYYY-MM-DD`. */
 export function longDate(date: string, locale: string): string {
   const [year, month = 1, day] = date.split('-').map(Number)
+  if (usesGalicianFallback(locale)) {
+    return `${day} de ${GALICIAN_CALENDAR.months[month - 1]} de ${year}`
+  }
   const format = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
   return format.format(new Date(year, month - 1, day))
 }
@@ -85,11 +147,16 @@ export function longDate(date: string, locale: string): string {
 /** `date` is `YYYY-MM-DD`. Weekday and month abbreviated, e.g. `Fri, Sep 4`; no year. */
 export function shortDate(date: string, locale: string): string {
   const [year, month = 1, day] = date.split('-').map(Number)
+  if (usesGalicianFallback(locale)) {
+    const weekday = GALICIAN_CALENDAR.weekdaysShort[(new Date(year, month - 1, day).getDay() + 6) % 7]
+    return `${weekday}, ${day} de ${GALICIAN_CALENDAR.monthsShort[month - 1]}`
+  }
   const format = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' })
   return format.format(new Date(year, month - 1, day))
 }
 
 export function monthLabel(year: number, month: number, locale: string): string {
+  if (usesGalicianFallback(locale)) return `${GALICIAN_CALENDAR.months[month]} de ${year}`
   const format = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
   return format.format(new Date(year, month, 1))
 }
@@ -139,11 +206,15 @@ export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
 /** `HH:MM` in local time, drawn the way the user chose to read the clock. */
 export function formatTime(time: string, format: '24h' | '12h', locale: string): string {
   const [hours, minutes] = time.split(':').map(Number)
+  if (format === '24h') return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  if (usesGalicianFallback(locale)) {
+    const meridiem = hours < 12 ? GALICIAN_CALENDAR.meridiem.am : GALICIAN_CALENDAR.meridiem.pm
+    return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${meridiem}`
+  }
   const formatter = new Intl.DateTimeFormat(locale, {
-    // Zero-padded in 24h (matching the source `HH:MM`); bare in 12h, as clocks read it.
-    hour: format === '24h' ? '2-digit' : 'numeric',
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: format === '12h',
+    hour12: true,
     timeZone: 'UTC'
   })
   return formatter.format(new Date(Date.UTC(1970, 0, 1, hours, minutes)))

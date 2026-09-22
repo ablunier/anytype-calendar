@@ -220,7 +220,15 @@ Standard electron-vite three-process layout:
     `react-i18next`'s own `useTranslation`, not a bespoke context. The pure `lib/` modules
     (`calendar.ts`, `schema.ts`, `events.ts`) have no hook access, so they stay
     translation-free: `lib/calendar.ts`'s date/weekday/time formatting takes a `locale`
-    argument and calls `Intl.DateTimeFormat` directly instead of a hardcoded English table, and
+    argument and calls `Intl.DateTimeFormat` directly instead of a hardcoded English table.
+    Electron bundles Chromium's own ICU data, not Node's, and unlike `es`, Chromium's copy
+    carries no `gl` data at all (`Intl.DateTimeFormat.supportedLocalesOf` comes back empty for
+    it) — every `Intl` call for Galician would otherwise silently draw in Chromium's default
+    locale instead. `lib/calendar.ts` detects this (`supportsLocale`) and falls back to a
+    small hardcoded Galician vocabulary table, checked against Node's own `Intl` output for
+    `gl` (which, confusingly, *does* carry it) so the wording matches what real `Intl` would
+    produce; `calendar-gl-fallback.test.ts` forces the fallback path by mocking
+    `supportedLocalesOf`, since a plain test run — under Node — never takes it otherwise. And
     `lib/schema.ts`/`lib/events.ts`'s sync-status text (`elapsedSince`, `syncViewFor`,
     `monthStatusFor`) returns a `SyncDetail`/`Elapsed` shape that a component resolves to text
     with `syncDetailText` (`lib/sync-text.ts`). `Wordmark`'s brand text and the literal Anytype
