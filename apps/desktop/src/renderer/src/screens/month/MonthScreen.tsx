@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type {
   CalendarEvent,
   CalendarMonth,
@@ -9,6 +10,7 @@ import type {
 } from '@renderer/types'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { buildMonthGrid, indexBy, monthLabel, spacesByKeys } from '@renderer/lib/calendar'
+import { syncDetailText } from '@renderer/lib/sync-text'
 import { DateNavigator } from './DateNavigator'
 import { DetailPanel } from './DetailPanel'
 import { MonthGrid } from './MonthGrid'
@@ -59,6 +61,7 @@ export function MonthScreen({
   onToday,
   onReread
 }: MonthScreenProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   const typesByKey = useMemo(() => indexBy(types), [types])
   const spacesByKey = useMemo(() => indexBy(spaces), [spaces])
   const cells = useMemo(
@@ -66,7 +69,7 @@ export function MonthScreen({
     [month.year, month.month, weekStart]
   )
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
-  const label = monthLabel(month.year, month.month)
+  const label = monthLabel(month.year, month.month, i18n.language)
   const todayCell = cells.find((cell) => !cell.outside && cell.date === today)
 
   const [detail, setDetail] = useState<DetailTarget | null>(null)
@@ -109,11 +112,11 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="sliders-horizontal"
-                title="Choose what goes on the calendar"
-                description="Pick the spaces and types whose dates you want to see here."
+                title={t('month.chooseWhatGoesOn')}
+                description={t('month.chooseWhatGoesOnDescription')}
                 action={
                   <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-                    Open Settings
+                    {t('month.openSettings')}
                   </Button>
                 }
               />
@@ -122,11 +125,11 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="circle-alert"
-                title={`Couldn't read ${label}`}
-                description={status.detail}
+                title={t('month.couldntRead', { month: label })}
+                description={syncDetailText(t, status.detail)}
                 action={
                   <Button variant="secondary" size="sm" iconLeft="refresh-cw" onClick={onReread}>
-                    Try again
+                    {t('common.tryAgain')}
                   </Button>
                 }
               />
@@ -135,12 +138,12 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="calendar-days"
-                title={`Nothing dated in ${label}`}
-                description="Events of the types you track appear here once one of their dates falls in this month."
+                title={t('month.nothingDated', { month: label })}
+                description={t('month.nothingDatedDescription')}
                 action={
                   todayCell ? undefined : (
                     <Button variant="secondary" size="sm" onClick={onToday}>
-                      Back to today
+                      {t('month.backToToday')}
                     </Button>
                   )
                 }

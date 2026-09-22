@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Badge, Button, IconButton, Tooltip } from '@renderer/components/ui'
@@ -17,17 +18,18 @@ export function DateNavigator({
   onNext,
   onToday
 }: DateNavigatorProps): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center gap-16 border-b border-line-subtle bg-surface-card px-16 py-10">
       <div className="flex items-center gap-2">
-        <IconButton icon="chevron-left" label="Previous month" onClick={onPrev} />
-        <IconButton icon="chevron-right" label="Next month" onClick={onNext} />
+        <IconButton icon="chevron-left" label={t('month.nav.prevMonth')} onClick={onPrev} />
+        <IconButton icon="chevron-right" label={t('month.nav.nextMonth')} onClick={onNext} />
       </div>
 
       <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
 
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
-        Today
+        {t('month.nav.today')}
       </Button>
 
       <div className="flex-1" />
@@ -47,9 +49,9 @@ export function DateNavigator({
           ))}
         </ul>
         <span className="shrink-0">
-          <Tooltip label="MVP: month view only, no editing" side="bottom" align="end">
+          <Tooltip label={t('month.nav.readOnlyTooltip')} side="bottom" align="end">
             <Badge tone="neutral" icon="eye">
-              Read-only
+              {t('month.nav.readOnly')}
             </Badge>
           </Tooltip>
         </span>

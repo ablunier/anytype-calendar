@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
@@ -16,9 +17,6 @@ export interface TypeConfigRowProps {
   onIncludesTimeChange: (value: boolean) => void
 }
 
-/** An empty value can never be a property key. */
-const NONE = { value: '', label: 'None' }
-
 export function TypeConfigRow({
   type,
   checked,
@@ -31,6 +29,9 @@ export function TypeConfigRow({
   onToChange,
   onIncludesTimeChange
 }: TypeConfigRowProps): React.JSX.Element {
+  const { t } = useTranslation()
+  /** An empty value can never be a property key. */
+  const none = { value: '', label: t('common.none') }
   return (
     <div
       className={[
@@ -42,7 +43,7 @@ export function TypeConfigRow({
         checked={checked}
         swatch={type.category}
         onChange={onToggle}
-        ariaLabel={`Show ${type.label} objects on the calendar`}
+        ariaLabel={t('common.showTypeObjects', { label: type.label })}
       />
       <TypeTile type={type} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -51,7 +52,7 @@ export function TypeConfigRow({
       <Select
         size="sm"
         className="w-152"
-        ariaLabel={`From date for ${type.label}`}
+        ariaLabel={t('config.fromDateFor', { label: type.label })}
         options={dateOptions(type)}
         value={from}
         disabled={!checked}
@@ -60,18 +61,18 @@ export function TypeConfigRow({
       <Select
         size="sm"
         className="w-152"
-        ariaLabel={`To date for ${type.label}`}
-        options={[NONE, ...dateOptions(type).filter((option) => option.value !== from)]}
-        value={to ?? NONE.value}
+        ariaLabel={t('config.toDateFor', { label: type.label })}
+        options={[none, ...dateOptions(type).filter((option) => option.value !== from)]}
+        value={to ?? none.value}
         disabled={!checked}
-        onChange={(value) => onToChange(value === NONE.value ? null : value)}
+        onChange={(value) => onToChange(value === none.value ? null : value)}
       />
       <div className="flex w-56 shrink-0 justify-center">
         <Checkbox
           checked={includesTime}
           onChange={onIncludesTimeChange}
           disabled={!checked}
-          ariaLabel={`${type.label} dates include a time`}
+          ariaLabel={t('config.typeIncludesTime', { label: type.label })}
         />
       </div>
     </div>

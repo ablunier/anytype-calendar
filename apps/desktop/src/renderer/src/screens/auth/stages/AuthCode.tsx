@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui'
 import { useSecondsUntil } from '@renderer/hooks/useSecondsUntil'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
@@ -27,6 +28,7 @@ export function AuthCode({
   onCancel,
   onVerify
 }: AuthCodeProps): React.JSX.Element {
+  const { t } = useTranslation()
   const [code, setCode] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const secondsLeft = useSecondsUntil(expiresAt)
@@ -35,14 +37,10 @@ export function AuthCode({
 
   return (
     <>
-      <AuthHead
-        icon="shield-check"
-        title="Enter the code from Anytype"
-        body="Anytype is showing a 4-digit code on this computer. Type it here to issue a key for your account."
-      />
+      <AuthHead icon="shield-check" title={t('auth.code.title')} body={t('auth.code.body')} />
 
       <label htmlFor={inputId} className="sr-only">
-        4-digit code from Anytype
+        {t('auth.code.srLabel')}
       </label>
       <input
         id={inputId}
@@ -78,17 +76,19 @@ export function AuthCode({
 
       <div className="my-12 mb-20 flex items-center justify-between">
         <div className="flex items-center gap-6 type-caption text-tiny text-ink-tertiary">
-          <span>Challenge</span>
+          <span>{t('auth.code.challenge')}</span>
           <span className="type-numeral text-tiny text-ink-secondary">{challengeId}</span>
         </div>
         <span className="type-numeral text-tiny text-ink-tertiary">
-          {secondsLeft > 0 ? `expires in ${formatCountdown(secondsLeft)}` : 'expired'}
+          {secondsLeft > 0
+            ? t('auth.code.expiresIn', { time: formatCountdown(secondsLeft) })
+            : t('auth.code.expired')}
         </span>
       </div>
 
       <div className="flex gap-8">
         <Button variant="secondary" size="lg" onClick={onCancel}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="primary"
@@ -97,7 +97,7 @@ export function AuthCode({
           disabled={code.length < 4}
           onClick={() => onVerify(code)}
         >
-          Verify code
+          {t('auth.code.verify')}
         </Button>
       </div>
     </>

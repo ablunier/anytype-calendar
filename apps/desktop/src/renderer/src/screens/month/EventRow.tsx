@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import { catBg } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
@@ -20,6 +21,7 @@ export function EventRow({
   selected = false,
   onClick
 }: EventRowProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
   return (
     <button
@@ -37,7 +39,7 @@ export function EventRow({
           time ? 'text-ink-secondary' : 'text-ink-tertiary'
         ].join(' ')}
       >
-        {time ? formatTime(time, timeFormat) : 'all-day'}
+        {time ? formatTime(time, timeFormat, i18n.language) : t('month.eventRow.allDay')}
       </span>
       <span aria-hidden className={['size-6 shrink-0 rounded-pill', catBg[category]].join(' ')} />
       <span

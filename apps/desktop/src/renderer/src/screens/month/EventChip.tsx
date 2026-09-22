@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { catBg, catBgSoft, catText } from '@renderer/components/ui'
@@ -32,6 +33,7 @@ export function EventChip({
   done = false,
   onClick
 }: EventChipProps): React.JSX.Element {
+  const { i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
   const { column, span, lane, continuesBefore, continuesAfter } = segment
 
@@ -56,7 +58,9 @@ export function EventChip({
         <span aria-hidden className={['size-5 shrink-0 rounded-pill', catBg[category]].join(' ')} />
       ) : null}
       {time ? (
-        <span className="font-mono text-micro tracking-mono opacity-85">{formatTime(time, timeFormat)}</span>
+        <span className="font-mono text-micro tracking-mono opacity-85">
+          {formatTime(time, timeFormat, i18n.language)}
+        </span>
       ) : null}
       <span
         className={[

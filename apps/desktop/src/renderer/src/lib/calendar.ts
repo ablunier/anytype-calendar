@@ -6,43 +6,27 @@
 
 import type { CalendarEvent, DateMapping, MonthCell, ObjectType, Space } from '@renderer/types'
 
-export const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-]
-
-/** Monday first. A week start is an index into this: Monday is 0, Sunday 6. */
-export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-export const WEEKDAY_NAMES = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday'
-]
-
 const FIRST_WEEKEND_INDEX = 5
+
+/** A Monday, used only to read weekday names off `Intl.DateTimeFormat` in order. */
+const REFERENCE_MONDAY = Date.UTC(2024, 0, 1)
+
+/** Monday first, in `locale`'s own names — e.g. `style: 'long'` gives `WEEKDAY_NAMES`'s old role. */
+export function weekdayNames(locale: string, style: 'short' | 'long'): string[] {
+  const format = new Intl.DateTimeFormat(locale, { weekday: style, timeZone: 'UTC' })
+  return Array.from({ length: 7 }, (_, day) =>
+    format.format(new Date(REFERENCE_MONDAY + day * 86_400_000))
+  )
+}
 
 /** The weekday (Monday is 0) shown in `column` of a week that starts on `weekStart`. */
 function weekdayAt(weekStart: number, column: number): number {
   return (weekStart + column) % 7
 }
 
-export function weekdaysFrom(weekStart: number): string[] {
-  return WEEKDAYS.map((_, column) => WEEKDAYS[weekdayAt(weekStart, column)])
+export function weekdaysFrom(weekStart: number, locale: string): string[] {
+  const names = weekdayNames(locale, 'short')
+  return names.map((_, column) => names[weekdayAt(weekStart, column)])
 }
 
 export function isWeekendColumn(weekStart: number, column: number): boolean {
@@ -92,20 +76,22 @@ export function isoDate(year: number, month: number, day: number): string {
 }
 
 /** `date` is `YYYY-MM-DD`. */
-export function longDate(date: string): string {
+export function longDate(date: string, locale: string): string {
   const [year, month = 1, day] = date.split('-').map(Number)
-  return `${day} ${MONTH_NAMES[month - 1]} ${year}`
+  const format = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  return format.format(new Date(year, month - 1, day))
 }
 
-/** `date` is `YYYY-MM-DD`. Weekday and month abbreviated, e.g. `Fri Sep 4`; no year. */
-export function shortDate(date: string): string {
+/** `date` is `YYYY-MM-DD`. Weekday and month abbreviated, e.g. `Fri, Sep 4`; no year. */
+export function shortDate(date: string, locale: string): string {
   const [year, month = 1, day] = date.split('-').map(Number)
-  const weekday = WEEKDAYS[(new Date(year, month - 1, day).getDay() + 6) % 7]
-  return `${weekday} ${MONTH_NAMES[month - 1].slice(0, 3)} ${day}`
+  const format = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' })
+  return format.format(new Date(year, month - 1, day))
 }
 
-export function monthLabel(year: number, month: number): string {
-  return `${MONTH_NAMES[month]} ${year}`
+export function monthLabel(year: number, month: number, locale: string): string {
+  const format = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
+  return format.format(new Date(year, month, 1))
 }
 
 export function indexBy<T extends { key: string }>(items: T[]): Map<string, T> {
@@ -151,8 +137,14 @@ export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
 }
 
 /** `HH:MM` in local time, drawn the way the user chose to read the clock. */
-export function formatTime(time: string, format: '24h' | '12h'): string {
-  if (format === '24h') return time
+export function formatTime(time: string, format: '24h' | '12h', locale: string): string {
   const [hours, minutes] = time.split(':').map(Number)
-  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'AM' : 'PM'}`
+  const formatter = new Intl.DateTimeFormat(locale, {
+    // Zero-padded in 24h (matching the source `HH:MM`); bare in 12h, as clocks read it.
+    hour: format === '24h' ? '2-digit' : 'numeric',
+    minute: '2-digit',
+    hour12: format === '12h',
+    timeZone: 'UTC'
+  })
+  return formatter.format(new Date(Date.UTC(1970, 0, 1, hours, minutes)))
 }

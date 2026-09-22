@@ -41,11 +41,15 @@ export function monthStatusFor(snapshot: EventsSnapshot, month: CalendarMonth, n
     case 'loading':
       return { state: 'syncing', hasResult }
     case 'loaded':
-      return { state: 'synced', detail: elapsedSince(snapshot.last.loadedAt, now), hasResult }
+      return {
+        state: 'synced',
+        detail: { kind: 'elapsed', elapsed: elapsedSince(snapshot.last.loadedAt, now) },
+        hasResult
+      }
     case 'failed':
       return {
         state: 'error',
-        detail: snapshot.failure === 'unauthorized' ? 'Key not accepted' : 'Is Anytype running?',
+        detail: { kind: snapshot.failure === 'unauthorized' ? 'unauthorized' : 'unreachable' },
         hasResult
       }
   }
@@ -68,7 +72,7 @@ function resultFor(snapshot: EventsSnapshot, month: CalendarMonth): EventsMonthR
   return last && sameEventsMonth(last.month, month) ? last : undefined
 }
 
-/** Anytype names an object with no title "Untitled", so the calendar does too. */
+/** An empty title (Anytype's own "Untitled" case) is resolved to text at each render site. */
 function calendarEventFor({
   id,
   spaceId,
@@ -80,7 +84,7 @@ function calendarEventFor({
 }: EventsDatedObject): CalendarEvent {
   return {
     id,
-    title: title === '' ? 'Untitled' : title,
+    title,
     type: objectTypeKey(spaceId, typeKey),
     space: spaceId,
     date: localDate(start),

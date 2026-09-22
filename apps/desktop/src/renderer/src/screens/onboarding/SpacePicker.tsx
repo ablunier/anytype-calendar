@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Checkbox } from '@renderer/components/ui'
@@ -16,9 +17,10 @@ export function SpacePicker({
   selectedKeys,
   onToggle
 }: SpacePickerProps): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <div>
-      <h2 className="type-overline text-tiny text-ink-tertiary">Spaces</h2>
+      <h2 className="type-overline text-tiny text-ink-tertiary">{t('onboarding.spacePicker.heading')}</h2>
       <ul className="mt-8 flex list-none flex-col gap-2 p-0">
         {spaces.map((space) => {
           const on = selectedKeys.includes(space.key)
@@ -33,7 +35,7 @@ export function SpacePicker({
               <Checkbox
                 checked={on}
                 onChange={() => onToggle(space.key)}
-                ariaLabel={`Show the ${space.name} space`}
+                ariaLabel={t('common.showSpace', { name: space.name })}
               />
               <SpaceMonogram space={space} />
               <span
@@ -52,7 +54,7 @@ export function SpacePicker({
         })}
       </ul>
       <p className="mt-12 type-caption text-tiny text-ink-tertiary">
-        Unchecked spaces stay hidden. Nothing is written back to Anytype.
+        {t('onboarding.spacePicker.note')}
       </p>
     </div>
   )

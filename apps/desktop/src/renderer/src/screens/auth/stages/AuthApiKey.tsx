@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Input } from '@renderer/components/ui'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
 
@@ -8,19 +9,16 @@ export interface AuthApiKeyProps {
 }
 
 export function AuthApiKey({ onCancel, onConnect }: AuthApiKeyProps): React.JSX.Element {
+  const { t } = useTranslation()
   const [apiKey, setApiKey] = useState('')
 
   return (
     <>
-      <AuthHead
-        icon="key-round"
-        title="Paste your API key"
-        body="Already issued a key for this app in Anytype's API settings? Paste it here to connect without the code step."
-      />
-      <Input value={apiKey} onChange={setApiKey} label="API key" mono />
+      <AuthHead icon="key-round" title={t('auth.apiKey.title')} body={t('auth.apiKey.body')} />
+      <Input value={apiKey} onChange={setApiKey} label={t('auth.apiKey.label')} mono />
       <div className="mt-20 flex gap-8">
         <Button variant="secondary" size="lg" onClick={onCancel}>
-          Back
+          {t('common.back')}
         </Button>
         <Button
           variant="primary"
@@ -29,7 +27,7 @@ export function AuthApiKey({ onCancel, onConnect }: AuthApiKeyProps): React.JSX.
           disabled={apiKey.trim().length === 0}
           onClick={() => onConnect(apiKey.trim())}
         >
-          Connect
+          {t('auth.apiKey.connect')}
         </Button>
       </div>
     </>

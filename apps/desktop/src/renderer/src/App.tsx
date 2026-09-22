@@ -3,6 +3,7 @@ import { shiftEventsMonth } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import type { AuthView, CalendarMonth, ConnectedScreen } from './types'
 import { useEvents } from './hooks/useEvents'
+import { useLocale } from './hooks/useLocale'
 import { useNow } from './hooks/useNow'
 import { useSchemaSelection } from './hooks/useSchemaSelection'
 import { useSchemaSync } from './hooks/useSchemaSync'
@@ -47,6 +48,7 @@ const SYNC_AGE_TICK_MS = 30_000
  */
 function App(): React.JSX.Element | null {
   const [theme, toggleTheme] = useTheme()
+  const [, language, setLanguage] = useLocale()
   const [showWeekNumbers, setShowWeekNumbers] = useWeekNumbers()
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
@@ -123,6 +125,8 @@ function App(): React.JSX.Element | null {
         sync={syncViewFor(schema, now)}
         initial={picksFor(selection, types)}
         apiKey={apiKey}
+        language={language}
+        onLanguage={setLanguage}
         showWeekNumbers={showWeekNumbers}
         onShowWeekNumbers={setShowWeekNumbers}
         weekStart={weekStart}

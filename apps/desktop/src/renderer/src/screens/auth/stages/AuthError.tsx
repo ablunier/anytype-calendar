@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 import type { AuthFailureKind } from '@renderer/types'
 import { Button } from '@renderer/components/ui'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
@@ -12,35 +14,46 @@ export interface AuthErrorProps {
   onRetry: () => void
 }
 
-const COPY: Record<AuthFailureKind, { title: string; body: string; detail: string; retry: string }> = {
-  'invalid-code': {
-    title: 'That code did not work',
-    body: 'The code expired or was mistyped. Codes last 60 seconds — request a new one and Anytype will show a fresh code.',
-    detail: 'Invalid or expired code (HTTP 400)',
-    retry: 'Request a new code'
-  },
-  expired: {
-    title: 'That code expired',
-    body: 'Codes last 60 seconds. Request a new one and Anytype will show a fresh code.',
-    detail: 'Submitted after the code expired',
-    retry: 'Request a new code'
-  },
-  unreachable: {
-    title: 'Could not reach Anytype',
-    body: 'Make sure the Anytype desktop app is open on this computer, then try again.',
-    detail: 'The local Anytype app did not respond',
-    retry: 'Try again'
-  },
-  'invalid-key': {
-    title: 'That key did not work',
-    body: "Anytype did not accept this key. Check it was pasted in full, or issue a new one in Anytype's API settings.",
-    detail: 'Invalid or unknown API key (HTTP 401)',
-    retry: 'Try again'
+interface FailureCopy {
+  title: string
+  body: string
+  detail: string
+  retry: string
+}
+
+function copyFor(t: TFunction, failure: AuthFailureKind): FailureCopy {
+  const table: Record<AuthFailureKind, FailureCopy> = {
+    'invalid-code': {
+      title: t('auth.error.invalidCode.title'),
+      body: t('auth.error.invalidCode.body'),
+      detail: t('auth.error.invalidCode.detail'),
+      retry: t('auth.error.invalidCode.retry')
+    },
+    expired: {
+      title: t('auth.error.expired.title'),
+      body: t('auth.error.expired.body'),
+      detail: t('auth.error.expired.detail'),
+      retry: t('auth.error.expired.retry')
+    },
+    unreachable: {
+      title: t('auth.error.unreachable.title'),
+      body: t('auth.error.unreachable.body'),
+      detail: t('auth.error.unreachable.detail'),
+      retry: t('auth.error.unreachable.retry')
+    },
+    'invalid-key': {
+      title: t('auth.error.invalidKey.title'),
+      body: t('auth.error.invalidKey.body'),
+      detail: t('auth.error.invalidKey.detail'),
+      retry: t('auth.error.invalidKey.retry')
+    }
   }
+  return table[failure]
 }
 
 export function AuthError({ failure, origin, code, onBack, onRetry }: AuthErrorProps): React.JSX.Element {
-  const copy = COPY[failure]
+  const { t } = useTranslation()
+  const copy = copyFor(t, failure)
   return (
     <>
       <AuthHead icon="circle-alert" tone="danger" title={copy.title} body={copy.body} />
@@ -56,7 +69,7 @@ export function AuthError({ failure, origin, code, onBack, onRetry }: AuthErrorP
       ) : (
         <div className="flex gap-8">
           <Button variant="secondary" size="lg" onClick={onBack}>
-            Back
+            {t('common.back')}
           </Button>
           <Button variant="primary" size="lg" fullWidth iconLeft="refresh-cw" onClick={onRetry}>
             {copy.retry}

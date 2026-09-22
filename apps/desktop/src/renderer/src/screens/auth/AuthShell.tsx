@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { IconName } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Icon } from '@renderer/components/ui'
@@ -47,9 +48,10 @@ export function AuthHead({ icon, title, body, tone = 'accent' }: AuthHeadProps):
 }
 
 export function PrivacyNote(): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <p className="mt-16 text-center type-caption text-tiny text-ink-tertiary">
-      Keys are stored on this computer only. No account, no server copy.
+      {t('auth.footer.privacyNote')}
     </p>
   )
 }

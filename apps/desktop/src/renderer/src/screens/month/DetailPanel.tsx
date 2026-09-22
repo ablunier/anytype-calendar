@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/types'
 import { IconButton } from '@renderer/components/ui'
 import { eventsOnDay } from '@renderer/lib/calendar'
@@ -21,13 +22,16 @@ export function DetailPanel({
   onClose,
   onOpenEvent
 }: DetailPanelProps): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <aside
-      aria-label={detail.kind === 'event' ? 'Event detail' : 'Day detail'}
+      aria-label={
+        detail.kind === 'event' ? t('month.detailPanel.eventDetailLabel') : t('month.detailPanel.dayDetailLabel')
+      }
       className="flex w-panel shrink-0 flex-col border-l border-line-subtle bg-surface-card"
     >
       <div className="flex h-topbar shrink-0 items-center justify-end border-b border-line-subtle pr-12 pl-16">
-        <IconButton icon="x" label="Close panel" onClick={onClose} />
+        <IconButton icon="x" label={t('month.detailPanel.close')} onClick={onClose} />
       </div>
 
       {detail.kind === 'event' ? (

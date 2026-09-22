@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next'
 import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace } from '@renderer/lib/calendar'
+import { syncDetailText } from '@renderer/lib/sync-text'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { SpacePicker } from './SpacePicker'
 import { TypeCard } from './TypeCard'
@@ -28,14 +30,15 @@ export function OnboardingScreen({
   onContinue,
   onSkip
 }: OnboardingScreenProps): React.JSX.Element {
+  const { t } = useTranslation()
   return (
     <div className="flex h-full flex-col bg-surface-page">
       <header className="flex h-topbar shrink-0 items-center gap-12 border-b border-line-subtle bg-surface-card px-16">
         <Wordmark />
-        <span className="type-caption text-tiny text-ink-tertiary">Onboarding</span>
+        <span className="type-caption text-tiny text-ink-tertiary">{t('onboarding.label')}</span>
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={onSkip}>
-          Skip
+          {t('onboarding.skip')}
         </Button>
       </header>
 
@@ -52,19 +55,19 @@ export function OnboardingScreen({
           {sync.state === 'error' ? (
             <EmptyState
               icon="circle-alert"
-              title="Read your spaces again"
-              description={`Your spaces could not be read. ${sync.detail ?? ''}`}
+              title={t('common.readAgain')}
+              description={t('common.spacesUnreadable', { detail: syncDetailText(t, sync.detail) ?? '' })}
               action={
                 <Button variant="secondary" size="md" iconLeft="refresh-cw" onClick={onRetrySync}>
-                  Try again
+                  {t('common.tryAgain')}
                 </Button>
               }
             />
           ) : (
             <EmptyState
               icon="loader-circle"
-              title="Reading your spaces…"
-              description="Your types and their dates show here in a moment."
+              title={t('common.reading')}
+              description={t('common.readingDescription')}
             />
           )}
         </main>
@@ -83,6 +86,7 @@ interface PickerProps {
 
 /** Mounted only once the account has been read, so the selection starts from real types. */
 function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): React.JSX.Element {
+  const { t } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const chosenSpaces = spaces.filter((space) => selection.spaceKeys.includes(space.key))
 
@@ -90,13 +94,9 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
     <>
       <main className="min-h-0 flex-1 overflow-auto px-32 pt-32 pb-24">
         <div className="mx-auto max-w-1000">
-          <h1 className="mb-8 type-title text-h2 text-ink-primary">
-            Which objects belong on the calendar?
-          </h1>
+          <h1 className="mb-8 type-title text-h2 text-ink-primary">{t('onboarding.heading')}</h1>
           <p className="mb-24 max-w-prose-max type-lead text-lead text-pretty text-ink-secondary">
-            Your key covers every space on this account. Pick the spaces you want to see, then
-            the types inside them. Each type needs one date to start from; a second date turns
-            it into a range.
+            {t('onboarding.lead')}
           </p>
 
           <div className="grid grid-picker items-start gap-32">
@@ -116,12 +116,12 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
                       <SpaceMonogram space={space} />
                       <h2 className="type-ui text-small text-ink-primary">{space.name}</h2>
                       <span className="type-numeral text-tiny text-ink-tertiary">
-                        {spaceTypes.length} dated types
+                        {t('onboarding.datedTypesCount', { count: spaceTypes.length })}
                       </span>
                     </div>
                     {spaceTypes.length === 0 ? (
                       <p className="type-body text-small text-ink-tertiary">
-                        No type in this space has a date property yet.
+                        {t('common.noDatedType')}
                       </p>
                     ) : (
                       <div className="grid grid-cols-2 items-start gap-10">
@@ -147,9 +147,7 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
                 )
               })}
               {chosenSpaces.length === 0 ? (
-                <p className="type-body text-small text-ink-tertiary">
-                  Pick a space to see the types inside it.
-                </p>
+                <p className="type-body text-small text-ink-tertiary">{t('onboarding.pickSpace')}</p>
               ) : null}
             </div>
           </div>
@@ -158,11 +156,12 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
 
       <footer className="flex shrink-0 items-center gap-12 border-t border-line-subtle bg-surface-card px-24 py-12">
         <span className="type-numeral text-small text-ink-secondary">
-          {chosenSpaces.length} spaces · {selection.activeTypes.length} types
+          {t('common.spacesCount', { count: chosenSpaces.length })} ·{' '}
+          {t('onboarding.typesCount', { count: selection.activeTypes.length })}
         </span>
         <div className="flex-1" />
         <Button variant="ghost" size="md" onClick={onSkip}>
-          Skip for now
+          {t('onboarding.skipForNow')}
         </Button>
         <Button
           variant="primary"
@@ -170,7 +169,7 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
           iconRight="chevron-right"
           onClick={() => onContinue(selection.picks)}
         >
-          Continue
+          {t('onboarding.continue')}
         </Button>
       </footer>
     </>

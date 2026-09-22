@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { AuthStage, AuthView, Space, SyncView } from '@renderer/types'
 import { Button, Card } from '@renderer/components/ui'
 import { AuthShell } from './AuthShell'
@@ -77,19 +78,20 @@ interface AuthFooterProps {
 }
 
 function AuthFooter({ stage, onRequestNew }: AuthFooterProps): React.JSX.Element {
+  const { t } = useTranslation()
   if (stage === 'code') {
     return (
       <p className="mt-16 text-center type-caption text-tiny text-ink-tertiary">
-        No code showing?{' '}
+        {t('auth.footer.noCode')}{' '}
         <Button variant="quiet" size="sm" onClick={onRequestNew}>
-          Request a new one
+          {t('auth.footer.requestNew')}
         </Button>
       </p>
     )
   }
   return (
     <p className="mt-16 text-center type-caption text-tiny text-ink-tertiary">
-      Keys are stored on this computer only. No account, no server copy.
+      {t('auth.footer.privacyNote')}
     </p>
   )
 }

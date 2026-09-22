@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
@@ -17,11 +18,16 @@ interface DetailDateProps {
  * each row's cells size to that row's own content.
  */
 function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element {
+  const { i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
   return (
     <div className="flex flex-col gap-2">
-      {time ? <span className="type-numeral text-small text-ink-body">{formatTime(time, timeFormat)}</span> : null}
-      <span className="type-numeral text-small text-ink-body">{shortDate(date)}</span>
+      {time ? (
+        <span className="type-numeral text-small text-ink-body">
+          {formatTime(time, timeFormat, i18n.language)}
+        </span>
+      ) : null}
+      <span className="type-numeral text-small text-ink-body">{shortDate(date, i18n.language)}</span>
       <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
     </div>
   )
@@ -63,12 +69,15 @@ export interface EventDetailProps {
  * trust comes from being explicit about why something is on the grid.
  */
 export function EventDetail({ event, type, spacesByKey }: EventDetailProps): React.JSX.Element {
+  const { t } = useTranslation()
   const space = spacesByKey.get(event.space)
 
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
       <div className="flex flex-col gap-8">
-        <h2 className="type-heading text-h4 text-pretty text-ink-primary">{event.title}</h2>
+        <h2 className="type-heading text-h4 text-pretty text-ink-primary">
+          {event.title || t('common.untitled')}
+        </h2>
         <div className="flex items-center gap-8">
           {type ? (
             <Tag category={type.category} icon={type.icon}>
@@ -91,7 +100,7 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
             <DetailDate
               date={event.date}
               time={!event.allDay ? event.time : undefined}
-              caption={type ? dateLabel(type, type.from) : 'From date'}
+              caption={type ? dateLabel(type, type.from) : t('month.eventDetail.fromDateFallback')}
             />
             {event.until ? (
               <>
@@ -99,21 +108,20 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
                 <DetailDate
                   date={event.until}
                   time={!event.allDay ? (event.end ?? event.time) : undefined}
-                  caption={type?.to ? dateLabel(type, type.to) : 'To date'}
+                  caption={type?.to ? dateLabel(type, type.to) : t('month.eventDetail.toDateFallback')}
                 />
               </>
             ) : null}
           </div>
         </div>
 
-        <ReadOnlyToggle checked={event.allDay} label="All day" />
+        <ReadOnlyToggle checked={event.allDay} label={t('month.eventDetail.allDay')} />
       </div>
 
       <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">
         <Icon name="info" size={14} className="mt-2 text-ink-tertiary" />
         <span className="type-caption text-tiny text-ink-secondary">
-          This view is read-only. Edit the object in Anytype and it updates here on the next
-          read.
+          {t('month.eventDetail.readOnlyNotice')}
         </span>
       </p>
 
@@ -124,7 +132,7 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
         iconRight="external-link"
         onClick={() => window.api.shell.openObject(event.id, event.space)}
       >
-        Open in Anytype
+        {t('month.eventDetail.openInAnytype')}
       </Button>
     </div>
   )

@@ -1,4 +1,5 @@
 import type { CSSProperties, KeyboardEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
@@ -37,6 +38,7 @@ export function MonthDayCell({
   onKeyDown,
   onOpenEvent
 }: MonthDayCellProps): React.JSX.Element {
+  const { t } = useTranslation()
   /* Outside days belong to the adjacent month: shown for continuity, but not selectable
    * and not part of the roving tab order. */
   const interactive = !cell.outside
@@ -88,7 +90,9 @@ export function MonthDayCell({
       ) : null}
 
       {hidden > 0 ? (
-        <span className="pl-2 type-caption text-micro text-ink-tertiary">+{hidden} more</span>
+        <span className="pl-2 type-caption text-micro text-ink-tertiary">
+          {t('month.dayCell.hiddenMore', { count: hidden })}
+        </span>
       ) : null}
 
       {segments.map((segment) => {
@@ -97,7 +101,7 @@ export function MonthDayCell({
           <EventChip
             key={segment.event.id}
             segment={segment}
-            title={segment.event.title}
+            title={segment.event.title || t('common.untitled')}
             category={type?.category ?? 'graphite'}
             time={segment.continuesBefore ? undefined : segment.event.time}
             allDay={segment.event.allDay}

@@ -11,6 +11,7 @@ import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type {
   CategoryHue,
   DateMapping,
+  Elapsed,
   IconName,
   ObjectType,
   Space,
@@ -99,11 +100,15 @@ export function syncViewFor(snapshot: SchemaSnapshot, now: number): SyncView {
     case 'syncing':
       return { state: 'syncing', hasResult }
     case 'synced':
-      return { state: 'synced', detail: elapsedSince(snapshot.last.syncedAt, now), hasResult }
+      return {
+        state: 'synced',
+        detail: { kind: 'elapsed', elapsed: elapsedSince(snapshot.last.syncedAt, now) },
+        hasResult
+      }
     case 'failed':
       return {
         state: 'error',
-        detail: snapshot.failure === 'unauthorized' ? 'Key not accepted' : 'Is Anytype running?',
+        detail: { kind: snapshot.failure === 'unauthorized' ? 'unauthorized' : 'unreachable' },
         hasResult
       }
   }
@@ -210,11 +215,11 @@ function defaultMapping(type: SchemaType): DateMapping {
   return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false }
 }
 
-/** Both epoch milliseconds, e.g. "3 min ago". */
-export function elapsedSince(at: number, now: number): string {
+/** Both epoch milliseconds. Untranslated: resolved to text by `syncDetailText` (`lib/sync-text.ts`). */
+export function elapsedSince(at: number, now: number): Elapsed {
   const elapsed = Math.max(0, now - at)
-  if (elapsed < MINUTE_MS) return 'just now'
-  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)} min ago`
-  if (elapsed < DAY_MS) return `${Math.floor(elapsed / HOUR_MS)} h ago`
-  return `${Math.floor(elapsed / DAY_MS)} d ago`
+  if (elapsed < MINUTE_MS) return { key: 'justNow' }
+  if (elapsed < HOUR_MS) return { key: 'minutesAgo', count: Math.floor(elapsed / MINUTE_MS) }
+  if (elapsed < DAY_MS) return { key: 'hoursAgo', count: Math.floor(elapsed / HOUR_MS) }
+  return { key: 'daysAgo', count: Math.floor(elapsed / DAY_MS) }
 }

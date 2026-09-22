@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
@@ -55,6 +56,7 @@ export function MonthGrid({
   onSelectDay,
   onOpenEvent
 }: MonthGridProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLDivElement>(null)
   const shouldRefocus = useRef(false)
 
@@ -94,11 +96,16 @@ export function MonthGrid({
   }
 
   return (
-    <div ref={gridRef} role="grid" aria-label="Month" className="flex min-h-0 flex-1 flex-col">
+    <div
+      ref={gridRef}
+      role="grid"
+      aria-label={t('month.grid.ariaLabel')}
+      className="flex min-h-0 flex-1 flex-col"
+    >
       <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
         {showWeekNumbers ? <span aria-hidden className="week-number-gutter shrink-0" /> : null}
         <div className="grid flex-1 grid-week">
-          {weekdaysFrom(weekStart).map((weekday, index) => (
+          {weekdaysFrom(weekStart, i18n.language).map((weekday, index) => (
             <span
               key={weekday}
               role="columnheader"

@@ -16,6 +16,7 @@ import {
   shortDate,
   spacesByKeys,
   typesInSpace,
+  weekdayNames,
   weekdaysFrom,
   withDates
 } from './calendar'
@@ -96,10 +97,27 @@ describe('buildMonthGrid with another week start', () => {
   })
 })
 
+describe('weekdayNames', () => {
+  test('gives Monday-first names in the requested style and locale', () => {
+    expect(weekdayNames('en', 'short')).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    expect(weekdayNames('en', 'long')).toEqual([
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ])
+    expect(weekdayNames('es', 'long')[0]).toBe('lunes')
+    expect(weekdayNames('gl', 'long')[0]).toBe('luns')
+  })
+})
+
 describe('weekdaysFrom and isWeekendColumn', () => {
   test('rotates the weekdays to start on the given day', () => {
-    expect(weekdaysFrom(0)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
-    expect(weekdaysFrom(6)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'])
+    expect(weekdaysFrom(0, 'en')).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    expect(weekdaysFrom(6, 'en')).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'])
   })
 
   test('marks Saturday and Sunday wherever they fall', () => {
@@ -166,21 +184,34 @@ describe('isoDate', () => {
 
 describe('longDate', () => {
   test('spells out the month name', () => {
-    expect(longDate('2024-01-05')).toBe('5 January 2024')
-    expect(longDate('2026-12-31')).toBe('31 December 2026')
+    expect(longDate('2024-01-05', 'en')).toBe('January 5, 2024')
+    expect(longDate('2026-12-31', 'en')).toBe('December 31, 2026')
+  })
+
+  test('follows the given locale', () => {
+    expect(longDate('2024-01-05', 'es')).toBe('5 de enero de 2024')
   })
 })
 
 describe('shortDate', () => {
   test('abbreviates the weekday and month, with no year', () => {
-    expect(shortDate('2024-01-05')).toBe('Fri Jan 5')
-    expect(shortDate('2026-12-31')).toBe('Thu Dec 31')
+    expect(shortDate('2024-01-05', 'en')).toBe('Fri, Jan 5')
+    expect(shortDate('2026-12-31', 'en')).toBe('Thu, Dec 31')
+  })
+
+  test('follows the given locale', () => {
+    expect(shortDate('2024-01-05', 'es')).toBe('vie, 5 ene')
   })
 })
 
 describe('monthLabel', () => {
   test('names the month and year', () => {
-    expect(monthLabel(2027, 0)).toBe('January 2027')
+    expect(monthLabel(2027, 0, 'en')).toBe('January 2027')
+  })
+
+  test('follows the given locale', () => {
+    expect(monthLabel(2026, 8, 'es')).toBe('septiembre de 2026')
+    expect(monthLabel(2026, 8, 'gl')).toBe('setembro de 2026')
   })
 })
 
@@ -305,17 +336,22 @@ describe('isoWeekNumber', () => {
 })
 
 describe('formatTime', () => {
-  test('leaves a 24-hour time as it is', () => {
-    expect(formatTime('13:05', '24h')).toBe('13:05')
+  test('leaves a 24-hour time zero-padded', () => {
+    expect(formatTime('13:05', '24h', 'en')).toBe('13:05')
+    expect(formatTime('09:00', '24h', 'en')).toBe('09:00')
   })
 
   test('draws afternoon hours as PM', () => {
-    expect(formatTime('13:05', '12h')).toBe('1:05 PM')
-    expect(formatTime('12:00', '12h')).toBe('12:00 PM')
+    expect(formatTime('13:05', '12h', 'en')).toBe('1:05 PM')
+    expect(formatTime('12:00', '12h', 'en')).toBe('12:00 PM')
   })
 
   test('draws midnight as 12 AM and the morning as AM', () => {
-    expect(formatTime('00:30', '12h')).toBe('12:30 AM')
-    expect(formatTime('09:00', '12h')).toBe('9:00 AM')
+    expect(formatTime('00:30', '12h', 'en')).toBe('12:30 AM')
+    expect(formatTime('09:00', '12h', 'en')).toBe('9:00 AM')
+  })
+
+  test('follows the given locale', () => {
+    expect(formatTime('13:05', '12h', 'es')).toContain('1:05')
   })
 })

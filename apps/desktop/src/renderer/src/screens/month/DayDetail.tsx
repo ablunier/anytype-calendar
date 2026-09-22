@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, ObjectType } from '@renderer/types'
 import { longDate } from '@renderer/lib/calendar'
 import { EventRow } from './EventRow'
@@ -16,11 +17,16 @@ export function DayDetail({
   typesByKey,
   onOpenEvent
 }: DayDetailProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   return (
     <div className="flex min-h-0 flex-col">
       <div className="px-16 pt-16 pb-8">
-        <h2 className="mb-2 type-heading text-h4 text-ink-primary">{longDate(date)}</h2>
-        <span className="type-numeral text-tiny text-ink-tertiary">{events.length} events</span>
+        <h2 className="mb-2 type-heading text-h4 text-ink-primary">
+          {longDate(date, i18n.language)}
+        </h2>
+        <span className="type-numeral text-tiny text-ink-tertiary">
+          {t('month.dayDetail.eventCount', { count: events.length })}
+        </span>
       </div>
       <div className="overflow-auto px-8 pb-16">
         {events.map((event) => {
@@ -28,7 +34,7 @@ export function DayDetail({
           return (
             <EventRow
               key={event.id}
-              title={event.title}
+              title={event.title || t('common.untitled')}
               time={event.date === date ? event.time : undefined}
               category={type?.category ?? 'graphite'}
               done={event.done}

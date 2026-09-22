@@ -207,6 +207,25 @@ Standard electron-vite three-process layout:
     The time format (Settings → Calendar, 24-hour by default) is saved likewise, in the `timeFormat`
     section (`main/time-format/`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
     `formatTime` (`lib/calendar.ts`) draws them, reading the format from `TimeFormatContext`.
+    The app is localized into English, Spanish and Galician (`react-i18next`, resources under
+    `renderer/src/i18n/locales/`). The language (Settings → Calendar) follows the OS language
+    by default: `LanguageSnapshot` (`main/language/`, saved in the `language` section of
+    `app-config.json`) is `'en' | 'es' | 'gl' | null`, where `null` — the initial value, and
+    "System default" in the Select — means "follow the OS", the same shape `ThemeSnapshot`
+    uses for the OS theme. Unlike the theme, which reads `prefers-color-scheme` in CSS,
+    resolving `null` to an actual locale needs a JS-visible value, so it happens in the
+    renderer: `resolveLocale` (`lib/locale.ts`) matches `navigator.languages` against the three
+    shipped locales, and `useLocale` (mirroring `useTheme`'s "follow the OS until overridden"
+    shape) feeds the result to `i18next.changeLanguage`. Components read translations with
+    `react-i18next`'s own `useTranslation`, not a bespoke context. The pure `lib/` modules
+    (`calendar.ts`, `schema.ts`, `events.ts`) have no hook access, so they stay
+    translation-free: `lib/calendar.ts`'s date/weekday/time formatting takes a `locale`
+    argument and calls `Intl.DateTimeFormat` directly instead of a hardcoded English table, and
+    `lib/schema.ts`/`lib/events.ts`'s sync-status text (`elapsedSince`, `syncViewFor`,
+    `monthStatusFor`) returns a `SyncDetail`/`Elapsed` shape that a component resolves to text
+    with `syncDetailText` (`lib/sync-text.ts`). `Wordmark`'s brand text and the literal Anytype
+    menu breadcrumb in `SessionSection`'s revoke instructions are deliberately left
+    untranslated — a product name and another app's own UI labels, not this app's copy.
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`

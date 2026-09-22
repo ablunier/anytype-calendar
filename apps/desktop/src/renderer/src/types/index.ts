@@ -121,11 +121,23 @@ export type AuthStage = AuthView['stage']
 
 export type SyncState = 'synced' | 'syncing' | 'offline' | 'error'
 
+/** How long ago a sync/load landed, in the largest unit that still reads naturally. */
+export type Elapsed =
+  | { key: 'justNow' }
+  | { key: 'minutesAgo'; count: number }
+  | { key: 'hoursAgo'; count: number }
+  | { key: 'daysAgo'; count: number }
+
+/** Untranslated: a component resolves this to text with `syncDetailText` (`lib/sync-text.ts`). */
+export type SyncDetail =
+  | { kind: 'elapsed'; elapsed: Elapsed }
+  | { kind: 'unauthorized' }
+  | { kind: 'unreachable' }
+
 /** How the last read of the account went, ready for SyncStatus. */
 export interface SyncView {
   state: SyncState
-  /** e.g. "just now", "Is Anytype running?". */
-  detail?: string
+  detail?: SyncDetail
   /** Whether any read has succeeded yet, so there is something to draw. */
   hasResult: boolean
 }

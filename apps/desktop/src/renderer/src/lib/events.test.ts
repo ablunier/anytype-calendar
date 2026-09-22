@@ -106,9 +106,9 @@ describe('eventsFor', () => {
     expect(event).toMatchObject({ date: '2026-09-09', time: '09:30', until: '2026-09-09', end: '10:15' })
   })
 
-  test('titles an object with no title as Anytype does', () => {
+  test('keeps an empty title as-is; the render sites fall back to a translated "Untitled"', () => {
     const [event] = eventsFor(loaded([object({ title: '' })]), SEPTEMBER) ?? []
-    expect(event?.title).toBe('Untitled')
+    expect(event?.title).toBe('')
   })
 })
 
@@ -124,7 +124,7 @@ describe('monthStatusFor', () => {
   test('says how long ago the month was read', () => {
     expect(monthStatusFor(loaded([]), SEPTEMBER, NOW)).toEqual({
       state: 'synced',
-      detail: '2 min ago',
+      detail: { kind: 'elapsed', elapsed: { key: 'minutesAgo', count: 2 } },
       hasResult: true
     })
   })
@@ -138,11 +138,11 @@ describe('monthStatusFor', () => {
     })
     expect(monthStatusFor(failed('unauthorized'), SEPTEMBER, NOW)).toEqual({
       state: 'error',
-      detail: 'Key not accepted',
+      detail: { kind: 'unauthorized' },
       hasResult: false
     })
     expect(monthStatusFor(failed('unreachable'), SEPTEMBER, NOW)).toMatchObject({
-      detail: 'Is Anytype running?'
+      detail: { kind: 'unreachable' }
     })
   })
 })

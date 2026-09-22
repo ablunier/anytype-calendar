@@ -72,10 +72,10 @@ describe('objectTypeKey', () => {
 
 describe('elapsedSince', () => {
   test('rounds down to the largest unit', () => {
-    expect(elapsedSince(0, 59_000)).toBe('just now')
-    expect(elapsedSince(0, 3 * 60_000)).toBe('3 min ago')
-    expect(elapsedSince(0, 5 * 3_600_000)).toBe('5 h ago')
-    expect(elapsedSince(0, 2 * 86_400_000)).toBe('2 d ago')
+    expect(elapsedSince(0, 59_000)).toEqual({ key: 'justNow' })
+    expect(elapsedSince(0, 3 * 60_000)).toEqual({ key: 'minutesAgo', count: 3 })
+    expect(elapsedSince(0, 5 * 3_600_000)).toEqual({ key: 'hoursAgo', count: 5 })
+    expect(elapsedSince(0, 2 * 86_400_000)).toEqual({ key: 'daysAgo', count: 2 })
   })
 })
 
@@ -145,20 +145,24 @@ describe('syncViewFor', () => {
   })
 
   test.each([
-    [0, 'just now'],
-    [30_000, 'just now'],
-    [90_000, '1 min ago'],
-    [2 * 60 * 60_000, '2 h ago'],
-    [3 * 24 * 60 * 60_000, '3 d ago']
-  ])('synced %i ms later reads as "%s"', (elapsed, detail) => {
-    expect(syncViewFor(SYNCED, SYNCED_AT + elapsed)).toEqual({ state: 'synced', detail, hasResult: true })
+    [0, { key: 'justNow' }],
+    [30_000, { key: 'justNow' }],
+    [90_000, { key: 'minutesAgo', count: 1 }],
+    [2 * 60 * 60_000, { key: 'hoursAgo', count: 2 }],
+    [3 * 24 * 60 * 60_000, { key: 'daysAgo', count: 3 }]
+  ])('synced %i ms later reads as "%o"', (elapsed, elapsedDetail) => {
+    expect(syncViewFor(SYNCED, SYNCED_AT + elapsed)).toEqual({
+      state: 'synced',
+      detail: { kind: 'elapsed', elapsed: elapsedDetail },
+      hasResult: true
+    })
   })
 
   test('failed with a stored key reason reads as key not accepted', () => {
     const failed: SchemaSnapshot = { phase: 'failed', failure: 'unauthorized', at: SYNCED_AT }
     expect(syncViewFor(failed, SYNCED_AT)).toEqual({
       state: 'error',
-      detail: 'Key not accepted',
+      detail: { kind: 'unauthorized' },
       hasResult: false
     })
   })
@@ -172,7 +176,7 @@ describe('syncViewFor', () => {
     }
     expect(syncViewFor(failed, SYNCED_AT)).toEqual({
       state: 'error',
-      detail: 'Is Anytype running?',
+      detail: { kind: 'unreachable' },
       hasResult: true
     })
   })

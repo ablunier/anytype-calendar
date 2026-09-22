@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ApiKeyView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
-import { typesInSpace, WEEKDAY_NAMES } from '@renderer/lib/calendar'
-import type { TimeFormatSnapshot } from '@shared/ipc'
+import { typesInSpace, weekdayNames } from '@renderer/lib/calendar'
+import { syncDetailText } from '@renderer/lib/sync-text'
+import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -15,6 +17,9 @@ export interface ConfigScreenProps {
   /** Read once, when the account has first been read. */
   initial: TypePicks
   apiKey: ApiKeyView
+  /** Null: following the OS language ("System default" in the Select). */
+  language: LanguageSnapshot
+  onLanguage: (language: LanguageSnapshot) => void
   showWeekNumbers: boolean
   onShowWeekNumbers: (shown: boolean) => void
   /** Monday is 0, Sunday 6. */
@@ -45,6 +50,8 @@ function Settings({
   sync,
   initial,
   apiKey,
+  language,
+  onLanguage,
   showWeekNumbers,
   onShowWeekNumbers,
   weekStart,
@@ -57,6 +64,7 @@ function Settings({
   onCopyKey,
   onSignOut
 }: ConfigScreenProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const [saveFailed, setSaveFailed] = useState(false)
 
@@ -86,29 +94,26 @@ function Settings({
         <Wordmark />
         <div className="flex-1" />
         <Button variant="ghost" size="sm" iconLeft="chevron-left" onClick={onBack}>
-          Back to calendar
+          {t('config.backToCalendar')}
         </Button>
       </header>
 
       <main className="min-h-0 flex-1 overflow-auto p-32">
         <div className="mx-auto flex max-w-820 flex-col gap-32">
           <div>
-            <h1 className="mb-4 type-heading text-h3 text-ink-primary">Settings</h1>
-            <p className="type-body text-small text-ink-secondary">
-              One key, read through the Anytype app on this computer. It covers every space on the
-              account.
-            </p>
+            <h1 className="mb-4 type-heading text-h3 text-ink-primary">{t('config.title')}</h1>
+            <p className="type-body text-small text-ink-secondary">{t('config.intro')}</p>
           </div>
 
           <section>
-            <h2 className="mb-10 type-heading text-h4 text-ink-primary">Account</h2>
+            <h2 className="mb-10 type-heading text-h4 text-ink-primary">{t('config.account')}</h2>
             <Card>
               <div className="flex items-center gap-12">
-                <SyncStatus state={sync.state} detail={sync.detail} />
+                <SyncStatus state={sync.state} detail={syncDetailText(t, sync.detail)} />
                 <div className="flex-1" />
                 {read ? (
                   <span className="type-numeral text-tiny text-ink-secondary">
-                    {spaces.length} spaces
+                    {t('common.spacesCount', { count: spaces.length })}
                   </span>
                 ) : null}
                 <Button
@@ -118,7 +123,7 @@ function Settings({
                   loading={syncing}
                   onClick={onReread}
                 >
-                  Re-read account
+                  {t('config.rereadAccount')}
                 </Button>
               </div>
             </Card>
@@ -126,9 +131,9 @@ function Settings({
 
           <section>
             <div className="mb-10 flex items-baseline gap-8">
-              <h2 className="type-heading text-h4 text-ink-primary">Spaces and types</h2>
+              <h2 className="type-heading text-h4 text-ink-primary">{t('config.spacesAndTypes')}</h2>
               <span className="type-caption text-tiny text-ink-tertiary">
-                Which types generate events, and which dates they use
+                {t('config.spacesAndTypesDescription')}
               </span>
             </div>
             {read ? (
@@ -147,8 +152,10 @@ function Settings({
                   <EmptyState
                     compact
                     icon="circle-alert"
-                    title="Read your spaces again"
-                    description={`Your spaces could not be read. ${sync.detail ?? ''}`}
+                    title={t('common.readAgain')}
+                    description={t('common.spacesUnreadable', {
+                      detail: syncDetailText(t, sync.detail) ?? ''
+                    })}
                     action={
                       <Button
                         variant="secondary"
@@ -156,7 +163,7 @@ function Settings({
                         iconLeft="refresh-cw"
                         onClick={onReread}
                       >
-                        Try again
+                        {t('common.tryAgain')}
                       </Button>
                     }
                   />
@@ -164,8 +171,8 @@ function Settings({
                   <EmptyState
                     compact
                     icon="loader-circle"
-                    title="Reading your spaces…"
-                    description="Your types and their dates show here in a moment."
+                    title={t('common.reading')}
+                    description={t('common.readingDescription')}
                   />
                 )}
               </Card>
@@ -173,19 +180,33 @@ function Settings({
           </section>
 
           <section>
-            <h2 className="mb-10 type-heading text-h4 text-ink-primary">Calendar</h2>
+            <h2 className="mb-10 type-heading text-h4 text-ink-primary">{t('config.calendar')}</h2>
             <Card className="flex flex-col gap-16">
               <Select
-                label="First day of the week"
-                options={WEEKDAY_NAMES.map((name, index) => ({ value: String(index), label: name }))}
+                label={t('config.language')}
+                options={[
+                  { value: '', label: t('config.languageSystem') },
+                  { value: 'en', label: 'English' },
+                  { value: 'es', label: 'Español' },
+                  { value: 'gl', label: 'Galego' }
+                ]}
+                value={language ?? ''}
+                onChange={(value) => onLanguage(value === '' ? null : (value as 'en' | 'es' | 'gl'))}
+              />
+              <Select
+                label={t('config.firstDayOfWeek')}
+                options={weekdayNames(i18n.language, 'long').map((name, index) => ({
+                  value: String(index),
+                  label: name
+                }))}
                 value={String(weekStart)}
                 onChange={(value) => onWeekStart(Number(value))}
               />
               <Select
-                label="Time format"
+                label={t('config.timeFormat')}
                 options={[
-                  { value: '24h', label: '24-hour (13:30)' },
-                  { value: '12h', label: '12-hour (1:30 PM)' }
+                  { value: '24h', label: t('config.timeFormat24h') },
+                  { value: '12h', label: t('config.timeFormat12h') }
                 ]}
                 value={timeFormat}
                 onChange={(value) => onTimeFormat(value === '12h' ? '12h' : '24h')}
@@ -193,8 +214,8 @@ function Settings({
               <Checkbox
                 checked={showWeekNumbers}
                 onChange={onShowWeekNumbers}
-                label="Show week numbers"
-                description="ISO weeks, beside each row of the month"
+                label={t('config.showWeekNumbers')}
+                description={t('config.showWeekNumbersDescription')}
               />
             </Card>
           </section>
@@ -225,14 +246,15 @@ function SpacesAndTypes({
   onReread,
   onRetrySave
 }: SpacesAndTypesProps): React.JSX.Element {
+  const { t } = useTranslation()
   if (spaces.length === 0) {
     return (
       <Card>
         <EmptyState
           compact
           icon="layers"
-          title="Create a space in Anytype"
-          description="This account has no spaces yet. Read it again once it has one."
+          title={t('config.createSpace')}
+          description={t('config.createSpaceDescription')}
           action={
             <Button
               variant="secondary"
@@ -241,7 +263,7 @@ function SpacesAndTypes({
               loading={syncing}
               onClick={onReread}
             >
-              Re-read account
+              {t('config.rereadAccount')}
             </Button>
           }
         />
@@ -265,16 +287,14 @@ function SpacesAndTypes({
         <div className="mt-8 flex items-center gap-8">
           <Icon name="circle-alert" size={14} className="text-ink-danger" />
           <span className="type-caption text-tiny text-ink-danger">
-            Your last change could not be saved.
+            {t('config.lastChangeFailed')}
           </span>
           <Button variant="quiet" size="sm" onClick={onRetrySave}>
-            Try again
+            {t('common.tryAgain')}
           </Button>
         </div>
       ) : (
-        <p className="mt-8 type-caption text-tiny text-ink-tertiary">
-          Changes apply to the grid immediately. A type with a to date is drawn as a range.
-        </p>
+        <p className="mt-8 type-caption text-tiny text-ink-tertiary">{t('config.changesApply')}</p>
       )}
     </>
   )
