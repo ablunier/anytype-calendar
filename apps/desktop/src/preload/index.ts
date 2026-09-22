@@ -4,6 +4,7 @@ import {
   IpcChannel,
   type CalendarApi,
   type EventsSnapshot,
+  type LanguageSnapshot,
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
   type SessionSnapshot,
@@ -77,6 +78,17 @@ const api: CalendarApi = {
       }
     },
     save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme)
+  },
+  language: {
+    get: () => ipcRenderer.invoke(IpcChannel.languageGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: LanguageSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.languageChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.languageChanged, forward)
+      }
+    },
+    save: (language) => ipcRenderer.invoke(IpcChannel.languageSave, language)
   },
   weekNumbers: {
     get: () => ipcRenderer.invoke(IpcChannel.weekNumbersGet),

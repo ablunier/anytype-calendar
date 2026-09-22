@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
+import { registerLanguageIpc } from './language/language-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
@@ -58,6 +59,7 @@ app.whenReady().then(async () => {
   registerSchemaIpc(services)
   registerEventsIpc(services)
   registerThemeIpc(services)
+  registerLanguageIpc(services)
   registerWeekNumbersIpc(services)
   registerWeekStartIpc(services)
   registerTimeFormatIpc(services)
@@ -67,6 +69,7 @@ app.whenReady().then(async () => {
     services.restoreAuthSession.execute(),
     services.loadSchemaSelection.execute(),
     services.loadTheme.execute(),
+    services.loadLanguage.execute(),
     services.loadWeekNumbers.execute(),
     services.loadWeekStart.execute(),
     services.loadTimeFormat.execute()

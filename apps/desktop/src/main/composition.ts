@@ -50,6 +50,9 @@ import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 import { eventsSourcesFor } from './events/event-sources'
+import { LoadLanguage } from './language/load-language'
+import { SaveLanguage } from './language/save-language'
+import { LanguageStore } from './language/language-store'
 import { selectionFileAt } from './schema/selection-storage'
 import { LoadTheme } from './theme/load-theme'
 import { SaveTheme } from './theme/save-theme'
@@ -90,6 +93,9 @@ export interface AppServices {
   themeState: ThemeStore
   loadTheme: LoadTheme
   saveTheme: SaveTheme
+  languageState: LanguageStore
+  loadLanguage: LoadLanguage
+  saveLanguage: SaveLanguage
   weekNumbersState: WeekNumbersStore
   loadWeekNumbers: LoadWeekNumbers
   saveWeekNumbers: SaveWeekNumbers
@@ -174,6 +180,10 @@ export function composeServices(): AppServices {
   const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
   const saveTheme = new SaveTheme({ config: appConfig, store: themeState })
 
+  const languageState = new LanguageStore()
+  const loadLanguage = new LoadLanguage({ config: appConfig, store: languageState })
+  const saveLanguage = new SaveLanguage({ config: appConfig, store: languageState })
+
   const weekNumbersState = new WeekNumbersStore()
   const loadWeekNumbers = new LoadWeekNumbers({ config: appConfig, store: weekNumbersState })
   const saveWeekNumbers = new SaveWeekNumbers({ config: appConfig, store: weekNumbersState })
@@ -241,6 +251,9 @@ export function composeServices(): AppServices {
     themeState,
     loadTheme,
     saveTheme,
+    languageState,
+    loadLanguage,
+    saveLanguage,
     weekNumbersState,
     loadWeekNumbers,
     saveWeekNumbers,

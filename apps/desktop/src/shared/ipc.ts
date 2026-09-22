@@ -20,6 +20,9 @@ export type EventsSnapshot = EventsMonthLoad
 /** Null: no theme was ever saved, so the renderer follows the OS setting. */
 export type ThemeSnapshot = 'light' | 'dark' | null
 
+/** Null: no language was ever saved, so the renderer follows the OS language. */
+export type LanguageSnapshot = 'en' | 'es' | 'gl' | null
+
 export type WeekNumbersSnapshot = boolean
 
 /** Monday is 0, Sunday 6. */
@@ -49,6 +52,9 @@ export const IpcChannel = {
   themeGet: 'theme:get',
   themeChanged: 'theme:changed',
   themeSave: 'theme:save',
+  languageGet: 'language:get',
+  languageChanged: 'language:changed',
+  languageSave: 'language:save',
   weekNumbersGet: 'weekNumbers:get',
   weekNumbersChanged: 'weekNumbers:changed',
   weekNumbersSave: 'weekNumbers:save',
@@ -108,6 +114,12 @@ export interface CalendarApi {
     onChange(listener: (state: ThemeSnapshot) => void): () => void
     /** Rejects when the value is not a theme. */
     save(theme: 'light' | 'dark'): Promise<void>
+  }
+  language: {
+    get(): Promise<LanguageSnapshot>
+    onChange(listener: (state: LanguageSnapshot) => void): () => void
+    /** Null resets to following the OS language. Rejects when the value is neither that nor a supported language. */
+    save(language: LanguageSnapshot): Promise<void>
   }
   weekNumbers: {
     get(): Promise<WeekNumbersSnapshot>
