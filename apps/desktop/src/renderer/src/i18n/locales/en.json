@@ -175,7 +175,7 @@
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     }
   },
-  "month": {
+  "calendar": {
     "couldntRead": "Couldn't read {{month}}",
     "nothingDated": "Nothing dated in {{month}}",
     "nothingDatedDescription": "Events of the types you track appear here once one of their dates falls in this month.",

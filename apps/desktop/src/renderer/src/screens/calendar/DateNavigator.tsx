@@ -22,14 +22,14 @@ export function DateNavigator({
   return (
     <div className="flex items-center gap-16 border-b border-line-subtle bg-surface-card px-16 py-10">
       <div className="flex items-center gap-2">
-        <IconButton icon="chevron-left" label={t('month.nav.prevMonth')} onClick={onPrev} />
-        <IconButton icon="chevron-right" label={t('month.nav.nextMonth')} onClick={onNext} />
+        <IconButton icon="chevron-left" label={t('calendar.nav.prevMonth')} onClick={onPrev} />
+        <IconButton icon="chevron-right" label={t('calendar.nav.nextMonth')} onClick={onNext} />
       </div>
 
       <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
 
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
-        {t('month.nav.today')}
+        {t('calendar.nav.today')}
       </Button>
 
       <div className="flex-1" />
@@ -49,9 +49,9 @@ export function DateNavigator({
           ))}
         </ul>
         <span className="shrink-0">
-          <Tooltip label={t('month.nav.readOnlyTooltip')} side="bottom" align="end">
+          <Tooltip label={t('calendar.nav.readOnlyTooltip')} side="bottom" align="end">
             <Badge tone="neutral" icon="eye">
-              {t('month.nav.readOnly')}
+              {t('calendar.nav.readOnly')}
             </Badge>
           </Tooltip>
         </span>

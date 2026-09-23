@@ -100,7 +100,7 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
             <DetailDate
               date={event.date}
               time={!event.allDay ? event.time : undefined}
-              caption={type ? dateLabel(type, type.from) : t('month.eventDetail.fromDateFallback')}
+              caption={type ? dateLabel(type, type.from) : t('calendar.eventDetail.fromDateFallback')}
             />
             {event.until ? (
               <>
@@ -108,20 +108,20 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
                 <DetailDate
                   date={event.until}
                   time={!event.allDay ? (event.end ?? event.time) : undefined}
-                  caption={type?.to ? dateLabel(type, type.to) : t('month.eventDetail.toDateFallback')}
+                  caption={type?.to ? dateLabel(type, type.to) : t('calendar.eventDetail.toDateFallback')}
                 />
               </>
             ) : null}
           </div>
         </div>
 
-        <ReadOnlyToggle checked={event.allDay} label={t('month.eventDetail.allDay')} />
+        <ReadOnlyToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
       </div>
 
       <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">
         <Icon name="info" size={14} className="mt-2 text-ink-tertiary" />
         <span className="type-caption text-tiny text-ink-secondary">
-          {t('month.eventDetail.readOnlyNotice')}
+          {t('calendar.eventDetail.readOnlyNotice')}
         </span>
       </p>
 
@@ -132,7 +132,7 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
         iconRight="external-link"
         onClick={() => window.api.shell.openObject(event.id, event.space)}
       >
-        {t('month.eventDetail.openInAnytype')}
+        {t('calendar.eventDetail.openInAnytype')}
       </Button>
     </div>
   )

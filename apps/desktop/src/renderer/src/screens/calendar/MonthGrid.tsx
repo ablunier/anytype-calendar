@@ -99,7 +99,7 @@ export function MonthGrid({
     <div
       ref={gridRef}
       role="grid"
-      aria-label={t('month.grid.ariaLabel')}
+      aria-label={t('calendar.grid.ariaLabel')}
       className="flex min-h-0 flex-1 flex-col"
     >
       <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">

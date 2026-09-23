@@ -39,7 +39,7 @@ export function EventRow({
           time ? 'text-ink-secondary' : 'text-ink-tertiary'
         ].join(' ')}
       >
-        {time ? formatTime(time, timeFormat, i18n.language) : t('month.eventRow.allDay')}
+        {time ? formatTime(time, timeFormat, i18n.language) : t('calendar.eventRow.allDay')}
       </span>
       <span aria-hidden className={['size-6 shrink-0 rounded-pill', catBg[category]].join(' ')} />
       <span

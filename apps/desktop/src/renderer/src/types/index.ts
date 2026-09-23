@@ -98,7 +98,7 @@ export interface MonthCell {
  * Chosen locally once the session is connected; until then the auth session in main decides
  * what is on screen. `success` is the one-off "connected" card shown right after signing in.
  */
-export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'month'
+export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'calendar'
 
 export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key'
 

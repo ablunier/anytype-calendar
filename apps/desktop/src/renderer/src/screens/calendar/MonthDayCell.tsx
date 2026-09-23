@@ -91,7 +91,7 @@ export function MonthDayCell({
 
       {hidden > 0 ? (
         <span className="pl-2 type-caption text-micro text-ink-tertiary">
-          {t('month.dayCell.hiddenMore', { count: hidden })}
+          {t('calendar.dayCell.hiddenMore', { count: hidden })}
         </span>
       ) : null}
 

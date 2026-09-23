@@ -14,9 +14,9 @@ import { syncDetailText } from '@renderer/lib/sync-text'
 import { DateNavigator } from './DateNavigator'
 import { DetailPanel } from './DetailPanel'
 import { MonthGrid } from './MonthGrid'
-import { MonthTopBar } from './MonthTopBar'
+import { CalendarTopBar } from './CalendarTopBar'
 
-export interface MonthScreenProps {
+export interface CalendarScreenProps {
   month: CalendarMonth
   /** Null until the month has been read. */
   events: CalendarEvent[] | null
@@ -42,7 +42,7 @@ export interface MonthScreenProps {
 }
 
 /** Draws one month. Keyed by it, so another month starts with no day selected and no panel. */
-export function MonthScreen({
+export function CalendarScreen({
   month,
   events,
   status,
@@ -60,7 +60,7 @@ export function MonthScreen({
   onNextMonth,
   onToday,
   onReread
-}: MonthScreenProps): React.JSX.Element {
+}: CalendarScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const typesByKey = useMemo(() => indexBy(types), [types])
   const spacesByKey = useMemo(() => indexBy(spaces), [spaces])
@@ -90,7 +90,7 @@ export function MonthScreen({
 
   return (
     <div className="flex h-full flex-col bg-surface-page">
-      <MonthTopBar
+      <CalendarTopBar
         sync={status}
         theme={theme}
         onToggleTheme={onToggleTheme}
@@ -112,11 +112,11 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="sliders-horizontal"
-                title={t('month.chooseWhatGoesOn')}
-                description={t('month.chooseWhatGoesOnDescription')}
+                title={t('calendar.chooseWhatGoesOn')}
+                description={t('calendar.chooseWhatGoesOnDescription')}
                 action={
                   <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-                    {t('month.openSettings')}
+                    {t('calendar.openSettings')}
                   </Button>
                 }
               />
@@ -125,7 +125,7 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="circle-alert"
-                title={t('month.couldntRead', { month: label })}
+                title={t('calendar.couldntRead', { month: label })}
                 description={syncDetailText(t, status.detail)}
                 action={
                   <Button variant="secondary" size="sm" iconLeft="refresh-cw" onClick={onReread}>
@@ -138,12 +138,12 @@ export function MonthScreen({
             <Centered>
               <EmptyState
                 icon="calendar-days"
-                title={t('month.nothingDated', { month: label })}
-                description={t('month.nothingDatedDescription')}
+                title={t('calendar.nothingDated', { month: label })}
+                description={t('calendar.nothingDatedDescription')}
                 action={
                   todayCell ? undefined : (
                     <Button variant="secondary" size="sm" onClick={onToday}>
-                      {t('month.backToToday')}
+                      {t('calendar.backToToday')}
                     </Button>
                   )
                 }

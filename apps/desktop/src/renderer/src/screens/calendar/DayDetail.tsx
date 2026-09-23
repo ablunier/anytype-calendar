@@ -25,7 +25,7 @@ export function DayDetail({
           {longDate(date, i18n.language)}
         </h2>
         <span className="type-numeral text-tiny text-ink-tertiary">
-          {t('month.dayDetail.eventCount', { count: events.length })}
+          {t('calendar.dayDetail.eventCount', { count: events.length })}
         </span>
       </div>
       <div className="overflow-auto px-8 pb-16">

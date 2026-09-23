@@ -26,12 +26,12 @@ export function DetailPanel({
   return (
     <aside
       aria-label={
-        detail.kind === 'event' ? t('month.detailPanel.eventDetailLabel') : t('month.detailPanel.dayDetailLabel')
+        detail.kind === 'event' ? t('calendar.detailPanel.eventDetailLabel') : t('calendar.detailPanel.dayDetailLabel')
       }
       className="flex w-panel shrink-0 flex-col border-l border-line-subtle bg-surface-card"
     >
       <div className="flex h-topbar shrink-0 items-center justify-end border-b border-line-subtle pr-12 pl-16">
-        <IconButton icon="x" label={t('month.detailPanel.close')} onClick={onClose} />
+        <IconButton icon="x" label={t('calendar.detailPanel.close')} onClick={onClose} />
       </div>
 
       {detail.kind === 'event' ? (

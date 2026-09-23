@@ -4,7 +4,7 @@ import { Wordmark } from '@renderer/components/app/Wordmark'
 import { IconButton, SyncStatus } from '@renderer/components/ui'
 import { syncDetailText } from '@renderer/lib/sync-text'
 
-export interface MonthTopBarProps {
+export interface CalendarTopBarProps {
   sync: SyncView
   theme: 'light' | 'dark'
   onToggleTheme: () => void
@@ -12,26 +12,26 @@ export interface MonthTopBarProps {
   onReread: () => void
 }
 
-export function MonthTopBar({
+export function CalendarTopBar({
   sync,
   theme,
   onToggleTheme,
   onOpenSettings,
   onReread
-}: MonthTopBarProps): React.JSX.Element {
+}: CalendarTopBarProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <header className="flex h-topbar shrink-0 items-center gap-12 border-b border-line-subtle bg-surface-card pr-12 pl-16">
       <Wordmark />
       <div className="flex-1" />
       <SyncStatus state={sync.state} detail={syncDetailText(t, sync.detail)} compact />
-      <IconButton icon="refresh-cw" label={t('month.topbar.rereadAccount')} onClick={onReread} />
+      <IconButton icon="refresh-cw" label={t('calendar.topbar.rereadAccount')} onClick={onReread} />
       <IconButton
         icon={theme === 'dark' ? 'sun' : 'moon'}
-        label={theme === 'dark' ? t('month.topbar.switchToLight') : t('month.topbar.switchToDark')}
+        label={theme === 'dark' ? t('calendar.topbar.switchToLight') : t('calendar.topbar.switchToDark')}
         onClick={onToggleTheme}
       />
-      <IconButton icon="settings" label={t('month.topbar.settings')} onClick={onOpenSettings} />
+      <IconButton icon="settings" label={t('calendar.topbar.settings')} onClick={onOpenSettings} />
     </header>
   )
 }

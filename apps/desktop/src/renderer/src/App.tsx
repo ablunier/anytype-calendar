@@ -27,7 +27,7 @@ import {
 import { apiKeyFor, authViewFor } from './lib/session'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
-import { MonthScreen } from './screens/month/MonthScreen'
+import { CalendarScreen } from './screens/calendar/CalendarScreen'
 import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
 
 /** Often enough for "synced 3 min ago" to stay true, and for today to move soon after midnight. */
@@ -69,7 +69,7 @@ function App(): React.JSX.Element | null {
   const [phase, setPhase] = useState(session?.phase)
   if (session?.phase !== phase) {
     setPhase(session?.phase)
-    if (session?.phase === 'connected') setScreen(phase === undefined ? 'month' : 'success')
+    if (session?.phase === 'connected') setScreen(phase === undefined ? 'calendar' : 'success')
   }
 
   if (!session || !schema || !selection || !events) return null
@@ -100,7 +100,7 @@ function App(): React.JSX.Element | null {
     // A failed save rejects and leaves the user here, picks intact, to try again.
     const save = async (next = EMPTY_SCHEMA_SELECTION): Promise<void> => {
       await window.api.schemaSelection.save(next)
-      setScreen('month')
+      setScreen('calendar')
     }
     return (
       <OnboardingScreen
@@ -111,7 +111,7 @@ function App(): React.JSX.Element | null {
         onRetrySync={() => void window.api.schema.sync()}
         onContinue={(picks) => void save(schemaSelectionFor(schema, picks, selection))}
         // Skipping on first run saves an empty selection; later, it keeps what was saved.
-        onSkip={() => (isOnboarded(selection) ? setScreen('month') : void save())}
+        onSkip={() => (isOnboarded(selection) ? setScreen('calendar') : void save())}
       />
     )
   }
@@ -133,7 +133,7 @@ function App(): React.JSX.Element | null {
         onWeekStart={setWeekStart}
         timeFormat={timeFormat}
         onTimeFormat={setTimeFormat}
-        onBack={() => setScreen('month')}
+        onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
         onSave={(picks) =>
           window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))
@@ -152,7 +152,7 @@ function App(): React.JSX.Element | null {
   const picks = picksFor(selection, types)
   return (
     <TimeFormatContext value={timeFormat}>
-      <MonthScreen
+      <CalendarScreen
         key={`${month.year}-${month.month}`}
         month={month}
         events={eventsFor(events, month)}

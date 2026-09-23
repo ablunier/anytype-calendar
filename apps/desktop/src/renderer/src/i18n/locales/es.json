@@ -175,7 +175,7 @@
       "revokeInstructions": "Para revocarla en todos los espacios de la cuenta, abre la aplicación de Anytype, ve a {{breadcrumb}} y revoca Calendar for Anytype. Luego cierra sesión aquí. Reconectar implica repetir el proceso del código de 4 dígitos."
     }
   },
-  "month": {
+  "calendar": {
     "couldntRead": "No se pudo leer {{month}}",
     "nothingDated": "Nada con fecha en {{month}}",
     "nothingDatedDescription": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en este mes.",
