@@ -4,9 +4,9 @@
 
 A desktop calendar for [Anytype](https://anytype.io). It reads objects from your local
 Anytype account through the local API and lays the ones carrying date properties onto a
-month grid — so a `Task` with a due date, a `Meeting` with a start and end, and a `Note`
-with a creation date all show up in one place, without leaving your data or moving it
-anywhere.
+month, week or day view — so a `Task` with a due date, a `Meeting` with a start and end, and
+a `Note` with a creation date all show up in one place, without leaving your data or moving
+it anywhere.
 
 You pick which spaces and object types to track, and which date property of each type
 anchors it on the grid (a type with both a start and an end property is drawn as a range).
@@ -17,12 +17,13 @@ anchors it on the grid (a type with both a start and an end property is drawn as
 > `schema` is real too — it reads each space's dated types from your Anytype data and feeds
 > the post-sign-in success card, onboarding, and Settings, which save which spaces/types you
 > track and each type's From/To date property. `events` puts those types' objects on the
-> month grid: any month can be browsed, a type with a To date is drawn as one continuous bar
-> across the days it spans, the event detail panel can open the object in Anytype, and the
-> month is read again when you come back to the window. The app remembers your light/dark
-> choice across restarts. The installers are packaged with Electron Forge and published from
-> a GitHub Actions release workflow. Editing, week and day views, and recurrence are not
-> built yet. The backend is organised as one package per bounded context — `auth`, `schema`
+> calendar: any month, week or day can be browsed, a type with a To date is drawn as one
+> continuous bar across the days it spans, timed objects are placed by the hour in the week
+> and day views, the event detail panel can open the object in Anytype, and what is on screen
+> is read again when you come back to the window. The app remembers your light/dark choice
+> and which view you were in across restarts. The installers are packaged with Electron Forge
+> and published from a GitHub Actions release workflow. Editing and recurrence are not built
+> yet. The backend is organised as one package per bounded context — `auth`, `schema`
 > and `events` so far — plus two shared packages, `anytype-client` (the local API HTTP
 > transport) and `kernel` (shared use-case plumbing).
 
@@ -54,11 +55,13 @@ code flow. The key is then stored in the app's user-data directory
 OS keychain through Electron's `safeStorage`. Once connected, the app reads your spaces'
 dated types and walks you through onboarding — which spaces and types to track, and each
 type's From/To date property — or reopens straight past it if you'd already done that on a
-previous run. The calendar then shows the current month's objects of the types you picked:
-a type with a To date is drawn as one continuous bar across the days it spans, and clicking
-into a day opens the event detail panel, which can open the object directly in Anytype.
-Dates without a time are drawn as all-day, and times are shown in your computer's time
-zone. The month view's top bar also has a light/dark theme toggle, remembered across
+previous run. The calendar then shows the objects of the types you picked, in whichever of
+the three views you were last in: a type with a To date is drawn as one continuous bar
+across the days it spans, and clicking into a day opens the event detail panel, which can
+open the object directly in Anytype. The week and day views lay timed objects out by the
+hour, with a band above the grid for dates that carry no time and for ranges crossing
+midnight. Dates without a time are drawn as all-day, and times are shown in your computer's
+time zone. The calendar's top bar also has a light/dark theme toggle, remembered across
 restarts. Signing out deletes the credential file. The local API cannot revoke a key,
 so to revoke one, delete it in the Anytype app under Settings → API Keys.
 
@@ -200,12 +203,11 @@ Not built yet, roughly grouped:
 
 ### Config
 
-- i18n
 - Configurable mapping of which Anytype properties show in the event detail panel
 
 ### Calendar
 
-- Day, week and year views (month is the only one today)
+- Year view
 - Per-space toggle for whether its events show on the calendar
 
 ### General
