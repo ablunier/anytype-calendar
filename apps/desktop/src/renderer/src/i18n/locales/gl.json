@@ -192,9 +192,7 @@
     "nav": {
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes seguinte",
-      "today": "Hoxe",
-      "readOnlyTooltip": "MVP: só vista mensual, sen edición",
-      "readOnly": "Só lectura"
+      "today": "Hoxe"
     },
     "grid": {
       "ariaLabel": "Mes"

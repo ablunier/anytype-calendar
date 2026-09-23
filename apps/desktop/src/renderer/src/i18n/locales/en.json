@@ -192,9 +192,7 @@
     "nav": {
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
-      "today": "Today",
-      "readOnlyTooltip": "MVP: month view only, no editing",
-      "readOnly": "Read-only"
+      "today": "Today"
     },
     "grid": {
       "ariaLabel": "Month"

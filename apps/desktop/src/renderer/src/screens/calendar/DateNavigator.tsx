@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
-import { Badge, Button, IconButton, Tooltip } from '@renderer/components/ui'
+import { Button, IconButton } from '@renderer/components/ui'
 
 export interface DateNavigatorProps {
   title: string
@@ -36,26 +36,17 @@ export function DateNavigator({
 
       {/* The legend is the one part of this row that may be trimmed: without min-w-0 it
           refuses to shrink and pushes the whole app into a horizontal scroll. */}
-      <div className="flex min-w-0 items-center gap-16">
-        <ul className="flex min-w-0 list-none items-center gap-12 overflow-hidden p-0">
-          {legendSpaces.map((space) => (
-            <li
-              key={space.key}
-              className="flex shrink-0 items-center gap-6 type-caption text-tiny text-ink-secondary"
-            >
-              <SpaceMonogram space={space} />
-              {space.name}
-            </li>
-          ))}
-        </ul>
-        <span className="shrink-0">
-          <Tooltip label={t('calendar.nav.readOnlyTooltip')} side="bottom" align="end">
-            <Badge tone="neutral" icon="eye">
-              {t('calendar.nav.readOnly')}
-            </Badge>
-          </Tooltip>
-        </span>
-      </div>
+      <ul className="flex min-w-0 list-none items-center gap-12 overflow-hidden p-0">
+        {legendSpaces.map((space) => (
+          <li
+            key={space.key}
+            className="flex shrink-0 items-center gap-6 type-caption text-tiny text-ink-secondary"
+          >
+            <SpaceMonogram space={space} />
+            {space.name}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

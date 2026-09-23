@@ -192,9 +192,7 @@
     "nav": {
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
-      "today": "Hoy",
-      "readOnlyTooltip": "MVP: solo vista mensual, sin edición",
-      "readOnly": "Solo lectura"
+      "today": "Hoy"
     },
     "grid": {
       "ariaLabel": "Mes"
