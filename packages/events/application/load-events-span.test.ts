@@ -2,14 +2,14 @@ import { describe, expect, test, vi } from 'vitest'
 import type {
   EventsGateway,
   EventsGatewayResult,
-  EventsMonthLoad,
+  EventsSpanLoad,
   EventsObjectRef,
   EventsSource,
   EventsTimeZone
 } from '../domain'
-import { EventsMonthStore } from './events-month-store'
-import { LoadEventsMonth } from './load-events-month'
-import { ResetEventsMonth } from './reset-events-month'
+import { EventsSpanStore } from './events-span-store'
+import { LoadEventsSpan } from './load-events-span'
+import { ResetEventsSpan } from './reset-events-span'
 
 const API_KEY = 'ak_secret'
 const NOW = Date.UTC(2026, 8, 14, 9, 30)
@@ -23,9 +23,9 @@ const UTC: EventsTimeZone = {
   }
 }
 
-const SEPTEMBER = { year: 2026, month: 8 }
-const OCTOBER = { year: 2026, month: 9 }
-const DECEMBER = { year: 2026, month: 11 }
+const SEPTEMBER = { kind: 'month', year: 2026, month: 8 } as const
+const OCTOBER = { kind: 'month', year: 2026, month: 9 } as const
+const DECEMBER = { kind: 'month', year: 2026, month: 11 } as const
 
 const TASKS: EventsSource = {
   spaceId: 'sp_1',
@@ -68,8 +68,8 @@ function setup({
   const gateway = {
     listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[source.typeKey] ?? []))
   }
-  const store = new EventsMonthStore()
-  const loadEventsMonth = new LoadEventsMonth({
+  const store = new EventsSpanStore()
+  const loadEventsSpan = new LoadEventsSpan({
     gateway,
     apiKeys: { current: async () => apiKey },
     sources: { current: () => sources },
@@ -77,30 +77,32 @@ function setup({
     store,
     now: () => NOW
   })
-  return { gateway, store, loadEventsMonth, reset: new ResetEventsMonth(store) }
+  return { gateway, store, loadEventsSpan, reset: new ResetEventsSpan(store) }
 }
 
 test("asks each source for the month's window and keeps the objects that overlap it, in order", async () => {
-  const { gateway, store, loadEventsMonth } = setup({
+  const { gateway, store, loadEventsSpan } = setup({
     refs: {
-      task: [ref('late task', Date.UTC(2026, 8, 20, 15)), ref('august task', Date.UTC(2026, 7, 31))],
+      task: [ref('late task', Date.UTC(2026, 8, 20, 15)), ref('august task', Date.UTC(2026, 7, 10))],
       project: [
         ref('spans in', Date.UTC(2026, 7, 28), Date.UTC(2026, 8, 2)),
-        ref('ended before', Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 31)),
+        ref('ended before', Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 10)),
         ref('runs out', Date.UTC(2026, 8, 29), Date.UTC(2026, 9, 3))
       ]
     }
   })
 
-  await loadEventsMonth.execute(SEPTEMBER)
+  await loadEventsSpan.execute(SEPTEMBER)
 
-  const window = { start: Date.UTC(2026, 8, 1), end: Date.UTC(2026, 9, 1) - 1 }
+  // A month is read with a week of slack either side, for the grid rows it shares with the
+  // adjacent months.
+  const window = { start: Date.UTC(2026, 7, 25), end: Date.UTC(2026, 9, 8) - 1 }
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, window)
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, PROJECTS, window)
   expect(store.get()).toEqual({
     phase: 'loaded',
     last: {
-      month: SEPTEMBER,
+      span: SEPTEMBER,
       loadedAt: NOW,
       objects: [
         {
@@ -135,65 +137,99 @@ test("asks each source for the month's window and keeps the objects that overlap
   })
 })
 
-test('asks for December up to the first instant of the next year', async () => {
-  const { gateway, loadEventsMonth } = setup({ sources: [TASKS] })
-  await loadEventsMonth.execute(DECEMBER)
+test('asks for December across the turn of the year', async () => {
+  const { gateway, loadEventsSpan } = setup({ sources: [TASKS] })
+  await loadEventsSpan.execute(DECEMBER)
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
-    start: Date.UTC(2026, 11, 1),
-    end: Date.UTC(2027, 0, 1) - 1
+    start: Date.UTC(2026, 10, 24),
+    end: Date.UTC(2027, 0, 8) - 1
+  })
+})
+
+test('asks for a week exactly, so one straddling a month is read whole', async () => {
+  const { gateway, loadEventsSpan } = setup({ sources: [TASKS] })
+  await loadEventsSpan.execute({ kind: 'week', start: { year: 2026, month: 8, day: 28 } })
+  expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
+    start: Date.UTC(2026, 8, 28),
+    end: Date.UTC(2026, 9, 5) - 1
+  })
+})
+
+test('asks for a day exactly', async () => {
+  const { gateway, loadEventsSpan } = setup({ sources: [TASKS] })
+  await loadEventsSpan.execute({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })
+  expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
+    start: Date.UTC(2026, 8, 14),
+    end: Date.UTC(2026, 8, 15) - 1
   })
 })
 
 test('is loaded and empty with nothing selected, asking Anytype nothing', async () => {
-  const { gateway, store, loadEventsMonth } = setup({ sources: [] })
-  await loadEventsMonth.execute(SEPTEMBER)
-  expect(store.get()).toEqual({ phase: 'loaded', last: { month: SEPTEMBER, objects: [], loadedAt: NOW } })
+  const { gateway, store, loadEventsSpan } = setup({ sources: [] })
+  await loadEventsSpan.execute(SEPTEMBER)
+  expect(store.get()).toEqual({ phase: 'loaded', last: { span: SEPTEMBER, objects: [], loadedAt: NOW } })
   expect(gateway.listObjects).not.toHaveBeenCalled()
 })
 
 test('is loading while Anytype is being read', async () => {
-  const { gateway, store, loadEventsMonth } = setup({ sources: [TASKS] })
+  const { gateway, store, loadEventsSpan } = setup({ sources: [TASKS] })
   const answer = deferred<EventsGatewayResult<EventsObjectRef[]>>()
   gateway.listObjects.mockReturnValueOnce(answer.promise)
 
-  const running = loadEventsMonth.execute(SEPTEMBER)
+  const running = loadEventsSpan.execute(SEPTEMBER)
   await Promise.resolve()
-  expect(store.get()).toEqual({ phase: 'loading', month: SEPTEMBER })
+  expect(store.get()).toEqual({ phase: 'loading', span: SEPTEMBER })
 
   answer.resolve(ok([]))
   await running
   expect(store.get()).toMatchObject({ phase: 'loaded' })
 })
 
-describe('without a month', () => {
+describe('without a span', () => {
   test('loads the current month before any', async () => {
-    const { store, loadEventsMonth } = setup()
-    await loadEventsMonth.execute()
-    expect(store.get()).toMatchObject({ phase: 'loaded', last: { month: SEPTEMBER } })
+    const { store, loadEventsSpan } = setup()
+    await loadEventsSpan.execute()
+    expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: SEPTEMBER } })
   })
 
-  test('reads the month on screen again', async () => {
-    const { gateway, store, loadEventsMonth } = setup({ sources: [TASKS] })
-    await loadEventsMonth.execute(DECEMBER)
-    await loadEventsMonth.execute()
+  test('opens on the span the composition root supplies, e.g. the saved view', async () => {
+    const week = { kind: 'week', start: { year: 2026, month: 8, day: 14 } } as const
+    const store = new EventsSpanStore()
+    const loadEventsSpan = new LoadEventsSpan({
+      gateway: setup().gateway,
+      apiKeys: { current: async () => API_KEY },
+      sources: { current: () => [TASKS] },
+      zone: UTC,
+      store,
+      defaultSpan: () => week,
+      now: () => NOW
+    })
+    await loadEventsSpan.execute()
+    expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: week } })
+  })
+
+  test('reads the span on screen again', async () => {
+    const { gateway, store, loadEventsSpan } = setup({ sources: [TASKS] })
+    await loadEventsSpan.execute(DECEMBER)
+    await loadEventsSpan.execute()
     expect(gateway.listObjects).toHaveBeenCalledTimes(2)
-    expect(store.get()).toMatchObject({ phase: 'loaded', last: { month: DECEMBER } })
+    expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: DECEMBER } })
   })
 
-  test('tries a failed month again', async () => {
-    const { gateway, store, loadEventsMonth } = setup({ sources: [TASKS] })
+  test('tries a failed span again', async () => {
+    const { gateway, store, loadEventsSpan } = setup({ sources: [TASKS] })
     gateway.listObjects.mockRejectedValueOnce(new TypeError('fetch failed'))
-    await loadEventsMonth.execute(OCTOBER)
-    await loadEventsMonth.execute()
-    expect(store.get()).toMatchObject({ phase: 'loaded', last: { month: OCTOBER } })
+    await loadEventsSpan.execute(OCTOBER)
+    await loadEventsSpan.execute()
+    expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: OCTOBER } })
   })
 })
 
 test('reads the selection as it is when the load starts', async () => {
   let sources = [TASKS]
   const { gateway } = setup()
-  const store = new EventsMonthStore()
-  const loadEventsMonth = new LoadEventsMonth({
+  const store = new EventsSpanStore()
+  const loadEventsSpan = new LoadEventsSpan({
     gateway,
     apiKeys: { current: async () => API_KEY },
     sources: { current: () => sources },
@@ -201,87 +237,87 @@ test('reads the selection as it is when the load starts', async () => {
     store,
     now: () => NOW
   })
-  await loadEventsMonth.execute(SEPTEMBER)
+  await loadEventsSpan.execute(SEPTEMBER)
   sources = [PROJECTS]
-  await loadEventsMonth.execute()
+  await loadEventsSpan.execute()
   expect(gateway.listObjects.mock.calls.map(([, source]) => source.typeKey)).toEqual(['task', 'project'])
 })
 
 test('fails as unauthorized without a stored key, asking Anytype nothing', async () => {
-  const { gateway, store, loadEventsMonth } = setup({ apiKey: null })
-  await loadEventsMonth.execute(SEPTEMBER)
-  expect(store.get()).toEqual({ phase: 'failed', month: SEPTEMBER, failure: 'unauthorized', at: NOW })
+  const { gateway, store, loadEventsSpan } = setup({ apiKey: null })
+  await loadEventsSpan.execute(SEPTEMBER)
+  expect(store.get()).toEqual({ phase: 'failed', span: SEPTEMBER, failure: 'unauthorized', at: NOW })
   expect(gateway.listObjects).not.toHaveBeenCalled()
 })
 
 test('fails as unauthorized when a source is refused', async () => {
-  const { gateway, store, loadEventsMonth } = setup()
+  const { gateway, store, loadEventsSpan } = setup()
   gateway.listObjects.mockResolvedValueOnce(unauthorized)
-  await loadEventsMonth.execute(SEPTEMBER)
+  await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unauthorized' })
 })
 
 test('fails as unreachable when a request rejects', async () => {
-  const { gateway, store, loadEventsMonth } = setup()
+  const { gateway, store, loadEventsSpan } = setup()
   gateway.listObjects.mockRejectedValueOnce(new TypeError('fetch failed'))
-  await loadEventsMonth.execute(SEPTEMBER)
-  expect(store.get()).toEqual({ phase: 'failed', month: SEPTEMBER, failure: 'unreachable', at: NOW })
+  await loadEventsSpan.execute(SEPTEMBER)
+  expect(store.get()).toEqual({ phase: 'failed', span: SEPTEMBER, failure: 'unreachable', at: NOW })
 })
 
 test('keeps the last result through a failed reload', async () => {
-  const { gateway, store, loadEventsMonth } = setup({
+  const { gateway, store, loadEventsSpan } = setup({
     sources: [TASKS],
     refs: { task: [ref('task', Date.UTC(2026, 8, 3, 10))] }
   })
-  await loadEventsMonth.execute(SEPTEMBER)
-  const { last } = store.get() as Extract<EventsMonthLoad, { phase: 'loaded' }>
+  await loadEventsSpan.execute(SEPTEMBER)
+  const { last } = store.get() as Extract<EventsSpanLoad, { phase: 'loaded' }>
 
   gateway.listObjects.mockRejectedValueOnce(new TypeError('fetch failed'))
-  await loadEventsMonth.execute()
+  await loadEventsSpan.execute()
 
-  expect(store.get()).toEqual({ phase: 'failed', month: SEPTEMBER, failure: 'unreachable', at: NOW, last })
+  expect(store.get()).toEqual({ phase: 'failed', span: SEPTEMBER, failure: 'unreachable', at: NOW, last })
 })
 
 describe('racing', () => {
   test('drops the result for a month the user already left', async () => {
-    const { gateway, store, loadEventsMonth } = setup({
+    const { gateway, store, loadEventsSpan } = setup({
       sources: [TASKS],
       refs: { task: [ref('october task', Date.UTC(2026, 9, 5, 12))] }
     })
     const september = deferred<EventsGatewayResult<EventsObjectRef[]>>()
     gateway.listObjects.mockReturnValueOnce(september.promise)
 
-    const leaving = loadEventsMonth.execute(SEPTEMBER)
-    await loadEventsMonth.execute(OCTOBER)
+    const leaving = loadEventsSpan.execute(SEPTEMBER)
+    await loadEventsSpan.execute(OCTOBER)
     september.resolve(ok([ref('september task', Date.UTC(2026, 8, 5, 12))]))
     await leaving
 
     expect(store.get()).toMatchObject({
       phase: 'loaded',
-      last: { month: OCTOBER, objects: [{ id: 'october task' }] }
+      last: { span: OCTOBER, objects: [{ id: 'october task' }] }
     })
   })
 
   test('drops a failure for a month the user already left', async () => {
-    const { gateway, store, loadEventsMonth } = setup({ sources: [TASKS] })
+    const { gateway, store, loadEventsSpan } = setup({ sources: [TASKS] })
     const september = deferred<EventsGatewayResult<EventsObjectRef[]>>()
     gateway.listObjects.mockReturnValueOnce(september.promise)
 
-    const leaving = loadEventsMonth.execute(SEPTEMBER)
-    await loadEventsMonth.execute(OCTOBER)
+    const leaving = loadEventsSpan.execute(SEPTEMBER)
+    await loadEventsSpan.execute(OCTOBER)
     september.resolve(unauthorized)
     await leaving
 
-    expect(store.get()).toMatchObject({ phase: 'loaded', last: { month: OCTOBER } })
+    expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: OCTOBER } })
   })
 
   test('drops the result of a load a reload of the same month replaced', async () => {
-    const { gateway, store, loadEventsMonth } = setup({ sources: [TASKS] })
+    const { gateway, store, loadEventsSpan } = setup({ sources: [TASKS] })
     const first = deferred<EventsGatewayResult<EventsObjectRef[]>>()
     gateway.listObjects.mockReturnValueOnce(first.promise)
 
-    const stale = loadEventsMonth.execute(SEPTEMBER)
-    await loadEventsMonth.execute(SEPTEMBER)
+    const stale = loadEventsSpan.execute(SEPTEMBER)
+    await loadEventsSpan.execute(SEPTEMBER)
     first.resolve(ok([ref('from before the selection changed', Date.UTC(2026, 8, 2, 8))]))
     await stale
 
@@ -289,11 +325,11 @@ describe('racing', () => {
   })
 
   test('drops a result that lands after a reset', async () => {
-    const { gateway, store, loadEventsMonth, reset } = setup({ sources: [TASKS] })
+    const { gateway, store, loadEventsSpan, reset } = setup({ sources: [TASKS] })
     const answer = deferred<EventsGatewayResult<EventsObjectRef[]>>()
     gateway.listObjects.mockReturnValueOnce(answer.promise)
 
-    const running = loadEventsMonth.execute(SEPTEMBER)
+    const running = loadEventsSpan.execute(SEPTEMBER)
     reset.execute()
     answer.resolve(ok([ref('task', Date.UTC(2026, 8, 2, 8))]))
     await running
@@ -302,10 +338,10 @@ describe('racing', () => {
   })
 })
 
-describe('ResetEventsMonth', () => {
+describe('ResetEventsSpan', () => {
   test('forgets the loaded month', async () => {
-    const { store, loadEventsMonth, reset } = setup()
-    await loadEventsMonth.execute(SEPTEMBER)
+    const { store, loadEventsSpan, reset } = setup()
+    await loadEventsSpan.execute(SEPTEMBER)
     reset.execute()
     expect(store.get()).toEqual({ phase: 'idle' })
   })
@@ -319,28 +355,28 @@ describe('ResetEventsMonth', () => {
   })
 
   test('a reload after a reset starts from the current month again', async () => {
-    const { store, loadEventsMonth, reset } = setup()
-    await loadEventsMonth.execute(DECEMBER)
+    const { store, loadEventsSpan, reset } = setup()
+    await loadEventsSpan.execute(DECEMBER)
     reset.execute()
-    await loadEventsMonth.execute()
-    expect(store.get()).toMatchObject({ last: { month: SEPTEMBER } })
+    await loadEventsSpan.execute()
+    expect(store.get()).toMatchObject({ last: { span: SEPTEMBER } })
   })
 })
 
 test('an object of a timed source is not all-day, whatever the instant', async () => {
-  const { store, loadEventsMonth } = setup({
+  const { store, loadEventsSpan } = setup({
     sources: [TASKS],
     refs: { task: [ref('standup', Date.UTC(2026, 8, 3))] }
   })
-  await loadEventsMonth.execute(SEPTEMBER)
+  await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: false }] } })
 })
 
 test('an object of an all-day source is all-day, whatever the instant', async () => {
-  const { store, loadEventsMonth } = setup({
+  const { store, loadEventsSpan } = setup({
     sources: [PROJECTS],
     refs: { project: [ref('launch', Date.UTC(2026, 8, 3) + 9 * HOUR_MS)] }
   })
-  await loadEventsMonth.execute(SEPTEMBER)
+  await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: true }] } })
 })

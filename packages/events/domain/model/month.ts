@@ -33,6 +33,14 @@ export function toEventsMonth(value: unknown): EventsMonth | null {
   return { year, month }
 }
 
+/** Null unless `value` is a month as `toEventsMonth` reads it, with a day from 1 to 31. */
+export function toEventsDay(value: unknown): EventsDay | null {
+  const month = toEventsMonth(value)
+  if (!month) return null
+  const { day } = value as Record<string, unknown>
+  return isIntegerIn(day, 1, 31) ? { ...month, day } : null
+}
+
 function isIntegerIn(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max
 }

@@ -4,7 +4,14 @@
  * Recurrence is deliberately absent; overlap is resolved into lanes by `month-layout.ts`.
  */
 
-import type { CalendarEvent, DateMapping, MonthCell, ObjectType, Space } from '@renderer/types'
+import type {
+  CalendarEvent,
+  DateMapping,
+  DayColumn,
+  MonthCell,
+  ObjectType,
+  Space
+} from '@renderer/types'
 
 const FIRST_WEEKEND_INDEX = 5
 
@@ -110,6 +117,24 @@ export function buildMonthGrid(year: number, month: number, weekStart = 0): Mont
   })
 }
 
+/** `date` is `YYYY-MM-DD`. Counted in calendar days, so a change of clocks never shifts it. */
+export function addDays(date: string, delta: number): string {
+  const [year, month = 1, day = 1] = date.split('-').map(Number)
+  const moved = new Date(year, month - 1, day + delta)
+  moved.setFullYear(year, month - 1, day + delta)
+  return isoDate(moved.getFullYear(), moved.getMonth(), moved.getDate())
+}
+
+/** The seven days of the week holding `date`, from the user's own first day of the week. */
+export function buildWeek(date: string, weekStart = 0): DayColumn[] {
+  const [year, month = 1, day = 1] = date.split('-').map(Number)
+  // getDay() is Sunday 0; weekStart is Monday 0.
+  const back = (new Date(year, month - 1, day).getDay() + 6 - weekStart) % 7
+  const first = addDays(date, -back)
+  // Every day of a week view is its own — nothing is borrowed from a neighbouring month.
+  return Array.from({ length: 7 }, (_, index) => ({ date: addDays(first, index), outside: false }))
+}
+
 /**
  * The ISO 8601 week (Monday first, week 1 holds the year's first Thursday) of a `YYYY-MM-DD`
  * date. Worked out in UTC so a daylight-saving change never moves the day.
@@ -159,6 +184,52 @@ export function monthLabel(year: number, month: number, locale: string): string 
   if (usesGalicianFallback(locale)) return `${GALICIAN_CALENDAR.months[month]} de ${year}`
   const format = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
   return format.format(new Date(year, month, 1))
+}
+
+/** `date` is `YYYY-MM-DD`. The weekday spelled out, e.g. `Wednesday, 23 September 2026`. */
+export function dayLabel(date: string, locale: string): string {
+  const [year, month = 1, day = 1] = date.split('-').map(Number)
+  if (usesGalicianFallback(locale)) {
+    const weekday = GALICIAN_CALENDAR.weekdaysLong[(new Date(year, month - 1, day).getDay() + 6) % 7]
+    return `${weekday}, ${day} de ${GALICIAN_CALENDAR.months[month - 1]} de ${year}`
+  }
+  const format = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+  return format.format(new Date(year, month - 1, day))
+}
+
+/**
+ * The range a week covers, `YYYY-MM-DD` both ends. `formatRange` says only what changes
+ * between the two dates — the month once when the week sits inside one, twice when it
+ * straddles two, the year twice only across New Year — in the locale's own order.
+ */
+export function weekLabel(start: string, end: string, locale: string): string {
+  const [startYear, startMonth = 1, startDay = 1] = start.split('-').map(Number)
+  const [endYear, endMonth = 1, endDay = 1] = end.split('-').map(Number)
+  const from = new Date(startYear, startMonth - 1, startDay)
+  const to = new Date(endYear, endMonth - 1, endDay)
+
+  if (usesGalicianFallback(locale)) {
+    const month = (index: number): string => GALICIAN_CALENDAR.monthsShort[index - 1] ?? ''
+    const head =
+      startYear !== endYear
+        ? `${startDay} de ${month(startMonth)} de ${startYear}`
+        : startMonth === endMonth
+          ? `${startDay}`
+          : `${startDay} de ${month(startMonth)}`
+    return `${head}–${endDay} de ${month(endMonth)} de ${endYear}`
+  }
+
+  const format = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+  return format.formatRange(from, to)
 }
 
 export function indexBy<T extends { key: string }>(items: T[]): Map<string, T> {

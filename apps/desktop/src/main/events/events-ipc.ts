@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { toEventsMonth } from '@anytype-calendar/events/domain'
+import { toEventsSpan } from '@anytype-calendar/events/domain'
 import { IpcChannel } from '@shared/ipc'
 import type { AppServices } from '../composition'
 import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
@@ -8,17 +8,17 @@ export function registerEventsIpc({
   authSession,
   schemaSync,
   eventsState,
-  loadEventsMonth
+  loadEventsSpan
 }: AppServices): void {
   const connected = (): boolean => authSession.get().phase === 'connected'
 
   ipcMain.handle(IpcChannel.eventsGet, () => eventsState.get())
-  ipcMain.handle(IpcChannel.eventsShowMonth, (_event, value: unknown) => {
+  ipcMain.handle(IpcChannel.eventsShowSpan, (_event, value: unknown) => {
     // Renderer input is untrusted, and this one becomes search filters.
-    const month = toEventsMonth(value)
-    if (!month) throw new TypeError('not a month')
-    // Signed out, the month stays idle: a load would only fail for want of a key.
-    return connected() ? loadEventsMonth.execute(month) : undefined
+    const span = toEventsSpan(value)
+    if (!span) throw new TypeError('not a span')
+    // Signed out, the span stays idle: a load would only fail for want of a key.
+    return connected() ? loadEventsSpan.execute(span) : undefined
   })
 
   eventsState.subscribe((state) => {
@@ -32,7 +32,7 @@ export function registerEventsIpc({
   const refresh = throttled(
     () => {
       void schemaSync.execute()
-      void loadEventsMonth.execute()
+      void loadEventsSpan.execute()
     },
     FOCUS_REFRESH_INTERVAL_MS,
     Date.now,

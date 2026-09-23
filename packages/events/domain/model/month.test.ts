@@ -1,17 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import type { EventsTimeZone } from '../gateways/time-zone'
-import { sameEventsMonth, shiftEventsMonth, toEventsMonth } from './month'
-import { eventsMonthWindow } from './window'
-
-const UTC: EventsTimeZone = {
-  startOfDay: ({ year, month, day }) => Date.UTC(year, month, day),
-  dayOf: (instant) => {
-    const date = new Date(instant)
-    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
-}
-
-const HOUR_MS = 3_600_000
+import { sameEventsMonth, shiftEventsMonth, toEventsDay, toEventsMonth } from './month'
 
 describe('shiftEventsMonth', () => {
   test('moves within a year', () => {
@@ -42,37 +30,6 @@ describe('sameEventsMonth', () => {
   })
 })
 
-describe('eventsMonthWindow', () => {
-  test('runs from the first instant of the month to the last before the next', () => {
-    expect(eventsMonthWindow({ year: 2026, month: 1 }, UTC)).toEqual({
-      start: Date.UTC(2026, 1, 1),
-      end: Date.UTC(2026, 2, 1) - 1
-    })
-  })
-
-  test('ends December at the start of the next year', () => {
-    expect(eventsMonthWindow({ year: 2026, month: 11 }, UTC)).toEqual({
-      start: Date.UTC(2026, 11, 1),
-      end: Date.UTC(2027, 0, 1) - 1
-    })
-  })
-
-  test("follows the zone's days, e.g. a month whose clocks change", () => {
-    // A zone two hours ahead of UTC until 25 October, one hour ahead from then.
-    const zone: EventsTimeZone = {
-      startOfDay: ({ year, month, day }) =>
-        Date.UTC(year, month, day) - (Date.UTC(year, month, day) < Date.UTC(2026, 9, 25) ? 2 : 1) * HOUR_MS,
-      dayOf: () => {
-        throw new Error('unused')
-      }
-    }
-    expect(eventsMonthWindow({ year: 2026, month: 9 }, zone)).toEqual({
-      start: Date.UTC(2026, 9, 1) - 2 * HOUR_MS,
-      end: Date.UTC(2026, 10, 1) - HOUR_MS - 1
-    })
-  })
-})
-
 describe('toEventsMonth', () => {
   test('accepts a month', () => {
     expect(toEventsMonth({ year: 2026, month: 0 })).toEqual({ year: 2026, month: 0 })
@@ -96,5 +53,22 @@ describe('toEventsMonth', () => {
     ['an infinite year', { year: Infinity, month: 0 }]
   ])('rejects %s', (_, value) => {
     expect(toEventsMonth(value)).toBeNull()
+  })
+})
+
+describe('toEventsDay', () => {
+  test('accepts a day', () => {
+    expect(toEventsDay({ year: 2026, month: 8, day: 1 })).toEqual({ year: 2026, month: 8, day: 1 })
+    expect(toEventsDay({ year: 2026, month: 8, day: 31 })).toEqual({ year: 2026, month: 8, day: 31 })
+  })
+
+  test.each([
+    ['no day', { year: 2026, month: 8 }],
+    ['day 0', { year: 2026, month: 8, day: 0 }],
+    ['day 32', { year: 2026, month: 8, day: 32 }],
+    ['a fractional day', { year: 2026, month: 8, day: 3.5 }],
+    ['a month it would reject on its own', { year: 2026, month: 12, day: 3 }]
+  ])('rejects %s', (_, value) => {
+    expect(toEventsDay(value)).toBeNull()
   })
 })

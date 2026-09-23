@@ -1,5 +1,5 @@
 import type { EventsDatedObject } from './dated-object'
-import type { EventsMonth } from './month'
+import type { EventsSpan } from './span'
 
 export type EventsLoadFailure =
   /** Anytype is not running, did not answer, or answered with something unusable. */
@@ -7,8 +7,8 @@ export type EventsLoadFailure =
   /** No key is stored, or Anytype refused it — usually deleted in Anytype's settings. */
   | 'unauthorized'
 
-export interface EventsMonthResult {
-  month: EventsMonth
+export interface EventsSpanResult {
+  span: EventsSpan
   /** In the order of compareEventsDatedObjects. */
   objects: EventsDatedObject[]
   /** Epoch milliseconds. */
@@ -16,20 +16,20 @@ export interface EventsMonthResult {
 }
 
 /**
- * `last` is the most recent successful result, whichever month it was for. It survives a
- * new load and a failed one, so a month being read again keeps what was on screen.
+ * `last` is the most recent successful result, whichever span it was for. It survives a
+ * new load and a failed one, so a span being read again keeps what was on screen.
  */
-export type EventsMonthLoad =
+export type EventsSpanLoad =
   | { phase: 'idle' }
-  | { phase: 'loading'; month: EventsMonth; last?: EventsMonthResult }
-  | { phase: 'loaded'; last: EventsMonthResult }
+  | { phase: 'loading'; span: EventsSpan; last?: EventsSpanResult }
+  | { phase: 'loaded'; last: EventsSpanResult }
   /** `at` is epoch milliseconds. */
-  | { phase: 'failed'; month: EventsMonth; failure: EventsLoadFailure; at: number; last?: EventsMonthResult }
+  | { phase: 'failed'; span: EventsSpan; failure: EventsLoadFailure; at: number; last?: EventsSpanResult }
 
-export type EventsMonthLoadPhase = EventsMonthLoad['phase']
+export type EventsSpanLoadPhase = EventsSpanLoad['phase']
 
-export type EventsMonthLoadEvent =
-  | { type: 'load-started'; month: EventsMonth }
+export type EventsSpanLoadEvent =
+  | { type: 'load-started'; span: EventsSpan }
   | { type: 'load-succeeded'; objects: EventsDatedObject[]; at: number }
   | { type: 'load-failed'; failure: EventsLoadFailure; at: number }
   | { type: 'reset' }
@@ -38,25 +38,25 @@ export type EventsMonthLoadEvent =
  * An event that does not apply to the current phase returns the state unchanged — the same
  * object, so callers can tell nothing happened. A load started while another runs is not
  * absorbed, unlike a schema sync: it always yields a new state, since the newer one may be
- * for another month or a changed selection, and the older one's result must lose.
+ * for another span or a changed selection, and the older one's result must lose.
  */
-export function nextEventsMonthLoad(
-  state: EventsMonthLoad,
-  event: EventsMonthLoadEvent
-): EventsMonthLoad {
+export function nextEventsSpanLoad(
+  state: EventsSpanLoad,
+  event: EventsSpanLoadEvent
+): EventsSpanLoad {
   switch (event.type) {
     case 'load-started':
-      return withLast({ phase: 'loading', month: event.month }, lastResult(state))
+      return withLast({ phase: 'loading', span: event.span }, lastResult(state))
 
     case 'load-succeeded':
       return state.phase === 'loading'
-        ? { phase: 'loaded', last: { month: state.month, objects: event.objects, loadedAt: event.at } }
+        ? { phase: 'loaded', last: { span: state.span, objects: event.objects, loadedAt: event.at } }
         : state
 
     case 'load-failed':
       return state.phase === 'loading'
         ? withLast(
-            { phase: 'failed', month: state.month, failure: event.failure, at: event.at },
+            { phase: 'failed', span: state.span, failure: event.failure, at: event.at },
             state.last
           )
         : state
@@ -66,24 +66,24 @@ export function nextEventsMonthLoad(
   }
 }
 
-/** The month being loaded, last loaded, or that failed; null before any load. */
-export function shownEventsMonth(state: EventsMonthLoad): EventsMonth | null {
+/** The span being loaded, last loaded, or that failed; null before any load. */
+export function shownEventsSpan(state: EventsSpanLoad): EventsSpan | null {
   switch (state.phase) {
     case 'idle':
       return null
     case 'loaded':
-      return state.last.month
+      return state.last.span
     case 'loading':
     case 'failed':
-      return state.month
+      return state.span
   }
 }
 
-function lastResult(state: EventsMonthLoad): EventsMonthResult | undefined {
+function lastResult(state: EventsSpanLoad): EventsSpanResult | undefined {
   return state.phase === 'idle' ? undefined : state.last
 }
 
 /** `exactOptionalPropertyTypes` forbids `last: undefined`, so an absent result is left off. */
-function withLast<T extends EventsMonthLoad>(state: T, last: EventsMonthResult | undefined): T {
+function withLast<T extends EventsSpanLoad>(state: T, last: EventsSpanResult | undefined): T {
   return last ? { ...state, last } : state
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { shiftEventsMonth } from '@anytype-calendar/events/domain'
+import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import type { AuthView, CalendarMonth, ConnectedScreen } from './types'
 import { useEvents } from './hooks/useEvents'
@@ -14,7 +14,15 @@ import { useTimeFormat } from './hooks/useTimeFormat'
 import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { useWeekStart } from './hooks/useWeekStart'
 import { withDates } from './lib/calendar'
-import { eventsFor, localDate, monthOf, monthStatusFor, shownMonthFor } from './lib/events'
+import {
+  eventsFor,
+  localDate,
+  monthOf,
+  shiftSpan,
+  shownSpanFor,
+  spanFor,
+  spanStatusFor
+} from './lib/events'
 import {
   isOnboarded,
   picksFor,
@@ -144,9 +152,11 @@ function App(): React.JSX.Element | null {
     )
   }
 
-  const month = shownMonthFor(events, now)
-  const showMonth = (next: CalendarMonth): void => {
-    void window.api.events.showMonth(next)
+  /* Main holds a span; until the week and day views exist it is always a month's. */
+  const span = shownSpanFor(events, 'month', now)
+  const month: CalendarMonth = span.kind === 'month' ? span : monthOf(now)
+  const showSpan = (next: EventsSpan): void => {
+    void window.api.events.showSpan(next)
   }
   const types = typesFor(schema)
   const picks = picksFor(selection, types)
@@ -155,8 +165,8 @@ function App(): React.JSX.Element | null {
       <CalendarScreen
         key={`${month.year}-${month.month}`}
         month={month}
-        events={eventsFor(events, month)}
-        status={monthStatusFor(events, month, now)}
+        events={eventsFor(events, span)}
+        status={spanStatusFor(events, span, now)}
         types={withDates(types, picks.dates)}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
@@ -167,12 +177,12 @@ function App(): React.JSX.Element | null {
         weekStart={weekStart}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setScreen('config')}
-        onPrevMonth={() => showMonth(shiftEventsMonth(month, -1))}
-        onNextMonth={() => showMonth(shiftEventsMonth(month, 1))}
-        onToday={() => showMonth(monthOf(Date.now()))}
+        onPrevMonth={() => showSpan(shiftSpan(span, -1))}
+        onNextMonth={() => showSpan(shiftSpan(span, 1))}
+        onToday={() => showSpan(spanFor('month', localDate(Date.now()), weekStart))}
         onReread={() => {
           void window.api.schema.sync()
-          showMonth(month)
+          showSpan(span)
         }}
       />
     </TimeFormatContext>

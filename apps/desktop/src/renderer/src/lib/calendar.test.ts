@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import {
+  addDays,
   formatTime,
   buildMonthGrid,
+  buildWeek,
   dateLabel,
+  dayLabel,
   dateOptions,
   eventsOnDay,
   indexBy,
@@ -18,6 +21,7 @@ import {
   typesInSpace,
   weekdayNames,
   weekdaysFrom,
+  weekLabel,
   withDates
 } from './calendar'
 
@@ -353,5 +357,79 @@ describe('formatTime', () => {
 
   test('follows the given locale', () => {
     expect(formatTime('13:05', '12h', 'es')).toContain('1:05')
+  })
+})
+
+describe('addDays', () => {
+  test('moves within a month, and across one', () => {
+    expect(addDays('2026-09-14', 3)).toBe('2026-09-17')
+    expect(addDays('2026-09-30', 1)).toBe('2026-10-01')
+    expect(addDays('2026-10-01', -1)).toBe('2026-09-30')
+  })
+
+  test('crosses the turn of the year', () => {
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
+    expect(addDays('2027-01-01', -1)).toBe('2026-12-31')
+  })
+
+  test('stays put for no shift', () => {
+    expect(addDays('2026-09-14', 0)).toBe('2026-09-14')
+  })
+})
+
+describe('buildWeek', () => {
+  // 2026-09-23 is a Wednesday.
+  test("opens on the user's own first day of the week", () => {
+    expect(buildWeek('2026-09-23', 0).map((day) => day.date)).toEqual([
+      '2026-09-21',
+      '2026-09-22',
+      '2026-09-23',
+      '2026-09-24',
+      '2026-09-25',
+      '2026-09-26',
+      '2026-09-27'
+    ])
+    expect(buildWeek('2026-09-23', 6)[0]?.date).toBe('2026-09-20')
+  })
+
+  test('straddles a month, and a year', () => {
+    expect(buildWeek('2026-10-01', 0).map((day) => day.date)).toEqual([
+      '2026-09-28',
+      '2026-09-29',
+      '2026-09-30',
+      '2026-10-01',
+      '2026-10-02',
+      '2026-10-03',
+      '2026-10-04'
+    ])
+    expect(buildWeek('2027-01-01', 0)[0]?.date).toBe('2026-12-28')
+  })
+
+  test('borrows nothing: every day of a week is its own', () => {
+    expect(buildWeek('2026-10-01', 0).every((day) => !day.outside)).toBe(true)
+  })
+})
+
+describe('dayLabel', () => {
+  test('spells the weekday out', () => {
+    expect(dayLabel('2026-09-23', 'en')).toBe('Wednesday, September 23, 2026')
+  })
+})
+
+describe('weekLabel', () => {
+  // Intl separates a range with thin spaces around the dash, which are not worth asserting.
+  const label = (start: string, end: string): string =>
+    weekLabel(start, end, 'en').replace(/\s+/g, ' ')
+
+  test('names the month once for a week inside one', () => {
+    expect(label('2026-09-21', '2026-09-27')).toBe('Sep 21 – 27, 2026')
+  })
+
+  test('names both months for a week that straddles two', () => {
+    expect(label('2026-09-28', '2026-10-04')).toBe('Sep 28 – Oct 4, 2026')
+  })
+
+  test('names both years across New Year', () => {
+    expect(label('2026-12-28', '2027-01-03')).toBe('Dec 28, 2026 – Jan 3, 2027')
   })
 })

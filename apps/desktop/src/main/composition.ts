@@ -22,9 +22,9 @@ import {
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
 import {
-  EventsMonthStore,
-  LoadEventsMonth,
-  ResetEventsMonth
+  EventsSpanStore,
+  LoadEventsSpan,
+  ResetEventsSpan
 } from '@anytype-calendar/events/application'
 import type { EventsGateway, EventsTimeZone } from '@anytype-calendar/events/domain'
 import {
@@ -88,8 +88,8 @@ export interface AppServices {
   schemaSelection: SchemaSelectionStore
   loadSchemaSelection: LoadSchemaSelection
   saveSchemaSelection: SaveSchemaSelection
-  eventsState: EventsMonthStore
-  loadEventsMonth: LoadEventsMonth
+  eventsState: EventsSpanStore
+  loadEventsSpan: LoadEventsSpan
   themeState: ThemeStore
   loadTheme: LoadTheme
   saveTheme: SaveTheme
@@ -166,15 +166,15 @@ export function composeServices(): AppServices {
   })
 
   const zone = new LocalEventsTimeZone()
-  const eventsState = new EventsMonthStore()
-  const loadEventsMonth = new LoadEventsMonth({
+  const eventsState = new EventsSpanStore()
+  const loadEventsSpan = new LoadEventsSpan({
     gateway: client ? new AnytypeEventsGateway(client) : inMemoryEventsGateway(zone),
     apiKeys,
     sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
     zone,
     store: eventsState
   })
-  const resetEventsMonth = new ResetEventsMonth(eventsState)
+  const resetEventsSpan = new ResetEventsSpan(eventsState)
 
   const themeState = new ThemeStore()
   const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
@@ -204,10 +204,10 @@ export function composeServices(): AppServices {
   authSession.subscribe((session) => {
     if (session.phase === 'connected') {
       void schemaSync.execute()
-      void loadEventsMonth.execute()
+      void loadEventsSpan.execute()
     } else {
       resetSchemaSync.execute()
-      resetEventsMonth.execute()
+      resetEventsSpan.execute()
     }
   })
   // A key Anytype no longer accepts — usually deleted in its settings — answers unauthorized
@@ -221,14 +221,14 @@ export function composeServices(): AppServices {
   // A fresh read of the account, or a changed selection, may change what the month holds. A
   // reload replaces a load still running, so a burst of Settings changes draws only the last.
   schemaState.subscribe((state) => {
-    if (state.phase === 'synced' && connected()) void loadEventsMonth.execute()
+    if (state.phase === 'synced' && connected()) void loadEventsSpan.execute()
     if (state.phase === 'failed') handleUnauthorized(state.failure)
   })
   eventsState.subscribe((state) => {
     if (state.phase === 'failed') handleUnauthorized(state.failure)
   })
   schemaSelection.subscribe(() => {
-    if (connected()) void loadEventsMonth.execute()
+    if (connected()) void loadEventsSpan.execute()
   })
 
   return {
@@ -247,7 +247,7 @@ export function composeServices(): AppServices {
     loadSchemaSelection,
     saveSchemaSelection,
     eventsState,
-    loadEventsMonth,
+    loadEventsSpan,
     themeState,
     loadTheme,
     saveTheme,

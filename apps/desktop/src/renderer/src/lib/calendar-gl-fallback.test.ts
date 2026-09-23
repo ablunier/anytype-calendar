@@ -47,6 +47,20 @@ describe('Galician calendar fallback', () => {
     expect(shortDate('2024-01-05', 'gl')).toBe('ven., 5 de xan.')
   })
 
+  test('dayLabel matches real Intl Galician wording', async () => {
+    const { dayLabel } = await import('./calendar')
+    expect(dayLabel('2026-09-23', 'gl')).toBe('mércores, 23 de setembro de 2026')
+  })
+
+  test('weekLabel names the month once inside one, and both across two', async () => {
+    const { weekLabel } = await import('./calendar')
+    expect(weekLabel('2026-09-21', '2026-09-27', 'gl')).toBe('21–27 de set. de 2026')
+    expect(weekLabel('2026-09-28', '2026-10-04', 'gl')).toBe('28 de set.–4 de out. de 2026')
+    expect(weekLabel('2026-12-28', '2027-01-03', 'gl')).toBe(
+      '28 de dec. de 2026–3 de xan. de 2027'
+    )
+  })
+
   test('formatTime uses a.m./p.m. and leaves 24h untouched', async () => {
     const { formatTime } = await import('./calendar')
     expect(formatTime('13:05', '12h', 'gl')).toBe('1:05 p.m.')

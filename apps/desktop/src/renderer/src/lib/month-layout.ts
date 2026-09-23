@@ -4,7 +4,7 @@
  * Pure helpers over local `YYYY-MM-DD` dates, which compare in order as strings.
  */
 
-import type { CalendarEvent, MonthCell } from '@renderer/types'
+import type { CalendarEvent, DayColumn } from '@renderer/types'
 
 /** Past this many lanes a week's segments are dropped and counted as `hidden` instead. */
 export const MAX_LANES = 3
@@ -40,18 +40,25 @@ function byDrawingOrder(a: EventSegment, b: EventSegment): number {
 }
 
 /**
- * `week` is seven consecutive cells. Outside days draw nothing — only the month's own window
- * was read — so a range reaching into them is cut at the month's edge and marked as
- * continuing there.
+ * `week` is seven consecutive days — a row of the month grid, or a week view's all-day band.
+ * A month is read with a week of slack on each side, so the days a row borrows from the
+ * adjacent months carry their objects too and a range crosses the edge unbroken.
+ *
+ * `maxLanes` is how many bars a row has room for; past it, segments are dropped and counted
+ * in `hidden` instead.
  */
-export function layOutWeek(events: CalendarEvent[], week: MonthCell[]): WeekLayout {
+export function layOutWeek(
+  events: CalendarEvent[],
+  week: DayColumn[],
+  maxLanes = MAX_LANES
+): WeekLayout {
   const segments: EventSegment[] = []
 
   for (const event of events) {
     const start = event.date
     const end = event.until ?? event.date
     const covered = week.flatMap((cell, index) =>
-      !cell.outside && start <= cell.date && cell.date <= end ? [index] : []
+      start <= cell.date && cell.date <= end ? [index] : []
     )
     const first = covered[0]
     const last = covered[covered.length - 1]
@@ -78,7 +85,7 @@ export function layOutWeek(events: CalendarEvent[], week: MonthCell[]): WeekLayo
       other.column < segment.column + segment.span && segment.column < other.column + other.span
     const lane = taken.findIndex((occupants) => !occupants.some(overlaps))
 
-    if (lane === -1 && taken.length >= MAX_LANES) {
+    if (lane === -1 && taken.length >= maxLanes) {
       for (let column = segment.column; column < segment.column + segment.span; column++) {
         hidden[column]++
       }

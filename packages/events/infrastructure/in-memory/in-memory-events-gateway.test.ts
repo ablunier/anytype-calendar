@@ -1,10 +1,11 @@
 import { expect, test } from 'vitest'
 import {
-  eventsMonthWindow,
   overlapsEventsWindow,
   shiftEventsMonth,
+  type EventsMonth,
   type EventsSource,
-  type EventsTimeZone
+  type EventsTimeZone,
+  type EventsWindow
 } from '../../domain'
 import { InMemoryEventsGateway, inMemoryEventsSample, type InMemoryEventsObject } from './in-memory-events-gateway'
 
@@ -18,6 +19,14 @@ const UTC: EventsTimeZone = {
 
 const NOW = Date.UTC(2026, 11, 14, 9)
 const DECEMBER = { year: 2026, month: 11 }
+
+/* The calendar month exactly. A month span is read with a week of slack either side, for the
+ * grid rows it shares with its neighbours, which would blur what these seeds are placed
+ * against. */
+const monthWindow = ({ year, month }: EventsMonth): EventsWindow => ({
+  start: Date.UTC(year, month, 1),
+  end: Date.UTC(year, month + 1, 1) - 1
+})
 
 const TASKS: EventsSource = {
   spaceId: 'sp_1',
@@ -76,7 +85,7 @@ test('carries the To value of a range, and null where it is missing', async () =
 
 test('seeds the design sample around the current month by default', async () => {
   const { gateway } = setup()
-  const window = eventsMonthWindow(DECEMBER, UTC)
+  const window = monthWindow(DECEMBER)
   const tasks = await gateway.listObjects('ak_any', {
     spaceId: 'sp_personal',
     typeKey: 'task',
@@ -89,7 +98,7 @@ test('seeds the design sample around the current month by default', async () => 
 
 test('seeds a range running into the next month, and one running in from the last', () => {
   const sample = inMemoryEventsSample(DECEMBER, UTC)
-  const window = eventsMonthWindow(DECEMBER, UTC)
+  const window = monthWindow(DECEMBER)
   const book = sample.find(({ title }) => title === 'The Dawn of Everything')
   const project = sample.find(({ title }) => title === 'Onboarding revamp')
 
@@ -101,7 +110,7 @@ test('seeds a range running into the next month, and one running in from the las
 
 test('seeds something in the months after the year turns', () => {
   const sample = inMemoryEventsSample(DECEMBER, UTC)
-  const january = eventsMonthWindow(shiftEventsMonth(DECEMBER, 1), UTC)
+  const january = monthWindow(shiftEventsMonth(DECEMBER, 1))
   const inJanuary = sample.filter(({ dates }) =>
     Object.values(dates).some((instant) => instant >= january.start && instant <= january.end)
   )

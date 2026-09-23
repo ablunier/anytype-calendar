@@ -1,5 +1,5 @@
 import type { AuthSession } from '@anytype-calendar/auth/domain'
-import type { EventsMonth, EventsMonthLoad } from '@anytype-calendar/events/domain'
+import type { EventsSpan, EventsSpanLoad } from '@anytype-calendar/events/domain'
 import type {
   SchemaSelection,
   SchemaSelectionState,
@@ -14,8 +14,8 @@ export type SchemaSnapshot = SchemaSync
 
 export type SchemaSelectionSnapshot = SchemaSelectionState
 
-/** Safe to hand to the renderer: the key is read in main and never stored in an EventsMonthLoad. */
-export type EventsSnapshot = EventsMonthLoad
+/** Safe to hand to the renderer: the key is read in main and never stored in an EventsSpanLoad. */
+export type EventsSnapshot = EventsSpanLoad
 
 /** Null: no theme was ever saved, so the renderer follows the OS setting. */
 export type ThemeSnapshot = 'light' | 'dark' | null
@@ -48,7 +48,7 @@ export const IpcChannel = {
   schemaSelectionSave: 'schema-selection:save',
   eventsGet: 'events:get',
   eventsChanged: 'events:changed',
-  eventsShowMonth: 'events:show-month',
+  eventsShowSpan: 'events:show-span',
   themeGet: 'theme:get',
   themeChanged: 'theme:changed',
   themeSave: 'theme:save',
@@ -103,11 +103,11 @@ export interface CalendarApi {
     get(): Promise<EventsSnapshot>
     onChange(listener: (state: EventsSnapshot) => void): () => void
     /**
-     * Loads the month, or reads it again when it is the one shown. Main already loads on
-     * sign-in, on every read of the account and every saved selection. Rejects when the month
-     * is malformed; does nothing while signed out.
+     * Loads the span — a month, a week or a day — or reads it again when it is the one shown.
+     * Main already loads on sign-in, on every read of the account and every saved selection.
+     * Rejects when the span is malformed; does nothing while signed out.
      */
-    showMonth(month: EventsMonth): Promise<void>
+    showSpan(span: EventsSpan): Promise<void>
   }
   theme: {
     get(): Promise<ThemeSnapshot>

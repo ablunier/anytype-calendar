@@ -3,8 +3,9 @@
 
 export * from './model/dated-object'
 export * from './model/month'
-export * from './model/month-load'
 export * from './model/source'
+export * from './model/span'
+export * from './model/span-load'
 export * from './model/window'
 export * from './gateways/api-key-source'
 export * from './gateways/events-gateway'

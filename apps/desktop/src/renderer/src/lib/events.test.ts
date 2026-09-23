@@ -1,14 +1,25 @@
 import { describe, expect, test } from 'vitest'
-import type { EventsDatedObject, EventsMonthResult } from '@anytype-calendar/events/domain'
+import type { EventsDatedObject, EventsSpanResult } from '@anytype-calendar/events/domain'
 import type { EventsSnapshot } from '@shared/ipc'
-import { eventsFor, localDate, localTime, monthOf, monthStatusFor, shownMonthFor } from './events'
+import {
+  anchorOf,
+  eventsFor,
+  localDate,
+  localTime,
+  monthOf,
+  shiftSpan,
+  shownSpanFor,
+  spanFor,
+  spanStatusFor,
+  switchDateFor
+} from './events'
 
 // Built from local wall times, so these hold in whatever zone the tests run in.
 const local = (month: number, day: number, hours = 0, minutes = 0): number =>
   new Date(2026, month, day, hours, minutes).getTime()
 
-const SEPTEMBER = { year: 2026, month: 8 }
-const OCTOBER = { year: 2026, month: 9 }
+const SEPTEMBER = { kind: 'month', year: 2026, month: 8 } as const
+const OCTOBER = { kind: 'month', year: 2026, month: 9 } as const
 const NOW = local(8, 14, 9, 30)
 
 const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
@@ -22,28 +33,82 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   ...overrides
 })
 
-const result = (objects: EventsDatedObject[], month = SEPTEMBER): EventsMonthResult => ({
-  month,
+const result = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSpanResult => ({
+  span,
   objects,
   loadedAt: local(8, 14, 9, 28)
 })
 
-const loaded = (objects: EventsDatedObject[], month = SEPTEMBER): EventsSnapshot => ({
+const loaded = (
+  objects: EventsDatedObject[],
+  span: EventsSpanResult['span'] = SEPTEMBER
+): EventsSnapshot => ({
   phase: 'loaded',
-  last: result(objects, month)
+  last: result(objects, span)
 })
 
-describe('shownMonthFor', () => {
-  test("is the current month before main's first load", () => {
-    expect(shownMonthFor({ phase: 'idle' }, NOW)).toEqual(SEPTEMBER)
+describe('shownSpanFor', () => {
+  test("is the saved view's span around today before main's first load", () => {
+    expect(shownSpanFor({ phase: 'idle' }, 'month', NOW)).toEqual(SEPTEMBER)
+    expect(shownSpanFor({ phase: 'idle' }, 'day', NOW)).toEqual({
+      kind: 'day',
+      start: { year: 2026, month: 8, day: 14 }
+    })
   })
 
-  test('is the month main is loading, even while it holds another', () => {
-    expect(shownMonthFor({ phase: 'loading', month: OCTOBER, last: result([]) }, NOW)).toEqual(OCTOBER)
+  test('is the span main is loading, even while it holds another', () => {
+    expect(
+      shownSpanFor({ phase: 'loading', span: OCTOBER, last: result([]) }, 'month', NOW)
+    ).toEqual(OCTOBER)
   })
 
-  test('is the month main loaded', () => {
-    expect(shownMonthFor(loaded([], OCTOBER), NOW)).toEqual(OCTOBER)
+  test('is the span main loaded', () => {
+    expect(shownSpanFor(loaded([], OCTOBER), 'month', NOW)).toEqual(OCTOBER)
+  })
+})
+
+describe('spanFor and anchorOf', () => {
+  test('round-trip a month through its first day', () => {
+    expect(spanFor('month', '2026-09-14', 0)).toEqual(SEPTEMBER)
+    expect(anchorOf(SEPTEMBER)).toBe('2026-09-01')
+  })
+
+  test('anchor a day on itself', () => {
+    const span = spanFor('day', '2026-09-14', 0)
+    expect(span).toEqual({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })
+    expect(anchorOf(span)).toBe('2026-09-14')
+  })
+
+  test("anchor a week on the user's own first day of the week", () => {
+    // 2026-09-23 is a Wednesday.
+    expect(anchorOf(spanFor('week', '2026-09-23', 0))).toBe('2026-09-21')
+    expect(anchorOf(spanFor('week', '2026-09-23', 6))).toBe('2026-09-20')
+  })
+})
+
+describe('shiftSpan', () => {
+  test('moves a month by months, rolling over the year', () => {
+    expect(shiftSpan(SEPTEMBER, 1)).toEqual(OCTOBER)
+    expect(shiftSpan({ kind: 'month', year: 2026, month: 11 }, 1)).toEqual({
+      kind: 'month',
+      year: 2027,
+      month: 0
+    })
+    expect(shiftSpan({ kind: 'month', year: 2026, month: 0 }, -1)).toEqual({
+      kind: 'month',
+      year: 2025,
+      month: 11
+    })
+  })
+
+  test('moves a week by seven days, across a month and a year', () => {
+    expect(anchorOf(shiftSpan(spanFor('week', '2026-09-28', 0), 1))).toBe('2026-10-05')
+    expect(anchorOf(shiftSpan(spanFor('week', '2026-12-28', 0), 1))).toBe('2027-01-04')
+  })
+
+  test('moves a day by one day', () => {
+    expect(anchorOf(shiftSpan(spanFor('day', '2026-09-30', 0), 1))).toBe('2026-10-01')
+    expect(anchorOf(shiftSpan(spanFor('day', '2026-01-01', 0), -1))).toBe('2025-12-31')
   })
 })
 
@@ -55,25 +120,30 @@ describe('monthOf', () => {
 })
 
 describe('eventsFor', () => {
-  test('is null before the month is read', () => {
+  test('is null before the span is read', () => {
     expect(eventsFor({ phase: 'idle' }, SEPTEMBER)).toBeNull()
-    expect(eventsFor({ phase: 'loading', month: SEPTEMBER }, SEPTEMBER)).toBeNull()
+    expect(eventsFor({ phase: 'loading', span: SEPTEMBER }, SEPTEMBER)).toBeNull()
   })
 
-  test("is null while another month's result is all there is", () => {
-    const loading: EventsSnapshot = { phase: 'loading', month: OCTOBER, last: result([object({})]) }
+  test("is null while another span's result is all there is", () => {
+    const loading: EventsSnapshot = { phase: 'loading', span: OCTOBER, last: result([object({})]) }
     expect(eventsFor(loading, OCTOBER)).toBeNull()
   })
 
-  test('keeps the objects on screen while the month is read again, or fails to be', () => {
+  test('tells a week from a month that starts on the same day', () => {
+    const week = spanFor('week', '2026-09-01', 0)
+    expect(eventsFor(loaded([object({})], week), SEPTEMBER)).toBeNull()
+  })
+
+  test('keeps the objects on screen while the span is read again, or fails to be', () => {
     const last = result([object({})])
-    expect(eventsFor({ phase: 'loading', month: SEPTEMBER, last }, SEPTEMBER)).toHaveLength(1)
+    expect(eventsFor({ phase: 'loading', span: SEPTEMBER, last }, SEPTEMBER)).toHaveLength(1)
     expect(
-      eventsFor({ phase: 'failed', month: SEPTEMBER, failure: 'unreachable', at: NOW, last }, SEPTEMBER)
+      eventsFor({ phase: 'failed', span: SEPTEMBER, failure: 'unreachable', at: NOW, last }, SEPTEMBER)
     ).toHaveLength(1)
   })
 
-  test('is empty for a month read with nothing in it', () => {
+  test('is empty for a span read with nothing in it', () => {
     expect(eventsFor(loaded([]), SEPTEMBER)).toEqual([])
   })
 
@@ -112,17 +182,17 @@ describe('eventsFor', () => {
   })
 })
 
-describe('monthStatusFor', () => {
-  test('is syncing while the month is read', () => {
-    expect(monthStatusFor({ phase: 'idle' }, SEPTEMBER, NOW)).toEqual({ state: 'syncing', hasResult: false })
-    expect(monthStatusFor({ phase: 'loading', month: SEPTEMBER, last: result([]) }, SEPTEMBER, NOW)).toEqual({
+describe('spanStatusFor', () => {
+  test('is syncing while the span is read', () => {
+    expect(spanStatusFor({ phase: 'idle' }, SEPTEMBER, NOW)).toEqual({ state: 'syncing', hasResult: false })
+    expect(spanStatusFor({ phase: 'loading', span: SEPTEMBER, last: result([]) }, SEPTEMBER, NOW)).toEqual({
       state: 'syncing',
       hasResult: true
     })
   })
 
-  test('says how long ago the month was read', () => {
-    expect(monthStatusFor(loaded([]), SEPTEMBER, NOW)).toEqual({
+  test('says how long ago the span was read', () => {
+    expect(spanStatusFor(loaded([]), SEPTEMBER, NOW)).toEqual({
       state: 'synced',
       detail: { kind: 'elapsed', elapsed: { key: 'minutesAgo', count: 2 } },
       hasResult: true
@@ -132,16 +202,16 @@ describe('monthStatusFor', () => {
   test('says why a read failed', () => {
     const failed = (failure: 'unauthorized' | 'unreachable'): EventsSnapshot => ({
       phase: 'failed',
-      month: SEPTEMBER,
+      span: SEPTEMBER,
       failure,
       at: NOW
     })
-    expect(monthStatusFor(failed('unauthorized'), SEPTEMBER, NOW)).toEqual({
+    expect(spanStatusFor(failed('unauthorized'), SEPTEMBER, NOW)).toEqual({
       state: 'error',
       detail: { kind: 'unauthorized' },
       hasResult: false
     })
-    expect(monthStatusFor(failed('unreachable'), SEPTEMBER, NOW)).toMatchObject({
+    expect(spanStatusFor(failed('unreachable'), SEPTEMBER, NOW)).toMatchObject({
       detail: { kind: 'unreachable' }
     })
   })
@@ -151,5 +221,27 @@ describe('localDate and localTime', () => {
   test('zero-pad', () => {
     expect(localDate(local(0, 5, 7, 3))).toBe('2026-01-05')
     expect(localTime(local(0, 5, 7, 3))).toBe('07:03')
+  })
+})
+
+describe('switchDateFor', () => {
+  const TODAY = '2026-09-23'
+
+  test('stays on today when the span covers it', () => {
+    expect(switchDateFor(SEPTEMBER, TODAY)).toBe(TODAY)
+    expect(switchDateFor(spanFor('week', TODAY, 0), TODAY)).toBe(TODAY)
+    expect(switchDateFor(spanFor('day', TODAY, 0), TODAY)).toBe(TODAY)
+  })
+
+  test("keeps the reader where they were when the span is elsewhere", () => {
+    expect(switchDateFor(OCTOBER, TODAY)).toBe('2026-10-01')
+    expect(switchDateFor(spanFor('week', '2026-03-10', 0), TODAY)).toBe('2026-03-09')
+    expect(switchDateFor(spanFor('day', '2026-03-10', 0), TODAY)).toBe('2026-03-10')
+  })
+
+  test('counts the last day of a week as covered', () => {
+    // The week of Monday 21 September ends on Sunday the 27th.
+    expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-27')).toBe('2026-09-27')
+    expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-28')).toBe('2026-09-21')
   })
 })

@@ -86,13 +86,20 @@ export interface CalendarEvent {
   done?: boolean
 }
 
-export interface MonthCell {
-  day: number
+/** One calendar day of whatever the view draws: a cell of the month grid, a day column. */
+export interface DayColumn {
   /** In the month the day belongs to, which for an outside cell is an adjacent one. */
   date: string
   /** True for the leading and trailing days borrowed from adjacent months. */
   outside: boolean
 }
+
+export interface MonthCell extends DayColumn {
+  day: number
+}
+
+/** Which of the three the calendar is drawing. Named for the spans they read. */
+export type CalendarView = 'month' | 'week' | 'day'
 
 /**
  * Chosen locally once the session is connected; until then the auth session in main decides

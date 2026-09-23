@@ -61,17 +61,30 @@ describe('layOutWeek', () => {
     ])
   })
 
-  test('cuts a range at the month edges, where the days are outside', () => {
-    // The first row borrows 31 August; the last runs to 4 October.
+  test('runs a range through the days a row borrows from the adjacent months', () => {
+    // The first row borrows 31 August; the last runs to 4 October. A month is read with a
+    // week of slack either side, so those days carry their objects like any other.
     const fromAugust = event('a', '2026-08-28', '2026-09-02')
     expect(layOutWeek([fromAugust], FIRST_WEEK).segments.map(shape)).toEqual([
-      { id: 'a', column: 1, span: 2, lane: 0, continuesBefore: true, continuesAfter: false }
+      { id: 'a', column: 0, span: 3, lane: 0, continuesBefore: true, continuesAfter: false }
     ])
 
     const intoOctober = event('b', '2026-09-29', '2026-10-06')
     expect(layOutWeek([intoOctober], LAST_WEEK).segments.map(shape)).toEqual([
-      { id: 'b', column: 1, span: 2, lane: 0, continuesBefore: false, continuesAfter: true }
+      { id: 'b', column: 1, span: 6, lane: 0, continuesBefore: false, continuesAfter: true }
     ])
+  })
+
+  test('draws an object that falls only on a borrowed day', () => {
+    expect(layOutWeek([event('a', '2026-08-31')], FIRST_WEEK).segments.map(shape)).toEqual([
+      { id: 'a', column: 0, span: 1, lane: 0, continuesBefore: false, continuesAfter: false }
+    ])
+  })
+
+  test('honours a lane cap of its own, e.g. the week view band', () => {
+    const many = Array.from({ length: 5 }, (_, index) => event(`e${index}`, '2026-09-03'))
+    expect(layOutWeek(many, FIRST_WEEK, 5).lanes).toBe(5)
+    expect(layOutWeek(many, FIRST_WEEK, 5).hidden[3]).toBe(0)
   })
 
   test('leaves out an event the week does not reach', () => {
