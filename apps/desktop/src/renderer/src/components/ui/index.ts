@@ -1,7 +1,7 @@
 export { Badge, type BadgeProps, type BadgeTone } from './Badge'
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './Button'
 export { Card, type CardPadding, type CardProps } from './Card'
-export { catBg, catBgSoft, catText } from './category'
+export { catBg, catBgSoft, catBorder, catText } from './category'
 export { Checkbox, type CheckboxProps } from './Checkbox'
 export { Dialog, type DialogProps, type DialogWidth } from './Dialog'
 export { EmptyState, type EmptyStateProps } from './EmptyState'

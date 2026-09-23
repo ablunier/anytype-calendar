@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ApiKeyView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
+import type { ApiKeyView, CalendarView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
@@ -25,6 +25,9 @@ export interface ConfigScreenProps {
   /** Monday is 0, Sunday 6. */
   weekStart: number
   onWeekStart: (day: number) => void
+  /** Which view a launch opens on; what is on screen now is the shown span's own kind. */
+  calendarView: CalendarView
+  onCalendarView: (view: CalendarView) => void
   timeFormat: TimeFormatSnapshot
   onTimeFormat: (format: TimeFormatSnapshot) => void
   onBack: () => void
@@ -56,6 +59,8 @@ function Settings({
   onShowWeekNumbers,
   weekStart,
   onWeekStart,
+  calendarView,
+  onCalendarView,
   timeFormat,
   onTimeFormat,
   onBack,
@@ -192,6 +197,16 @@ function Settings({
                 ]}
                 value={language ?? ''}
                 onChange={(value) => onLanguage(value === '' ? null : (value as 'en' | 'es' | 'gl'))}
+              />
+              <Select
+                label={t('config.defaultView')}
+                options={[
+                  { value: 'day', label: t('calendar.view.day') },
+                  { value: 'week', label: t('calendar.view.week') },
+                  { value: 'month', label: t('calendar.view.month') }
+                ]}
+                value={calendarView}
+                onChange={(value) => onCalendarView(value as CalendarView)}
               />
               <Select
                 label={t('config.firstDayOfWeek')}

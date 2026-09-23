@@ -145,6 +145,7 @@
     "calendar": "Calendar",
     "language": "Language",
     "languageSystem": "System default",
+    "defaultView": "Default view",
     "firstDayOfWeek": "First day of the week",
     "timeFormat": "Time format",
     "timeFormat24h": "24-hour (13:30)",
@@ -176,8 +177,8 @@
     }
   },
   "calendar": {
-    "couldntRead": "Couldn't read {{month}}",
-    "nothingDated": "Nothing dated in {{month}}",
+    "couldntRead": "Couldn't read {{span}}",
+    "nothingDated": "Nothing dated in {{span}}",
     "nothingDatedDescription": "Events of the types you track appear here once one of their dates falls in this month.",
     "chooseWhatGoesOn": "Choose what goes on the calendar",
     "chooseWhatGoesOnDescription": "Pick the spaces and types whose dates you want to see here.",
@@ -190,12 +191,18 @@
       "settings": "Settings"
     },
     "nav": {
-      "prevMonth": "Previous month",
-      "nextMonth": "Next month",
-      "today": "Today"
-    },
-    "grid": {
-      "ariaLabel": "Month"
+      "today": "Today",
+      "prev": {
+        "month": "Previous month",
+        "week": "Previous week",
+        "day": "Previous day"
+      },
+      "next": {
+        "month": "Next month",
+        "week": "Next week",
+        "day": "Next day"
+      },
+      "view": "Calendar view"
     },
     "dayCell": {
       "hiddenMore": "+{{count}} more"
@@ -218,6 +225,17 @@
       "eventDetailLabel": "Event detail",
       "dayDetailLabel": "Day detail",
       "close": "Close panel"
+    },
+    "allDay": "all-day",
+    "view": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "grid": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
     }
   }
 }

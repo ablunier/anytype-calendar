@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
-import type { AuthView, CalendarMonth, ConnectedScreen } from './types'
+import type { AuthView, CalendarView, ConnectedScreen } from './types'
+import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
 import { useLocale } from './hooks/useLocale'
 import { useNow } from './hooks/useNow'
@@ -15,13 +16,14 @@ import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { useWeekStart } from './hooks/useWeekStart'
 import { withDates } from './lib/calendar'
 import {
+  anchorOf,
   eventsFor,
   localDate,
-  monthOf,
   shiftSpan,
   shownSpanFor,
   spanFor,
-  spanStatusFor
+  spanStatusFor,
+  switchDateFor
 } from './lib/events'
 import {
   isOnboarded,
@@ -60,6 +62,7 @@ function App(): React.JSX.Element | null {
   const [showWeekNumbers, setShowWeekNumbers] = useWeekNumbers()
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
+  const [calendarView, setCalendarView] = useCalendarView()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -141,6 +144,8 @@ function App(): React.JSX.Element | null {
         onWeekStart={setWeekStart}
         timeFormat={timeFormat}
         onTimeFormat={setTimeFormat}
+        calendarView={calendarView}
+        onCalendarView={setCalendarView}
         onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
         onSave={(picks) =>
@@ -152,34 +157,41 @@ function App(): React.JSX.Element | null {
     )
   }
 
-  /* Main holds a span; until the week and day views exist it is always a month's. */
-  const span = shownSpanFor(events, 'month', now)
-  const month: CalendarMonth = span.kind === 'month' ? span : monthOf(now)
+  const span = shownSpanFor(events, calendarView, now)
   const showSpan = (next: EventsSpan): void => {
     void window.api.events.showSpan(next)
   }
+  /* Switching view saves the choice and asks for the new span in one go: the preference is
+   * what the next launch opens on, the span is what this window draws. */
+  const showView = (view: CalendarView): void => {
+    setCalendarView(view)
+    showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart))
+  }
   const types = typesFor(schema)
   const picks = picksFor(selection, types)
+  const today = localDate(now)
   return (
     <TimeFormatContext value={timeFormat}>
       <CalendarScreen
-        key={`${month.year}-${month.month}`}
-        month={month}
+        key={`${span.kind}-${anchorOf(span)}`}
+        span={span}
         events={eventsFor(events, span)}
         status={spanStatusFor(events, span, now)}
         types={withDates(types, picks.dates)}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
         tracksAnything={tracksAnyType(selection)}
-        today={localDate(now)}
+        today={today}
+        nowMinute={minutesOf(now)}
         theme={theme}
         showWeekNumbers={showWeekNumbers}
         weekStart={weekStart}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setScreen('config')}
-        onPrevMonth={() => showSpan(shiftSpan(span, -1))}
-        onNextMonth={() => showSpan(shiftSpan(span, 1))}
-        onToday={() => showSpan(spanFor('month', localDate(Date.now()), weekStart))}
+        onView={showView}
+        onPrev={() => showSpan(shiftSpan(span, -1))}
+        onNext={() => showSpan(shiftSpan(span, 1))}
+        onToday={() => showSpan(spanFor(span.kind, localDate(Date.now()), weekStart))}
         onReread={() => {
           void window.api.schema.sync()
           showSpan(span)
@@ -187,6 +199,12 @@ function App(): React.JSX.Element | null {
       />
     </TimeFormatContext>
   )
+}
+
+/** Minutes from local midnight. `instant` is epoch milliseconds. */
+function minutesOf(instant: number): number {
+  const date = new Date(instant)
+  return date.getHours() * 60 + date.getMinutes()
 }
 
 export default App

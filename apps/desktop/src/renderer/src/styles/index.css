@@ -114,23 +114,32 @@
   width: var(--ds-size-28);
 }
 
+/* A month grid's week row. `--columns` and `--lane-top` are inherited by the bars inside it:
+ * seven equal columns, and a top that clears the day cell's own padding, its date and the gap
+ * below, in the same tokens the cell uses, so it follows any change to them. */
 @utility grid-week {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  --columns: 7;
+  --lane-top: calc(var(--ds-space-6) + var(--ds-size-18) + var(--ds-space-4));
 }
 
-/* A month bar covers `--span` of the week row's seven equal columns from column `--column`,
- * on lane `--lane`. Its top clears the day cell's own padding, its date and the gap below,
- * in the same tokens the cell uses, so it follows any change to them. */
+/* A week or day view's columns — `--days` of them, set on the element. Bars in the all-day
+ * band start at its own padding: unlike a month cell, nothing is drawn above them. */
+@utility grid-days {
+  grid-template-columns: repeat(var(--days), minmax(0, 1fr));
+  --columns: var(--days);
+  --lane-top: var(--ds-space-2);
+}
+
+/* A bar covers `--span` of its row's `--columns` equal columns from column `--column`, on
+ * lane `--lane`. */
 @utility event-span {
   --lead-inset: var(--ds-space-2);
   --trail-inset: var(--ds-space-2);
   position: absolute;
-  left: calc(var(--column) * 100% / 7 + var(--lead-inset));
-  width: calc(var(--span) * 100% / 7 - var(--lead-inset) - var(--trail-inset));
-  top: calc(
-    var(--ds-space-6) + var(--ds-size-18) + var(--ds-space-4) + var(--lane) *
-      var(--ds-lane-stride)
-  );
+  left: calc(var(--column) * 100% / var(--columns) + var(--lead-inset));
+  width: calc(var(--span) * 100% / var(--columns) - var(--lead-inset) - var(--trail-inset));
+  top: calc(var(--lane-top) + var(--lane) * var(--ds-lane-stride));
 }
 
 /* Cut sides run flush into the column's edge. Declared after `event-span`, which is what
@@ -145,6 +154,38 @@
 /* The height a day cell reserves for `--lanes` bars, which are out of its flow. */
 @utility lane-stack {
   height: calc(var(--lanes) * var(--ds-lane-stride));
+}
+
+/* ----------------------------------------------------------------------------
+ * The time grid of the week and day views. A day is one canvas 24 hours tall, and
+ * everything on it is placed by the minute, so an object's height is its duration.
+ * --------------------------------------------------------------------------*/
+
+@utility hour-row {
+  height: var(--ds-hour-h);
+}
+
+@utility day-canvas {
+  position: relative;
+  height: calc(24 * var(--ds-hour-h));
+}
+
+/* A timed object, from `--start-minute` to `--end-minute` of the day, sharing the width of
+ * the group of overlapping objects it belongs to. */
+@utility time-slot {
+  position: absolute;
+  top: calc(var(--start-minute) / 60 * var(--ds-hour-h));
+  height: calc((var(--end-minute) - var(--start-minute)) / 60 * var(--ds-hour-h));
+  left: calc(var(--column) * 100% / var(--columns) + var(--ds-space-2));
+  width: calc(100% / var(--columns) - var(--ds-space-4));
+}
+
+/* The line marking the current time, at `--minute` of the day. */
+@utility now-line {
+  position: absolute;
+  top: calc(var(--minute) / 60 * var(--ds-hour-h));
+  left: 0;
+  right: 0;
 }
 
 /* Design rule: no bounce, no spring. */

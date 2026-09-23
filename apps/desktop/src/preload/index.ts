@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import {
   IpcChannel,
   type CalendarApi,
+  type CalendarViewSnapshot,
   type EventsSnapshot,
   type LanguageSnapshot,
   type SchemaSelectionSnapshot,
@@ -124,6 +125,17 @@ const api: CalendarApi = {
       }
     },
     save: (format) => ipcRenderer.invoke(IpcChannel.timeFormatSave, format)
+  },
+  calendarView: {
+    get: () => ipcRenderer.invoke(IpcChannel.calendarViewGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, view: CalendarViewSnapshot): void => listener(view)
+      ipcRenderer.on(IpcChannel.calendarViewChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.calendarViewChanged, forward)
+      }
+    },
+    save: (view) => ipcRenderer.invoke(IpcChannel.calendarViewSave, view)
   },
   shell: {
     openObject: (objectId, spaceId) =>

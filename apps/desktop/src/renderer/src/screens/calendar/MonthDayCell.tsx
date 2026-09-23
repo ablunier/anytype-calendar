@@ -39,8 +39,9 @@ export function MonthDayCell({
   onOpenEvent
 }: MonthDayCellProps): React.JSX.Element {
   const { t } = useTranslation()
-  /* Outside days belong to the adjacent month: shown for continuity, but not selectable
-   * and not part of the roving tab order. */
+  /* Outside days belong to the adjacent month: they carry their objects, so a range crosses
+   * the edge unbroken, but they are dimmed, not selectable, and not part of the roving tab
+   * order — their day numbers repeat the month's own. */
   const interactive = !cell.outside
 
   /* The cell is deliberately left unpositioned: a bar has to reach across the columns after

@@ -49,6 +49,7 @@ import {
 import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
+import { defaultEventsSpan } from './events/default-span'
 import { eventsSourcesFor } from './events/event-sources'
 import { LoadLanguage } from './language/load-language'
 import { SaveLanguage } from './language/save-language'
@@ -60,6 +61,9 @@ import { ThemeStore } from './theme/theme-store'
 import { LoadTimeFormat } from './time-format/load-time-format'
 import { SaveTimeFormat } from './time-format/save-time-format'
 import { TimeFormatStore } from './time-format/time-format-store'
+import { CalendarViewStore } from './calendar-view/calendar-view-store'
+import { LoadCalendarView } from './calendar-view/load-calendar-view'
+import { SaveCalendarView } from './calendar-view/save-calendar-view'
 import { LoadWeekStart } from './week-start/load-week-start'
 import { SaveWeekStart } from './week-start/save-week-start'
 import { WeekStartStore } from './week-start/week-start-store'
@@ -102,6 +106,9 @@ export interface AppServices {
   weekStartState: WeekStartStore
   loadWeekStart: LoadWeekStart
   saveWeekStart: SaveWeekStart
+  calendarViewState: CalendarViewStore
+  loadCalendarView: LoadCalendarView
+  saveCalendarView: SaveCalendarView
   timeFormatState: TimeFormatStore
   loadTimeFormat: LoadTimeFormat
   saveTimeFormat: SaveTimeFormat
@@ -172,7 +179,10 @@ export function composeServices(): AppServices {
     apiKeys,
     sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
     zone,
-    store: eventsState
+    store: eventsState,
+    // A launch opens on the view last chosen, so the first read is the one the window draws.
+    defaultSpan: () =>
+      defaultEventsSpan(calendarViewState.get(), zone.dayOf(Date.now()), weekStartState.get())
   })
   const resetEventsSpan = new ResetEventsSpan(eventsState)
 
@@ -191,6 +201,9 @@ export function composeServices(): AppServices {
   const weekStartState = new WeekStartStore()
   const loadWeekStart = new LoadWeekStart({ config: appConfig, store: weekStartState })
   const saveWeekStart = new SaveWeekStart({ config: appConfig, store: weekStartState })
+  const calendarViewState = new CalendarViewStore()
+  const loadCalendarView = new LoadCalendarView({ config: appConfig, store: calendarViewState })
+  const saveCalendarView = new SaveCalendarView({ config: appConfig, store: calendarViewState })
 
   const timeFormatState = new TimeFormatStore()
   const loadTimeFormat = new LoadTimeFormat({ config: appConfig, store: timeFormatState })
@@ -260,6 +273,9 @@ export function composeServices(): AppServices {
     weekStartState,
     loadWeekStart,
     saveWeekStart,
+    calendarViewState,
+    loadCalendarView,
+    saveCalendarView,
     timeFormatState,
     loadTimeFormat,
     saveTimeFormat

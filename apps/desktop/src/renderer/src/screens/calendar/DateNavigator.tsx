@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import type { Space } from '@renderer/types'
+import type { CalendarView, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, IconButton } from '@renderer/components/ui'
+import { ViewSwitcher } from './ViewSwitcher'
 
 export interface DateNavigatorProps {
   title: string
+  view: CalendarView
   legendSpaces: Space[]
+  onView: (view: CalendarView) => void
   onPrev: () => void
   onNext: () => void
   onToday: () => void
@@ -13,7 +16,9 @@ export interface DateNavigatorProps {
 
 export function DateNavigator({
   title,
+  view,
   legendSpaces,
+  onView,
   onPrev,
   onNext,
   onToday
@@ -22,8 +27,8 @@ export function DateNavigator({
   return (
     <div className="flex items-center gap-16 border-b border-line-subtle bg-surface-card px-16 py-10">
       <div className="flex items-center gap-2">
-        <IconButton icon="chevron-left" label={t('calendar.nav.prevMonth')} onClick={onPrev} />
-        <IconButton icon="chevron-right" label={t('calendar.nav.nextMonth')} onClick={onNext} />
+        <IconButton icon="chevron-left" label={t(`calendar.nav.prev.${view}`)} onClick={onPrev} />
+        <IconButton icon="chevron-right" label={t(`calendar.nav.next.${view}`)} onClick={onNext} />
       </div>
 
       <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
@@ -31,6 +36,8 @@ export function DateNavigator({
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
         {t('calendar.nav.today')}
       </Button>
+
+      <ViewSwitcher view={view} onChange={onView} />
 
       <div className="flex-1" />
 

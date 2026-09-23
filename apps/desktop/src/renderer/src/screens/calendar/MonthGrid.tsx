@@ -14,13 +14,14 @@ export interface MonthGridProps {
   showWeekNumbers: boolean
   /** Monday is 0, Sunday 6. */
   weekStart: number
-  selectedDay: number | null
+  /** `YYYY-MM-DD`, or null when no day is selected. */
+  selectedDate: string | null
   /** The day that owns the grid's single tab stop. */
   focusedDay: number
   onFocusDay: (day: number) => void
   onSelectDay: (day: number) => void
-  /** `day` is the day whose cell the event was opened from. */
-  onOpenEvent: (event: CalendarEvent, day: number) => void
+  /** `date` is the day whose cell the event was opened from, `YYYY-MM-DD`. */
+  onOpenEvent: (event: CalendarEvent, date: string) => void
 }
 
 function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
@@ -37,8 +38,9 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * Roving tabindex: exactly one cell is tabbable and the arrow keys move between them, so a
  * keyboard user crosses the month without tabbing through every chip on the way.
  *
- * A range is drawn as one bar per week, cut at the week's edges and at the month's — only the
- * month's own window was read, so outside days draw nothing. Each bar is a child of the cell
+ * A range is drawn as one bar per week, cut only at the week's edges: a month is read with a
+ * week of slack either side, so the days a row borrows from the adjacent months carry their
+ * objects too, dimmed but drawn. Each bar is a child of the cell
  * its week's segment starts in, which keeps the grid's rows and cells intact, and is
  * positioned against the week row, whose seven equal columns it needs to span. That is why
  * the week numbers sit beside the row, in a gutter of their own, and not in a column of it.
@@ -50,7 +52,7 @@ export function MonthGrid({
   today,
   showWeekNumbers,
   weekStart,
-  selectedDay,
+  selectedDate,
   focusedDay,
   onFocusDay,
   onSelectDay,
@@ -99,7 +101,7 @@ export function MonthGrid({
     <div
       ref={gridRef}
       role="grid"
-      aria-label={t('calendar.grid.ariaLabel')}
+      aria-label={t('calendar.grid.month')}
       className="flex min-h-0 flex-1 flex-col"
     >
       <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
@@ -141,13 +143,13 @@ export function MonthGrid({
                   hidden={layout.hidden[dayIndex]}
                   typesByKey={typesByKey}
                   isToday={!cell.outside && cell.date === today}
-                  isSelected={!cell.outside && cell.day === selectedDay}
+                  isSelected={cell.date === selectedDate}
                   isWeekend={isWeekendColumn(weekStart, dayIndex)}
                   tabbable={!cell.outside && cell.day === focusedDay}
                   onFocus={() => onFocusDay(cell.day)}
                   onSelect={() => onSelectDay(cell.day)}
                   onKeyDown={(event) => handleKeyDown(event, cell.day)}
-                  onOpenEvent={(event) => onOpenEvent(event, cell.day)}
+                  onOpenEvent={(event) => onOpenEvent(event, cell.date)}
                 />
               ))}
             </div>

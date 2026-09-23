@@ -145,6 +145,7 @@
     "calendar": "Calendario",
     "language": "Idioma",
     "languageSystem": "Predeterminado do sistema",
+    "defaultView": "Vista predeterminada",
     "firstDayOfWeek": "Primeiro día da semana",
     "timeFormat": "Formato de hora",
     "timeFormat24h": "24 horas (13:30)",
@@ -176,8 +177,8 @@
     }
   },
   "calendar": {
-    "couldntRead": "Non se puido ler {{month}}",
-    "nothingDated": "Nada con data en {{month}}",
+    "couldntRead": "Non se puido ler {{span}}",
+    "nothingDated": "Nada con data en {{span}}",
     "nothingDatedDescription": "Os eventos dos tipos que segues aparecerán aquí en canto unha das súas datas caia neste mes.",
     "chooseWhatGoesOn": "Elixe que aparece no calendario",
     "chooseWhatGoesOnDescription": "Elixe os espazos e tipos cuxas datas queres ver aquí.",
@@ -190,12 +191,18 @@
       "settings": "Axustes"
     },
     "nav": {
-      "prevMonth": "Mes anterior",
-      "nextMonth": "Mes seguinte",
-      "today": "Hoxe"
-    },
-    "grid": {
-      "ariaLabel": "Mes"
+      "today": "Hoxe",
+      "prev": {
+        "month": "Mes anterior",
+        "week": "Semana anterior",
+        "day": "Día anterior"
+      },
+      "next": {
+        "month": "Mes seguinte",
+        "week": "Semana seguinte",
+        "day": "Día seguinte"
+      },
+      "view": "Vista do calendario"
     },
     "dayCell": {
       "hiddenMore": "+{{count}} máis"
@@ -218,6 +225,17 @@
       "eventDetailLabel": "Detalle do evento",
       "dayDetailLabel": "Detalle do día",
       "close": "Pechar panel"
+    },
+    "allDay": "todo o día",
+    "view": {
+      "month": "Mes",
+      "week": "Semana",
+      "day": "Día"
+    },
+    "grid": {
+      "month": "Mes",
+      "week": "Semana",
+      "day": "Día"
     }
   }
 }

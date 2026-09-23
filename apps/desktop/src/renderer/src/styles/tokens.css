@@ -225,6 +225,8 @@
   --ds-row-h: 34px;
   --ds-daycell-min-h: 112px;
   --ds-hour-h: 48px;
+  /* Wide enough for a 12-hour label ("12:00 PM") in the mono face. */
+  --ds-hour-gutter-w: 60px;
 
   /* ---- Component geometry ------------------------------------------------ *
    * The design system tokenises colour, type, spacing, radius, elevation, motion,
@@ -544,6 +546,7 @@
   --spacing-row: var(--ds-row-h);
   --spacing-daycell: var(--ds-daycell-min-h);
   --spacing-hour: var(--ds-hour-h);
+  --spacing-hour-gutter: var(--ds-hour-gutter-w);
 
   --radius-2: var(--ds-radius-2);
   --radius-4: var(--ds-radius-4);

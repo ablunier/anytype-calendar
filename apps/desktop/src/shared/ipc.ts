@@ -1,5 +1,5 @@
 import type { AuthSession } from '@anytype-calendar/auth/domain'
-import type { EventsSpan, EventsSpanLoad } from '@anytype-calendar/events/domain'
+import type { EventsSpan, EventsSpanKind, EventsSpanLoad } from '@anytype-calendar/events/domain'
 import type {
   SchemaSelection,
   SchemaSelectionState,
@@ -16,6 +16,12 @@ export type SchemaSelectionSnapshot = SchemaSelectionState
 
 /** Safe to hand to the renderer: the key is read in main and never stored in an EventsSpanLoad. */
 export type EventsSnapshot = EventsSpanLoad
+
+/**
+ * Which of the three views a launch opens on. What is on screen now is the shown span's own
+ * kind, which main holds; this is only the durable default the next launch starts from.
+ */
+export type CalendarViewSnapshot = EventsSpanKind
 
 /** Null: no theme was ever saved, so the renderer follows the OS setting. */
 export type ThemeSnapshot = 'light' | 'dark' | null
@@ -64,6 +70,9 @@ export const IpcChannel = {
   timeFormatGet: 'timeFormat:get',
   timeFormatChanged: 'timeFormat:changed',
   timeFormatSave: 'timeFormat:save',
+  calendarViewGet: 'calendarView:get',
+  calendarViewChanged: 'calendarView:changed',
+  calendarViewSave: 'calendarView:save',
   shellOpenObject: 'shell:open-object'
 } as const
 
@@ -138,6 +147,12 @@ export interface CalendarApi {
     onChange(listener: (format: TimeFormatSnapshot) => void): () => void
     /** Rejects when the value is not `24h` or `12h`. */
     save(format: TimeFormatSnapshot): Promise<void>
+  }
+  calendarView: {
+    get(): Promise<CalendarViewSnapshot>
+    onChange(listener: (view: CalendarViewSnapshot) => void): () => void
+    /** Rejects when the value is not one of the three views. */
+    save(view: CalendarViewSnapshot): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

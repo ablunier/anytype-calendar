@@ -12,6 +12,7 @@ import { registerThemeIpc } from './theme/theme-ipc'
 import { registerTimeFormatIpc } from './time-format/time-format-ipc'
 import { startAutoUpdate } from './updates/auto-update'
 import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
+import { registerCalendarViewIpc } from './calendar-view/calendar-view-ipc'
 import { registerWeekStartIpc } from './week-start/week-start-ipc'
 import icon from '../../resources/icon.png?asset'
 
@@ -63,7 +64,11 @@ app.whenReady().then(async () => {
   registerWeekNumbersIpc(services)
   registerWeekStartIpc(services)
   registerTimeFormatIpc(services)
+  registerCalendarViewIpc(services)
   registerShellIpc()
+  // The span a launch opens on is read from these two, and restoring the session is what
+  // starts that first load, so they have to be in place before it runs.
+  await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),
@@ -71,7 +76,6 @@ app.whenReady().then(async () => {
     services.loadTheme.execute(),
     services.loadLanguage.execute(),
     services.loadWeekNumbers.execute(),
-    services.loadWeekStart.execute(),
     services.loadTimeFormat.execute()
   ])
 

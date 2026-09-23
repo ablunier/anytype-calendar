@@ -33,6 +33,20 @@ export const catBgSoft: Record<CategoryHue, string> = {
   graphite: 'bg-cat-graphite-soft'
 }
 
+/** Solid category edge — the left rule of a timed object in the week and day views. */
+export const catBorder: Record<CategoryHue, string> = {
+  sage: 'border-cat-sage',
+  clay: 'border-cat-clay',
+  ochre: 'border-cat-ochre',
+  mustard: 'border-cat-mustard',
+  dusk: 'border-cat-dusk',
+  denim: 'border-cat-denim',
+  plum: 'border-cat-plum',
+  teal: 'border-cat-teal',
+  rose: 'border-cat-rose',
+  graphite: 'border-cat-graphite'
+}
+
 /** Category ink — text and icons sitting on a soft fill. */
 export const catText: Record<CategoryHue, string> = {
   sage: 'text-cat-sage',
