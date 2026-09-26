@@ -22,7 +22,10 @@ export interface SchemaTypeRef {
 export type SchemaGatewayResult<T> = { ok: true; value: T } | { ok: false; failure: 'unauthorized' }
 
 export interface SchemaGateway {
-  /** Leaves out one-to-one chats and Anytype's own tech space. */
+  /**
+   * Leaves out Anytype's own tech space, and one-to-one chats where the API says which spaces
+   * those are (v1 does, v2 does not).
+   */
   listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceRef[]>>
 
   /** Leaves out archived types. */
