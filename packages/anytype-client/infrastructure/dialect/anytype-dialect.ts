@@ -31,7 +31,7 @@ const NOT_FOUND = 404
  */
 export class AnytypeDialectProbe {
   readonly #client: AnytypeClient
-  readonly #forced: AnytypeDialect | undefined
+  #forced: AnytypeDialect | undefined
   #cached: { apiKey: string; result: Promise<AnytypeDialectResult> } | null = null
 
   constructor({ client, forced }: AnytypeDialectProbeOptions) {
@@ -58,6 +58,12 @@ export class AnytypeDialectProbe {
   /** For when a v2 route stops answering: Anytype may have been downgraded under the app. */
   forget(): void {
     this.#cached = null
+  }
+
+  /** Undefined goes back to asking Anytype. Either way the last answer is forgotten. */
+  setForced(dialect: AnytypeDialect | undefined): void {
+    this.#forced = dialect
+    this.forget()
   }
 
   async #ask(apiKey: string): Promise<AnytypeDialectResult> {
