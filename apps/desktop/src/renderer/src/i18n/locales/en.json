@@ -167,6 +167,7 @@
     "colour": "Colour",
     "colourFor": "Colour for {{label}}",
     "typeColour": "Type colour",
+    "noColourProperty": "Add a select property to this type in Anytype to colour by it",
     "session": {
       "heading": "Session",
       "apiKey": "API key",

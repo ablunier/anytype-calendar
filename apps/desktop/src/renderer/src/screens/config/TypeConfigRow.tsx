@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
-import { Checkbox, Select } from '@renderer/components/ui'
+import { Checkbox, Select, Tooltip } from '@renderer/components/ui'
 import { colourOptions, dateOptions } from '@renderer/lib/calendar'
 
 export interface TypeConfigRowProps {
@@ -38,6 +38,17 @@ export function TypeConfigRow({
   const none = { value: '', label: t('common.none') }
   const typeColour = { value: '', label: t('config.typeColour') }
   const selects = colourOptions(type)
+  const colourSelect = (
+    <Select
+      size="sm"
+      className="w-116"
+      ariaLabel={t('config.colourFor', { label: type.label })}
+      options={[typeColour, ...selects]}
+      value={colourBy ?? typeColour.value}
+      disabled={!checked || selects.length === 0}
+      onChange={(value) => onColourByChange(value === typeColour.value ? null : value)}
+    />
+  )
   return (
     <div
       className={[
@@ -82,15 +93,13 @@ export function TypeConfigRow({
         />
       </div>
       {/* Only v2 says what a select's options look like, so under v1 there is nothing to pick. */}
-      <Select
-        size="sm"
-        className="w-116"
-        ariaLabel={t('config.colourFor', { label: type.label })}
-        options={[typeColour, ...selects]}
-        value={colourBy ?? typeColour.value}
-        disabled={!checked || selects.length === 0}
-        onChange={(value) => onColourByChange(value === typeColour.value ? null : value)}
-      />
+      {selects.length === 0 ? (
+        <Tooltip label={t('config.noColourProperty')} align="end">
+          {colourSelect}
+        </Tooltip>
+      ) : (
+        colourSelect
+      )}
     </div>
   )
 }

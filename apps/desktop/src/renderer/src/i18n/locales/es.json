@@ -167,6 +167,7 @@
     "colour": "Color",
     "colourFor": "Color de {{label}}",
     "typeColour": "Color del tipo",
+    "noColourProperty": "Añade una propiedad de selección a este tipo en Anytype para colorear por ella",
     "session": {
       "heading": "Sesión",
       "apiKey": "Clave de API",
