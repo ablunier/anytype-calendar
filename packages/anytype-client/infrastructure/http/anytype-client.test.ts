@@ -107,6 +107,31 @@ describe('request', () => {
     })
   })
 
+  test('resolves an error status whose body is not JSON with empty fields', async () => {
+    const { client } = setup(404, '404 page not found')
+
+    await expect(client.request({ method: 'GET', path: '/v2/auth/whoami' })).resolves.toEqual({
+      ok: false,
+      status: 404,
+      error: { code: '', message: '' }
+    })
+  })
+
+  test('sends extra headers beside its own', async () => {
+    const { client, calls } = setup(200, '{}')
+
+    await client.request({
+      method: 'PATCH',
+      path: '/v2/x',
+      headers: { 'Idempotency-Key': 'k1' }
+    })
+
+    expect(calls[0]?.init.headers).toEqual({
+      'Idempotency-Key': 'k1',
+      'Anytype-Version': '2025-11-08'
+    })
+  })
+
   test('rejects when the connection fails', async () => {
     const client = new AnytypeClient({
       fetch: async () => {
@@ -117,7 +142,7 @@ describe('request', () => {
     await expect(client.request({ method: 'GET', path: '/v1/spaces' })).rejects.toThrow('fetch failed')
   })
 
-  test('rejects when something other than JSON answers', async () => {
+  test('rejects when a success is something other than JSON', async () => {
     const { client } = setup(200, '<html>not anytype</html>')
 
     await expect(client.request({ method: 'GET', path: '/v1/spaces' })).rejects.toThrow(SyntaxError)

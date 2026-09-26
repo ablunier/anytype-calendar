@@ -24,6 +24,8 @@ export interface AnytypeRequest {
   body?: unknown
   /** Sent as a bearer token; omitted only by the auth endpoints. */
   apiKey?: string
+  /** Extra request headers, e.g. v2's `Idempotency-Key`. */
+  headers?: Record<string, string>
 }
 
 /** Empty strings when the error body did not carry the field. */
@@ -39,8 +41,8 @@ export type AnytypeResponse =
 
 /**
  * An error status is an answer, not a failure, so it resolves as a value for the adapter
- * to interpret; only a transport breakdown — no connection, or something other than JSON
- * coming back — rejects. Bodies are returned unvalidated: each adapter checks the shape
+ * to interpret; only a transport breakdown — no connection, or a success whose body is not
+ * JSON — rejects. Bodies are returned unvalidated: each adapter checks the shape
  * it relies on.
  */
 export class AnytypeClient {
@@ -58,8 +60,9 @@ export class AnytypeClient {
     this.#apiVersion = apiVersion
   }
 
-  async request({ method, path, body, apiKey }: AnytypeRequest): Promise<AnytypeResponse> {
-    const headers: Record<string, string> = { 'Anytype-Version': this.#apiVersion }
+  async request({ method, path, body, apiKey, headers: extra }: AnytypeRequest): Promise<AnytypeResponse> {
+    // v2 routes ignore the version header, so it is sent to both majors alike.
+    const headers: Record<string, string> = { ...extra, 'Anytype-Version': this.#apiVersion }
     if (apiKey !== undefined) headers['Authorization'] = `Bearer ${apiKey}`
     const init: Parameters<AnytypeFetch>[1] = { method, headers }
     if (body !== undefined) {
@@ -69,16 +72,30 @@ export class AnytypeClient {
 
     const response = await this.#fetch(`${this.#baseUrl}${path}`, init)
     const text = await response.text()
-    const parsed: unknown = text === '' ? null : JSON.parse(text)
 
     if (response.status >= 200 && response.status < 300) {
-      return { ok: true, status: response.status, body: parsed }
+      return { ok: true, status: response.status, body: text === '' ? null : JSON.parse(text) }
     }
-    return { ok: false, status: response.status, error: toApiError(parsed) }
+    return { ok: false, status: response.status, error: toApiError(parseErrorBody(text)) }
   }
 }
 
-/** Anytype's error body is `{ object: 'error', status, code, message }`. */
+/**
+ * An unmatched route answers in plain text (`404 page not found`), which is still an answer:
+ * an Anytype without API v2 says so this way.
+ */
+function parseErrorBody(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * v1's error body is `{ object: 'error', status, code, message }`; v2's handlers answer
+ * `{ status, code, message, issues }`, though its auth and scope checks still use v1's.
+ */
 function toApiError(body: unknown): AnytypeApiError {
   const fields = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
   return {
