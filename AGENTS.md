@@ -32,7 +32,8 @@ Run from the repo root unless noted.
   running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to run against a simulated Anytype instead —
   sign-in, the schema reads and the span's objects alike (see `composition.ts`). Against a
   real Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback (and
-  `v2` forbids it); either overrides the Settings → Session "API version" preference.
+  `v2` forbids it). Only with a legacy key: v1 refuses a key paired through v2, and a refused
+  key is signed out, which deletes it. There is deliberately no such setting in the UI.
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -82,8 +83,7 @@ answer means v2, a bare plain-text 404 means a build without v2). Each context's
 `infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
 `Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
 means deleting one file per context. A v2 adapter that meets the bare 404 calls
-`probe.forget()`, and so does leaving the `connected` session. `setForced` pins a major (the
-API version preference, or the env var), forgetting the last answer. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+`probe.forget()`, and so does leaving the `connected` session. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -174,13 +174,11 @@ Standard electron-vite three-process layout:
   Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
   and refreshes it on focus. The connected session's `access` is `{ apiVersion, grant }`; a
   null `grant` is a legacy key, or v1, which cannot say, and reaches every space with write
-  access. The API version preference (`main/api-version/`, the `apiVersion` section of
-  `app-config.json`: `'auto' | 'v1'`) sets the probe's forced major; a change re-checks the
-  access, re-syncs and reloads. Only the choice is saved, never the detected major. `LoadEventsSpan` lets the
+  access. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
   result. Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
   from the saved view and week start — which is why `main/index.ts` awaits those two
-  preferences, and the API version the first reads go through, before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
+  preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
   separate `credential-fake.bin`,
   `InMemorySchemaGateway` (the design's four sample spaces) and `InMemoryEventsGateway`
@@ -354,7 +352,8 @@ v1 facts, checked against a real account on API version `2025-11-08`:
 
 v2 (pre-release: it may change without a new version; spec at
 `https://developers.anytype.io/openapi-v2.yaml`), checked against a real account in September
-2026. The same process, port and keys serve both majors, so a v2 build still serves v1:
+2026. The same process and port serve both majors, so a v2 build still serves v1, and a legacy
+key works with both; a key paired through v2 (scoped) does not work with v1:
 - Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
   adapters always ask, since the saved selection stores full ids. Both spellings are accepted
   back. The list holds only the key's granted spaces, never the tech space, and says nothing
