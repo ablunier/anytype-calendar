@@ -9,7 +9,9 @@ calendar. It talks to the Anytype local API. npm workspaces monorepo, currently 
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
 the real Anytype local API, either through the challenge/code exchange or by pasting a key
-the user already holds, and keeps the key across restarts. `schema` — how the user
+the user already holds, and keeps the key across restarts. The connected session also says
+which major of the API the app reads through and what the key was granted (its spaces, and
+read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property) and tracks the last sync, which feeds the post-sign-in success
 card and onboarding. It also persists the user's
@@ -29,7 +31,8 @@ Run from the repo root unless noted.
   fails with a misleading `isPackaged` TypeError. Sign-in needs the Anytype desktop app
   running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to run against a simulated Anytype instead —
   sign-in, the schema reads and the span's objects alike (see `composition.ts`). Against a
-  real Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback.
+  real Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback (and
+  `v2` forbids it); either overrides the Settings → Session "API version" preference.
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -79,7 +82,8 @@ answer means v2, a bare plain-text 404 means a build without v2). Each context's
 `infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
 `Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
 means deleting one file per context. A v2 adapter that meets the bare 404 calls
-`probe.forget()`, and so does leaving the `connected` session. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+`probe.forget()`, and so does leaving the `connected` session. `setForced` pins a major (the
+API version preference, or the env var), forgetting the last answer. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -161,14 +165,22 @@ Standard electron-vite three-process layout:
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types of chosen spaces), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
-  where the contexts are linked: every auth session change either syncs the schema and
-  loads the span on screen (`connected`) or resets both (anything else); a successful
-  schema sync and every saved selection reload that span; and a window gaining focus
-  re-runs both, at most once per 30 s (`events/events-ipc.ts`). `LoadEventsSpan` lets the
+  where the contexts are linked: entering `connected` syncs the schema and loads the span on
+  screen, and leaving it resets both (a session that stays connected — `access-checked`
+  replacing its access — reads nothing again); a successful schema sync and every saved
+  selection reload that span; and a window gaining focus re-runs both, at most once per 30 s
+  (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
+  connected key reaches (`verifyApiKey`, which always re-asks the probe, so a grant changed in
+  Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
+  and refreshes it on focus. The connected session's `access` is `{ apiVersion, grant }`; a
+  null `grant` is a legacy key, or v1, which cannot say, and reaches every space with write
+  access. The API version preference (`main/api-version/`, the `apiVersion` section of
+  `app-config.json`: `'auto' | 'v1'`) sets the probe's forced major; a change re-checks the
+  access, re-syncs and reloads. Only the choice is saved, never the detected major. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
   result. Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
   from the saved view and week start — which is why `main/index.ts` awaits those two
-  preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
+  preferences, and the API version the first reads go through, before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
   separate `credential-fake.bin`,
   `InMemorySchemaGateway` (the design's four sample spaces) and `InMemoryEventsGateway`
@@ -346,7 +358,15 @@ v2 (pre-release: it may change without a new version; spec at
 - Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
   adapters always ask, since the saved selection stores full ids. Both spellings are accepted
   back. The list holds only the key's granted spaces, never the tech space, and says nothing
-  of a space's kind, so one-to-one chats cannot be left out.
+  of a space's kind, so one-to-one chats cannot be left out. Its top-level
+  `has_not_granted_spaces` says the grant leaves some of the account's spaces out; the schema
+  sync carries it as `hasNotGrantedSpaces`, and onboarding and Settings show a hint for it.
+- `GET /v2/auth/whoami?ids=full&spaces=true` describes the key: `grant { scoped, restricted,
+  all_spaces, permission, spaces[{ id, name, permission }] }` and `key_status`. A legacy key
+  (issued before grants) answers `scoped: false`, `permission: null`, `key_status: "legacy"`;
+  a restricted one lists its spaces; an all-spaces grant lists every live space too, which is
+  not its boundary. Pairing answers `grant { all_spaces, space_ids, permission: 'read' |
+  'readwrite' }`, or null. `api.version` says `2025-11-08` even over v2, so it is never shown.
 - A type list row is only `{ key, name }`; the icon and properties are in the type document
   (`GET …/types/{key}`: `icon`, `type_settings.property_definitions[{ property, internal_key,
   name, format }]`). That document spells `lastOpenedDate` in camelCase, where every other
@@ -366,7 +386,8 @@ v2 (pre-release: it may change without a new version; spec at
   with only the `fields` asked for: a date is a bare RFC 3339 string, and one the object has
   no value for is left out.
 - An unknown type key or a `fields`/filter key the type lacks answers 400, a space not open
-  404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects".
+  404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects". A
+  403 on a space's types, or on one type, reads as no types: the grant changed since the list.
 - Paging puts `has_more`, `total` and a `message` hint at the top level. v2's own errors are
   `{ status, code, message, issues[] }`; pairing, key and rate-limit refusals keep v1's shape.
 
