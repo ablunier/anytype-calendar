@@ -156,6 +156,19 @@ export interface ApiKeyView {
   issuedAt: number
 }
 
+/**
+ * What the connected key reaches. v1 cannot tell, so it says only which API is read through;
+ * under v2 a key with no grant of its own reaches every space and may edit.
+ */
+export type ApiAccessView =
+  | { version: 'v1' }
+  | {
+      version: 'v2'
+      /** Null: every space, including ones created later. */
+      spaceCount: number | null
+      canEdit: boolean
+    }
+
 export type DetailTarget =
   | { kind: 'event'; event: CalendarEvent }
   /** `date` is `YYYY-MM-DD`. */

@@ -84,6 +84,11 @@ export function spacesFor(snapshot: SchemaSnapshot): Space[] {
   }))
 }
 
+/** Whether the last successful sync found spaces the key was not granted; false until there is one. */
+export function hasNotGrantedSpaces(snapshot: SchemaSnapshot): boolean {
+  return snapshot.phase !== 'idle' && snapshot.last?.hasNotGrantedSpaces === true
+}
+
 /** Every dated type of the last successful sync, space by space; empty until there is one. */
 export function typesFor(snapshot: SchemaSnapshot): ObjectType[] {
   return syncedSpaces(snapshot).flatMap((space) =>

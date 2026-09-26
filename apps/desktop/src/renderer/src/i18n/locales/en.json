@@ -15,7 +15,9 @@
     "spacesUnreadable": "Your spaces could not be read. {{detail}}",
     "noDatedType": "No type in this space has a date property yet.",
     "spacesCount_one": "{{count}} space",
-    "spacesCount_other": "{{count}} spaces"
+    "spacesCount_other": "{{count}} spaces",
+    "notGrantedTitle": "Some spaces are not shared with this app",
+    "notGrantedDescription": "The key reaches only the spaces you picked when connecting. To add others, open the Anytype app, go to {{breadcrumb}} and grant them to Calendar for Anytype, or sign out and connect again to pick them."
   },
   "sync": {
     "status": {
@@ -117,7 +119,7 @@
     "label": "Onboarding",
     "skip": "Skip",
     "heading": "Which objects belong on the calendar?",
-    "lead": "Your key covers every space on this account. Pick the spaces you want to see, then the types inside them. Each type needs one date to start from; a second date turns it into a range.",
+    "lead": "Pick the spaces you want to see, then the types inside them. Each type needs one date to start from; a second date turns it into a range.",
     "datedTypesCount_one": "{{count}} dated type",
     "datedTypesCount_other": "{{count}} dated types",
     "pickSpace": "Pick a space to see the types inside it.",
@@ -137,7 +139,7 @@
   "config": {
     "backToCalendar": "Back to calendar",
     "title": "Settings",
-    "intro": "One key, read through the Anytype app on this computer. It covers every space on the account.",
+    "intro": "One key, read through the Anytype app on this computer.",
     "account": "Account",
     "rereadAccount": "Re-read account",
     "spacesAndTypes": "Spaces and types",
@@ -165,9 +167,20 @@
     "session": {
       "heading": "Session",
       "apiKey": "API key",
-      "keySummary": "••••••••••••{{hint}} · added {{added}} · account-wide",
+      "keySummary": "••••••••••••{{hint}} · added {{added}}",
       "keyCopied": "Key copied",
       "copyKey": "Copy key",
+      "api": "Anytype API",
+      "accessUnknown": "Checking what the key reaches…",
+      "accessV1": "v1",
+      "accessV2": "v2 (preview)",
+      "allSpaces": "all spaces",
+      "canEdit": "can edit",
+      "readOnly": "read-only",
+      "apiVersion": "API version",
+      "apiVersionAuto": "Automatic",
+      "apiVersionV1": "v1 only",
+      "apiVersionDescription": "Automatic uses v2 where Anytype offers it. v1 only is a way back if v2, still a preview, misbehaves; types v2 renamed may then show as not picked.",
       "signOutTitle": "Sign out of this computer",
       "signOutDescription": "Forgets the key here. It stays valid in Anytype until you delete it there.",
       "signOut": "Sign out",

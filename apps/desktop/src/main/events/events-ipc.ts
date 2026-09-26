@@ -6,6 +6,7 @@ import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
 
 export function registerEventsIpc({
   authSession,
+  checkAuthAccess,
   schemaSync,
   eventsState,
   loadEventsSpan
@@ -28,9 +29,11 @@ export function registerEventsIpc({
   })
 
   // Counted from now: the first window takes focus right after launch, when being connected
-  // has just read everything.
+  // has just read everything. The key's grant is asked again too: the user may have been in
+  // Anytype changing it.
   const refresh = throttled(
     () => {
+      void checkAuthAccess.execute()
       void schemaSync.execute()
       void loadEventsSpan.execute()
     },

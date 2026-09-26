@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import type { AuthView, CalendarView, ConnectedScreen } from './types'
+import { useApiVersion } from './hooks/useApiVersion'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
 import { useLocale } from './hooks/useLocale'
@@ -26,6 +27,7 @@ import {
   switchDateFor
 } from './lib/events'
 import {
+  hasNotGrantedSpaces,
   isOnboarded,
   picksFor,
   schemaSelectionFor,
@@ -34,7 +36,7 @@ import {
   tracksAnyType,
   typesFor
 } from './lib/schema'
-import { apiKeyFor, authViewFor } from './lib/session'
+import { apiAccessFor, apiKeyFor, authViewFor } from './lib/session'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
 import { CalendarScreen } from './screens/calendar/CalendarScreen'
@@ -63,6 +65,7 @@ function App(): React.JSX.Element | null {
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
   const [calendarView, setCalendarView] = useCalendarView()
+  const [apiVersion, setApiVersion] = useApiVersion()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -118,6 +121,7 @@ function App(): React.JSX.Element | null {
         spaces={spacesFor(schema)}
         types={types}
         sync={syncViewFor(schema, now)}
+        hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
         initial={picksFor(selection, types)}
         onRetrySync={() => void window.api.schema.sync()}
         onContinue={(picks) => void save(schemaSelectionFor(schema, picks, selection))}
@@ -134,8 +138,12 @@ function App(): React.JSX.Element | null {
         spaces={spacesFor(schema)}
         types={types}
         sync={syncViewFor(schema, now)}
+        hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
         initial={picksFor(selection, types)}
         apiKey={apiKey}
+        access={apiAccessFor(session)}
+        apiVersion={apiVersion}
+        onApiVersion={setApiVersion}
         language={language}
         onLanguage={setLanguage}
         showWeekNumbers={showWeekNumbers}

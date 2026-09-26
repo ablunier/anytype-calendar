@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { SessionSnapshot } from '@shared/ipc'
-import { apiKeyFor, authViewFor } from './session'
+import { apiAccessFor, apiKeyFor, authViewFor } from './session'
 
 const CHALLENGE = { id: 'ch_1', expiresAt: 60_000 }
 const ATTEMPT = { challenge: CHALLENGE, code: '1234' }
@@ -92,5 +92,45 @@ describe('apiKeyFor', () => {
       { phase: 'failed', failure: 'expired', attempt: ATTEMPT }
     ]
     for (const session of sessions) expect(apiKeyFor(session)).toBeNull()
+  })
+})
+
+describe('apiAccessFor', () => {
+  const connected = (access: Extract<SessionSnapshot, { phase: 'connected' }>['access']) =>
+    ({ phase: 'connected', key: KEY, access }) satisfies SessionSnapshot
+
+  test('is unknown until Anytype has been asked, and while not connected', () => {
+    expect(apiAccessFor(connected(null))).toBeNull()
+    expect(apiAccessFor({ phase: 'signed-out' })).toBeNull()
+  })
+
+  test('says only the major under v1', () => {
+    expect(apiAccessFor(connected({ apiVersion: 'v1', grant: null }))).toEqual({ version: 'v1' })
+  })
+
+  test('reads a key with no grant as reaching every space, and able to edit', () => {
+    expect(apiAccessFor(connected({ apiVersion: 'v2', grant: null }))).toEqual({
+      version: 'v2',
+      spaceCount: null,
+      canEdit: true
+    })
+  })
+
+  test('counts the spaces of a restricted grant, and reads its permission', () => {
+    const grant = { allSpaces: false, spaceIds: ['a', 'b'], permission: 'read' as const }
+    expect(apiAccessFor(connected({ apiVersion: 'v2', grant }))).toEqual({
+      version: 'v2',
+      spaceCount: 2,
+      canEdit: false
+    })
+  })
+
+  test('reads an all-spaces grant as every space', () => {
+    const grant = { allSpaces: true, spaceIds: [], permission: 'readwrite' as const }
+    expect(apiAccessFor(connected({ apiVersion: 'v2', grant }))).toEqual({
+      version: 'v2',
+      spaceCount: null,
+      canEdit: true
+    })
   })
 })

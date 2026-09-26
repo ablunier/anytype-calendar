@@ -15,7 +15,9 @@
     "spacesUnreadable": "Non se puideron ler os teus espazos. {{detail}}",
     "noDatedType": "Ningún tipo deste espazo ten aínda unha propiedade de data.",
     "spacesCount_one": "{{count}} espazo",
-    "spacesCount_other": "{{count}} espazos"
+    "spacesCount_other": "{{count}} espazos",
+    "notGrantedTitle": "Algúns espazos non se comparten con esta aplicación",
+    "notGrantedDescription": "A clave só chega aos espazos que elixiches ao conectar. Para engadir outros, abre a aplicación de Anytype, vai a {{breadcrumb}} e concédellos a Calendar for Anytype, ou pecha sesión e volve conectar para elixilos."
   },
   "sync": {
     "status": {
@@ -117,7 +119,7 @@
     "label": "Configuración inicial",
     "skip": "Omitir",
     "heading": "Que obxectos pertencen ao calendario?",
-    "lead": "A túa clave cobre todos os espazos desta conta. Elixe os espazos que queres ver e logo os tipos que conteñen. Cada tipo precisa unha data de inicio; unha segunda data convérteo nun intervalo.",
+    "lead": "Elixe os espazos que queres ver e logo os tipos que conteñen. Cada tipo precisa unha data de inicio; unha segunda data convérteo nun intervalo.",
     "datedTypesCount_one": "{{count}} tipo con data",
     "datedTypesCount_other": "{{count}} tipos con data",
     "pickSpace": "Elixe un espazo para ver os tipos que contén.",
@@ -137,7 +139,7 @@
   "config": {
     "backToCalendar": "Volver ao calendario",
     "title": "Axustes",
-    "intro": "Unha soa clave, lida a través da aplicación de Anytype neste computador. Cobre todos os espazos da conta.",
+    "intro": "Unha soa clave, lida a través da aplicación de Anytype neste computador.",
     "account": "Conta",
     "rereadAccount": "Reler conta",
     "spacesAndTypes": "Espazos e tipos",
@@ -165,9 +167,20 @@
     "session": {
       "heading": "Sesión",
       "apiKey": "Clave de API",
-      "keySummary": "••••••••••••{{hint}} · engadida o {{added}} · para toda a conta",
+      "keySummary": "••••••••••••{{hint}} · engadida o {{added}}",
       "keyCopied": "Clave copiada",
       "copyKey": "Copiar clave",
+      "api": "API de Anytype",
+      "accessUnknown": "Comprobando a que chega a clave…",
+      "accessV1": "v1",
+      "accessV2": "v2 (versión preliminar)",
+      "allSpaces": "todos os espazos",
+      "canEdit": "pode editar",
+      "readOnly": "só lectura",
+      "apiVersion": "Versión da API",
+      "apiVersionAuto": "Automática",
+      "apiVersionV1": "Só v1",
+      "apiVersionDescription": "Automática usa a v2 onde Anytype a ofrece. Só v1 é unha vía de volta se a v2, aínda preliminar, falla; os tipos que a v2 renomeou poden aparecer entón sen elixir.",
       "signOutTitle": "Pechar sesión neste computador",
       "signOutDescription": "Esquece a clave aquí. Segue sendo válida en Anytype ata que a elimines alí.",
       "signOut": "Pechar sesión",

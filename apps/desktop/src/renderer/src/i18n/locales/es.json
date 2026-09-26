@@ -15,7 +15,9 @@
     "spacesUnreadable": "No se pudieron leer tus espacios. {{detail}}",
     "noDatedType": "Ningún tipo de este espacio tiene todavía una propiedad de fecha.",
     "spacesCount_one": "{{count}} espacio",
-    "spacesCount_other": "{{count}} espacios"
+    "spacesCount_other": "{{count}} espacios",
+    "notGrantedTitle": "Algunos espacios no se comparten con esta aplicación",
+    "notGrantedDescription": "La clave solo llega a los espacios que elegiste al conectar. Para añadir otros, abre la aplicación de Anytype, ve a {{breadcrumb}} y concédeselos a Calendar for Anytype, o cierra sesión y vuelve a conectar para elegirlos."
   },
   "sync": {
     "status": {
@@ -117,7 +119,7 @@
     "label": "Configuración inicial",
     "skip": "Omitir",
     "heading": "¿Qué objetos pertenecen al calendario?",
-    "lead": "Tu clave cubre todos los espacios de esta cuenta. Elige los espacios que quieres ver y luego los tipos que contienen. Cada tipo necesita una fecha de inicio; una segunda fecha lo convierte en un rango.",
+    "lead": "Elige los espacios que quieres ver y luego los tipos que contienen. Cada tipo necesita una fecha de inicio; una segunda fecha lo convierte en un rango.",
     "datedTypesCount_one": "{{count}} tipo con fecha",
     "datedTypesCount_other": "{{count}} tipos con fecha",
     "pickSpace": "Elige un espacio para ver los tipos que contiene.",
@@ -137,7 +139,7 @@
   "config": {
     "backToCalendar": "Volver al calendario",
     "title": "Ajustes",
-    "intro": "Una sola clave, leída a través de la aplicación de Anytype en este ordenador. Cubre todos los espacios de la cuenta.",
+    "intro": "Una sola clave, leída a través de la aplicación de Anytype en este ordenador.",
     "account": "Cuenta",
     "rereadAccount": "Releer cuenta",
     "spacesAndTypes": "Espacios y tipos",
@@ -165,9 +167,20 @@
     "session": {
       "heading": "Sesión",
       "apiKey": "Clave de API",
-      "keySummary": "••••••••••••{{hint}} · añadida el {{added}} · para toda la cuenta",
+      "keySummary": "••••••••••••{{hint}} · añadida el {{added}}",
       "keyCopied": "Clave copiada",
       "copyKey": "Copiar clave",
+      "api": "API de Anytype",
+      "accessUnknown": "Comprobando a qué llega la clave…",
+      "accessV1": "v1",
+      "accessV2": "v2 (versión preliminar)",
+      "allSpaces": "todos los espacios",
+      "canEdit": "puede editar",
+      "readOnly": "solo lectura",
+      "apiVersion": "Versión de la API",
+      "apiVersionAuto": "Automática",
+      "apiVersionV1": "Solo v1",
+      "apiVersionDescription": "Automática usa la v2 donde Anytype la ofrece. Solo v1 es una vía de vuelta si la v2, aún preliminar, falla; los tipos que la v2 renombró pueden aparecer entonces sin elegir.",
       "signOutTitle": "Cerrar sesión en este ordenador",
       "signOutDescription": "Olvida la clave aquí. Sigue siendo válida en Anytype hasta que la elimines allí.",
       "signOut": "Cerrar sesión",

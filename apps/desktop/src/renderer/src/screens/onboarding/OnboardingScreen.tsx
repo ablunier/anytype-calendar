@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
+import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
@@ -13,6 +14,8 @@ export interface OnboardingScreenProps {
   spaces: Space[]
   types: ObjectType[]
   sync: SyncView
+  /** The key's grant leaves some of the account's spaces out of `spaces`. */
+  hasNotGrantedSpaces: boolean
   /** Read once, when the account has first been read. */
   initial: TypePicks
   onRetrySync: () => void
@@ -25,6 +28,7 @@ export function OnboardingScreen({
   spaces,
   types,
   sync,
+  hasNotGrantedSpaces,
   initial,
   onRetrySync,
   onContinue,
@@ -45,6 +49,7 @@ export function OnboardingScreen({
       {sync.hasResult ? (
         <Picker
           spaces={spaces}
+          hasNotGrantedSpaces={hasNotGrantedSpaces}
           types={types}
           initial={initial}
           onContinue={onContinue}
@@ -78,6 +83,7 @@ export function OnboardingScreen({
 
 interface PickerProps {
   spaces: Space[]
+  hasNotGrantedSpaces: boolean
   types: ObjectType[]
   initial: TypePicks
   onContinue: (picks: TypePicks) => void
@@ -85,7 +91,14 @@ interface PickerProps {
 }
 
 /** Mounted only once the account has been read, so the selection starts from real types. */
-function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): React.JSX.Element {
+function Picker({
+  spaces,
+  hasNotGrantedSpaces,
+  types,
+  initial,
+  onContinue,
+  onSkip
+}: PickerProps): React.JSX.Element {
   const { t } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const chosenSpaces = spaces.filter((space) => selection.spaceKeys.includes(space.key))
@@ -98,6 +111,11 @@ function Picker({ spaces, types, initial, onContinue, onSkip }: PickerProps): Re
           <p className="mb-24 max-w-prose-max type-lead text-lead text-pretty text-ink-secondary">
             {t('onboarding.lead')}
           </p>
+          {hasNotGrantedSpaces ? (
+            <div className="mb-24 max-w-prose-max">
+              <NotGrantedSpacesHint />
+            </div>
+          ) : null}
 
           <div className="grid grid-picker items-start gap-32">
             <SpacePicker

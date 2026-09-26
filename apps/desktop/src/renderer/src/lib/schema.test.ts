@@ -4,6 +4,7 @@ import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type { ObjectType, TypePicks } from '@renderer/types'
 import {
   elapsedSince,
+  hasNotGrantedSpaces,
   isOnboarded,
   objectTypeKey,
   picksFor,
@@ -49,6 +50,20 @@ const SYNCED: SchemaSnapshot = {
   phase: 'synced',
   last: { spaces: [SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT }
 }
+
+describe('hasNotGrantedSpaces', () => {
+  test('is false until a sync has succeeded', () => {
+    expect(hasNotGrantedSpaces({ phase: 'idle' })).toBe(false)
+    expect(hasNotGrantedSpaces({ phase: 'syncing' })).toBe(false)
+  })
+
+  test('follows the last successful sync, through a failed one', () => {
+    const last = { spaces: [SPACE], hasNotGrantedSpaces: true, syncedAt: SYNCED_AT }
+    expect(hasNotGrantedSpaces({ phase: 'synced', last })).toBe(true)
+    expect(hasNotGrantedSpaces({ phase: 'failed', failure: 'unreachable', at: 0, last })).toBe(true)
+    expect(hasNotGrantedSpaces(SYNCED)).toBe(false)
+  })
+})
 
 describe('tracksAnyType', () => {
   const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }

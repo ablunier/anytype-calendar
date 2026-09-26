@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ApiKeyView, CalendarView, ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
+import type {
+  ApiAccessView,
+  ApiKeyView,
+  CalendarView,
+  ObjectType,
+  Space,
+  SyncView,
+  TypePicks
+} from '@renderer/types'
+import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
-import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
+import type { ApiVersionSnapshot, LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -14,9 +23,15 @@ export interface ConfigScreenProps {
   spaces: Space[]
   types: ObjectType[]
   sync: SyncView
+  /** The key's grant leaves some of the account's spaces out of `spaces`. */
+  hasNotGrantedSpaces: boolean
   /** Read once, when the account has first been read. */
   initial: TypePicks
   apiKey: ApiKeyView
+  /** Null until Anytype has been asked what the key reaches. */
+  access: ApiAccessView | null
+  apiVersion: ApiVersionSnapshot
+  onApiVersion: (preference: ApiVersionSnapshot) => void
   /** Null: following the OS language ("System default" in the Select). */
   language: LanguageSnapshot
   onLanguage: (language: LanguageSnapshot) => void
@@ -51,8 +66,12 @@ function Settings({
   spaces,
   types,
   sync,
+  hasNotGrantedSpaces,
   initial,
   apiKey,
+  access,
+  apiVersion,
+  onApiVersion,
   language,
   onLanguage,
   showWeekNumbers,
@@ -141,6 +160,11 @@ function Settings({
                 {t('config.spacesAndTypesDescription')}
               </span>
             </div>
+            {read && hasNotGrantedSpaces ? (
+              <div className="mb-12">
+                <NotGrantedSpacesHint />
+              </div>
+            ) : null}
             {read ? (
               <SpacesAndTypes
                 spaces={spaces}
@@ -235,7 +259,14 @@ function Settings({
             </Card>
           </section>
 
-          <SessionSection apiKey={apiKey} onCopyKey={onCopyKey} onSignOut={onSignOut} />
+          <SessionSection
+            apiKey={apiKey}
+            access={access}
+            apiVersion={apiVersion}
+            onApiVersion={onApiVersion}
+            onCopyKey={onCopyKey}
+            onSignOut={onSignOut}
+          />
         </div>
       </main>
     </div>
