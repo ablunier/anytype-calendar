@@ -8,6 +8,11 @@ export interface EventsObjectRef {
   start: number
   /** Epoch milliseconds: the To value; null when the source has no To property or the object leaves it empty. */
   end: number | null
+  /** Each left off where the source has no such property, the object no value for it, or the API does not read it (v1). */
+  done?: boolean
+  location?: string
+  /** The name of the option picked in the source's `colourBy` property. */
+  option?: string
 }
 
 /**

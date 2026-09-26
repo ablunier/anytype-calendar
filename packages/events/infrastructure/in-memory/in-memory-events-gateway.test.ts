@@ -83,6 +83,31 @@ test('carries the To value of a range, and null where it is missing', async () =
   ])
 })
 
+test('carries Done, Location and the colour-by option only where the source names them', async () => {
+  const detailed: InMemoryEventsObject = {
+    ...OBJECTS[0]!,
+    done: true,
+    location: 'Home',
+    options: { priority: 'High' }
+  }
+  const { gateway } = setup([detailed])
+  const source: EventsSource = {
+    ...TASKS,
+    done: 'done',
+    location: 'location',
+    colourBy: { key: 'priority', options: [] }
+  }
+
+  await expect(gateway.listObjects('ak_any', source)).resolves.toEqual({
+    ok: true,
+    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null, done: true, location: 'Home', option: 'High' }]
+  })
+  await expect(gateway.listObjects('ak_any', TASKS)).resolves.toEqual({
+    ok: true,
+    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null }]
+  })
+})
+
 test('seeds the design sample around the current month by default', async () => {
   const { gateway } = setup()
   const window = monthWindow(DECEMBER)

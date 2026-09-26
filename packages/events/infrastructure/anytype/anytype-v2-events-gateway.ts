@@ -28,7 +28,8 @@ const GONE_STATUSES = new Set([400, 403, 404])
 type Page = { data: unknown[]; hasMore: boolean }
 
 /**
- * Searches each type with date filters, asking only for the From and To values back. The
+ * Searches each type with date filters, asking only for the From and To values back, and the
+ * Done, Location and colour-by values where the source names them. The
  * structured `filters` are used rather than the compact filter string, whose grammar has no
  * spelling for the keys Anytype mints for user properties (`6a650e02…`: they may start with a
  * digit). Like v1, a date filter rounds out to whole days (`greater_or_equal` to the start of
@@ -53,7 +54,7 @@ export class AnytypeV2EventsGateway implements EventsGateway {
     const body = {
       type: source.typeKey,
       filters: windowFilters(source, window),
-      fields: source.to === null ? [source.from] : [source.from, source.to]
+      fields: fieldsOf(source)
     }
     const items: unknown[] = []
     for (;;) {
@@ -82,6 +83,11 @@ export class AnytypeV2EventsGateway implements EventsGateway {
   }
 }
 
+/** Only keys the type has: v2 refuses a field the type lacks as a bad request. */
+function fieldsOf({ from, to, done, location, colourBy }: EventsSource): string[] {
+  return [from, to, done, location, colourBy?.key].filter((key) => key != null)
+}
+
 /**
  * A single date needs its From inside the window. A range needs its From at or before the
  * window's end, and either its To or its From at or after the window's start: the From
@@ -107,22 +113,36 @@ function windowFilters({ from, to }: EventsSource, window: EventsWindow): unknow
   ]
 }
 
-/** A row carries only the fields asked for, and leaves out a date the object has no value for. */
-function toRef(item: unknown, { from, to }: EventsSource): EventsObjectRef[] {
+/**
+ * A row carries only the fields asked for, and leaves out any the object has no value for: an
+ * unticked Done among them.
+ */
+function toRef(item: unknown, { from, to, done, location, colourBy }: EventsSource): EventsObjectRef[] {
   const id = stringField(item, 'id')
   const properties = field(item, 'properties')
   if (id === undefined) throw malformed()
   const start = dateIn(properties, from)
   if (start === null) return []
   const name = field(item, 'name')
-  return [
-    {
-      id,
-      title: typeof name === 'string' ? name : '',
-      start,
-      end: to === null ? null : dateIn(properties, to)
-    }
-  ]
+  const ref: EventsObjectRef = {
+    id,
+    title: typeof name === 'string' ? name : '',
+    start,
+    end: to === null ? null : dateIn(properties, to)
+  }
+  if (done !== undefined) ref.done = field(properties, done) === true
+  const place = location === undefined ? undefined : stringField(properties, location)
+  if (place !== undefined) ref.location = place
+  const option = colourBy === undefined ? undefined : optionIn(properties, colourBy.key)
+  if (option !== undefined) ref.option = option
+  return [ref]
+}
+
+/** A select's value is the list of its picked options' names, e.g. `["P4"]`. */
+function optionIn(properties: unknown, key: string): string | undefined {
+  const value = field(properties, key)
+  const first: unknown = Array.isArray(value) ? value[0] : value
+  return typeof first === 'string' && first !== '' ? first : undefined
 }
 
 /** Epoch milliseconds. v2 serves a date as a bare RFC 3339 string in UTC, e.g. `2026-09-13T22:00:00Z`. */

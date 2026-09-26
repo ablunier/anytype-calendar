@@ -13,6 +13,10 @@ export interface EventsDatedObject {
   /** Epoch milliseconds, from the type's To property. Null when there is none, or it precedes `start`. */
   end: number | null
   allDay: boolean
+  done?: boolean
+  location?: string
+  /** Anytype's colour name of the option the source colours by; left off to draw the type's. */
+  colour?: string
 }
 
 /**
@@ -25,11 +29,17 @@ export interface EventsDatedObject {
  * range running backwards: the object shows on its From date alone.
  */
 export function toEventsDatedObject(
-  { id, title, start, end }: EventsObjectRef,
-  { spaceId, typeKey, includesTime }: EventsSource
+  { id, title, start, end, done, location, option }: EventsObjectRef,
+  { spaceId, typeKey, includesTime, colourBy }: EventsSource
 ): EventsDatedObject {
   const kept = end !== null && end >= start ? end : null
-  return { id, spaceId, typeKey, title, start, end: kept, allDay: !includesTime }
+  const object: EventsDatedObject = { id, spaceId, typeKey, title, start, end: kept, allDay: !includesTime }
+  if (done !== undefined) object.done = done
+  if (location !== undefined && location !== '') object.location = location
+  const colour =
+    option === undefined ? undefined : colourBy?.options.find(({ name }) => name === option)?.color
+  if (colour !== undefined) object.colour = colour
+  return object
 }
 
 export function overlapsEventsWindow(

@@ -141,6 +141,62 @@ describe('a range', () => {
   })
 })
 
+describe('Done, Location and colour', () => {
+  const TASKS: EventsSource = {
+    ...APPOINTMENTS,
+    typeKey: 'task',
+    from: 'due_date',
+    done: 'done',
+    location: 'location',
+    colourBy: { key: '6aaa4502', options: [{ name: 'P4', color: 'grey' }] }
+  }
+
+  test('asks for them only where the source names them', async () => {
+    const { gateway, calls } = setup(page([]), page([]))
+
+    await gateway.listObjects(API_KEY, TASKS, WINDOW)
+    await gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)
+
+    expect(JSON.parse(calls[0]?.init.body ?? '').fields).toEqual(['due_date', 'done', 'location', '6aaa4502'])
+    expect(JSON.parse(calls[1]?.init.body ?? '').fields).toEqual(['data'])
+  })
+
+  test('resolves them, reading an absent Done as not done', async () => {
+    const { gateway } = setup(
+      page([
+        row('obj_1', 'Allergist', {
+          due_date: '2027-06-01T13:45:00Z',
+          done: true,
+          location: 'Clinic',
+          '6aaa4502': ['P4']
+        }),
+        row('obj_2', 'Cancel subscription', { due_date: '2027-06-02T10:00:00Z' })
+      ])
+    )
+
+    const result = await gateway.listObjects(API_KEY, TASKS, WINDOW)
+
+    expect(result.ok && result.value).toEqual([
+      {
+        id: 'obj_1',
+        title: 'Allergist',
+        start: Date.parse('2027-06-01T13:45:00Z'),
+        end: null,
+        done: true,
+        location: 'Clinic',
+        option: 'P4'
+      },
+      { id: 'obj_2', title: 'Cancel subscription', start: Date.parse('2027-06-02T10:00:00Z'), end: null, done: false }
+    ])
+  })
+
+  test('leaves them out for a source that does not name them', async () => {
+    const { gateway } = setup(page([row('obj_1', 'Padel', { data: '2026-09-26T09:00:00Z', done: true })]))
+    const result = await gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)
+    expect(result.ok && result.value[0]).not.toHaveProperty('done')
+  })
+})
+
 test('follows the pages until Anytype has no more', async () => {
   const { gateway, calls } = setup(
     page([row('obj_1', 'One', { data: '2026-09-01T08:00:00Z' })], true),

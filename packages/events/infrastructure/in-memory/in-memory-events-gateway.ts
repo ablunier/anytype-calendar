@@ -15,6 +15,10 @@ export interface InMemoryEventsObject {
   title: string
   /** Epoch milliseconds by property key. */
   dates: Record<string, number>
+  done?: boolean
+  location?: string
+  /** Option names by select property key. */
+  options?: Record<string, string>
 }
 
 export interface InMemoryEventsGatewayOptions {
@@ -33,42 +37,60 @@ interface SeedDate {
   time?: string
 }
 
-type Seed = [title: string, spaceId: string, typeKey: string, dates: Record<string, SeedDate>]
+type SeedDetails = Pick<InMemoryEventsObject, 'done' | 'location' | 'options'>
+
+type Seed = [
+  title: string,
+  spaceId: string,
+  typeKey: string,
+  dates: Record<string, SeedDate>,
+  details?: SeedDetails
+]
 
 const at = (month: number, day: number, time?: string): SeedDate =>
   time === undefined ? { month, day } : { month, day, time }
 
-const meeting = (title: string, day: number, start: string, end: string, month = 0): Seed => [
+const meeting = (
+  title: string,
+  day: number,
+  start: string,
+  end: string,
+  month = 0,
+  location?: string
+): Seed => [
   title,
   'sp_personal',
   'meeting',
-  { start_date: at(month, day, start), end_date: at(month, day, end) }
+  { start_date: at(month, day, start), end_date: at(month, day, end) },
+  location === undefined ? {} : { location }
 ]
+
+const priority = (name: string): SeedDetails => ({ options: { priority: name } })
 
 /**
  * The design's sample month, keyed to IN_MEMORY_SCHEMA_SPACES' account. Days stay within 28 so
  * every month has them.
  */
 const SEEDS: Seed[] = [
-  meeting('Weekly planning', 2, '10:00', '11:00'),
-  ['Draft API notes', 'sp_personal', 'task', { due_date: at(0, 3, '14:30') }],
+  meeting('Weekly planning', 2, '10:00', '11:00', 0, 'Studio, room 2'),
+  ['Draft API notes', 'sp_personal', 'task', { due_date: at(0, 3, '14:30') }, { done: true }],
   ['Docs sprint', 'sp_studio', 'project', { start_date: at(0, 4), due_date: at(0, 6) }],
   meeting('Standup', 5, '09:00', '09:30'),
-  ['Ship weekly digest', 'sp_studio', 'task', { due_date: at(0, 6, '16:00') }],
+  ['Ship weekly digest', 'sp_studio', 'task', { due_date: at(0, 6, '16:00') }, { done: true }],
   meeting('Design review', 9, '09:30', '10:15'),
-  ['Rewrite empty states', 'sp_studio', 'task', { due_date: at(0, 9, '13:00') }],
-  meeting('Sync with Mara', 10, '11:00', '11:45'),
+  ['Rewrite empty states', 'sp_studio', 'task', { due_date: at(0, 9, '13:00') }, priority('High')],
+  meeting('Sync with Mara', 10, '11:00', '11:45', 0, 'Café Central'),
   ['Field notes: local-first', 'sp_personal', 'task', { due_date: at(0, 10) }],
-  ['Ship changelog', 'sp_studio', 'task', { due_date: at(0, 11, '15:00') }],
+  ['Ship changelog', 'sp_studio', 'task', { due_date: at(0, 11, '15:00') }, priority('Medium')],
   ['Launch week', 'sp_studio', 'project', { start_date: at(0, 12), due_date: at(0, 16) }],
   meeting('Design review', 12, '09:30', '10:15'),
   ['Write release notes', 'sp_studio', 'task', { due_date: at(0, 12, '11:00') }],
-  ['Reply to Iris', 'sp_personal', 'task', { due_date: at(0, 12, '14:00') }],
+  ['Reply to Iris', 'sp_personal', 'task', { due_date: at(0, 12, '14:00') }, priority('Low')],
   ['Close the week', 'sp_personal', 'task', { due_date: at(0, 13, '17:00') }],
   ['Seeing Like a State', 'sp_reading', 'book', { start_date: at(0, 14), finish_date: at(0, 21) }],
   meeting('Weekly planning', 16, '10:00', '10:30'),
   ['Iris', 'sp_personal', 'contact', { birthday: at(0, 17) }],
-  ['Sync API contract', 'sp_studio', 'task', { due_date: at(0, 18, '09:00') }],
+  ['Sync API contract', 'sp_studio', 'task', { due_date: at(0, 18, '09:00') }, priority('High')],
   ['File taxes', 'sp_archive', 'task', { due_date: at(0, 19) }],
   ['Quarter close', 'sp_studio', 'project', { start_date: at(0, 20), due_date: at(0, 21) }],
   meeting('Interview: Sofia', 23, '11:30', '12:15'),
@@ -101,14 +123,15 @@ const SEEDS: Seed[] = [
 
 /** Seeded around `month`, so the fake account always has something to show wherever it runs. */
 export function inMemoryEventsSample(month: EventsMonth, zone: EventsTimeZone): InMemoryEventsObject[] {
-  return SEEDS.map(([title, spaceId, typeKey, dates], index) => ({
+  return SEEDS.map(([title, spaceId, typeKey, dates, details = {}], index) => ({
     id: `obj_${index + 1}`,
     spaceId,
     typeKey,
     title,
     dates: Object.fromEntries(
       Object.entries(dates).map(([key, seed]) => [key, instantOf(seed, month, zone)])
-    )
+    ),
+    ...details
   }))
 }
 
@@ -127,13 +150,23 @@ export class InMemoryEventsGateway implements EventsGateway {
   /** Returns every object of the source with a From value, as the port allows. */
   async listObjects(
     _apiKey: string,
-    { spaceId, typeKey, from, to }: EventsSource
+    { spaceId, typeKey, from, to, done, location, colourBy }: EventsSource
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     await this.#sleep(this.#requestLatencyMs)
-    const refs = this.#objects.flatMap(({ id, title, dates, ...object }) => {
-      const start = dates[from]
+    const refs = this.#objects.flatMap((object) => {
+      const start = object.dates[from]
       if (object.spaceId !== spaceId || object.typeKey !== typeKey || start === undefined) return []
-      return [{ id, title, start, end: to === null ? null : (dates[to] ?? null) }]
+      const ref: EventsObjectRef = {
+        id: object.id,
+        title: object.title,
+        start,
+        end: to === null ? null : (object.dates[to] ?? null)
+      }
+      if (done !== undefined) ref.done = object.done === true
+      if (location !== undefined && object.location !== undefined) ref.location = object.location
+      const option = colourBy && object.options?.[colourBy.key]
+      if (option) ref.option = option
+      return [ref]
     })
     return { ok: true, value: refs }
   }
