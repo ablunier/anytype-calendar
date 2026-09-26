@@ -14,12 +14,15 @@ which major of the API the app reads through and what the key was granted (its s
 read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property) and tracks the last sync, which feeds the post-sign-in success
-card and onboarding. It also persists the user's
-selection — which spaces and types go on the calendar, each type's From/To date property,
-and whether that type's dates carry a time of day — which onboarding and Settings save.
+card and onboarding. Under v2 a sync also reads each space's image, whether each type has
+Anytype's own Done and Location, and its select properties' option colours. It also persists
+the user's selection — which spaces and types go on the calendar, each type's From/To date
+property, whether that type's dates carry a time of day, and which select property, if any,
+colours its objects (`colourBy`) — which onboarding and Settings save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
-selected types whose dates fall in it, which the calendar screen draws as a month grid or as
-an hour grid. No screen runs on mock data.
+selected types whose dates fall in it, with their Done, Location and colour-by option where
+v2 serves them, which the calendar screen draws as a month grid or as an hour grid. No screen
+runs on mock data.
 
 ## Commands
 
@@ -163,7 +166,9 @@ Standard electron-vite three-process layout:
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
-  store (`events/event-sources.ts`: only the chosen types of chosen spaces), and places a
+  store (`events/event-sources.ts`: only the chosen types of chosen spaces; Done, Location and
+  the colour-by property only where the last schema sync saw the type with them, since v2
+  refuses a search `field` the type lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
@@ -369,7 +374,17 @@ key works with both; a key paired through v2 (scoped) does not work with v1:
 - A type list row is only `{ key, name }`; the icon and properties are in the type document
   (`GET …/types/{key}`: `icon`, `type_settings.property_definitions[{ property, internal_key,
   name, format }]`). That document spells `lastOpenedDate` in camelCase, where every other
-  route says `last_opened_date`.
+  route says `last_opened_date`. Done is the bundled `done` (checkbox) and Location the
+  bundled `location` (text); a user property of the same name is not them.
+- A select's options are `GET …/properties/{key}/options` → `{ name, color }`, space-wide and
+  with no id: a search row names the picked option by its name, as a list (`["P4"]`). v1 has
+  no such route, so `colourBy` is offered only under v2. `color` is one of the same ten names
+  type icons use, drawn with the same hues (`hueOf`, `lib/schema.ts`).
+- A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
+  the image's bytes (PNG seen). `AnytypeClient.download` reads it through the injected
+  `fetchBytes`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
+  composition root), cached by file id since a changed image gets a new id. The renderer's
+  CSP allows `img-src data:` for it.
 - **Keys differ from v1's where a user's type or property collides with one Anytype bundles**
   (a user "Book" type, a "Status" property): v1 serves the slug (`book`), v2 the internal key
   (`6a67272659c08021576f3127`), and v2 refuses the slug as `ambiguous_input`. Both majors
@@ -383,7 +398,7 @@ key works with both; a key paired through v2 (scoped) does not work with v1:
   compact `filter` string cannot spell a key that starts with a digit, as internal keys may,
   so the adapters do not use it. Rows are `{ id, name, type, properties: { [key]: value } }`
   with only the `fields` asked for: a date is a bare RFC 3339 string, and one the object has
-  no value for is left out.
+  no value for is left out — so is an unticked Done, read as not done.
 - An unknown type key or a `fields`/filter key the type lacks answers 400, a space not open
   404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects". A
   403 on a space's types, or on one type, reads as no types: the grant changed since the list.
