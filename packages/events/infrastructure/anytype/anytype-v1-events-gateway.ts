@@ -20,7 +20,7 @@ type Page = { data: unknown[]; hasMore: boolean }
  * (`gte` to the start of its day, `lte` to the end), so these can only return extra objects,
  * never miss one — which is what the port promises.
  */
-export class AnytypeEventsGateway implements EventsGateway {
+export class AnytypeV1EventsGateway implements EventsGateway {
   readonly #client: AnytypeClient
 
   constructor(client: AnytypeClient) {

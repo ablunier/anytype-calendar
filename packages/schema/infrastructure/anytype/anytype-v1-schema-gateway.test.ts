@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
-import { AnytypeSchemaGateway } from './anytype-schema-gateway'
+import { AnytypeV1SchemaGateway } from './anytype-v1-schema-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 type Reply = { status: number; body: unknown }
@@ -19,7 +19,7 @@ function setup(...replies: Reply[]) {
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
     }
   })
-  return { gateway: new AnytypeSchemaGateway(client), calls }
+  return { gateway: new AnytypeV1SchemaGateway(client), calls }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({

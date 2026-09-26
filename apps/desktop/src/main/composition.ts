@@ -16,7 +16,7 @@ import {
 } from '@anytype-calendar/auth/application'
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
 import {
-  AnytypeAuthGateway,
+  AnytypeV1AuthGateway,
   EncryptedFileCredentialRepository,
   InMemoryAuthGateway,
   InMemoryCredentialRepository
@@ -28,7 +28,7 @@ import {
 } from '@anytype-calendar/events/application'
 import type { EventsGateway, EventsTimeZone } from '@anytype-calendar/events/domain'
 import {
-  AnytypeEventsGateway,
+  AnytypeV1EventsGateway,
   InMemoryEventsGateway,
   LocalEventsTimeZone
 } from '@anytype-calendar/events/infrastructure'
@@ -42,7 +42,7 @@ import {
 } from '@anytype-calendar/schema/application'
 import type { SchemaGateway } from '@anytype-calendar/schema/domain'
 import {
-  AnytypeSchemaGateway,
+  AnytypeV1SchemaGateway,
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
@@ -126,7 +126,7 @@ export function composeServices(): AppServices {
   const credentials = credentialRepository(fakeAnytype ? 'credential-fake.bin' : 'credential.bin')
 
   const authSession = new AuthSessionStore()
-  const authGateway = client ? new AnytypeAuthGateway(client) : inMemoryAuthGateway()
+  const authGateway = client ? new AnytypeV1AuthGateway(client) : inMemoryAuthGateway()
   const restoreAuthSession = new RestoreAuthSession({ credentials, store: authSession })
   const startAuthConnection = new StartAuthConnection({
     gateway: authGateway,
@@ -145,7 +145,7 @@ export function composeServices(): AppServices {
 
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
-    gateway: client ? new AnytypeSchemaGateway(client) : inMemorySchemaGateway(),
+    gateway: client ? new AnytypeV1SchemaGateway(client) : inMemorySchemaGateway(),
     apiKeys,
     store: schemaState
   })
@@ -175,7 +175,7 @@ export function composeServices(): AppServices {
   const zone = new LocalEventsTimeZone()
   const eventsState = new EventsSpanStore()
   const loadEventsSpan = new LoadEventsSpan({
-    gateway: client ? new AnytypeEventsGateway(client) : inMemoryEventsGateway(zone),
+    gateway: client ? new AnytypeV1EventsGateway(client) : inMemoryEventsGateway(zone),
     apiKeys,
     sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
     zone,

@@ -21,7 +21,7 @@ const UNAUTHORIZED = 401
 
 type Page = { data: unknown[]; hasMore: boolean }
 
-export class AnytypeSchemaGateway implements SchemaGateway {
+export class AnytypeV1SchemaGateway implements SchemaGateway {
   readonly #client: AnytypeClient
 
   constructor(client: AnytypeClient) {

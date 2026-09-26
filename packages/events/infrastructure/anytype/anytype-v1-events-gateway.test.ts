@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
 import type { EventsSource } from '../../domain'
-import { AnytypeEventsGateway } from './anytype-events-gateway'
+import { AnytypeV1EventsGateway } from './anytype-v1-events-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 type Reply = { status: number; body: unknown }
@@ -38,7 +38,7 @@ function setup(...replies: Reply[]) {
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
     }
   })
-  return { gateway: new AnytypeEventsGateway(client), calls }
+  return { gateway: new AnytypeV1EventsGateway(client), calls }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -257,7 +257,7 @@ describe('malformed answers', () => {
 })
 
 test('rejects when Anytype cannot be reached', async () => {
-  const gateway = new AnytypeEventsGateway(
+  const gateway = new AnytypeV1EventsGateway(
     new AnytypeClient({
       fetch: async () => {
         throw new TypeError('fetch failed')

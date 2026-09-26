@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
-import { AnytypeAuthGateway } from './anytype-auth-gateway'
+import { AnytypeV1AuthGateway } from './anytype-v1-auth-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 
@@ -12,7 +12,7 @@ function setup(status: number, body: unknown) {
       return { status, text: async () => JSON.stringify(body) }
     }
   })
-  return { gateway: new AnytypeAuthGateway(client), calls }
+  return { gateway: new AnytypeV1AuthGateway(client), calls }
 }
 
 const authFailure = {
@@ -44,7 +44,7 @@ describe('createChallenge', () => {
   })
 
   test('rejects when Anytype cannot be reached', async () => {
-    const gateway = new AnytypeAuthGateway(
+    const gateway = new AnytypeV1AuthGateway(
       new AnytypeClient({
         fetch: async () => {
           throw new TypeError('fetch failed')
@@ -124,7 +124,7 @@ describe('verifyApiKey', () => {
   })
 
   test('rejects when Anytype cannot be reached', async () => {
-    const gateway = new AnytypeAuthGateway(
+    const gateway = new AnytypeV1AuthGateway(
       new AnytypeClient({
         fetch: async () => {
           throw new TypeError('fetch failed')

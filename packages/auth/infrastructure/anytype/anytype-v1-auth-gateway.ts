@@ -12,7 +12,7 @@ const REJECTED_CODE_STATUSES = new Set([400, 500])
 /** What every authenticated endpoint answers for a key it does not recognise. */
 const UNAUTHORIZED = 401
 
-export class AnytypeAuthGateway implements AuthGateway {
+export class AnytypeV1AuthGateway implements AuthGateway {
   readonly #client: AnytypeClient
 
   constructor(client: AnytypeClient) {
