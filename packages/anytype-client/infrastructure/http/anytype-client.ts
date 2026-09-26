@@ -10,8 +10,19 @@ export type AnytypeFetch = (
   init: { method: string; headers: Record<string, string>; body?: string }
 ) => Promise<{ status: number; text(): Promise<string> }>
 
+/**
+ * `fetch` again, reading the body as bytes rather than text. Separate so that a composition
+ * with no downloads to make need not supply it.
+ */
+export type AnytypeFetchBytes = (
+  url: string,
+  init: { method: 'GET'; headers: Record<string, string> }
+) => Promise<{ status: number; contentType: string | null; bytes(): Promise<Uint8Array> }>
+
 export interface AnytypeClientOptions {
   fetch: AnytypeFetch
+  /** Needed only by `download`. */
+  fetchBytes?: AnytypeFetchBytes
   baseUrl?: string
   apiVersion?: string
 }
@@ -35,6 +46,11 @@ export interface AnytypeApiError {
   message: string
 }
 
+/** The error body is not read: a download's failure is told by its status alone. */
+export type AnytypeDownload =
+  | { ok: true; status: number; contentType: string | null; bytes: Uint8Array }
+  | { ok: false; status: number }
+
 export type AnytypeResponse =
   | { ok: true; status: number; body: unknown }
   | { ok: false; status: number; error: AnytypeApiError }
@@ -47,15 +63,18 @@ export type AnytypeResponse =
  */
 export class AnytypeClient {
   readonly #fetch: AnytypeFetch
+  readonly #fetchBytes: AnytypeFetchBytes | undefined
   readonly #baseUrl: string
   readonly #apiVersion: string
 
   constructor({
     fetch,
+    fetchBytes,
     baseUrl = ANYTYPE_LOCAL_API_URL,
     apiVersion = ANYTYPE_API_VERSION
   }: AnytypeClientOptions) {
     this.#fetch = fetch
+    this.#fetchBytes = fetchBytes
     this.#baseUrl = baseUrl
     this.#apiVersion = apiVersion
   }
@@ -77,6 +96,22 @@ export class AnytypeClient {
       return { ok: true, status: response.status, body: text === '' ? null : JSON.parse(text) }
     }
     return { ok: false, status: response.status, error: toApiError(parseErrorBody(text)) }
+  }
+
+  /** A file's bytes, e.g. v2's `…/files/{id}/content`. Rejects when no `fetchBytes` was given. */
+  async download({ path, apiKey }: { path: string; apiKey: string }): Promise<AnytypeDownload> {
+    if (!this.#fetchBytes) throw new Error('This AnytypeClient was given no fetchBytes')
+    const response = await this.#fetchBytes(`${this.#baseUrl}${path}`, {
+      method: 'GET',
+      headers: { 'Anytype-Version': this.#apiVersion, Authorization: `Bearer ${apiKey}` }
+    })
+    if (response.status < 200 || response.status >= 300) return { ok: false, status: response.status }
+    return {
+      ok: true,
+      status: response.status,
+      contentType: response.contentType,
+      bytes: await response.bytes()
+    }
   }
 }
 

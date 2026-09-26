@@ -148,3 +148,53 @@ describe('request', () => {
     await expect(client.request({ method: 'GET', path: '/v1/spaces' })).rejects.toThrow(SyntaxError)
   })
 })
+
+describe('download', () => {
+  test('reads a file as bytes, with its media type, sending the key', async () => {
+    const calls: { url: string; init: unknown }[] = []
+    const client = new AnytypeClient({
+      fetch: async () => ({ status: 500, text: async () => '' }),
+      fetchBytes: async (url, init) => {
+        calls.push({ url, init })
+        return { status: 200, contentType: 'image/png', bytes: async () => new Uint8Array([1, 2]) }
+      }
+    })
+
+    await expect(
+      client.download({ path: '/v2/spaces/sp/files/f1/content?width=64', apiKey: 'ak_secret' })
+    ).resolves.toEqual({ ok: true, status: 200, contentType: 'image/png', bytes: new Uint8Array([1, 2]) })
+    expect(calls).toEqual([
+      {
+        url: 'http://127.0.0.1:31009/v2/spaces/sp/files/f1/content?width=64',
+        init: {
+          method: 'GET',
+          headers: { 'Anytype-Version': '2025-11-08', Authorization: 'Bearer ak_secret' }
+        }
+      }
+    ])
+  })
+
+  test('resolves an error status without reading the body', async () => {
+    let read = false
+    const client = new AnytypeClient({
+      fetch: async () => ({ status: 500, text: async () => '' }),
+      fetchBytes: async () => ({
+        status: 404,
+        contentType: null,
+        bytes: async () => {
+          read = true
+          return new Uint8Array()
+        }
+      })
+    })
+
+    await expect(client.download({ path: '/v2/x', apiKey: 'ak' })).resolves.toEqual({ ok: false, status: 404 })
+    expect(read).toBe(false)
+  })
+
+  test('rejects when the client was given no way to read bytes', async () => {
+    const { client } = setup(200)
+
+    await expect(client.download({ path: '/v2/x', apiKey: 'ak' })).rejects.toThrow('fetchBytes')
+  })
+})
