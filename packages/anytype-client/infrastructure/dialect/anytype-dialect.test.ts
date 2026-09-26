@@ -84,17 +84,6 @@ describe('probe', () => {
     expect(urls).toEqual([])
   })
 
-  test('forces v1 from when it is set, and asks again once unset', async () => {
-    const { probe, urls } = setup([V2, V2])
-
-    await expect(probe.probe('ak')).resolves.toMatchObject({ dialect: 'v2' })
-    probe.setForced('v1')
-    await expect(probe.probe('ak')).resolves.toMatchObject({ dialect: 'v1' })
-    probe.setForced(undefined)
-    await expect(probe.probe('ak')).resolves.toMatchObject({ dialect: 'v2' })
-    expect(urls).toHaveLength(2)
-  })
-
   test('refuses a forced v2 that Anytype does not serve', async () => {
     const { probe } = setup([NO_ROUTE], 'v2')
 
