@@ -2,7 +2,11 @@ import { randomBytes } from 'crypto'
 import { join } from 'path'
 import { setTimeout as sleep } from 'timers/promises'
 import { app, safeStorage } from 'electron'
-import { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
+import {
+  AnytypeClient,
+  AnytypeDialectProbe,
+  type AnytypeDialect
+} from '@anytype-calendar/anytype-client/infrastructure'
 import {
   AuthSessionStore,
   CopyAuthApiKey,
@@ -16,7 +20,9 @@ import {
 } from '@anytype-calendar/auth/application'
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
 import {
+  AnytypeAuthGateway,
   AnytypeV1AuthGateway,
+  AnytypeV2AuthGateway,
   EncryptedFileCredentialRepository,
   InMemoryAuthGateway,
   InMemoryCredentialRepository
@@ -28,12 +34,15 @@ import {
 } from '@anytype-calendar/events/application'
 import type { EventsGateway, EventsTimeZone } from '@anytype-calendar/events/domain'
 import {
+  AnytypeEventsGateway,
   AnytypeV1EventsGateway,
+  AnytypeV2EventsGateway,
   InMemoryEventsGateway,
   LocalEventsTimeZone
 } from '@anytype-calendar/events/infrastructure'
 import {
   LoadSchemaSelection,
+  RekeySchemaSelection,
   ResetSchemaSync,
   SaveSchemaSelection,
   SchemaSelectionStore,
@@ -42,7 +51,9 @@ import {
 } from '@anytype-calendar/schema/application'
 import type { SchemaGateway } from '@anytype-calendar/schema/domain'
 import {
+  AnytypeSchemaGateway,
   AnytypeV1SchemaGateway,
+  AnytypeV2SchemaGateway,
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
@@ -121,12 +132,22 @@ export function composeServices(): AppServices {
   // return the design's sample account.
   const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
   const client = fakeAnytype ? null : anytypeClient()
+  // Every context asks this which major of the API Anytype serves: v2 where it can, v1 where
+  // it cannot. ANYTYPE_CALENDAR_API=v1 forces the fallback against an Anytype that has v2.
+  const probe = client ? dialectProbe(client) : null
 
   // A fake key gets its own file, so it is never restored against the real Anytype.
   const credentials = credentialRepository(fakeAnytype ? 'credential-fake.bin' : 'credential.bin')
 
   const authSession = new AuthSessionStore()
-  const authGateway = client ? new AnytypeV1AuthGateway(client) : inMemoryAuthGateway()
+  const authGateway =
+    client && probe
+      ? new AnytypeAuthGateway({
+          probe,
+          v1: new AnytypeV1AuthGateway(client),
+          v2: new AnytypeV2AuthGateway(client)
+        })
+      : inMemoryAuthGateway()
   const restoreAuthSession = new RestoreAuthSession({ credentials, store: authSession })
   const startAuthConnection = new StartAuthConnection({
     gateway: authGateway,
@@ -145,7 +166,14 @@ export function composeServices(): AppServices {
 
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
-    gateway: client ? new AnytypeV1SchemaGateway(client) : inMemorySchemaGateway(),
+    gateway:
+      client && probe
+        ? new AnytypeSchemaGateway({
+            probe,
+            v1: new AnytypeV1SchemaGateway(client),
+            v2: new AnytypeV2SchemaGateway({ client, probe })
+          })
+        : inMemorySchemaGateway(),
     apiKeys,
     store: schemaState
   })
@@ -171,11 +199,19 @@ export function composeServices(): AppServices {
     repository: selectionRepository,
     store: schemaSelection
   })
+  const rekeySchemaSelection = new RekeySchemaSelection(saveSchemaSelection)
 
   const zone = new LocalEventsTimeZone()
   const eventsState = new EventsSpanStore()
   const loadEventsSpan = new LoadEventsSpan({
-    gateway: client ? new AnytypeV1EventsGateway(client) : inMemoryEventsGateway(zone),
+    gateway:
+      client && probe
+        ? new AnytypeEventsGateway({
+            probe,
+            v1: new AnytypeV1EventsGateway(client),
+            v2: new AnytypeV2EventsGateway({ client, probe })
+          })
+        : inMemoryEventsGateway(zone),
     apiKeys,
     sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
     zone,
@@ -221,6 +257,9 @@ export function composeServices(): AppServices {
     } else {
       resetSchemaSync.execute()
       resetEventsSpan.execute()
+      // Anytype may be updated before the next sign-in, and a key restored at launch has only
+      // just been probed, so the dialect is asked again only once the session is left.
+      probe?.forget()
     }
   })
   // A key Anytype no longer accepts — usually deleted in its settings — answers unauthorized
@@ -233,7 +272,14 @@ export function composeServices(): AppServices {
   }
   // A fresh read of the account, or a changed selection, may change what the month holds. A
   // reload replaces a load still running, so a burst of Settings changes draws only the last.
+  // A selection saved under v1 of the API may name types and properties by keys v2 spells
+  // otherwise; rewriting it saves it, and a saved selection reloads the span on its own.
   schemaState.subscribe((state) => {
+    if (state.phase === 'synced') {
+      rekeySchemaSelection.execute(state.last.spaces).catch((error: unknown) => {
+        console.error('Could not rewrite the calendar selection to the current keys', error)
+      })
+    }
     if (state.phase === 'synced' && connected()) void loadEventsSpan.execute()
     if (state.phase === 'failed') handleUnauthorized(state.failure)
   })
@@ -286,6 +332,14 @@ function anytypeClient(): AnytypeClient {
   return new AnytypeClient({
     fetch: (url, init) =>
       fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) })
+  })
+}
+
+function dialectProbe(client: AnytypeClient): AnytypeDialectProbe {
+  const forced = process.env['ANYTYPE_CALENDAR_API']
+  return new AnytypeDialectProbe({
+    client,
+    ...(forced === 'v1' || forced === 'v2' ? { forced: forced satisfies AnytypeDialect } : {})
   })
 }
 
