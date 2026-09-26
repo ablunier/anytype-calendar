@@ -28,7 +28,8 @@ Run from the repo root unless noted.
   `env -u ELECTRON_RUN_AS_NODE npm run dev` — otherwise Electron launches in Node mode and
   fails with a misleading `isPackaged` TypeError. Sign-in needs the Anytype desktop app
   running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to run against a simulated Anytype instead —
-  sign-in, the schema reads and the span's objects alike (see `composition.ts`).
+  sign-in, the schema reads and the span's objects alike (see `composition.ts`). Against a
+  real Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback.
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -71,8 +72,14 @@ packages/<context>/
 with only one layer, so the pattern-based aliases, vitest projects and lint rules apply to
 them unedited. `anytype-client` is the HTTP transport for the Anytype local API
 (`AnytypeClient`) that every context's `infrastructure/anytype/` adapters use; it resolves
-error statuses as values and rejects only on transport failure, and `fetch` is injected by
-the composition root. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+error statuses as values and rejects only on transport failure (or a success that is not
+JSON), and `fetch` is injected by the composition root. It also holds `AnytypeDialectProbe`,
+which asks Anytype once per key which major of the API it serves (`GET /v2/auth/whoami`: an
+answer means v2, a bare plain-text 404 means a build without v2). Each context's
+`infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
+`Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
+means deleting one file per context. A v2 adapter that meets the bare 404 calls
+`probe.forget()`, and so does leaving the `connected` session. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -142,7 +149,9 @@ so `lint:arch` doesn't need a build either.
 Standard electron-vite three-process layout:
 - `src/main` — Electron main process and the **composition root**. `composition.ts` is
   the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
-  needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009`, and keeps
+  needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
+  through v2 where served (the user then picks the spaces and read/write access in Anytype)
+  and v1 where not, exchanging a code with the major that issued its challenge — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
@@ -313,7 +322,7 @@ Standard electron-vite three-process layout:
 
 ### Anytype local API facts the adapters rely on
 
-Checked against a real account on API version `2025-11-08`:
+v1 facts, checked against a real account on API version `2025-11-08`:
 - A date property's value is `{ key, format: 'date', date: '2026-09-13T22:00:00Z' }`:
   RFC 3339, always UTC, no zone of its own. A property the object has no value for is left
   out of `properties` altogether.
@@ -330,6 +339,36 @@ Checked against a real account on API version `2025-11-08`:
 - A filter on a property key the space does not have answers 400 (`failed to build
   expression filters`); an unknown type key or space id answers an empty page.
 - Paging is `?offset=&limit=` (at most 1000) with `pagination.has_more`.
+
+v2 (pre-release: it may change without a new version; spec at
+`https://developers.anytype.io/openapi-v2.yaml`), checked against a real account in September
+2026. The same process, port and keys serve both majors, so a v2 build still serves v1:
+- Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
+  adapters always ask, since the saved selection stores full ids. Both spellings are accepted
+  back. The list holds only the key's granted spaces, never the tech space, and says nothing
+  of a space's kind, so one-to-one chats cannot be left out.
+- A type list row is only `{ key, name }`; the icon and properties are in the type document
+  (`GET …/types/{key}`: `icon`, `type_settings.property_definitions[{ property, internal_key,
+  name, format }]`). That document spells `lastOpenedDate` in camelCase, where every other
+  route says `last_opened_date`.
+- **Keys differ from v1's where a user's type or property collides with one Anytype bundles**
+  (a user "Book" type, a "Status" property): v1 serves the slug (`book`), v2 the internal key
+  (`6a67272659c08021576f3127`), and v2 refuses the slug as `ambiguous_input`. Both majors
+  accept the internal key as input, but each serves its own spelling in rows. The type
+  document keeps v1's type key as `type_settings.api_key`; a property's v1 key is known only
+  to v1, matched by name. `rekeySchemaSelection` rewrites a v1-saved selection after each
+  sync (`formerKey` on types and date properties).
+- Search takes `{ type, filters, fields }`. Structured `filters` use the long condition names
+  (`greater_or_equal`, `not_empty` …) and dates as **unix seconds**, and still round date
+  comparisons out to whole local days; `less_or_equal` still matches an empty date. The
+  compact `filter` string cannot spell a key that starts with a digit, as internal keys may,
+  so the adapters do not use it. Rows are `{ id, name, type, properties: { [key]: value } }`
+  with only the `fields` asked for: a date is a bare RFC 3339 string, and one the object has
+  no value for is left out.
+- An unknown type key or a `fields`/filter key the type lacks answers 400, a space not open
+  404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects".
+- Paging puts `has_more`, `total` and a `message` hint at the top level. v2's own errors are
+  `{ status, code, message, issues[] }`; pairing, key and rate-limit refusals keep v1's shape.
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 
