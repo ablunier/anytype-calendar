@@ -8,6 +8,7 @@ import {
   dateLabel,
   dayLabel,
   dateOptions,
+  eventHue,
   eventsOnDay,
   indexBy,
   isoDate,
@@ -15,6 +16,7 @@ import {
   isWeekendColumn,
   longDate,
   monthLabel,
+  offeredMapping,
   offersDates,
   shortDate,
   spacesByKeys,
@@ -35,9 +37,11 @@ const TASK: ObjectType = {
     { key: 'due_date', label: 'Due date' },
     { key: 'start_date', label: 'Start date' }
   ],
+  selects: [{ key: 'priority', label: 'Priority' }],
   from: 'due_date',
   to: null,
-  includesTime: false
+  includesTime: false,
+  colourBy: null
 }
 
 describe('buildMonthGrid', () => {
@@ -248,7 +252,7 @@ describe('dateLabel', () => {
 
 describe('offersDates', () => {
   test('true for a from-only mapping the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false })).toBe(true)
+    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null })).toBe(true)
   })
 
   test('true for a range whose both ends the type still has', () => {
@@ -256,13 +260,14 @@ describe('offersDates', () => {
       offersDates(TASK, {
         from: 'due_date',
         to: 'start_date',
-        includesTime: false
+        includesTime: false,
+        colourBy: null
       })
     ).toBe(true)
   })
 
   test('false when the from property is gone', () => {
-    expect(offersDates(TASK, { from: 'gone_date', to: null, includesTime: false })).toBe(false)
+    expect(offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null })).toBe(false)
   })
 
   test('false when the to property is gone', () => {
@@ -270,9 +275,36 @@ describe('offersDates', () => {
       offersDates(TASK, {
         from: 'due_date',
         to: 'gone_date',
-        includesTime: false
+        includesTime: false,
+        colourBy: null
       })
     ).toBe(false)
+  })
+})
+
+describe('offeredMapping', () => {
+  const mapping = { from: 'due_date', to: null, includesTime: true, colourBy: 'priority' }
+
+  test('is the mapping itself when the type offers all of it', () => {
+    expect(offeredMapping(TASK, mapping)).toBe(mapping)
+  })
+
+  test('is null when a date is gone', () => {
+    expect(offeredMapping(TASK, { ...mapping, from: 'gone_date' })).toBeNull()
+  })
+
+  test('keeps the dates but colours by nothing when the property it colours by is gone', () => {
+    expect(offeredMapping(TASK, { ...mapping, colourBy: 'gone' })).toEqual({ ...mapping, colourBy: null })
+  })
+})
+
+describe('eventHue', () => {
+  const event: CalendarEvent = { id: 'o', title: '', type: TASK.key, space: 'sp_1', date: '2026-09-01', allDay: true }
+
+  test("is the event's own hue, else its type's, else neutral", () => {
+    expect(eventHue({ ...event, category: 'clay' }, TASK)).toBe('clay')
+    expect(eventHue(event, TASK)).toBe('denim')
+    expect(eventHue(event, undefined)).toBe('graphite')
   })
 })
 
@@ -281,13 +313,14 @@ describe('withDates', () => {
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {
-      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true }
+      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority' }
     })
     expect(task).toEqual({
       ...TASK,
       from: 'start_date',
       to: 'due_date',
-      includesTime: true
+      includesTime: true,
+      colourBy: 'priority'
     })
     expect(project).toBe(other)
   })

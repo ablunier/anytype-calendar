@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
+import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
 
@@ -56,7 +57,7 @@ export function AllDayBand({
               key={segment.event.id}
               segment={segment}
               title={segment.event.title || t('common.untitled')}
-              category={type?.category ?? 'graphite'}
+              category={eventHue(segment.event, type)}
               allDay={segment.event.allDay}
               time={segment.continuesBefore ? undefined : segment.event.time}
               {...(segment.event.done === undefined ? {} : { done: segment.event.done })}

@@ -6,9 +6,10 @@
   <title>Calendar for Anytype</title>
   <!-- style-src must be spelled out: without it styles fall back to default-src 'self', which
        refuses the inline <style> that Vite injects for HMR and the app renders unstyled.
-       'unsafe-inline' is scoped to styles only — script-src stays 'self'. -->
+       'unsafe-inline' is scoped to styles only — script-src stays 'self'. img-src takes data:
+       URLs because that is how main hands over the spaces' images it downloads from Anytype. -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
 </head>
 
 <body>

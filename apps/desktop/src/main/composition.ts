@@ -178,7 +178,11 @@ export function composeServices(): AppServices {
         ? new AnytypeSchemaGateway({
             probe,
             v1: new AnytypeV1SchemaGateway(client),
-            v2: new AnytypeV2SchemaGateway({ client, probe })
+            v2: new AnytypeV2SchemaGateway({
+              client,
+              probe,
+              encodeBase64: (bytes) => Buffer.from(bytes).toString('base64')
+            })
           })
         : inMemorySchemaGateway(),
     apiKeys,
@@ -220,7 +224,7 @@ export function composeServices(): AppServices {
           })
         : inMemoryEventsGateway(zone),
     apiKeys,
-    sources: { current: () => eventsSourcesFor(schemaSelection.get()) },
+    sources: { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) },
     zone,
     store: eventsState,
     // A launch opens on the view last chosen, so the first read is the one the window draws.
@@ -346,7 +350,18 @@ export function composeServices(): AppServices {
 function anytypeClient(): AnytypeClient {
   return new AnytypeClient({
     fetch: (url, init) =>
-      fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) })
+      fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) }),
+    fetchBytes: async (url, init) => {
+      const response = await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS)
+      })
+      return {
+        status: response.status,
+        contentType: response.headers.get('Content-Type'),
+        bytes: async () => new Uint8Array(await response.arrayBuffer())
+      }
+    }
   })
 }
 

@@ -164,6 +164,9 @@
     "fromDateFor": "From date for {{label}}",
     "toDateFor": "To date for {{label}}",
     "typeIncludesTime": "{{label}} dates include a time",
+    "colour": "Colour",
+    "colourFor": "Colour for {{label}}",
+    "typeColour": "Type colour",
     "session": {
       "heading": "Session",
       "apiKey": "API key",
@@ -226,7 +229,9 @@
     "eventDetail": {
       "fromDateFallback": "From date",
       "toDateFallback": "To date",
+      "location": "Location",
       "allDay": "All day",
+      "done": "Done",
       "readOnlyNotice": "This view is read-only. Edit the object in Anytype and it updates here on the next read.",
       "openInAnytype": "Open in Anytype"
     },

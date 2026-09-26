@@ -18,9 +18,12 @@ import type {
   SyncView,
   TypePicks
 } from '@renderer/types'
-import { offersDates } from './calendar'
+import { offeredMapping } from './calendar'
 
-/** Anytype's ten icon colours, one hue each, so types Anytype tells apart stay apart here. */
+/**
+ * Anytype's ten colours — of type icons and select options alike — one hue each, so what
+ * Anytype tells apart stays apart here.
+ */
 const TYPE_HUES: Record<string, CategoryHue> = {
   grey: 'graphite',
   yellow: 'mustard',
@@ -72,16 +75,22 @@ const TYPE_ICONS: Record<string, IconName> = {
   list: 'list'
 }
 
+/** The hue Anytype's colour name is drawn in; one Anytype does not name draws neutral. */
+export function hueOf(color: string): CategoryHue {
+  return (Object.hasOwn(TYPE_HUES, color) && TYPE_HUES[color]) || 'graphite'
+}
+
 const MINUTE_MS = 60_000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 
 /** The spaces of the last successful sync; empty until there is one. */
 export function spacesFor(snapshot: SchemaSnapshot): Space[] {
-  return syncedSpaces(snapshot).map((space) => ({
-    key: space.id,
-    name: space.name
-  }))
+  return syncedSpaces(snapshot).map((space) =>
+    space.icon === undefined
+      ? { key: space.id, name: space.name }
+      : { key: space.id, name: space.name, icon: space.icon }
+  )
 }
 
 /** Whether the last successful sync found spaces the key was not granted; false until there is one. */
@@ -133,17 +142,18 @@ export function tracksAnyType(selection: SchemaSelectionSnapshot): boolean {
 
 /**
  * The saved selection as picks over `types`. A saved date the type no longer has is left
- * out, so the type falls back to its own dates rather than showing a choice it cannot offer.
+ * out, so the type falls back to its own dates rather than showing a choice it cannot offer;
+ * so is a property it no longer colours by.
  */
 export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]): TypePicks {
   if (selection.phase === 'unset') return { spaceKeys: [], typeKeys: [], dates: {} }
   const byKey = new Map(types.map((type) => [type.key, type]))
   const dates: Record<string, DateMapping> = {}
-  for (const { spaceId, typeKey, from, to, includesTime } of selection.selection.types) {
+  for (const { spaceId, typeKey, from, to, includesTime, colourBy } of selection.selection.types) {
     const key = objectTypeKey(spaceId, typeKey)
     const type = byKey.get(key)
-    if (type && offersDates(type, { from, to, includesTime }))
-      dates[key] = { from, to, includesTime }
+    const mapping = type && offeredMapping(type, { from, to, includesTime, colourBy })
+    if (mapping) dates[key] = mapping
   }
   return {
     spaceKeys: selection.selection.spaceIds,
@@ -177,8 +187,8 @@ export function schemaSelectionFor(
       const type = objectTypeFor(space, schemaType)
       if (!picks.typeKeys.includes(type.key)) return []
       const mapping = picks.dates[type.key]
-      const { from, to, includesTime } = mapping && offersDates(type, mapping) ? mapping : type
-      return [{ spaceId: space.id, typeKey: schemaType.key, from, to, includesTime }]
+      const { from, to, includesTime, colourBy } = (mapping && offeredMapping(type, mapping)) ?? type
+      return [{ spaceId: space.id, typeKey: schemaType.key, from, to, includesTime, colourBy }]
     })
   )
 
@@ -208,16 +218,17 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
     key: objectTypeKey(space.id, type.key),
     space: space.id,
     label: type.name,
-    category: (type.icon && TYPE_HUES[type.icon.color]) ?? 'graphite',
+    category: type.icon ? hueOf(type.icon.color) : 'graphite',
     icon: (type.icon && TYPE_ICONS[type.icon.name]) ?? 'calendar',
     props: type.dateProperties.map(({ key, name }) => ({ key, label: name })),
+    selects: type.selectProperties.map(({ key, name }) => ({ key, label: name })),
     ...defaultMapping(type)
   }
 }
 
-/** A newly ticked type starts on its first date, as a single all-day date. */
+/** A newly ticked type starts on its first date, as a single all-day date in its own hue. */
 function defaultMapping(type: SchemaType): DateMapping {
-  return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false }
+  return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false, colourBy: null }
 }
 
 /** Both epoch milliseconds. Untranslated: resolved to text by `syncDetailText` (`lib/sync-text.ts`). */

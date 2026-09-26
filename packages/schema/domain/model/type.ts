@@ -1,4 +1,5 @@
 import type { SchemaDateProperty } from './date-property'
+import type { SchemaSelectProperty } from './select-property'
 
 /** Anytype's own icon name and color, e.g. `checkbox` / `lime`. */
 export interface SchemaTypeIcon {
@@ -17,4 +18,10 @@ export interface SchemaType {
   icon: SchemaTypeIcon | null
   /** Never empty — see userDateProperties. */
   dateProperties: SchemaDateProperty[]
+  /** Whether it has Anytype's own Done checkbox. */
+  hasDone: boolean
+  /** Whether it has Anytype's own Location text. */
+  hasLocation: boolean
+  /** Only the ones with options; empty where the API cannot list options (v1). */
+  selectProperties: SchemaSelectProperty[]
 }

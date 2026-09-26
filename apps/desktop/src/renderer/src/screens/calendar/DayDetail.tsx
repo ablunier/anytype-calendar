@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, ObjectType } from '@renderer/types'
-import { longDate } from '@renderer/lib/calendar'
+import { eventHue, longDate } from '@renderer/lib/calendar'
 import { EventRow } from './EventRow'
 
 export interface DayDetailProps {
@@ -36,7 +36,7 @@ export function DayDetail({
               key={event.id}
               title={event.title || t('common.untitled')}
               time={event.date === date ? event.time : undefined}
-              category={type?.category ?? 'graphite'}
+              category={eventHue(event, type)}
               done={event.done}
               onClick={() => onOpenEvent(event)}
             />

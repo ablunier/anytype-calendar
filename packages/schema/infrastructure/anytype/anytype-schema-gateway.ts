@@ -1,5 +1,11 @@
 import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-client/infrastructure'
-import type { SchemaGateway, SchemaGatewayResult, SchemaSpaceList, SchemaTypeRef } from '../../domain'
+import type {
+  SchemaGateway,
+  SchemaGatewayResult,
+  SchemaSelectOption,
+  SchemaSpaceList,
+  SchemaTypeRef
+} from '../../domain'
 
 /** Reads through v2 where Anytype serves it, and through v1 where it does not. */
 export class AnytypeSchemaGateway implements SchemaGateway {
@@ -21,6 +27,17 @@ export class AnytypeSchemaGateway implements SchemaGateway {
   async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
     const gateway = await this.#pick(apiKey)
     return gateway ? gateway.listTypes(apiKey, spaceId) : { ok: false, failure: 'unauthorized' }
+  }
+
+  async listSelectOptions(
+    apiKey: string,
+    spaceId: string,
+    propertyKey: string
+  ): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
+    const gateway = await this.#pick(apiKey)
+    return gateway
+      ? gateway.listSelectOptions(apiKey, spaceId, propertyKey)
+      : { ok: false, failure: 'unauthorized' }
   }
 
   async #pick(apiKey: string): Promise<SchemaGateway | null> {

@@ -8,13 +8,19 @@ export interface SchemaSelectionFile {
 }
 
 /**
- * Bumped when the stored shape changes; a file of any other version loads as none. Bumped to
- * 2 when `SchemaTypeChoice` gained `includesTime`.
+ * Bumped when the stored shape changes. Bumped to 2 when `SchemaTypeChoice` gained
+ * `includesTime`, and to 3 when it gained `colourBy`.
  */
-const FORMAT_VERSION = 2
+const FORMAT_VERSION = 3
 
 /**
- * A file that cannot be read back — unreadable, not JSON, another version, or not a
+ * Versions still read, besides the current one: a version-2 choice lacks only `colourBy`,
+ * which toSchemaSelection reads as none. A file of any other version loads as none.
+ */
+const READABLE_VERSIONS: ReadonlySet<unknown> = new Set([2, FORMAT_VERSION])
+
+/**
+ * A file that cannot be read back — unreadable, not JSON, an unreadable version, or not a
  * selection — loads as no selection, so a bad file shows onboarding again instead of
  * stopping the app from starting.
  */
@@ -32,7 +38,7 @@ export class JsonFileSchemaSelectionRepository implements SchemaSelectionReposit
       const stored: unknown = JSON.parse(text)
       if (typeof stored !== 'object' || stored === null) return null
       const { version, selection } = stored as Record<string, unknown>
-      return version === FORMAT_VERSION ? toSchemaSelection(selection) : null
+      return READABLE_VERSIONS.has(version) ? toSchemaSelection(selection) : null
     } catch {
       return null
     }

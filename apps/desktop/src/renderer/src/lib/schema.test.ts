@@ -22,21 +22,30 @@ const TASK_TYPE: SchemaType = {
   key: 'task',
   name: 'Task',
   icon: { name: 'checkbox', color: 'lime' },
-  dateProperties: [DUE, START]
+  dateProperties: [DUE, START],
+  hasDone: true,
+  hasLocation: false,
+  selectProperties: [{ key: 'priority', name: 'Priority', options: [{ name: 'P1', color: 'red' }] }]
 }
 
 const UNKNOWN_ICON_TYPE: SchemaType = {
   key: 'note',
   name: 'Note',
   icon: { name: 'mystery-icon', color: 'mystery-color' },
-  dateProperties: [DUE]
+  dateProperties: [DUE],
+  hasDone: false,
+  hasLocation: false,
+  selectProperties: []
 }
 
 const NO_ICON_TYPE: SchemaType = {
   key: 'idea',
   name: 'Idea',
   icon: null,
-  dateProperties: [DUE]
+  dateProperties: [DUE],
+  hasDone: false,
+  hasLocation: false,
+  selectProperties: []
 }
 
 const SPACE: SchemaSpace = {
@@ -66,7 +75,7 @@ describe('hasNotGrantedSpaces', () => {
 })
 
 describe('tracksAnyType', () => {
-  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }
+  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }
 
   test('is false until a selection is saved', () => {
     expect(tracksAnyType({ phase: 'unset' })).toBe(false)
@@ -106,6 +115,14 @@ describe('spacesFor', () => {
     expect(spacesFor(SYNCED)).toEqual([{ key: 'sp_1', name: 'Personal' }])
   })
 
+  test("carries a space's image", () => {
+    const withIcon: SchemaSnapshot = {
+      phase: 'synced',
+      last: { ...SYNCED.last, spaces: [{ ...SPACE, icon: 'data:image/png;base64,AA==' }] }
+    }
+    expect(spacesFor(withIcon)).toEqual([{ key: 'sp_1', name: 'Personal', icon: 'data:image/png;base64,AA==' }])
+  })
+
   test('keeps the last result while a new sync is failing', () => {
     const failed: SchemaSnapshot = { phase: 'failed', failure: 'unreachable', at: 200_000, last: SYNCED.last }
     expect(spacesFor(failed)).toEqual([{ key: 'sp_1', name: 'Personal' }])
@@ -129,9 +146,11 @@ describe('typesFor', () => {
         { key: 'due_date', label: 'Due date' },
         { key: 'start_date', label: 'Start date' }
       ],
+      selects: [{ key: 'priority', label: 'Priority' }],
       from: 'due_date',
       to: null,
-      includesTime: false
+      includesTime: false,
+      colourBy: null
     })
   })
 
@@ -222,9 +241,11 @@ describe('picksFor', () => {
         { key: 'due_date', label: 'Due date' },
         { key: 'start_date', label: 'Start date' }
       ],
+      selects: [{ key: 'priority', label: 'Priority' }],
       from: 'due_date',
       to: null,
-      includesTime: false
+      includesTime: false,
+      colourBy: null
     }
   ]
 
@@ -237,13 +258,30 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null } }
+    })
+  })
+
+  test('carries the property it colours by, or colours by nothing once that is gone', () => {
+    const saved = (colourBy: string): SchemaSelectionSnapshot => ({
+      phase: 'saved',
+      selection: {
+        spaceIds: ['sp_1'],
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy }]
+      }
+    })
+    expect(picksFor(saved('priority'), TYPES).dates['sp_1:task']?.colourBy).toBe('priority')
+    expect(picksFor(saved('gone'), TYPES).dates['sp_1:task']).toEqual({
+      from: 'due_date',
+      to: null,
+      includesTime: false,
+      colourBy: null
     })
   })
 
@@ -252,7 +290,7 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false, colourBy: null }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -267,7 +305,7 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: [],
-        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false }]
+        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false, colourBy: null }]
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -283,7 +321,7 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }]
     })
   })
 
@@ -291,23 +329,32 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }]
     })
+  })
+
+  test('saves the property a type is coloured by', () => {
+    const picks: TypePicks = {
+      spaceKeys: ['sp_1'],
+      typeKeys: ['sp_1:task'],
+      dates: { 'sp_1:task': { from: 'due_date', to: null, includesTime: false, colourBy: 'priority' } }
+    }
+    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]?.colourBy).toBe('priority')
   })
 
   test('falls back to the type\'s own dates when the picked mapping no longer applies', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true } }
+      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }]
     })
   })
 
@@ -317,8 +364,8 @@ describe('schemaSelectionFor', () => {
       selection: {
         spaceIds: ['sp_1', 'sp_9'],
         types: [
-          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false },
-          { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false }
+          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null },
+          { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null }
         ]
       }
     }
@@ -327,8 +374,8 @@ describe('schemaSelectionFor', () => {
     expect(schemaSelectionFor(SYNCED, picks, previous)).toEqual({
       spaceIds: ['sp_9', 'sp_1'],
       types: [
-        { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false },
-        { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }
+        { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null },
+        { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }
       ]
     })
   })

@@ -8,14 +8,19 @@ import { AnytypeV2SchemaGateway } from './anytype-v2-schema-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 type Reply = { status: number; body: unknown }
+type FileReply = { status: number; contentType: string | null; bytes: number[] }
 
 const API_KEY = 'ak_secret'
 const BASE = 'http://127.0.0.1:31009'
 const SPACE_ID = 'bafy.space'
 
-/** Replies by path (without the query string); a list of replies is served in turn. */
-function setup(routes: Record<string, Reply | Reply[]>) {
+/**
+ * Replies by path (without the query string); a list of replies is served in turn. Downloads
+ * are served from `files`, and bytes encode as their comma-joined values.
+ */
+function setup(routes: Record<string, Reply | Reply[]>, files: Record<string, FileReply> = {}) {
   const calls: FetchCall[] = []
+  const downloads: string[] = []
   const served: Record<string, number> = {}
   const client = new AnytypeClient({
     fetch: async (url, init) => {
@@ -27,10 +32,21 @@ function setup(routes: Record<string, Reply | Reply[]>) {
       const n = (served[path] = (served[path] ?? 0) + 1)
       const reply = replies[Math.min(n, replies.length) - 1] as Reply
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
+    },
+    fetchBytes: async (url) => {
+      downloads.push(url)
+      const file = files[url.slice(BASE.length)] ?? { status: 404, contentType: null, bytes: [] }
+      return { ...file, bytes: async () => new Uint8Array(file.bytes) }
     }
   })
   const probe = new AnytypeDialectProbe({ client })
-  return { gateway: new AnytypeV2SchemaGateway({ client, probe }), probe, calls }
+  const encodeBase64 = (bytes: Uint8Array): string => [...bytes].join(',')
+  return {
+    gateway: new AnytypeV2SchemaGateway({ client, probe, encodeBase64 }),
+    probe,
+    calls,
+    downloads
+  }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -51,7 +67,7 @@ const unauthorized: Reply = {
 describe('listSpaces', () => {
   test('asks for the spaces by their full ids and resolves their ids and names', async () => {
     const { gateway, calls } = setup({
-      '/v2/spaces': page([{ id: 'bafy.personal', name: 'Personal', icon_image: 'bafy.icon' }])
+      '/v2/spaces': page([{ id: 'bafy.personal', name: 'Personal' }])
     })
 
     await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({
@@ -60,6 +76,45 @@ describe('listSpaces', () => {
     })
     expect(calls[0]?.url).toBe(`${BASE}/v2/spaces?ids=full&offset=0&limit=1000`)
     expect(calls[0]?.init.headers).toMatchObject({ Authorization: `Bearer ${API_KEY}` })
+  })
+
+  const ICON = '/v2/spaces/bafy.personal/files/bafy.icon/content?width=64'
+  const withIcon = page([{ id: 'bafy.personal', name: 'Personal', icon_image: 'bafy.icon' }])
+
+  test("carries a space's image as a data URL", async () => {
+    const { gateway } = setup(
+      { '/v2/spaces': withIcon },
+      { [ICON]: { status: 200, contentType: 'image/png; charset=binary', bytes: [1, 2] } }
+    )
+
+    const result = await gateway.listSpaces(API_KEY)
+
+    expect(result.ok && result.value.spaces).toEqual([
+      { id: 'bafy.personal', name: 'Personal', icon: 'data:image/png;base64,1,2' }
+    ])
+  })
+
+  test('downloads an image once, however often the spaces are listed', async () => {
+    const { gateway, downloads } = setup(
+      { '/v2/spaces': withIcon },
+      { [ICON]: { status: 200, contentType: 'image/png', bytes: [1] } }
+    )
+
+    await gateway.listSpaces(API_KEY)
+    await gateway.listSpaces(API_KEY)
+
+    expect(downloads).toEqual([`${BASE}${ICON}`])
+  })
+
+  test.each([
+    ['cannot be downloaded', { status: 404, contentType: null, bytes: [] }],
+    ['is not an image', { status: 200, contentType: 'text/html', bytes: [1] }]
+  ])('leaves out an image that %s', async (_, file) => {
+    const { gateway } = setup({ '/v2/spaces': withIcon }, { [ICON]: file })
+
+    const result = await gateway.listSpaces(API_KEY)
+
+    expect(result.ok && result.value.spaces).toEqual([{ id: 'bafy.personal', name: 'Personal' }])
   })
 
   test('follows the pages until Anytype has no more', async () => {
@@ -315,6 +370,58 @@ describe('listTypes', () => {
     await probe.probe(API_KEY)
 
     await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('404')
+    await probe.probe(API_KEY)
+
+    expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
+  })
+})
+
+describe('listSelectOptions', () => {
+  const OPTIONS = `/v2/spaces/${SPACE_ID}/properties/6aaa4502/options`
+
+  test("resolves a property's options, following the pages", async () => {
+    const { gateway, calls } = setup({
+      [OPTIONS]: [
+        page([{ name: 'P1', color: 'red' }], true),
+        page([{ name: 'P2', color: 'orange' }, { name: 'No colour' }])
+      ]
+    })
+
+    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).resolves.toEqual({
+      ok: true,
+      value: [
+        { name: 'P1', color: 'red' },
+        { name: 'P2', color: 'orange' }
+      ]
+    })
+    expect(calls[1]?.url).toBe(`${BASE}${OPTIONS}?offset=1&limit=1000`)
+  })
+
+  test.each([
+    ['a property since deleted', { status: 404, body: { status: 404, code: 'not_found', message: 'x' } }],
+    ['a key the space does not have', { status: 400, body: { status: 400, code: 'bad_request', message: 'x' } }],
+    ['a space no longer granted', notGranted]
+  ])('reads %s as having no options', async (_, reply) => {
+    const { gateway } = setup({ [OPTIONS]: reply })
+    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).resolves.toEqual({
+      ok: true,
+      value: []
+    })
+  })
+
+  test('resolves a refused key as unauthorized', async () => {
+    const { gateway } = setup({ [OPTIONS]: unauthorized })
+    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).resolves.toEqual({
+      ok: false,
+      failure: 'unauthorized'
+    })
+  })
+
+  test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
+    const { gateway, probe, calls } = setup({ '/v2/auth/whoami': { status: 200, body: {} } })
+    await probe.probe(API_KEY)
+
+    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).rejects.toThrow('404')
     await probe.probe(API_KEY)
 
     expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)

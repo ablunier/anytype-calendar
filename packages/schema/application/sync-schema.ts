@@ -1,15 +1,20 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   nextSchemaSync,
+  SCHEMA_DONE_KEY,
+  SCHEMA_LOCATION_KEY,
   userDateProperties,
   type SchemaApiKeySource,
   type SchemaGateway,
   type SchemaGatewayResult,
+  type SchemaSelectOption,
+  type SchemaSelectProperty,
   type SchemaSpace,
   type SchemaSpaceList,
   type SchemaSync,
   type SchemaSyncEvent,
-  type SchemaType
+  type SchemaType,
+  type SchemaTypeRef
 } from '../domain'
 import type { SchemaSyncStore } from './schema-sync-store'
 
@@ -67,22 +72,55 @@ export class SyncSchema {
 
     const listed: SchemaSpaceList = accepted(await this.#gateway.listSpaces(apiKey))
     const spaces = await Promise.all(
-      listed.spaces.map(async ({ id, name }) => {
+      listed.spaces.map(async ({ id, name, icon }) => {
         const types = await this.#fetchDatedTypes(apiKey, id)
-        return { id, name, types }
+        return icon === undefined ? { id, name, types } : { id, name, icon, types }
       })
     )
     return { spaces, hasNotGrantedSpaces: listed.hasNotGrantedSpaces }
   }
 
   async #fetchDatedTypes(apiKey: string, spaceId: string): Promise<SchemaType[]> {
-    const refs = accepted(await this.#gateway.listTypes(apiKey, spaceId))
-    return refs.flatMap(({ key, formerKey, name, icon, properties }) => {
-      const dateProperties = userDateProperties(properties)
-      if (dateProperties.length === 0) return []
-      const type = { key, name, icon, dateProperties }
-      return [formerKey === undefined ? type : { ...type, formerKey }]
+    const refs = accepted(await this.#gateway.listTypes(apiKey, spaceId)).flatMap((ref) => {
+      const dateProperties = userDateProperties(ref.properties)
+      return dateProperties.length === 0 ? [] : [{ ref, dateProperties }]
     })
+    const options = await this.#fetchSelectOptions(
+      apiKey,
+      spaceId,
+      refs.flatMap(({ ref }) => ref.properties)
+    )
+    return refs.map(({ ref: { key, formerKey, name, icon, properties }, dateProperties }) => {
+      const has = (propertyKey: string): boolean => properties.some((property) => property.key === propertyKey)
+      const type: SchemaType = {
+        key,
+        name,
+        icon,
+        dateProperties,
+        hasDone: has(SCHEMA_DONE_KEY),
+        hasLocation: has(SCHEMA_LOCATION_KEY),
+        selectProperties: properties.flatMap((property): SchemaSelectProperty[] => {
+          const found = property.format === 'select' ? options.get(property.key) : undefined
+          if (!found || found.length === 0) return []
+          const select = { key: property.key, name: property.name, options: found }
+          return [property.formerKey === undefined ? select : { ...select, formerKey: property.formerKey }]
+        })
+      }
+      return formerKey === undefined ? type : { ...type, formerKey }
+    })
+  }
+
+  /** A property's options are the space's, not a type's, so each is asked for once per space. */
+  async #fetchSelectOptions(
+    apiKey: string,
+    spaceId: string,
+    properties: SchemaTypeRef['properties']
+  ): Promise<Map<string, SchemaSelectOption[]>> {
+    const keys = [...new Set(properties.filter(({ format }) => format === 'select').map(({ key }) => key))]
+    const lists = await Promise.all(
+      keys.map(async (key) => accepted(await this.#gateway.listSelectOptions(apiKey, spaceId, key)))
+    )
+    return new Map(keys.map((key, index) => [key, lists[index] ?? []]))
   }
 }
 

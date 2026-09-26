@@ -11,7 +11,8 @@ const SPACE: InMemorySchemaSpace = {
       icon: { name: 'checkbox', color: 'lime' },
       properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
     }
-  ]
+  ],
+  options: { priority: [{ name: 'High', color: 'red' }] }
 }
 
 function setup() {
@@ -64,4 +65,16 @@ test('ships the design sample account by default', async () => {
     'Reading',
     'Archive 2024'
   ])
+})
+
+test("answers with a space's options for a property, and none for one it has not", async () => {
+  const { gateway } = setup()
+  await expect(gateway.listSelectOptions('ak_any', 'sp_1', 'priority')).resolves.toEqual({
+    ok: true,
+    value: [{ name: 'High', color: 'red' }]
+  })
+  await expect(gateway.listSelectOptions('ak_any', 'sp_1', 'status')).resolves.toEqual({
+    ok: true,
+    value: []
+  })
 })

@@ -1,9 +1,12 @@
 import type { SchemaProperty } from '../model/date-property'
+import type { SchemaSelectOption } from '../model/select-property'
 import type { SchemaTypeIcon } from '../model/type'
 
 export interface SchemaSpaceRef {
   id: string
   name: string
+  /** A `data:` URL of the space's own image; left off when it has none, or it could not be read. */
+  icon?: string
 }
 
 export interface SchemaSpaceList {
@@ -42,4 +45,14 @@ export interface SchemaGateway {
    * change between listing the spaces and reading one.
    */
   listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>>
+
+  /**
+   * A select property's options. Empty where the API cannot list them (v1), and for a property
+   * or space that is gone or no longer granted.
+   */
+  listSelectOptions(
+    apiKey: string,
+    spaceId: string,
+    propertyKey: string
+  ): Promise<SchemaGatewayResult<SchemaSelectOption[]>>
 }

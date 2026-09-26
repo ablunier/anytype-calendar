@@ -3,6 +3,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
+  SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
   SchemaTypeRef
@@ -59,6 +60,11 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
       ]
     })
     return { ok: true, value: types }
+  }
+
+  /** v1 serves options only as tags of a property, so select colours are left to v2. */
+  async listSelectOptions(): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
+    return { ok: true, value: [] }
   }
 
   async #listAll(

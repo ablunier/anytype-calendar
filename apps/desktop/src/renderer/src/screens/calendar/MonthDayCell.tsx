@@ -1,6 +1,7 @@
 import type { CSSProperties, KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
 
@@ -103,7 +104,7 @@ export function MonthDayCell({
             key={segment.event.id}
             segment={segment}
             title={segment.event.title || t('common.untitled')}
-            category={type?.category ?? 'graphite'}
+            category={eventHue(segment.event, type)}
             time={segment.continuesBefore ? undefined : segment.event.time}
             allDay={segment.event.allDay}
             done={segment.event.done}

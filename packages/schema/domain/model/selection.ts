@@ -1,4 +1,3 @@
-import type { SchemaDateProperty } from './date-property'
 import type { SchemaSpace } from './space'
 
 /** A type put on the calendar, with the date properties (keys) its objects are drawn by. */
@@ -14,6 +13,12 @@ export interface SchemaTypeChoice {
    * the user states it instead.
    */
   includesTime: boolean
+  /**
+   * A select property (key) whose options colour the type's objects, each in its option's
+   * colour; null draws them all in the type's own. An object with no option picked keeps the
+   * type's colour too.
+   */
+  colourBy: string | null
 }
 
 /**
@@ -35,7 +40,8 @@ export type SchemaSelectionState =
 
 /**
  * Null unless `value` is a well-formed selection: non-empty ids, a `to` that differs from
- * `from`, and no type chosen twice. Spaces listed twice are collapsed.
+ * `from`, and no type chosen twice. Spaces listed twice are collapsed. A choice with no
+ * `colourBy` at all, as saved before there was one, colours by nothing.
  */
 export function toSchemaSelection(value: unknown): SchemaSelection | null {
   if (typeof value !== 'object' || value === null) return null
@@ -59,11 +65,12 @@ export function toSchemaSelection(value: unknown): SchemaSelection | null {
 
 function toChoice(value: unknown): SchemaTypeChoice | null {
   if (typeof value !== 'object' || value === null) return null
-  const { spaceId, typeKey, from, to, includesTime } = value as Record<string, unknown>
+  const { spaceId, typeKey, from, to, includesTime, colourBy = null } = value as Record<string, unknown>
   if (!isId(spaceId) || !isId(typeKey) || !isId(from)) return null
   if (to !== null && (!isId(to) || to === from)) return null
   if (typeof includesTime !== 'boolean') return null
-  return { spaceId, typeKey, from, to, includesTime }
+  if (colourBy !== null && !isId(colourBy)) return null
+  return { spaceId, typeKey, from, to, includesTime, colourBy }
 }
 
 function isId(value: unknown): value is string {
@@ -98,13 +105,19 @@ export function rekeySchemaSelection(
       ...choice,
       typeKey: type.key,
       from: currentKey(type.dateProperties, choice.from),
-      to: choice.to === null ? null : currentKey(type.dateProperties, choice.to)
+      to: choice.to === null ? null : currentKey(type.dateProperties, choice.to),
+      colourBy: choice.colourBy === null ? null : currentKey(type.selectProperties, choice.colourBy)
     }
     if (rekeyed.typeKey !== choice.typeKey && chosen.has(`${choice.spaceId}\n${rekeyed.typeKey}`)) {
       changed = true
       return []
     }
-    if (rekeyed.typeKey === choice.typeKey && rekeyed.from === choice.from && rekeyed.to === choice.to) {
+    if (
+      rekeyed.typeKey === choice.typeKey &&
+      rekeyed.from === choice.from &&
+      rekeyed.to === choice.to &&
+      rekeyed.colourBy === choice.colourBy
+    ) {
       return [choice]
     }
     changed = true
@@ -113,7 +126,10 @@ export function rekeySchemaSelection(
   return changed ? { ...selection, types } : selection
 }
 
-function currentKey(properties: readonly SchemaDateProperty[], key: string): string {
+function currentKey(
+  properties: readonly { key: string; formerKey?: string }[],
+  key: string
+): string {
   if (properties.some((property) => property.key === key)) return key
   return properties.find(({ formerKey }) => formerKey === key)?.key ?? key
 }

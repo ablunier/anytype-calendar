@@ -16,7 +16,7 @@ const API_KEY = 'ak_secret'
 const NOW = 7_000
 
 const SPACES: SchemaSpaceRef[] = [
-  { id: 'sp_personal', name: 'Personal' },
+  { id: 'sp_personal', name: 'Personal', icon: 'data:image/png;base64,AA==' },
   { id: 'sp_empty', name: 'Empty' }
 ]
 
@@ -25,12 +25,22 @@ const DUE: SchemaProperty = { key: 'due_date', name: 'Due date', format: 'date' 
 const START: SchemaProperty = { key: 'start_date', name: 'Start date', format: 'date' }
 const FINISH: SchemaProperty = { key: 'finish_date', name: 'Finish date', format: 'date' }
 const TAG: SchemaProperty = { key: 'tag', name: 'Tag', format: 'multi_select' }
+const DONE: SchemaProperty = { key: 'done', name: 'Done', format: 'checkbox' }
+const LOCATION: SchemaProperty = { key: 'location', name: 'Location', format: 'text' }
+const PRIORITY: SchemaProperty = { key: 'priority', name: 'Priority', format: 'select' }
+const STAGE: SchemaProperty = { key: 'stage', name: 'Stage', format: 'select' }
+const P1 = { name: 'P1', color: 'red' }
 
 const TYPES: Record<string, SchemaTypeRef[]> = {
   sp_personal: [
-    { key: 'task', name: 'Task', icon: { name: 'checkbox', color: 'lime' }, properties: [TAG, DUE, CREATED] },
-    { key: 'page', name: 'Page', icon: null, properties: [TAG, CREATED] },
-    { key: 'project', name: 'Project', icon: null, properties: [START, FINISH, CREATED] }
+    {
+      key: 'task',
+      name: 'Task',
+      icon: { name: 'checkbox', color: 'lime' },
+      properties: [TAG, DUE, CREATED, DONE, PRIORITY, STAGE]
+    },
+    { key: 'page', name: 'Page', icon: null, properties: [TAG, CREATED, PRIORITY] },
+    { key: 'project', name: 'Project', icon: null, properties: [START, FINISH, CREATED, LOCATION, PRIORITY] }
   ],
   sp_empty: [{ key: 'page', name: 'Page', icon: null, properties: [CREATED] }]
 }
@@ -53,7 +63,11 @@ function deferred<T>() {
 function setup(apiKey: string | null = API_KEY) {
   const gateway = {
     listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ok(listed(SPACES))),
-    listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? []))
+    listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? [])),
+    // Stage has no options, so it colours nothing.
+    listSelectOptions: vi.fn<SchemaGateway['listSelectOptions']>(async (_key, _space, property) =>
+      ok(property === 'priority' ? [P1] : [])
+    )
   }
   const store = new SchemaSyncStore()
   const syncSchema = new SyncSchema({
@@ -79,12 +93,16 @@ test('reads every space with its dated types', async () => {
         {
           id: 'sp_personal',
           name: 'Personal',
+          icon: 'data:image/png;base64,AA==',
           types: [
             {
               key: 'task',
               name: 'Task',
               icon: { name: 'checkbox', color: 'lime' },
-              dateProperties: [{ key: 'due_date', name: 'Due date' }]
+              dateProperties: [{ key: 'due_date', name: 'Due date' }],
+              hasDone: true,
+              hasLocation: false,
+              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
             },
             {
               key: 'project',
@@ -93,7 +111,10 @@ test('reads every space with its dated types', async () => {
               dateProperties: [
                 { key: 'start_date', name: 'Start date' },
                 { key: 'finish_date', name: 'Finish date' }
-              ]
+              ],
+              hasDone: false,
+              hasLocation: true,
+              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
             }
           ]
         },
@@ -103,6 +124,22 @@ test('reads every space with its dated types', async () => {
   })
   expect(gateway.listSpaces).toHaveBeenCalledWith(API_KEY)
   expect(gateway.listTypes).toHaveBeenCalledWith(API_KEY, 'sp_personal')
+})
+
+test("asks for a select property's options once per space, and only for dated types", async () => {
+  const { gateway, syncSchema } = setup()
+  await syncSchema.execute()
+  expect(gateway.listSelectOptions.mock.calls).toEqual([
+    [API_KEY, 'sp_personal', 'priority'],
+    [API_KEY, 'sp_personal', 'stage']
+  ])
+})
+
+test('fails as unauthorized when options are refused', async () => {
+  const { gateway, store, syncSchema } = setup()
+  gateway.listSelectOptions.mockResolvedValueOnce(unauthorized)
+  await syncSchema.execute()
+  expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unauthorized' })
 })
 
 test('says when the key was not granted every space', async () => {

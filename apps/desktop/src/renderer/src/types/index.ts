@@ -21,9 +21,17 @@ export type CategoryHue =
 export interface Space {
   key: string
   name: string
+  /** A `data:` URL of the space's own image; absent when it has none. */
+  icon?: string
 }
 
 export interface DateProperty {
+  key: string
+  label: string
+}
+
+/** A select property whose options can colour a type's objects. */
+export interface SelectProperty {
   key: string
   label: string
 }
@@ -37,19 +45,27 @@ export interface ObjectType {
   icon: IconName
   /** Date properties only. */
   props: DateProperty[]
+  /** Empty where the API cannot say what the options' colours are (v1). */
+  selects: SelectProperty[]
   /** Key of the mandatory start-date property the type starts with. */
   from: string
   /** Key of the optional end-date property; a type with one is drawn as a range. */
   to: string | null
   /** Whether From/To carry a time of day, as the user states it; starts false (all-day). */
   includesTime: boolean
+  /** Key of the select property whose options colour its objects; starts null (the type's own hue). */
+  colourBy: string | null
 }
 
-/** `to: null` means a point, not a range. `from`/`to` are property keys. */
+/**
+ * How a type is drawn. `to: null` means a point, not a range. `from`/`to`/`colourBy` are
+ * property keys.
+ */
 export interface DateMapping {
   from: string
   to: string | null
   includesTime: boolean
+  colourBy: string | null
 }
 
 /** What the user has ticked, keyed by `Space.key` and `ObjectType.key`. */
@@ -84,6 +100,9 @@ export interface CalendarEvent {
   end?: string
   allDay: boolean
   done?: boolean
+  location?: string
+  /** The hue of its option in the property its type is coloured by, drawn instead of the type's. */
+  category?: CategoryHue
 }
 
 /** One calendar day of whatever the view draws: a cell of the month grid, a day column. */

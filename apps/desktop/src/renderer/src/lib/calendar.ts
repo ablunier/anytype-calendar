@@ -6,6 +6,7 @@
 
 import type {
   CalendarEvent,
+  CategoryHue,
   DateMapping,
   DayColumn,
   MonthCell,
@@ -240,6 +241,11 @@ export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[
   return types.filter((type) => type.space === spaceKey)
 }
 
+/** Its colour-by option's hue, else its type's; neutral for a type no longer read. */
+export function eventHue(event: CalendarEvent, type: ObjectType | undefined): CategoryHue {
+  return event.category ?? type?.category ?? 'graphite'
+}
+
 /** Falls back to the key for a property the type no longer has. */
 export function dateLabel(type: ObjectType, key: string): string {
   return type.props.find((prop) => prop.key === key)?.label ?? key
@@ -251,6 +257,19 @@ export function offersDates(type: ObjectType, { from, to }: DateMapping): boolea
   return offers(from) && (to === null || offers(to))
 }
 
+/**
+ * The mapping as the type can still draw it: null when it names a date the type does not have,
+ * and colouring by nothing when the property it colours by is gone — that alone is no reason to
+ * forget the dates. The mapping itself when the type offers all of it.
+ */
+export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapping | null {
+  if (!offersDates(type, mapping)) return null
+  const { colourBy } = mapping
+  return colourBy === null || type.selects.some((select) => select.key === colourBy)
+    ? mapping
+    : { ...mapping, colourBy: null }
+}
+
 /** Each type with the dates in `dates` where it has an entry, and its own where it has none. */
 export function withDates(types: ObjectType[], dates: Record<string, DateMapping>): ObjectType[] {
   return types.map((type) => {
@@ -260,7 +279,8 @@ export function withDates(types: ObjectType[], dates: Record<string, DateMapping
           ...type,
           from: mapping.from,
           to: mapping.to,
-          includesTime: mapping.includesTime
+          includesTime: mapping.includesTime,
+          colourBy: mapping.colourBy
         }
       : type
   })
@@ -268,6 +288,10 @@ export function withDates(types: ObjectType[], dates: Record<string, DateMapping
 
 export function dateOptions(type: ObjectType): { value: string; label: string }[] {
   return type.props.map(({ key, label }) => ({ value: key, label }))
+}
+
+export function colourOptions(type: ObjectType): { value: string; label: string }[] {
+  return type.selects.map(({ key, label }) => ({ value: key, label }))
 }
 
 export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {

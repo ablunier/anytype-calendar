@@ -8,6 +8,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
+  SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
   SchemaTypeRef
@@ -18,6 +19,9 @@ const PAGE_LIMIT = 1_000
 
 /** A type list row carries no properties, so each type is read on its own, this many at once. */
 const TYPE_READS_AT_ONCE = 4
+
+/** Pixels. A space's image is drawn at 16, so this covers a 4x display. */
+const SPACE_ICON_WIDTH = 64
 
 /**
  * The type document spells some of Anytype's own property keys the way the app stores them
@@ -31,6 +35,7 @@ const SYSTEM_KEY_SPELLINGS: Readonly<Record<string, string>> = {
   lastMessageDate: 'last_message_date'
 }
 
+const BAD_REQUEST = 400
 const UNAUTHORIZED = 401
 /** `space_not_granted`: the user took the space out of the key's grant since it was listed. */
 const FORBIDDEN = 403
@@ -48,10 +53,25 @@ type Listing = { items: unknown[]; hasNotGrantedSpaces: boolean }
 export class AnytypeV2SchemaGateway implements SchemaGateway {
   readonly #client: AnytypeClient
   readonly #probe: AnytypeDialectProbe
+  readonly #encodeBase64: (bytes: Uint8Array) => string
+  /**
+   * `data:` URLs by file id. A space's image is stored under a new id when it changes, so an
+   * id's image never goes stale, and every sync need not download it again.
+   */
+  readonly #icons = new Map<string, string>()
 
-  constructor({ client, probe }: { client: AnytypeClient; probe: AnytypeDialectProbe }) {
+  constructor({
+    client,
+    probe,
+    encodeBase64
+  }: {
+    client: AnytypeClient
+    probe: AnytypeDialectProbe
+    encodeBase64: (bytes: Uint8Array) => string
+  }) {
     this.#client = client
     this.#probe = probe
+    this.#encodeBase64 = encodeBase64
   }
 
   async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
@@ -59,12 +79,54 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     // ambiguous when the account joins another space.
     const result = await this.#listAll(apiKey, '/v2/spaces', 'ids=full&', 'spaces')
     if (!result.ok) return result
-    const spaces = result.value.items.map((item) => {
-      const id = stringField(item, 'id')
-      if (id === undefined) throw malformed('spaces')
-      return { id, name: stringField(item, 'name') ?? '' }
-    })
+    const spaces = await Promise.all(
+      result.value.items.map(async (item) => {
+        const id = stringField(item, 'id')
+        if (id === undefined) throw malformed('spaces')
+        const space = { id, name: stringField(item, 'name') ?? '' }
+        const fileId = stringField(item, 'icon_image')
+        const icon = fileId === undefined ? undefined : await this.#spaceIcon(apiKey, id, fileId)
+        return icon === undefined ? space : { ...space, icon }
+      })
+    )
     return { ok: true, value: { spaces, hasNotGrantedSpaces: result.value.hasNotGrantedSpaces } }
+  }
+
+  async listSelectOptions(
+    apiKey: string,
+    spaceId: string,
+    propertyKey: string
+  ): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
+    const path = `/v2/spaces/${encodeURIComponent(spaceId)}/properties/${encodeURIComponent(propertyKey)}/options`
+    const result = await this.#listAll(apiKey, path, '', 'options')
+    if (!result.ok) return result
+    return {
+      ok: true,
+      value: result.value.items.flatMap((item) => {
+        const name = stringField(item, 'name')
+        const color = stringField(item, 'color')
+        return name !== undefined && color !== undefined ? [{ name, color }] : []
+      })
+    }
+  }
+
+  /** Decoration only: an image that cannot be read leaves the space drawn by its initial. */
+  async #spaceIcon(apiKey: string, spaceId: string, fileId: string): Promise<string | undefined> {
+    const cached = this.#icons.get(fileId)
+    if (cached !== undefined) return cached
+    try {
+      const response = await this.#client.download({
+        path: `/v2/spaces/${encodeURIComponent(spaceId)}/files/${encodeURIComponent(fileId)}/content?width=${SPACE_ICON_WIDTH}`,
+        apiKey
+      })
+      const mediaType = response.ok ? response.contentType?.split(';')[0]?.trim() : undefined
+      if (!response.ok || !mediaType?.startsWith('image/')) return undefined
+      const icon = `data:${mediaType};base64,${this.#encodeBase64(response.bytes)}`
+      this.#icons.set(fileId, icon)
+      return icon
+    } catch {
+      return undefined
+    }
   }
 
   async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
@@ -158,7 +220,14 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
       })
       if (!response.ok) {
         if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
-        if (response.status === FORBIDDEN) {
+        // A space taken out of the grant holds nothing; so does a property deleted since
+        // its type was read, for which the options route answers 404 or 400.
+        if (
+          response.status === FORBIDDEN ||
+          (what === 'options' &&
+            (response.status === BAD_REQUEST ||
+              (response.status === NOT_FOUND && !isUnmatchedRoute(response))))
+        ) {
           return { ok: true, value: { items: [], hasNotGrantedSpaces } }
         }
         throw this.#unexpected(response, what)

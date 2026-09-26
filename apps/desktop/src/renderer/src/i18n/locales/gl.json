@@ -164,6 +164,9 @@
     "fromDateFor": "Data de inicio de {{label}}",
     "toDateFor": "Data de fin de {{label}}",
     "typeIncludesTime": "As datas de {{label}} inclúen unha hora",
+    "colour": "Cor",
+    "colourFor": "Cor de {{label}}",
+    "typeColour": "Cor do tipo",
     "session": {
       "heading": "Sesión",
       "apiKey": "Clave de API",
@@ -226,7 +229,9 @@
     "eventDetail": {
       "fromDateFallback": "Data de inicio",
       "toDateFallback": "Data de fin",
+      "location": "Localización",
       "allDay": "Todo o día",
+      "done": "Feito",
       "readOnlyNotice": "Esta vista é de só lectura. Edita o obxecto en Anytype e actualizarase aquí na próxima lectura.",
       "openInAnytype": "Abrir en Anytype"
     },

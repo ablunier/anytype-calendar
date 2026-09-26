@@ -115,7 +115,18 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
           </div>
         </div>
 
+        {event.location ? (
+          <div className="flex items-start gap-10">
+            <Icon name="map-pin" size={16} className="mt-2 text-ink-tertiary" />
+            <span className="sr-only">{t('calendar.eventDetail.location')}</span>
+            <span className="type-body text-small text-pretty text-ink-body">{event.location}</span>
+          </div>
+        ) : null}
+
         <ReadOnlyToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
+        {event.done === undefined ? null : (
+          <ReadOnlyToggle checked={event.done} label={t('calendar.eventDetail.done')} />
+        )}
       </div>
 
       <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">

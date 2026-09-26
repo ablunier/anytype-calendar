@@ -12,7 +12,7 @@ import {
 import type { EventsSnapshot } from '@shared/ipc'
 import type { CalendarEvent, CalendarMonth, CalendarView, SyncView } from '@renderer/types'
 import { addDays, buildWeek, isoDate } from './calendar'
-import { elapsedSince, objectTypeKey } from './schema'
+import { elapsedSince, hueOf, objectTypeKey } from './schema'
 
 /** The span main holds, or before any load the one `now` (epoch milliseconds) opens on. */
 export function shownSpanFor(snapshot: EventsSnapshot, view: CalendarView, now: number): EventsSpan {
@@ -134,7 +134,10 @@ function calendarEventFor({
   title,
   start,
   end,
-  allDay
+  allDay,
+  done,
+  location,
+  colour
 }: EventsDatedObject): CalendarEvent {
   return {
     id,
@@ -144,6 +147,9 @@ function calendarEventFor({
     date: localDate(start),
     allDay,
     ...(allDay ? {} : { time: localTime(start) }),
-    ...(end === null ? {} : { until: localDate(end), ...(allDay ? {} : { end: localTime(end) }) })
+    ...(end === null ? {} : { until: localDate(end), ...(allDay ? {} : { end: localTime(end) }) }),
+    ...(done === undefined ? {} : { done }),
+    ...(location === undefined ? {} : { location }),
+    ...(colour === undefined ? {} : { category: hueOf(colour) })
   }
 }

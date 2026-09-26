@@ -13,14 +13,16 @@ const TASK: SchemaTypeChoice = {
   typeKey: 'task',
   from: 'due_date',
   to: null,
-  includesTime: false
+  includesTime: false,
+  colourBy: null
 }
 const PROJECT: SchemaTypeChoice = {
   spaceId: 'sp_1',
   typeKey: 'project',
   from: 'start_date',
   to: 'finish_date',
-  includesTime: true
+  includesTime: true,
+  colourBy: '6aaa450259c0801cdafc4015'
 }
 
 describe('toSchemaSelection', () => {
@@ -37,6 +39,14 @@ describe('toSchemaSelection', () => {
     expect(
       toSchemaSelection({ spaceIds: [], types: [{ ...TASK, label: 'Task' }], extra: true })
     ).toEqual({ spaceIds: [], types: [TASK] })
+  })
+
+  test('reads a choice saved before colourBy as colouring by nothing', () => {
+    const { colourBy: _, ...saved } = PROJECT
+    expect(toSchemaSelection({ spaceIds: [], types: [saved] })).toEqual({
+      spaceIds: [],
+      types: [{ ...PROJECT, colourBy: null }]
+    })
   })
 
   test('collapses a space listed twice', () => {
@@ -67,7 +77,9 @@ describe('toSchemaSelection', () => {
     ['a range from and to the same date', { spaceIds: [], types: [{ ...TASK, to: 'due_date' }] }],
     ['a type chosen twice', { spaceIds: [], types: [TASK, { ...TASK, from: 'other' }] }],
     ['a missing includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: undefined }] }],
-    ['a non-boolean includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: 'yes' }] }]
+    ['a non-boolean includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: 'yes' }] }],
+    ['an empty colourBy', { spaceIds: [], types: [{ ...TASK, colourBy: '' }] }],
+    ['a non-string colourBy', { spaceIds: [], types: [{ ...TASK, colourBy: 1 }] }]
   ])('rejects %s', (_, value) => {
     expect(toSchemaSelection(value)).toBeNull()
   })
@@ -80,7 +92,8 @@ describe('rekeySchemaSelection', () => {
     typeKey,
     from,
     to,
-    includesTime: false
+    includesTime: false,
+    colourBy: null
   })
   const selectionOf = (...types: SchemaTypeChoice[]): SchemaSelection => ({ spaceIds: [SPACE], types })
   const spaces: SchemaSpace[] = [
@@ -96,9 +109,27 @@ describe('rekeySchemaSelection', () => {
           dateProperties: [
             { key: 'start_date', name: 'Start date' },
             { key: '6a6733dc59c08021576f32d2', formerKey: 'finished', name: 'Finished' }
+          ],
+          hasDone: false,
+          hasLocation: false,
+          selectProperties: [
+            {
+              key: '6a6725f159c08021576f3119',
+              formerKey: 'status',
+              name: 'Status',
+              options: [{ name: 'Reading', color: 'teal' }]
+            }
           ]
         },
-        { key: 'task', name: 'Task', icon: null, dateProperties: [{ key: 'due_date', name: 'Due date' }] }
+        {
+          key: 'task',
+          name: 'Task',
+          icon: null,
+          dateProperties: [{ key: 'due_date', name: 'Due date' }],
+          hasDone: true,
+          hasLocation: false,
+          selectProperties: []
+        }
       ]
     }
   ]
@@ -117,6 +148,11 @@ describe('rekeySchemaSelection', () => {
   test('rewrites a property of a type whose key is current', () => {
     const selection = selectionOf(choice('6a67272659c08021576f3127', 'finished'))
     expect(rekeySchemaSelection(selection, spaces).types[0]?.from).toBe('6a6733dc59c08021576f32d2')
+  })
+
+  test('rewrites the property it colours by', () => {
+    const selection = selectionOf({ ...choice('book', 'start_date'), colourBy: 'status' })
+    expect(rekeySchemaSelection(selection, spaces).types[0]?.colourBy).toBe('6a6725f159c08021576f3119')
   })
 
   test('keeps a choice whose type or space the account does not have', () => {

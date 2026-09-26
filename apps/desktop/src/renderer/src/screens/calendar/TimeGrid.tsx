@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
-import { isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
+import { eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
 import { layOutDayColumn, MINUTES_PER_DAY, splitDayEvents } from '@renderer/lib/time-grid'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
@@ -155,7 +155,7 @@ export function TimeGrid({
                       key={segment.event.id}
                       segment={segment}
                       title={segment.event.title || t('common.untitled')}
-                      category={type?.category ?? 'graphite'}
+                      category={eventHue(segment.event, type)}
                       {...(segment.event.done === undefined ? {} : { done: segment.event.done })}
                       onClick={() => onOpenEvent(segment.event, day.date)}
                     />

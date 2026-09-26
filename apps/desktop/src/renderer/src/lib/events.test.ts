@@ -153,6 +153,12 @@ describe('eventsFor', () => {
     ])
   })
 
+  test('carries whether it is done, its location, and the hue of the option it is coloured by', () => {
+    const [event] =
+      eventsFor(loaded([object({ done: true, location: 'Clinic', colour: 'red' })]), SEPTEMBER) ?? []
+    expect(event).toMatchObject({ done: true, location: 'Clinic', category: 'clay' })
+  })
+
   test('gives a timed object its local time', () => {
     const [event] = eventsFor(loaded([object({ start: local(8, 3, 14, 5), allDay: false })]), SEPTEMBER) ?? []
     expect(event).toMatchObject({ date: '2026-09-03', time: '14:05', allDay: false })

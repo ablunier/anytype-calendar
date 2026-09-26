@@ -2,6 +2,7 @@
 // deps, no Node core modules.
 
 export * from './model/date-property'
+export * from './model/select-property'
 export * from './model/selection'
 export * from './model/space'
 export * from './model/sync'

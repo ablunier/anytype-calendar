@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import type { SchemaSelection } from '../../domain'
+import type { SchemaSelection, SchemaTypeChoice } from '../../domain'
 import {
   JsonFileSchemaSelectionRepository,
   type SchemaSelectionFile
@@ -8,7 +8,14 @@ import {
 const SELECTION: SchemaSelection = {
   spaceIds: ['sp_1'],
   types: [
-    { spaceId: 'sp_1', typeKey: 'project', from: 'start_date', to: 'finish_date', includesTime: false }
+    {
+      spaceId: 'sp_1',
+      typeKey: 'project',
+      from: 'start_date',
+      to: 'finish_date',
+      includesTime: false,
+      colourBy: 'status'
+    }
   ]
 }
 
@@ -32,7 +39,16 @@ test('loads what it saved', async () => {
 test('writes the selection under a format version', async () => {
   const { repository, contents } = setup()
   await repository.save(SELECTION)
-  expect(JSON.parse(contents() ?? '')).toEqual({ version: 2, selection: SELECTION })
+  expect(JSON.parse(contents() ?? '')).toEqual({ version: 3, selection: SELECTION })
+})
+
+test('loads a version-2 file as colouring by nothing', async () => {
+  const [{ colourBy: _, ...choice }] = SELECTION.types as [SchemaTypeChoice]
+  const { repository } = setup(JSON.stringify({ version: 2, selection: { ...SELECTION, types: [choice] } }))
+  await expect(repository.load()).resolves.toEqual({
+    ...SELECTION,
+    types: [{ ...choice, colourBy: null }]
+  })
 })
 
 test('loads no selection when there is no file', async () => {
@@ -44,7 +60,7 @@ test.each([
   ['not an object', '"selection"'],
   ['another version', JSON.stringify({ version: 1, selection: SELECTION })],
   ['no version', JSON.stringify({ selection: SELECTION })],
-  ['not a selection', JSON.stringify({ version: 2, selection: { spaceIds: 'sp_1' } })]
+  ['not a selection', JSON.stringify({ version: 3, selection: { spaceIds: 'sp_1' } })]
 ])('loads no selection from a file that is %s', async (_, text) => {
   await expect(setup(text).repository.load()).resolves.toBeNull()
 })
