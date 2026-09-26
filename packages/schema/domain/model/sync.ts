@@ -8,6 +8,8 @@ export type SchemaSyncFailure =
 
 export interface SchemaSyncResult {
   spaces: SchemaSpace[]
+  /** The key reaches only some of the account's spaces: the rest can be granted in Anytype. */
+  hasNotGrantedSpaces: boolean
   /** Epoch milliseconds. */
   syncedAt: number
 }
@@ -27,7 +29,7 @@ export type SchemaSyncPhase = SchemaSync['phase']
 
 export type SchemaSyncEvent =
   | { type: 'sync-started' }
-  | { type: 'sync-succeeded'; spaces: SchemaSpace[]; at: number }
+  | { type: 'sync-succeeded'; spaces: SchemaSpace[]; hasNotGrantedSpaces: boolean; at: number }
   | { type: 'sync-failed'; failure: SchemaSyncFailure; at: number }
   | { type: 'reset' }
 
@@ -43,7 +45,14 @@ export function nextSchemaSync(state: SchemaSync, event: SchemaSyncEvent): Schem
 
     case 'sync-succeeded':
       return state.phase === 'syncing'
-        ? { phase: 'synced', last: { spaces: event.spaces, syncedAt: event.at } }
+        ? {
+            phase: 'synced',
+            last: {
+              spaces: event.spaces,
+              hasNotGrantedSpaces: event.hasNotGrantedSpaces,
+              syncedAt: event.at
+            }
+          }
         : state
 
     case 'sync-failed':

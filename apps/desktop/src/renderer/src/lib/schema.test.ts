@@ -45,7 +45,10 @@ const SPACE: SchemaSpace = {
 }
 
 const SYNCED_AT = 100_000
-const SYNCED: SchemaSnapshot = { phase: 'synced', last: { spaces: [SPACE], syncedAt: SYNCED_AT } }
+const SYNCED: SchemaSnapshot = {
+  phase: 'synced',
+  last: { spaces: [SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT }
+}
 
 describe('tracksAnyType', () => {
   const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false }

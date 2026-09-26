@@ -40,7 +40,7 @@ describe('listSpaces', () => {
 
     await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({
       ok: true,
-      value: [{ id: 'sp_1', name: 'Personal' }]
+      value: { spaces: [{ id: 'sp_1', name: 'Personal' }], hasNotGrantedSpaces: false }
     })
     expect(calls).toHaveLength(1)
     expect(calls[0]?.url).toBe(`${BASE}/v1/spaces?offset=0&limit=1000`)
@@ -56,7 +56,7 @@ describe('listSpaces', () => {
 
     const result = await gateway.listSpaces(API_KEY)
 
-    expect(result.ok && result.value.map(({ id }) => id)).toEqual(['sp_1', 'sp_2', 'sp_3'])
+    expect(result.ok && result.value.spaces.map(({ id }) => id)).toEqual(['sp_1', 'sp_2', 'sp_3'])
     expect(calls[1]?.url).toBe(`${BASE}/v1/spaces?offset=2&limit=1000`)
   })
 
@@ -76,7 +76,7 @@ describe('listSpaces', () => {
       ])
     )
     const result = await gateway.listSpaces(API_KEY)
-    expect(result.ok && result.value.map(({ id }) => id)).toEqual(['sp_1', 'sp_2'])
+    expect(result.ok && result.value.spaces.map(({ id }) => id)).toEqual(['sp_1', 'sp_2'])
   })
 
   test('resolves a refused key as unauthorized', async () => {

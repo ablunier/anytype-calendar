@@ -6,6 +6,7 @@ import {
   type SchemaGateway,
   type SchemaGatewayResult,
   type SchemaSpace,
+  type SchemaSpaceList,
   type SchemaSync,
   type SchemaSyncEvent,
   type SchemaType
@@ -45,9 +46,9 @@ export class SyncSchema {
     const syncing = this.#guard.dispatch({ type: 'sync-started' })
     if (syncing === before) return
 
-    let spaces: SchemaSpace[]
+    let read: { spaces: SchemaSpace[]; hasNotGrantedSpaces: boolean }
     try {
-      spaces = await this.#fetchSpaces()
+      read = await this.#fetchSpaces()
     } catch (error) {
       const failure = error instanceof Unauthorized ? 'unauthorized' : 'unreachable'
       if (this.#guard.isCurrent(syncing)) {
@@ -56,21 +57,22 @@ export class SyncSchema {
       return
     }
     if (this.#guard.isCurrent(syncing)) {
-      this.#guard.dispatch({ type: 'sync-succeeded', spaces, at: this.#now() })
+      this.#guard.dispatch({ type: 'sync-succeeded', ...read, at: this.#now() })
     }
   }
 
-  async #fetchSpaces(): Promise<SchemaSpace[]> {
+  async #fetchSpaces(): Promise<{ spaces: SchemaSpace[]; hasNotGrantedSpaces: boolean }> {
     const apiKey = await this.#apiKeys.current()
     if (apiKey === null) throw new Unauthorized()
 
-    const refs = accepted(await this.#gateway.listSpaces(apiKey))
-    return Promise.all(
-      refs.map(async ({ id, name }) => {
+    const listed: SchemaSpaceList = accepted(await this.#gateway.listSpaces(apiKey))
+    const spaces = await Promise.all(
+      listed.spaces.map(async ({ id, name }) => {
         const types = await this.#fetchDatedTypes(apiKey, id)
         return { id, name, types }
       })
     )
+    return { spaces, hasNotGrantedSpaces: listed.hasNotGrantedSpaces }
   }
 
   async #fetchDatedTypes(apiKey: string, spaceId: string): Promise<SchemaType[]> {

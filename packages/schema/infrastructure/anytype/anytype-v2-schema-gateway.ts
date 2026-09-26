@@ -8,7 +8,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
-  SchemaSpaceRef,
+  SchemaSpaceList,
   SchemaTypeIcon,
   SchemaTypeRef
 } from '../../domain'
@@ -32,14 +32,18 @@ const SYSTEM_KEY_SPELLINGS: Readonly<Record<string, string>> = {
 }
 
 const UNAUTHORIZED = 401
+/** `space_not_granted`: the user took the space out of the key's grant since it was listed. */
+const FORBIDDEN = 403
 const NOT_FOUND = 404
 
-type Page = { data: unknown[]; hasMore: boolean }
+type Page = { data: unknown[]; hasMore: boolean; hasNotGrantedSpaces: boolean }
+type Listing = { items: unknown[]; hasNotGrantedSpaces: boolean }
 
 /**
- * v2 lists only the spaces the key was granted, and never Anytype's tech space. Unlike v1 it
- * does not say what kind of space each is, so it cannot leave out one-to-one chats; those hold
- * no dated types, so they show as spaces with nothing to put on the calendar.
+ * v2 lists only the spaces the key was granted, and never Anytype's tech space, but says
+ * whether the grant leaves others out. Unlike v1 it does not say what kind of space each is,
+ * so it cannot leave out one-to-one chats; those hold no dated types, so they show as spaces
+ * with nothing to put on the calendar.
  */
 export class AnytypeV2SchemaGateway implements SchemaGateway {
   readonly #client: AnytypeClient
@@ -50,24 +54,24 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     this.#probe = probe
   }
 
-  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceRef[]>> {
+  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
     // The full id is what the saved selection stores; the default short one can become
     // ambiguous when the account joins another space.
     const result = await this.#listAll(apiKey, '/v2/spaces', 'ids=full&', 'spaces')
     if (!result.ok) return result
-    const spaces = result.value.map((item) => {
+    const spaces = result.value.items.map((item) => {
       const id = stringField(item, 'id')
       if (id === undefined) throw malformed('spaces')
       return { id, name: stringField(item, 'name') ?? '' }
     })
-    return { ok: true, value: spaces }
+    return { ok: true, value: { spaces, hasNotGrantedSpaces: result.value.hasNotGrantedSpaces } }
   }
 
   async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
     const space = `/v2/spaces/${encodeURIComponent(spaceId)}`
     const listed = await this.#listAll(apiKey, `${space}/types`, '', 'types')
     if (!listed.ok) return listed
-    const keys = listed.value.map((item) => {
+    const keys = listed.value.items.map((item) => {
       const key = stringField(item, 'key')
       if (key === undefined) throw malformed('types')
       return key
@@ -89,8 +93,12 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
         refused = true
         return
       }
-      // Deleted between the list and this read: it is simply not there any more.
-      if (response.status === NOT_FOUND && !isUnmatchedRoute(response)) {
+      // Deleted, or its space taken out of the grant, between the list and this read: it is
+      // simply not there any more.
+      if (
+        response.status === FORBIDDEN ||
+        (response.status === NOT_FOUND && !isUnmatchedRoute(response))
+      ) {
         types[index] = null
         return
       }
@@ -139,8 +147,9 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     path: string,
     query: string,
     what: string
-  ): Promise<SchemaGatewayResult<unknown[]>> {
+  ): Promise<SchemaGatewayResult<Listing>> {
     const items: unknown[] = []
+    let hasNotGrantedSpaces = false
     for (;;) {
       const response = await this.#client.request({
         method: 'GET',
@@ -149,13 +158,19 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
       })
       if (!response.ok) {
         if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
+        if (response.status === FORBIDDEN) {
+          return { ok: true, value: { items: [], hasNotGrantedSpaces } }
+        }
         throw this.#unexpected(response, what)
       }
       const page = toPage(response.body)
       if (!page) throw malformed(what)
       items.push(...page.data)
+      hasNotGrantedSpaces ||= page.hasNotGrantedSpaces
       // An empty page that claims more would otherwise be asked for forever.
-      if (!page.hasMore || page.data.length === 0) return { ok: true, value: items }
+      if (!page.hasMore || page.data.length === 0) {
+        return { ok: true, value: { items, hasNotGrantedSpaces } }
+      }
     }
   }
 
@@ -250,7 +265,8 @@ function toPage(body: unknown): Page | null {
   const data = field(body, 'data')
   const hasMore = field(body, 'has_more')
   if (!Array.isArray(data) || typeof hasMore !== 'boolean') return null
-  return { data, hasMore }
+  // Only the spaces list carries it.
+  return { data, hasMore, hasNotGrantedSpaces: field(body, 'has_not_granted_spaces') === true }
 }
 
 function field(value: unknown, name: string): unknown {

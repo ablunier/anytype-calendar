@@ -2,7 +2,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
-  SchemaSpaceRef,
+  SchemaSpaceList,
   SchemaTypeIcon,
   SchemaTypeRef
 } from '../../domain'
@@ -126,9 +126,12 @@ export class InMemorySchemaGateway implements SchemaGateway {
     this.#requestLatencyMs = requestLatencyMs
   }
 
-  async listSpaces(): Promise<SchemaGatewayResult<SchemaSpaceRef[]>> {
+  async listSpaces(): Promise<SchemaGatewayResult<SchemaSpaceList>> {
     await this.#sleep(this.#requestLatencyMs)
-    return { ok: true, value: this.#spaces.map(({ id, name }) => ({ id, name })) }
+    return {
+      ok: true,
+      value: { spaces: this.#spaces.map(({ id, name }) => ({ id, name })), hasNotGrantedSpaces: false }
+    }
   }
 
   async listTypes(_apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {

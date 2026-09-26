@@ -1,5 +1,5 @@
 import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-client/infrastructure'
-import type { SchemaGateway, SchemaGatewayResult, SchemaSpaceRef, SchemaTypeRef } from '../../domain'
+import type { SchemaGateway, SchemaGatewayResult, SchemaSpaceList, SchemaTypeRef } from '../../domain'
 
 /** Reads through v2 where Anytype serves it, and through v1 where it does not. */
 export class AnytypeSchemaGateway implements SchemaGateway {
@@ -13,7 +13,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     this.#v2 = v2
   }
 
-  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceRef[]>> {
+  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
     const gateway = await this.#pick(apiKey)
     return gateway ? gateway.listSpaces(apiKey) : { ok: false, failure: 'unauthorized' }
   }

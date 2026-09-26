@@ -3,6 +3,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
+  SchemaSpaceList,
   SchemaSpaceRef,
   SchemaSync,
   SchemaTypeRef
@@ -35,6 +36,10 @@ const TYPES: Record<string, SchemaTypeRef[]> = {
 }
 
 const ok = <T>(value: T): SchemaGatewayResult<T> => ({ ok: true, value })
+const listed = (spaces: SchemaSpaceRef[], hasNotGrantedSpaces = false): SchemaSpaceList => ({
+  spaces,
+  hasNotGrantedSpaces
+})
 const unauthorized = { ok: false, failure: 'unauthorized' } as const
 
 function deferred<T>() {
@@ -47,7 +52,7 @@ function deferred<T>() {
 
 function setup(apiKey: string | null = API_KEY) {
   const gateway = {
-    listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ok(SPACES)),
+    listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ok(listed(SPACES))),
     listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? []))
   }
   const store = new SchemaSyncStore()
@@ -69,6 +74,7 @@ test('reads every space with its dated types', async () => {
     phase: 'synced',
     last: {
       syncedAt: NOW,
+      hasNotGrantedSpaces: false,
       spaces: [
         {
           id: 'sp_personal',
@@ -99,6 +105,13 @@ test('reads every space with its dated types', async () => {
   expect(gateway.listTypes).toHaveBeenCalledWith(API_KEY, 'sp_personal')
 })
 
+test('says when the key was not granted every space', async () => {
+  const { gateway, store, syncSchema } = setup()
+  gateway.listSpaces.mockResolvedValueOnce(ok(listed(SPACES, true)))
+  await syncSchema.execute()
+  expect(store.get()).toMatchObject({ phase: 'synced', last: { hasNotGrantedSpaces: true } })
+})
+
 test('leaves out a type without user date properties', async () => {
   const { syncSchema, store } = setup()
   await syncSchema.execute()
@@ -108,15 +121,18 @@ test('leaves out a type without user date properties', async () => {
 
 test('is syncing while Anytype is being read', async () => {
   const { gateway, store, syncSchema } = setup()
-  const spaces = deferred<SchemaGatewayResult<SchemaSpaceRef[]>>()
+  const spaces = deferred<SchemaGatewayResult<SchemaSpaceList>>()
   gateway.listSpaces.mockReturnValueOnce(spaces.promise)
 
   const running = syncSchema.execute()
   expect(store.get()).toEqual({ phase: 'syncing' })
 
-  spaces.resolve(ok([]))
+  spaces.resolve(ok(listed([])))
   await running
-  expect(store.get()).toEqual({ phase: 'synced', last: { spaces: [], syncedAt: NOW } })
+  expect(store.get()).toEqual({
+    phase: 'synced',
+    last: { spaces: [], hasNotGrantedSpaces: false, syncedAt: NOW }
+  })
 })
 
 test('fails as unauthorized without a stored key, asking Anytype nothing', async () => {
@@ -164,12 +180,12 @@ describe('racing a reset', () => {
   test('drops a result that lands after a reset', async () => {
     const { gateway, store, syncSchema } = setup()
     const resetSchemaSync = new ResetSchemaSync(store)
-    const spaces = deferred<SchemaGatewayResult<SchemaSpaceRef[]>>()
+    const spaces = deferred<SchemaGatewayResult<SchemaSpaceList>>()
     gateway.listSpaces.mockReturnValueOnce(spaces.promise)
 
     const running = syncSchema.execute()
     resetSchemaSync.execute()
-    spaces.resolve(ok(SPACES))
+    spaces.resolve(ok(listed(SPACES)))
     await running
 
     expect(store.get()).toEqual({ phase: 'idle' })
@@ -178,7 +194,7 @@ describe('racing a reset', () => {
   test('drops a failure that lands after a reset', async () => {
     const { gateway, store, syncSchema } = setup()
     const resetSchemaSync = new ResetSchemaSync(store)
-    const spaces = deferred<SchemaGatewayResult<SchemaSpaceRef[]>>()
+    const spaces = deferred<SchemaGatewayResult<SchemaSpaceList>>()
     gateway.listSpaces.mockReturnValueOnce(spaces.promise)
 
     const running = syncSchema.execute()

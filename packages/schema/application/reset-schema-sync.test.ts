@@ -8,7 +8,10 @@ const API_KEY = 'ak_secret'
 
 function setup() {
   const gateway = {
-    listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ({ ok: true, value: [] })),
+    listSpaces: vi.fn<SchemaGateway['listSpaces']>(async () => ({
+      ok: true,
+      value: { spaces: [], hasNotGrantedSpaces: false }
+    })),
     listTypes: vi.fn<SchemaGateway['listTypes']>(async () => ({ ok: true, value: [] }))
   }
   const store = new SchemaSyncStore()

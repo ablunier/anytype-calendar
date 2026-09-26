@@ -38,6 +38,11 @@ const page = (data: unknown[], hasMore = false): Reply => ({
   body: { data, total: data.length, offset: 0, limit: 1000, has_more: hasMore }
 })
 
+const notGranted: Reply = {
+  status: 403,
+  body: { status: 403, code: 'space_not_granted', message: 'x', issues: [] }
+}
+
 const unauthorized: Reply = {
   status: 401,
   body: { object: 'error', status: 401, code: 'unauthorized', message: 'invalid api key' }
@@ -51,7 +56,7 @@ describe('listSpaces', () => {
 
     await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({
       ok: true,
-      value: [{ id: 'bafy.personal', name: 'Personal' }]
+      value: { spaces: [{ id: 'bafy.personal', name: 'Personal' }], hasNotGrantedSpaces: false }
     })
     expect(calls[0]?.url).toBe(`${BASE}/v2/spaces?ids=full&offset=0&limit=1000`)
     expect(calls[0]?.init.headers).toMatchObject({ Authorization: `Bearer ${API_KEY}` })
@@ -64,8 +69,19 @@ describe('listSpaces', () => {
 
     const result = await gateway.listSpaces(API_KEY)
 
-    expect(result.ok && result.value.map(({ id }) => id)).toEqual(['sp_1', 'sp_2', 'sp_3'])
+    expect(result.ok && result.value.spaces.map(({ id }) => id)).toEqual(['sp_1', 'sp_2', 'sp_3'])
     expect(calls[1]?.url).toBe(`${BASE}/v2/spaces?ids=full&offset=2&limit=1000`)
+  })
+
+  test('says when the key was not granted every space of the account', async () => {
+    const { gateway } = setup({
+      '/v2/spaces': {
+        status: 200,
+        body: { ...page([{ id: 'sp_1' }]).body as object, has_not_granted_spaces: true }
+      }
+    })
+    const result = await gateway.listSpaces(API_KEY)
+    expect(result.ok && result.value.hasNotGrantedSpaces).toBe(true)
   })
 
   test('resolves a refused key as unauthorized', async () => {
@@ -250,6 +266,19 @@ describe('listTypes', () => {
     })
     const result = await gateway.listTypes(API_KEY, SPACE_ID)
     expect(result.ok && result.value.map(({ key }) => key)).toEqual(['task'])
+  })
+
+  test('leaves out a type whose space was taken out of the grant after the list', async () => {
+    const { gateway } = setup({
+      [TYPES]: page([{ key: 'task' }]),
+      [`${TYPES}/task`]: notGranted
+    })
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  test('reads a space the key is no longer granted as holding no types', async () => {
+    const { gateway } = setup({ [TYPES]: notGranted })
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({ ok: true, value: [] })
   })
 
   test('resolves a refused key as unauthorized', async () => {

@@ -3,7 +3,7 @@ import type { SchemaSpace } from './space'
 import { nextSchemaSync, type SchemaSync, type SchemaSyncResult } from './sync'
 
 const SPACES: SchemaSpace[] = [{ id: 'sp_1', name: 'Personal', types: [] }]
-const LAST: SchemaSyncResult = { spaces: SPACES, syncedAt: 1_000 }
+const LAST: SchemaSyncResult = { spaces: SPACES, hasNotGrantedSpaces: false, syncedAt: 1_000 }
 
 const idle: SchemaSync = { phase: 'idle' }
 const syncing: SchemaSync = { phase: 'syncing' }
@@ -33,15 +33,18 @@ describe('sync-started', () => {
 })
 
 describe('sync-succeeded', () => {
-  test('records the spaces and when they were read', () => {
+  test('records the spaces, whether the grant left any out, and when they were read', () => {
     expect(
-      nextSchemaSync({ phase: 'syncing', last: LAST }, { type: 'sync-succeeded', spaces: [], at: 5_000 })
-    ).toEqual({ phase: 'synced', last: { spaces: [], syncedAt: 5_000 } })
+      nextSchemaSync(
+        { phase: 'syncing', last: LAST },
+        { type: 'sync-succeeded', spaces: [], hasNotGrantedSpaces: true, at: 5_000 }
+      )
+    ).toEqual({ phase: 'synced', last: { spaces: [], hasNotGrantedSpaces: true, syncedAt: 5_000 } })
   })
 
   test('is ignored outside a sync', () => {
     for (const state of [idle, synced, failed]) {
-      expect(nextSchemaSync(state, { type: 'sync-succeeded', spaces: SPACES, at: 5_000 })).toBe(state)
+      expect(nextSchemaSync(state, { type: 'sync-succeeded', spaces: SPACES, hasNotGrantedSpaces: false, at: 5_000 })).toBe(state)
     }
   })
 })

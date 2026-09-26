@@ -30,7 +30,7 @@ test('lists the seeded spaces after the simulated latency', async () => {
   const { gateway, sleeps } = setup()
   await expect(gateway.listSpaces()).resolves.toEqual({
     ok: true,
-    value: [{ id: 'sp_1', name: 'Personal' }]
+    value: { spaces: [{ id: 'sp_1', name: 'Personal' }], hasNotGrantedSpaces: false }
   })
   expect(sleeps).toEqual([50])
 })
@@ -58,7 +58,7 @@ test('rejects for a space it does not know', async () => {
 test('ships the design sample account by default', async () => {
   const gateway = new InMemorySchemaGateway({ sleep: async () => {} })
   const result = await gateway.listSpaces()
-  expect(result.ok && result.value.map(({ name }) => name)).toEqual([
+  expect(result.ok && result.value.spaces.map(({ name }) => name)).toEqual([
     'Personal',
     'Studio',
     'Reading',

@@ -3,7 +3,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
-  SchemaSpaceRef,
+  SchemaSpaceList,
   SchemaTypeIcon,
   SchemaTypeRef
 } from '../../domain'
@@ -28,7 +28,7 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
     this.#client = client
   }
 
-  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceRef[]>> {
+  async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
     const result = await this.#listAll(apiKey, '/v1/spaces', 'spaces')
     if (!result.ok) return result
     const spaces = result.value.flatMap((item) => {
@@ -37,7 +37,7 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
       if (id === undefined || kind === undefined) throw malformed('spaces')
       return OBJECT_SPACE_KINDS.has(kind) ? [{ id, name: stringField(item, 'name') ?? '' }] : []
     })
-    return { ok: true, value: spaces }
+    return { ok: true, value: { spaces, hasNotGrantedSpaces: false } }
   }
 
   async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
