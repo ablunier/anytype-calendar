@@ -1,7 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { registerApiVersionIpc } from './api-version/api-version-ipc'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
@@ -66,16 +65,10 @@ app.whenReady().then(async () => {
   registerWeekStartIpc(services)
   registerTimeFormatIpc(services)
   registerCalendarViewIpc(services)
-  registerApiVersionIpc(services)
   registerShellIpc()
-  // The span a launch opens on is read from the view and week start, and the API version
-  // picks what it is read through; restoring the session is what starts that first load, so
-  // they have to be in place before it runs.
-  await Promise.all([
-    services.loadCalendarView.execute(),
-    services.loadWeekStart.execute(),
-    services.loadApiVersion.execute()
-  ])
+  // The span a launch opens on is read from these two, and restoring the session is what
+  // starts that first load, so they have to be in place before it runs.
+  await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),

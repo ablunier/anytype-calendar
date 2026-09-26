@@ -36,12 +36,6 @@ export type WeekStartSnapshot = number
 
 export type TimeFormatSnapshot = '24h' | '12h'
 
-/**
- * `auto` reads through v2 where Anytype serves it; `v1` never does. Which major is in use now
- * is the connected session's `access.apiVersion`.
- */
-export type ApiVersionSnapshot = 'auto' | 'v1'
-
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -79,9 +73,6 @@ export const IpcChannel = {
   calendarViewGet: 'calendarView:get',
   calendarViewChanged: 'calendarView:changed',
   calendarViewSave: 'calendarView:save',
-  apiVersionGet: 'apiVersion:get',
-  apiVersionChanged: 'apiVersion:changed',
-  apiVersionSave: 'apiVersion:save',
   shellOpenObject: 'shell:open-object'
 } as const
 
@@ -162,15 +153,6 @@ export interface CalendarApi {
     onChange(listener: (view: CalendarViewSnapshot) => void): () => void
     /** Rejects when the value is not one of the three views. */
     save(view: CalendarViewSnapshot): Promise<void>
-  }
-  apiVersion: {
-    get(): Promise<ApiVersionSnapshot>
-    onChange(listener: (preference: ApiVersionSnapshot) => void): () => void
-    /**
-     * Reads the account and the span again through the major it picks. Rejects when the value
-     * is not `auto` or `v1`.
-     */
-    save(preference: ApiVersionSnapshot): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ApiAccessView, ApiKeyView } from '@renderer/types'
-import { Button, Card, Icon, IconButton, Select } from '@renderer/components/ui'
+import { Button, Card, Icon, IconButton } from '@renderer/components/ui'
 import { API_KEYS_BREADCRUMB } from '@renderer/lib/anytype-menu'
 import { isoDate } from '@renderer/lib/calendar'
-import type { ApiVersionSnapshot } from '@shared/ipc'
 
 export interface SessionSectionProps {
   apiKey: ApiKeyView
   /** Null until Anytype has been asked what the key reaches. */
   access: ApiAccessView | null
-  apiVersion: ApiVersionSnapshot
-  onApiVersion: (preference: ApiVersionSnapshot) => void
   /** Resolves whether a key was copied. */
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
@@ -22,8 +19,6 @@ const COPIED_FEEDBACK_MS = 2_000
 export function SessionSection({
   apiKey,
   access,
-  apiVersion,
-  onApiVersion,
   onCopyKey,
   onSignOut
 }: SessionSectionProps): React.JSX.Element {
@@ -78,31 +73,14 @@ export function SessionSection({
               onClick={() => void copy()}
             />
           </div>
-          <div className="flex flex-col gap-8 border-b border-line-hairline py-12">
-            <div className="flex items-center gap-12">
-              <Icon name="database" size={16} className="text-ink-tertiary" />
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="type-ui text-small text-ink-primary">
-                  {t('config.session.api')}
-                </span>
-                <span className="truncate type-caption text-tiny text-ink-tertiary">
-                  {access ? accessSummary(access) : t('config.session.accessUnknown')}
-                </span>
-              </div>
-              <Select
-                ariaLabel={t('config.session.apiVersion')}
-                size="sm"
-                options={[
-                  { value: 'auto', label: t('config.session.apiVersionAuto') },
-                  { value: 'v1', label: t('config.session.apiVersionV1') }
-                ]}
-                value={apiVersion}
-                onChange={(value) => onApiVersion(value === 'v1' ? 'v1' : 'auto')}
-              />
+          <div className="flex items-center gap-12 border-b border-line-hairline py-12">
+            <Icon name="database" size={16} className="text-ink-tertiary" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="type-ui text-small text-ink-primary">{t('config.session.api')}</span>
+              <span className="truncate type-caption text-tiny text-ink-tertiary">
+                {access ? accessSummary(access) : t('config.session.accessUnknown')}
+              </span>
             </div>
-            <span className="max-w-prose-max pl-28 type-caption text-tiny text-ink-secondary">
-              {t('config.session.apiVersionDescription')}
-            </span>
           </div>
           <div className="flex items-center gap-12 pt-12">
             <div className="flex min-w-0 flex-1 flex-col">

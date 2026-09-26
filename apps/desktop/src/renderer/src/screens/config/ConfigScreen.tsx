@@ -15,7 +15,7 @@ import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@r
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
 import { typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
-import type { ApiVersionSnapshot, LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
+import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -30,8 +30,6 @@ export interface ConfigScreenProps {
   apiKey: ApiKeyView
   /** Null until Anytype has been asked what the key reaches. */
   access: ApiAccessView | null
-  apiVersion: ApiVersionSnapshot
-  onApiVersion: (preference: ApiVersionSnapshot) => void
   /** Null: following the OS language ("System default" in the Select). */
   language: LanguageSnapshot
   onLanguage: (language: LanguageSnapshot) => void
@@ -70,8 +68,6 @@ function Settings({
   initial,
   apiKey,
   access,
-  apiVersion,
-  onApiVersion,
   language,
   onLanguage,
   showWeekNumbers,
@@ -262,8 +258,6 @@ function Settings({
           <SessionSection
             apiKey={apiKey}
             access={access}
-            apiVersion={apiVersion}
-            onApiVersion={onApiVersion}
             onCopyKey={onCopyKey}
             onSignOut={onSignOut}
           />

@@ -58,9 +58,6 @@ import {
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
-import { ApiVersionStore } from './api-version/api-version-store'
-import { LoadApiVersion } from './api-version/load-api-version'
-import { SaveApiVersion } from './api-version/save-api-version'
 import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
@@ -128,9 +125,6 @@ export interface AppServices {
   timeFormatState: TimeFormatStore
   loadTimeFormat: LoadTimeFormat
   saveTimeFormat: SaveTimeFormat
-  apiVersionState: ApiVersionStore
-  loadApiVersion: LoadApiVersion
-  saveApiVersion: SaveApiVersion
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
@@ -141,8 +135,8 @@ export function composeServices(): AppServices {
   const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
   const client = fakeAnytype ? null : anytypeClient()
   // Every context asks this which major of the API Anytype serves: v2 where it can, v1 where
-  // it cannot, unless Settings asks for v1 only. ANYTYPE_CALENDAR_API=v1 or v2 overrides that
-  // setting, e.g. to force the fallback against an Anytype that has v2.
+  // it cannot. ANYTYPE_CALENDAR_API=v1 forces the fallback against an Anytype that has v2, for
+  // development only: v1 refuses a key paired through v2, and a refused key is signed out.
   const envDialect = dialectFromEnv()
   const probe = client
     ? new AnytypeDialectProbe(envDialect ? { client, forced: envDialect } : { client })
@@ -258,11 +252,6 @@ export function composeServices(): AppServices {
   const loadTimeFormat = new LoadTimeFormat({ config: appConfig, store: timeFormatState })
   const saveTimeFormat = new SaveTimeFormat({ config: appConfig, store: timeFormatState })
 
-  // The simulated Anytype has no second major to fall back to, so there it changes nothing.
-  const apiVersionState = new ApiVersionStore()
-  const loadApiVersion = new LoadApiVersion({ config: appConfig, store: apiVersionState })
-  const saveApiVersion = new SaveApiVersion({ config: appConfig, store: apiVersionState })
-
   // Contexts never know about each other, so the links live here. Being connected — signed
   // in just now, or a key restored at launch — is what reads the account and the month;
   // anything else forgets both. The stores notify only on change, and a reset while idle is
@@ -314,15 +303,6 @@ export function composeServices(): AppServices {
   schemaSelection.subscribe(() => {
     if (connected()) void loadEventsSpan.execute()
   })
-  // Loaded before the session is restored, so the first read already goes through the saved
-  // choice. A later change reads everything again through the major it picks.
-  apiVersionState.subscribe((preference) => {
-    probe?.setForced(envDialect ?? (preference === 'v1' ? 'v1' : undefined))
-    if (!connected()) return
-    void checkAuthAccess.execute()
-    void schemaSync.execute()
-    void loadEventsSpan.execute()
-  })
 
   return {
     authSession,
@@ -359,10 +339,7 @@ export function composeServices(): AppServices {
     saveCalendarView,
     timeFormatState,
     loadTimeFormat,
-    saveTimeFormat,
-    apiVersionState,
-    loadApiVersion,
-    saveApiVersion
+    saveTimeFormat
   }
 }
 

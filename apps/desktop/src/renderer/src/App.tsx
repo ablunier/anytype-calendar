@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import type { AuthView, CalendarView, ConnectedScreen } from './types'
-import { useApiVersion } from './hooks/useApiVersion'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
 import { useLocale } from './hooks/useLocale'
@@ -65,7 +64,6 @@ function App(): React.JSX.Element | null {
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
   const [calendarView, setCalendarView] = useCalendarView()
-  const [apiVersion, setApiVersion] = useApiVersion()
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -142,8 +140,6 @@ function App(): React.JSX.Element | null {
         initial={picksFor(selection, types)}
         apiKey={apiKey}
         access={apiAccessFor(session)}
-        apiVersion={apiVersion}
-        onApiVersion={setApiVersion}
         language={language}
         onLanguage={setLanguage}
         showWeekNumbers={showWeekNumbers}

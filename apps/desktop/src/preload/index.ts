@@ -2,7 +2,6 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import {
   IpcChannel,
-  type ApiVersionSnapshot,
   type CalendarApi,
   type CalendarViewSnapshot,
   type EventsSnapshot,
@@ -126,18 +125,6 @@ const api: CalendarApi = {
       }
     },
     save: (format) => ipcRenderer.invoke(IpcChannel.timeFormatSave, format)
-  },
-  apiVersion: {
-    get: () => ipcRenderer.invoke(IpcChannel.apiVersionGet),
-    onChange: (listener) => {
-      const forward = (_event: IpcRendererEvent, preference: ApiVersionSnapshot): void =>
-        listener(preference)
-      ipcRenderer.on(IpcChannel.apiVersionChanged, forward)
-      return () => {
-        ipcRenderer.removeListener(IpcChannel.apiVersionChanged, forward)
-      }
-    },
-    save: (preference) => ipcRenderer.invoke(IpcChannel.apiVersionSave, preference)
   },
   calendarView: {
     get: () => ipcRenderer.invoke(IpcChannel.calendarViewGet),
