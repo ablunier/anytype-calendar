@@ -20,10 +20,13 @@ export type AuthVerifyResult = { ok: true } | { ok: false; failure: 'invalid-key
  * the user, in the Anytype app's API key settings.
  */
 export interface AuthGateway {
-  /** POST /v1/auth/challenges. Anytype shows the user a code; resolves the challenge id. */
+  /**
+   * POST /v2/auth/challenges, or /v1/… where v2 is not served. Anytype shows the user a code;
+   * resolves the challenge id.
+   */
   createChallenge(appName: string): Promise<string>
 
-  /** POST /v1/auth/api_keys. */
+  /** POST /v2/auth/api_keys, or /v1/… for a challenge v1 issued. */
   exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult>
 
   /** Checks a key the user already holds, e.g. issued for this app in a previous run. */
