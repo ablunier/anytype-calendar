@@ -92,3 +92,39 @@ describe('SaveSchemaSelection', () => {
     expect(store.get()).toEqual({ phase: 'saved', selection: LATER })
   })
 })
+
+describe('SaveSchemaSelection.rewrite', () => {
+  test('rewrites the selection as the saves queued before it left it', async () => {
+    const { repository, store, save } = setup()
+    store.set({ phase: 'saved', selection: SELECTION })
+    const first = deferred()
+    repository.save.mockImplementationOnce(() => first.promise)
+
+    const saving = save.execute(LATER)
+    const rewriting = save.rewrite((selection) => ({ ...selection, spaceIds: [...selection.spaceIds, 'sp_9'] }))
+    first.resolve()
+    await Promise.all([saving, rewriting])
+
+    expect(repository.save).toHaveBeenLastCalledWith({ spaceIds: ['sp_9'], types: [] })
+    expect(store.get()).toEqual({ phase: 'saved', selection: { spaceIds: ['sp_9'], types: [] } })
+  })
+
+  test('writes nothing when the change returns the same selection', async () => {
+    const { repository, store, save } = setup()
+    store.set({ phase: 'saved', selection: SELECTION })
+
+    await save.rewrite((selection) => selection)
+
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  test('writes nothing before a selection was ever saved', async () => {
+    const { repository, save } = setup()
+    const change = vi.fn((selection: SchemaSelection) => selection)
+
+    await save.rewrite(change)
+
+    expect(change).not.toHaveBeenCalled()
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+})

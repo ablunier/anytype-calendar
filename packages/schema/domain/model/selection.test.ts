@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { EMPTY_SCHEMA_SELECTION, toSchemaSelection, type SchemaTypeChoice } from './selection'
+import {
+  EMPTY_SCHEMA_SELECTION,
+  rekeySchemaSelection,
+  toSchemaSelection,
+  type SchemaSelection,
+  type SchemaTypeChoice
+} from './selection'
+import type { SchemaSpace } from './space'
 
 const TASK: SchemaTypeChoice = {
   spaceId: 'sp_1',
@@ -63,5 +70,71 @@ describe('toSchemaSelection', () => {
     ['a non-boolean includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: 'yes' }] }]
   ])('rejects %s', (_, value) => {
     expect(toSchemaSelection(value)).toBeNull()
+  })
+})
+
+describe('rekeySchemaSelection', () => {
+  const SPACE = 'bafy.space'
+  const choice = (typeKey: string, from: string, to: string | null = null): SchemaTypeChoice => ({
+    spaceId: SPACE,
+    typeKey,
+    from,
+    to,
+    includesTime: false
+  })
+  const selectionOf = (...types: SchemaTypeChoice[]): SchemaSelection => ({ spaceIds: [SPACE], types })
+  const spaces: SchemaSpace[] = [
+    {
+      id: SPACE,
+      name: 'Personal',
+      types: [
+        {
+          key: '6a67272659c08021576f3127',
+          formerKey: 'book',
+          name: 'Book',
+          icon: null,
+          dateProperties: [
+            { key: 'start_date', name: 'Start date' },
+            { key: '6a6733dc59c08021576f32d2', formerKey: 'finished', name: 'Finished' }
+          ]
+        },
+        { key: 'task', name: 'Task', icon: null, dateProperties: [{ key: 'due_date', name: 'Due date' }] }
+      ]
+    }
+  ]
+
+  test('returns the selection itself when every key is current', () => {
+    const selection = selectionOf(choice('task', 'due_date'))
+    expect(rekeySchemaSelection(selection, spaces)).toBe(selection)
+  })
+
+  test("rewrites a type and its properties from v1's spelling to the current one", () => {
+    expect(rekeySchemaSelection(selectionOf(choice('book', 'start_date', 'finished')), spaces)).toEqual(
+      selectionOf(choice('6a67272659c08021576f3127', 'start_date', '6a6733dc59c08021576f32d2'))
+    )
+  })
+
+  test('rewrites a property of a type whose key is current', () => {
+    const selection = selectionOf(choice('6a67272659c08021576f3127', 'finished'))
+    expect(rekeySchemaSelection(selection, spaces).types[0]?.from).toBe('6a6733dc59c08021576f32d2')
+  })
+
+  test('keeps a choice whose type or space the account does not have', () => {
+    const selection = selectionOf(choice('recipe', 'cooked'), { ...choice('book', 'x'), spaceId: 'other' })
+    expect(rekeySchemaSelection(selection, spaces)).toBe(selection)
+  })
+
+  test('drops a former-keyed choice of a type already chosen under its current key', () => {
+    const current = choice('6a67272659c08021576f3127', 'start_date')
+    expect(rekeySchemaSelection(selectionOf(current, choice('book', 'finished')), spaces)).toEqual(
+      selectionOf(current)
+    )
+  })
+
+  test('keeps the other fields of a choice', () => {
+    const selection = { spaceIds: [SPACE, 'x'], types: [{ ...choice('book', 'start_date'), includesTime: true }] }
+    const rekeyed = rekeySchemaSelection(selection, spaces)
+    expect(rekeyed.spaceIds).toEqual([SPACE, 'x'])
+    expect(rekeyed.types[0]).toMatchObject({ spaceId: SPACE, includesTime: true })
   })
 })

@@ -3,6 +3,11 @@ export interface SchemaProperty {
   name: string
   /** Anytype's property format, e.g. `date`, `text`, `select`. */
   format: string
+  /**
+   * How v1 of the local API spelled the key, where v2 spells it otherwise: a selection saved
+   * under v1 names the property this way. See rekeySchemaSelection.
+   */
+  formerKey?: string
 }
 
 /**
@@ -21,11 +26,12 @@ export const SCHEMA_SYSTEM_DATE_KEYS: ReadonlySet<string> = new Set([
 export interface SchemaDateProperty {
   key: string
   name: string
+  formerKey?: string
 }
 
 /** In the order given, which for Anytype is the order the type lists them in. */
 export function userDateProperties(properties: readonly SchemaProperty[]): SchemaDateProperty[] {
   return properties
     .filter((property) => property.format === 'date' && !SCHEMA_SYSTEM_DATE_KEYS.has(property.key))
-    .map(({ key, name }) => ({ key, name }))
+    .map(({ key, name, formerKey }) => (formerKey === undefined ? { key, name } : { key, name, formerKey }))
 }

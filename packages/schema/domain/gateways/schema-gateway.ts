@@ -8,6 +8,8 @@ export interface SchemaSpaceRef {
 
 export interface SchemaTypeRef {
   key: string
+  /** How v1 of the local API spelled the key, where v2 spells it otherwise. */
+  formerKey?: string
   name: string
   icon: SchemaTypeIcon | null
   properties: SchemaProperty[]

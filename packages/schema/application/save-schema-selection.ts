@@ -32,6 +32,22 @@ export class SaveSchemaSelection {
     return save
   }
 
+  /**
+   * Saves what `change` makes of the selection as it stands once every save before it has
+   * run, so it never undoes a newer choice. Nothing is written when there is no selection yet
+   * or `change` returns the same object.
+   */
+  rewrite(change: (selection: SchemaSelection) => SchemaSelection): Promise<void> {
+    const save = this.#previous.then(() => {
+      const state = this.#store.get()
+      if (state.phase !== 'saved') return
+      const changed = change(state.selection)
+      return changed === state.selection ? undefined : this.#save(changed)
+    })
+    this.#previous = save.catch(() => {})
+    return save
+  }
+
   async #save(selection: SchemaSelection): Promise<void> {
     await this.#repository.save(selection)
     this.#store.set({ phase: 'saved', selection })

@@ -75,9 +75,11 @@ export class SyncSchema {
 
   async #fetchDatedTypes(apiKey: string, spaceId: string): Promise<SchemaType[]> {
     const refs = accepted(await this.#gateway.listTypes(apiKey, spaceId))
-    return refs.flatMap(({ key, name, icon, properties }) => {
+    return refs.flatMap(({ key, formerKey, name, icon, properties }) => {
       const dateProperties = userDateProperties(properties)
-      return dateProperties.length > 0 ? [{ key, name, icon, dateProperties }] : []
+      if (dateProperties.length === 0) return []
+      const type = { key, name, icon, dateProperties }
+      return [formerKey === undefined ? type : { ...type, formerKey }]
     })
   }
 }

@@ -1,3 +1,6 @@
+import type { SchemaDateProperty } from './date-property'
+import type { SchemaSpace } from './space'
+
 /** A type put on the calendar, with the date properties (keys) its objects are drawn by. */
 export interface SchemaTypeChoice {
   spaceId: string
@@ -65,4 +68,52 @@ function toChoice(value: unknown): SchemaTypeChoice | null {
 
 function isId(value: unknown): value is string {
   return typeof value === 'string' && value !== ''
+}
+
+/**
+ * A selection saved while Anytype served only v1 of its API names a type or date property the
+ * way v1 spelled it. v2 spells some differently — a user's type or property whose v1 key
+ * collides with one Anytype bundles is served by its internal key (`6a67…`), and refused by
+ * the old one as ambiguous — so each such choice is rewritten to the key the account now
+ * serves. Returns `selection` itself when nothing needed rewriting.
+ *
+ * A choice whose type is already chosen under its current key is dropped: it is the same type.
+ */
+export function rekeySchemaSelection(
+  selection: SchemaSelection,
+  spaces: readonly SchemaSpace[]
+): SchemaSelection {
+  const typesBySpace = new Map(spaces.map(({ id, types }) => [id, types]))
+  const chosen = new Set(selection.types.map(({ spaceId, typeKey }) => `${spaceId}\n${typeKey}`))
+
+  let changed = false
+  const types = selection.types.flatMap((choice) => {
+    const candidates = typesBySpace.get(choice.spaceId) ?? []
+    const type =
+      candidates.find(({ key }) => key === choice.typeKey) ??
+      candidates.find(({ formerKey }) => formerKey === choice.typeKey)
+    if (!type) return [choice]
+
+    const rekeyed: SchemaTypeChoice = {
+      ...choice,
+      typeKey: type.key,
+      from: currentKey(type.dateProperties, choice.from),
+      to: choice.to === null ? null : currentKey(type.dateProperties, choice.to)
+    }
+    if (rekeyed.typeKey !== choice.typeKey && chosen.has(`${choice.spaceId}\n${rekeyed.typeKey}`)) {
+      changed = true
+      return []
+    }
+    if (rekeyed.typeKey === choice.typeKey && rekeyed.from === choice.from && rekeyed.to === choice.to) {
+      return [choice]
+    }
+    changed = true
+    return [rekeyed]
+  })
+  return changed ? { ...selection, types } : selection
+}
+
+function currentKey(properties: readonly SchemaDateProperty[], key: string): string {
+  if (properties.some((property) => property.key === key)) return key
+  return properties.find(({ formerKey }) => formerKey === key)?.key ?? key
 }
