@@ -17,7 +17,11 @@ function deferred<T>() {
 function setup() {
   const gateway = {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
-    exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({ ok: true, apiKey: 'unused' }))
+    exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
+      ok: true,
+      apiKey: 'unused',
+      access: { apiVersion: 'v2', grant: null }
+    }))
   }
   const store = new AuthSessionStore()
   const startAuthConnection = new StartAuthConnection({

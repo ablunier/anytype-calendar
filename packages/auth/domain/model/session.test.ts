@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import type { AuthAccess } from './access'
 import { createAuthChallenge } from './challenge'
 import type { ApiKeyInfo } from './credential'
 import { nextAuthSession, type AuthEvent, type AuthSession } from './session'
@@ -16,6 +17,11 @@ const challenge = createAuthChallenge('ch_1', 0)
 const attempt = { challenge, code: '2749' }
 const freshChallenge = createAuthChallenge('ch_2', 1_000)
 const key: ApiKeyInfo = { hint: '4c19', issuedAt: 5 }
+const access: AuthAccess = { apiVersion: 'v2', grant: null }
+const narrowed: AuthAccess = {
+  apiVersion: 'v2',
+  grant: { allSpaces: false, spaceIds: ['sp_1'], permission: 'read' }
+}
 
 const sessions = deepFreeze({
   signedOut: { phase: 'signed-out' },
@@ -26,22 +32,25 @@ const sessions = deepFreeze({
   failedAttempt: { phase: 'failed', failure: 'invalid-code', attempt },
   failedUnreachable: { phase: 'failed', failure: 'unreachable' },
   failedKey: { phase: 'failed', failure: 'invalid-key', enteredKey: true },
-  connected: { phase: 'connected', key }
+  connected: { phase: 'connected', key, access },
+  /** Restored at launch, before Anytype has been asked. */
+  connectedUnchecked: { phase: 'connected', key, access: null }
 } satisfies Record<string, AuthSession>)
 
 const events = deepFreeze({
   challengeIssued: { type: 'challenge-issued', challenge: freshChallenge },
   challengeFailed: { type: 'challenge-failed' },
   codeSubmitted: { type: 'code-submitted', code: '2749', at: 1_000 },
-  exchangeSucceeded: { type: 'exchange-succeeded', key },
+  exchangeSucceeded: { type: 'exchange-succeeded', key, access },
   exchangeFailed: { type: 'exchange-failed', failure: 'invalid-code' },
   keyEntryOpened: { type: 'key-entry-opened' },
   keySubmitted: { type: 'key-submitted' },
-  keyVerified: { type: 'key-verified', key },
+  keyVerified: { type: 'key-verified', key, access },
   keyRejected: { type: 'key-rejected', failure: 'invalid-key' },
   steppedBack: { type: 'stepped-back' },
   restored: { type: 'restored', key },
-  signedOut: { type: 'signed-out' }
+  signedOut: { type: 'signed-out' },
+  accessChecked: { type: 'access-checked', access: narrowed }
 } satisfies Record<string, AuthEvent>)
 
 type SessionName = keyof typeof sessions
@@ -63,12 +72,12 @@ const transitions: Array<[SessionName, EventName, AuthSession]> = [
 
   ['awaitingCode', 'codeSubmitted', { phase: 'verifying', attempt }],
 
-  ['verifying', 'exchangeSucceeded', { phase: 'connected', key }],
+  ['verifying', 'exchangeSucceeded', { phase: 'connected', key, access }],
   ['verifying', 'exchangeFailed', { phase: 'failed', failure: 'invalid-code', attempt }],
 
   ['signedOut', 'keyEntryOpened', { phase: 'entering-key' }],
   ['enteringKey', 'keySubmitted', { phase: 'verifying-key' }],
-  ['verifyingKey', 'keyVerified', { phase: 'connected', key }],
+  ['verifyingKey', 'keyVerified', { phase: 'connected', key, access }],
   ['verifyingKey', 'keyRejected', { phase: 'failed', failure: 'invalid-key', enteredKey: true }],
 
   ['awaitingCode', 'steppedBack', { phase: 'signed-out' }],
@@ -79,9 +88,13 @@ const transitions: Array<[SessionName, EventName, AuthSession]> = [
   ['failedUnreachable', 'steppedBack', { phase: 'signed-out' }],
   ['failedKey', 'steppedBack', { phase: 'entering-key' }],
 
-  ['signedOut', 'restored', { phase: 'connected', key }],
+  ['signedOut', 'restored', { phase: 'connected', key, access: null }],
 
-  ['connected', 'signedOut', { phase: 'signed-out' }]
+  ['connected', 'signedOut', { phase: 'signed-out' }],
+  ['connectedUnchecked', 'signedOut', { phase: 'signed-out' }],
+
+  ['connected', 'accessChecked', { phase: 'connected', key, access: narrowed }],
+  ['connectedUnchecked', 'accessChecked', { phase: 'connected', key, access: narrowed }]
 ]
 
 const listed = new Set(transitions.map(([session, event]) => `${session}/${event}`))
@@ -125,6 +138,11 @@ describe('nextAuthSession', () => {
       const malformed = { type: 'code-submitted', code: '27', at: 1_000 } as const
       expect(nextAuthSession(sessions.awaitingCode, malformed)).toBe(sessions.awaitingCode)
     })
+  })
+
+  test('keeps the same session when a check finds the access unchanged', () => {
+    const same = { type: 'access-checked', access: { apiVersion: 'v2', grant: null } } as const
+    expect(nextAuthSession(sessions.connected, same)).toBe(sessions.connected)
   })
 
   test('stepping back after an expired code returns to that challenge', () => {

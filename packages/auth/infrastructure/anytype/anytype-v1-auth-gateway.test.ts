@@ -61,7 +61,8 @@ describe('exchangeCode', () => {
 
     await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({
       ok: true,
-      apiKey: 'ak_secret'
+      apiKey: 'ak_secret',
+      access: { apiVersion: 'v1', grant: null }
     })
     expect(calls[0]?.url).toBe('http://127.0.0.1:31009/v1/auth/api_keys')
     expect(calls[0]?.init).toMatchObject({
@@ -104,7 +105,10 @@ describe('verifyApiKey', () => {
   test('sends the key as a bearer token and resolves ok on success', async () => {
     const { gateway, calls } = setup(200, { data: [] })
 
-    await expect(gateway.verifyApiKey('ak_secret')).resolves.toEqual({ ok: true })
+    await expect(gateway.verifyApiKey('ak_secret')).resolves.toEqual({
+      ok: true,
+      access: { apiVersion: 'v1', grant: null }
+    })
     expect(calls[0]?.url).toBe('http://127.0.0.1:31009/v1/spaces')
     expect(calls[0]?.init).toMatchObject({ method: 'GET' })
     expect(calls[0]?.init.headers).toMatchObject({ Authorization: 'Bearer ak_secret' })

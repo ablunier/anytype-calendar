@@ -63,6 +63,10 @@ export class SubmitAuthApiKey {
     const credential: AuthCredential = { apiKey, issuedAt: this.#now() }
     await this.#credentials.save(credential)
     if (!this.#guard.isCurrent(verifying)) return this.#credentials.clear()
-    this.#guard.dispatch({ type: 'key-verified', key: describeCredential(credential) })
+    this.#guard.dispatch({
+      type: 'key-verified',
+      key: describeCredential(credential),
+      access: result.access
+    })
   }
 }

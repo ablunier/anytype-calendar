@@ -1,5 +1,5 @@
 import type { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
-import type { AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
+import type { AuthAccess, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 
 /**
  * Anytype answers a wrong code, an expired challenge and an unknown challenge alike with
@@ -11,6 +11,9 @@ const REJECTED_CODE_STATUSES = new Set([400, 500])
 
 /** What every authenticated endpoint answers for a key it does not recognise. */
 const UNAUTHORIZED = 401
+
+/** v1 cannot tell what a key was granted. */
+const V1_ACCESS: AuthAccess = { apiVersion: 'v1', grant: null }
 
 export class AnytypeV1AuthGateway implements AuthGateway {
   readonly #client: AnytypeClient
@@ -41,7 +44,7 @@ export class AnytypeV1AuthGateway implements AuthGateway {
     }
     const apiKey = response.ok ? stringField(response.body, 'api_key') : undefined
     if (apiKey === undefined) throw unexpected('API key', response)
-    return { ok: true, apiKey }
+    return { ok: true, apiKey, access: V1_ACCESS }
   }
 
   /**
@@ -50,7 +53,7 @@ export class AnytypeV1AuthGateway implements AuthGateway {
    */
   async verifyApiKey(apiKey: string): Promise<AuthVerifyResult> {
     const response = await this.#client.request({ method: 'GET', path: '/v1/spaces', apiKey })
-    if (response.ok) return { ok: true }
+    if (response.ok) return { ok: true, access: V1_ACCESS }
     if (response.status === UNAUTHORIZED) return { ok: false, failure: 'invalid-key' }
     throw unexpected('spaces list', response)
   }

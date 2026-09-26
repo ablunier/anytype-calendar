@@ -1,3 +1,4 @@
+import type { AuthAccess } from '../model/access'
 import type { AuthFailure } from '../model/session'
 
 /**
@@ -5,11 +6,13 @@ import type { AuthFailure } from '../model/session'
  * breakdown rejects the promise.
  */
 export type AuthExchangeResult =
-  | { ok: true; apiKey: string }
+  | { ok: true; apiKey: string; access: AuthAccess }
   | { ok: false; failure: Exclude<AuthFailure, 'unreachable'> }
 
 /** A key Anytype does not recognise is an expected answer too, not an error. */
-export type AuthVerifyResult = { ok: true } | { ok: false; failure: 'invalid-key' }
+export type AuthVerifyResult =
+  | { ok: true; access: AuthAccess }
+  | { ok: false; failure: 'invalid-key' }
 
 /**
  * Every method rejects when Anytype cannot be reached. There is no cancellation — the
@@ -29,6 +32,9 @@ export interface AuthGateway {
   /** POST /v2/auth/api_keys, or /v1/… for a challenge v1 issued. */
   exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult>
 
-  /** Checks a key the user already holds, e.g. issued for this app in a previous run. */
+  /**
+   * Checks a key the user already holds, e.g. issued for this app in a previous run, and asks
+   * afresh what it reaches: the user may have changed its grant in Anytype since.
+   */
   verifyApiKey(apiKey: string): Promise<AuthVerifyResult>
 }

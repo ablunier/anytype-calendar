@@ -1,4 +1,13 @@
-import type { AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
+import type { AuthAccess, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
+
+/** Every key it issues, in this run or an earlier one, since a restart restores the last. */
+const ISSUED_KEY_PREFIX = 'ak_mock_'
+
+/** Like a key paired through v2 with every space and write access. */
+const FAKE_ACCESS: AuthAccess = {
+  apiVersion: 'v2',
+  grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' }
+}
 
 export interface InMemoryAuthGatewayOptions {
   sleep: (ms: number) => Promise<void>
@@ -61,11 +70,13 @@ export class InMemoryAuthGateway implements AuthGateway {
       return { ok: false, failure: 'invalid-code' }
     }
     this.#openChallenges.delete(challengeId)
-    return { ok: true, apiKey: `ak_mock_${this.#randomId()}` }
+    return { ok: true, apiKey: `${ISSUED_KEY_PREFIX}${this.#randomId()}`, access: FAKE_ACCESS }
   }
 
   async verifyApiKey(apiKey: string): Promise<AuthVerifyResult> {
     await this.#sleep(this.#exchangeLatencyMs)
-    return apiKey === this.#acceptedApiKey ? { ok: true } : { ok: false, failure: 'invalid-key' }
+    return apiKey === this.#acceptedApiKey || apiKey.startsWith(ISSUED_KEY_PREFIX)
+      ? { ok: true, access: FAKE_ACCESS }
+      : { ok: false, failure: 'invalid-key' }
   }
 }

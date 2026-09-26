@@ -26,7 +26,11 @@ describe('restore', () => {
   test('connects from a stored credential without exposing the key', async () => {
     const { store, restoreAuthSession } = setup({ apiKey: API_KEY, issuedAt: 42 })
     await restoreAuthSession.execute()
-    expect(store.get()).toEqual({ phase: 'connected', key: { hint: '4c19', issuedAt: 42 } })
+    expect(store.get()).toEqual({
+      phase: 'connected',
+      key: { hint: '4c19', issuedAt: 42 },
+      access: null
+    })
     expect(JSON.stringify(store.get())).not.toContain(API_KEY)
   })
 })

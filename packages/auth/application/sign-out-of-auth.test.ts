@@ -13,7 +13,11 @@ function setup(initialCredential: AuthCredential | null = null) {
 
   const gateway = {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
-    exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({ ok: true, apiKey: API_KEY }))
+    exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
+      ok: true,
+      apiKey: API_KEY,
+      access: { apiVersion: 'v2', grant: null }
+    }))
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),

@@ -55,7 +55,11 @@ describe('exchangeCode', () => {
       grant: { all_spaces: true, space_ids: [], permission: 'read' }
     })
 
-    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({ ok: true, apiKey: 'anytype_key' })
+    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({
+      ok: true,
+      apiKey: 'anytype_key',
+      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'read' } }
+    })
     expect(calls[0]?.url).toBe('http://127.0.0.1:31009/v2/auth/api_keys')
     expect(calls[0]?.init.body).toBe('{"challenge_id":"ch_1","code":"2749"}')
   })

@@ -1,3 +1,4 @@
+import { sameAuthAccess, type AuthAccess } from './access'
 import { isChallengeExpired, isWellFormedAuthCode, type AuthChallenge } from './challenge'
 import type { ApiKeyInfo } from './credential'
 
@@ -33,7 +34,11 @@ export type AuthSession =
    * key rather than to a code challenge.
    */
   | { phase: 'failed'; failure: AuthFailure; attempt?: AuthAttempt; enteredKey?: boolean }
-  | { phase: 'connected'; key: ApiKeyInfo }
+  /**
+   * `access` is null until Anytype has been asked: a key restored at launch is connected
+   * before anything is read.
+   */
+  | { phase: 'connected'; key: ApiKeyInfo; access: AuthAccess | null }
 
 export type AuthSessionPhase = AuthSession['phase']
 
@@ -43,16 +48,18 @@ export type AuthEvent =
   | { type: 'challenge-failed' }
   /** `at` decides whether the code arrived before its challenge expired. */
   | { type: 'code-submitted'; code: string; at: number }
-  | { type: 'exchange-succeeded'; key: ApiKeyInfo }
+  | { type: 'exchange-succeeded'; key: ApiKeyInfo; access: AuthAccess }
   | { type: 'exchange-failed'; failure: AuthFailure }
   /** The user picked "I already have an API key" from the start screen. */
   | { type: 'key-entry-opened' }
   | { type: 'key-submitted' }
-  | { type: 'key-verified'; key: ApiKeyInfo }
+  | { type: 'key-verified'; key: ApiKeyInfo; access: AuthAccess }
   | { type: 'key-rejected'; failure: AuthFailure }
   | { type: 'stepped-back' }
   | { type: 'restored'; key: ApiKeyInfo }
   | { type: 'signed-out' }
+  /** Anytype was asked again what the connected key reaches, e.g. when the window regains focus. */
+  | { type: 'access-checked'; access: AuthAccess }
 
 /**
  * An event that does not apply to the current phase returns the session unchanged — the
@@ -76,7 +83,9 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
     }
 
     case 'exchange-succeeded':
-      return session.phase === 'verifying' ? { phase: 'connected', key: event.key } : session
+      return session.phase === 'verifying'
+        ? { phase: 'connected', key: event.key, access: event.access }
+        : session
 
     case 'exchange-failed':
       return session.phase === 'verifying'
@@ -90,7 +99,9 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
       return session.phase === 'entering-key' ? { phase: 'verifying-key' } : session
 
     case 'key-verified':
-      return session.phase === 'verifying-key' ? { phase: 'connected', key: event.key } : session
+      return session.phase === 'verifying-key'
+        ? { phase: 'connected', key: event.key, access: event.access }
+        : session
 
     case 'key-rejected':
       return session.phase === 'verifying-key'
@@ -101,10 +112,18 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
       return stepBack(session)
 
     case 'restored':
-      return session.phase === 'signed-out' ? { phase: 'connected', key: event.key } : session
+      return session.phase === 'signed-out'
+        ? { phase: 'connected', key: event.key, access: null }
+        : session
 
     case 'signed-out':
       return session.phase === 'connected' ? { phase: 'signed-out' } : session
+
+    case 'access-checked':
+      return session.phase === 'connected' &&
+        (session.access === null || !sameAuthAccess(session.access, event.access))
+        ? { ...session, access: event.access }
+        : session
   }
 }
 

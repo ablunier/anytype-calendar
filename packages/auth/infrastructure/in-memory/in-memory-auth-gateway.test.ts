@@ -35,7 +35,8 @@ describe('exchangeCode', () => {
 
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toEqual({
       ok: true,
-      apiKey: 'ak_mock_id2'
+      apiKey: 'ak_mock_id2',
+      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
     })
     expect(slept).toEqual([300, 1_200])
   })
@@ -84,8 +85,16 @@ describe('verifyApiKey', () => {
   test('accepts the default fake key, after the exchange latency', async () => {
     const { gateway, slept } = setup()
 
-    await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toEqual({ ok: true })
+    await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toEqual({
+      ok: true,
+      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+    })
     expect(slept).toEqual([1_200])
+  })
+
+  test('accepts a key it issued, even in an earlier run', async () => {
+    const { gateway } = setup()
+    await expect(gateway.verifyApiKey('ak_mock_abc123')).resolves.toMatchObject({ ok: true })
   })
 
   test('rejects any other key', async () => {

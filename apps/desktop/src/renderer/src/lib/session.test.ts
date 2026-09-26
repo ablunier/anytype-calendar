@@ -71,14 +71,14 @@ describe('authViewFor', () => {
   })
 
   test('connected has no auth view', () => {
-    const session: SessionSnapshot = { phase: 'connected', key: KEY }
+    const session: SessionSnapshot = { phase: 'connected', key: KEY, access: null }
     expect(authViewFor(session)).toBeNull()
   })
 })
 
 describe('apiKeyFor', () => {
   test('connected exposes the key hint', () => {
-    const session: SessionSnapshot = { phase: 'connected', key: KEY }
+    const session: SessionSnapshot = { phase: 'connected', key: KEY, access: null }
     expect(apiKeyFor(session)).toEqual({ hint: KEY.hint, issuedAt: KEY.issuedAt })
   })
 

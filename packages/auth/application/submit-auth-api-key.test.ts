@@ -7,6 +7,7 @@ import { SubmitAuthApiKey } from './submit-auth-api-key'
 
 const VALID_KEY = 'ak_secret_4c19'
 const START = 1_000
+const ACCESS = { apiVersion: 'v2', grant: null } as const
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -27,7 +28,7 @@ function setup(initialCredential: { apiKey: string; issuedAt: number } | null = 
       failure: 'invalid-code'
     })),
     verifyApiKey: vi.fn<AuthGateway['verifyApiKey']>(async (apiKey) =>
-      apiKey === VALID_KEY ? { ok: true } : { ok: false, failure: 'invalid-key' }
+      apiKey === VALID_KEY ? { ok: true, access: ACCESS } : { ok: false, failure: 'invalid-key' }
     )
   }
   const credentials = {
@@ -69,7 +70,8 @@ describe('submitApiKey', () => {
     expect(stored()).toEqual({ apiKey: VALID_KEY, issuedAt: START + 5_000 })
     expect(store.get()).toEqual({
       phase: 'connected',
-      key: { hint: '4c19', issuedAt: START + 5_000 }
+      key: { hint: '4c19', issuedAt: START + 5_000 },
+      access: ACCESS
     })
     expect(JSON.stringify(store.get())).not.toContain(VALID_KEY)
   })
@@ -83,7 +85,7 @@ describe('submitApiKey', () => {
     const submitting = submitAuthApiKey.execute(VALID_KEY)
     expect(store.get().phase).toBe('verifying-key')
 
-    verify.resolve({ ok: true })
+    verify.resolve({ ok: true, access: ACCESS })
     await submitting
     expect(store.get().phase).toBe('connected')
   })
@@ -114,7 +116,7 @@ describe('submitApiKey', () => {
 
     const first = submitAuthApiKey.execute(VALID_KEY)
     const second = submitAuthApiKey.execute(VALID_KEY)
-    verify.resolve({ ok: true })
+    verify.resolve({ ok: true, access: ACCESS })
     await Promise.all([first, second])
 
     expect(gateway.verifyApiKey).toHaveBeenCalledOnce()
@@ -138,7 +140,7 @@ describe('late verify results', () => {
 
     const submitting = submitAuthApiKey.execute(VALID_KEY)
     stepBackAuthConnection.execute()
-    verify.resolve({ ok: true })
+    verify.resolve({ ok: true, access: ACCESS })
     await submitting
 
     expect(store.get().phase).toBe('entering-key')

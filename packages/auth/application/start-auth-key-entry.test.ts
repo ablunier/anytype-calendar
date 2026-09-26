@@ -13,7 +13,11 @@ describe('startAuthKeyEntry', () => {
   })
 
   test('notifies no one once already past signed-out', () => {
-    const store = new AuthSessionStore({ phase: 'connected', key: { hint: '4c19', issuedAt: 0 } })
+    const store = new AuthSessionStore({
+      phase: 'connected',
+      key: { hint: '4c19', issuedAt: 0 },
+      access: null
+    })
     const startAuthKeyEntry = new StartAuthKeyEntry(store)
     const listener = vi.fn()
     store.subscribe(listener)

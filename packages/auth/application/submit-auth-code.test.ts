@@ -14,6 +14,7 @@ import { SubmitAuthCode } from './submit-auth-code'
 const VALID_CODE = '2749'
 const API_KEY = 'ak_secret_4c19'
 const START = 1_000
+const ACCESS = { apiVersion: 'v2', grant: null } as const
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -30,7 +31,7 @@ function setup(initialCredential: AuthCredential | null = null) {
   const gateway = {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async (_challengeId, code) =>
-      code === VALID_CODE ? { ok: true, apiKey: API_KEY } : { ok: false, failure: 'invalid-code' }
+      code === VALID_CODE ? { ok: true, apiKey: API_KEY, access: ACCESS } : { ok: false, failure: 'invalid-code' }
     )
   }
   const credentials = {
@@ -77,7 +78,8 @@ describe('submitCode', () => {
     expect(stored()).toEqual({ apiKey: API_KEY, issuedAt: START + 5_000 })
     expect(store.get()).toEqual({
       phase: 'connected',
-      key: { hint: '4c19', issuedAt: START + 5_000 }
+      key: { hint: '4c19', issuedAt: START + 5_000 },
+      access: ACCESS
     })
     expect(JSON.stringify(store.get())).not.toContain(API_KEY)
   })
@@ -91,7 +93,7 @@ describe('submitCode', () => {
     const submitting = submitAuthCode.execute(VALID_CODE)
     expect(store.get().phase).toBe('verifying')
 
-    exchange.resolve({ ok: true, apiKey: API_KEY })
+    exchange.resolve({ ok: true, apiKey: API_KEY, access: ACCESS })
     await submitting
     expect(store.get().phase).toBe('connected')
   })
@@ -146,7 +148,7 @@ describe('submitCode', () => {
 
     const first = submitAuthCode.execute(VALID_CODE)
     const second = submitAuthCode.execute(VALID_CODE)
-    exchange.resolve({ ok: true, apiKey: API_KEY })
+    exchange.resolve({ ok: true, apiKey: API_KEY, access: ACCESS })
     await Promise.all([first, second])
 
     expect(gateway.exchangeCode).toHaveBeenCalledOnce()
@@ -164,7 +166,7 @@ describe('late exchange results', () => {
 
     const submitting = submitAuthCode.execute(VALID_CODE)
     stepBackAuthConnection.execute()
-    exchange.resolve({ ok: true, apiKey: API_KEY })
+    exchange.resolve({ ok: true, apiKey: API_KEY, access: ACCESS })
     await submitting
 
     expect(store.get().phase).toBe('awaiting-code')
@@ -199,7 +201,7 @@ describe('late exchange results', () => {
     const second = submitAuthCode.execute('1111')
     secondExchange.resolve({ ok: false, failure: 'invalid-code' })
     await second
-    firstExchange.resolve({ ok: true, apiKey: API_KEY })
+    firstExchange.resolve({ ok: true, apiKey: API_KEY, access: ACCESS })
     await first
 
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'invalid-code' })

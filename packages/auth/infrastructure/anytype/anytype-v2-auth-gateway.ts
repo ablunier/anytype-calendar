@@ -3,6 +3,7 @@ import {
   type AnytypeClient
 } from '@anytype-calendar/anytype-client/infrastructure'
 import type { AuthExchangeResult } from '../../domain'
+import { grantFromPairing } from './anytype-grant'
 
 /**
  * Pairing is refused before v2's own handlers run, so it answers in v1's shape and with v1's
@@ -50,15 +51,22 @@ export class AnytypeV2AuthGateway {
     if (!response.ok && REJECTED_CODE_STATUSES.has(response.status)) {
       return { ok: false, failure: 'invalid-code' }
     }
-    const apiKey = response.ok ? stringField(response.body, 'api_key') : undefined
+    const body = response.ok ? response.body : undefined
+    const apiKey = stringField(body, 'api_key')
     if (apiKey === undefined) throw unexpected('API key', response)
-    return { ok: true, apiKey }
+    const grant = grantFromPairing(field(body, 'grant'))
+    return { ok: true, apiKey, access: { apiVersion: 'v2', grant } }
   }
 }
 
+function field(body: unknown, name: string): unknown {
+  return typeof body === 'object' && body !== null
+    ? (body as Record<string, unknown>)[name]
+    : undefined
+}
+
 function stringField(body: unknown, name: string): string | undefined {
-  if (typeof body !== 'object' || body === null) return undefined
-  const value = (body as Record<string, unknown>)[name]
+  const value = field(body, name)
   return typeof value === 'string' && value !== '' ? value : undefined
 }
 
