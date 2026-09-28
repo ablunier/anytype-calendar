@@ -12,7 +12,8 @@ const SPACE: InMemorySchemaSpace = {
       properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
     }
   ],
-  options: { priority: [{ name: 'High', color: 'red' }] }
+  options: { priority: [{ name: 'High', color: 'red' }] },
+  queries: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }]
 }
 
 function setup() {
@@ -49,6 +50,17 @@ test("answers with a space's types", async () => {
       }
     ]
   })
+})
+
+test("answers with a space's queries, and none for a space without", async () => {
+  const { gateway } = setup()
+  await expect(gateway.listQueries('ak_any', 'sp_1')).resolves.toEqual({
+    ok: true,
+    value: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }]
+  })
+  const { queries: _, ...withoutQueries } = SPACE
+  const bare = new InMemorySchemaGateway({ sleep: async () => {}, spaces: [withoutQueries] })
+  await expect(bare.listQueries('ak_any', 'sp_1')).resolves.toEqual({ ok: true, value: [] })
 })
 
 test('rejects for a space it does not know', async () => {

@@ -17,7 +17,10 @@
     "spacesCount_one": "{{count}} space",
     "spacesCount_other": "{{count}} spaces",
     "notGrantedTitle": "Some spaces are not shared with this app",
-    "notGrantedDescription": "The key reaches only the spaces you picked when connecting. To add others, open the Anytype app, go to {{breadcrumb}} and grant them to Calendar for Anytype, or sign out and connect again to pick them."
+    "notGrantedDescription": "The key reaches only the spaces you picked when connecting. To add others, open the Anytype app, go to {{breadcrumb}} and grant them to Calendar for Anytype, or sign out and connect again to pick them.",
+    "queries": "Queries",
+    "queryOf": "Query over {{type}}",
+    "view": "View"
   },
   "sync": {
     "status": {
@@ -134,7 +137,9 @@
     "typeCard": {
       "includesTime": "Includes time",
       "includesTimeDescription": "Off draws every date all-day, on shows the time it was set."
-    }
+    },
+    "queriesCount_one": "{{count}} query",
+    "queriesCount_other": "{{count}} queries"
   },
   "config": {
     "backToCalendar": "Back to calendar",
@@ -187,7 +192,9 @@
       "revokeHeading": "Revoke access",
       "revokeTitle": "Revoke API key",
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
-    }
+    },
+    "viewFor": "View of {{label}}",
+    "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do."
   },
   "calendar": {
     "couldntRead": "Couldn't read {{span}}",

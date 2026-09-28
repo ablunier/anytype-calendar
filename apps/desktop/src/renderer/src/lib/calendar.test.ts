@@ -18,6 +18,7 @@ import {
   monthLabel,
   offeredMapping,
   offersDates,
+  queriesInSpace,
   shortDate,
   spacesByKeys,
   typesInSpace,
@@ -233,10 +234,17 @@ describe('indexBy', () => {
   })
 })
 
-describe('typesInSpace', () => {
-  test('keeps only types in the given space', () => {
-    const other: ObjectType = { ...TASK, key: 'sp_2:task', space: 'sp_2' }
-    expect(typesInSpace([TASK, other], 'sp_1')).toEqual([TASK])
+describe('typesInSpace and queriesInSpace', () => {
+  const other: ObjectType = { ...TASK, key: 'sp_2:task', space: 'sp_2' }
+  const query: ObjectType = {
+    ...TASK,
+    key: 'sp_1:query:q',
+    query: { typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
+  }
+
+  test("split the given space's types from its queries", () => {
+    expect(typesInSpace([TASK, query, other], 'sp_1')).toEqual([TASK])
+    expect(queriesInSpace([TASK, query, other], 'sp_1')).toEqual([query])
   })
 })
 
@@ -252,7 +260,7 @@ describe('dateLabel', () => {
 
 describe('offersDates', () => {
   test('true for a from-only mapping the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null })).toBe(true)
+    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null, view: null })).toBe(true)
   })
 
   test('true for a range whose both ends the type still has', () => {
@@ -261,13 +269,16 @@ describe('offersDates', () => {
         from: 'due_date',
         to: 'start_date',
         includesTime: false,
-        colourBy: null
+        colourBy: null,
+        view: null
       })
     ).toBe(true)
   })
 
   test('false when the from property is gone', () => {
-    expect(offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null })).toBe(false)
+    expect(
+      offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null, view: null })
+    ).toBe(false)
   })
 
   test('false when the to property is gone', () => {
@@ -276,14 +287,15 @@ describe('offersDates', () => {
         from: 'due_date',
         to: 'gone_date',
         includesTime: false,
-        colourBy: null
+        colourBy: null,
+        view: null
       })
     ).toBe(false)
   })
 })
 
 describe('offeredMapping', () => {
-  const mapping = { from: 'due_date', to: null, includesTime: true, colourBy: 'priority' }
+  const mapping = { from: 'due_date', to: null, includesTime: true, colourBy: 'priority', view: null }
 
   test('is the mapping itself when the type offers all of it', () => {
     expect(offeredMapping(TASK, mapping)).toBe(mapping)
@@ -295,6 +307,14 @@ describe('offeredMapping', () => {
 
   test('keeps the dates but colours by nothing when the property it colours by is gone', () => {
     expect(offeredMapping(TASK, { ...mapping, colourBy: 'gone' })).toEqual({ ...mapping, colourBy: null })
+  })
+
+  test("keeps a view the query has, and reads the query's first once it is gone", () => {
+    const query: ObjectType = { ...TASK, query: { typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] } }
+    const viewed = { ...mapping, view: 'v_all' }
+    expect(offeredMapping(query, viewed)).toBe(viewed)
+    expect(offeredMapping(query, { ...viewed, view: 'v_gone' })).toEqual(mapping)
+    expect(offeredMapping(TASK, viewed)).toEqual(mapping)
   })
 })
 
@@ -313,7 +333,7 @@ describe('withDates', () => {
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {
-      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority' }
+      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority', view: null }
     })
     expect(task).toEqual({
       ...TASK,

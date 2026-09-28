@@ -8,16 +8,40 @@ import { TypeConfigRow } from './TypeConfigRow'
 export interface SpaceTypesCardProps {
   space: Space
   types: ObjectType[]
+  queries: ObjectType[]
   selection: TypeSelection
 }
 
 export function SpaceTypesCard({
   space,
   types,
+  queries,
   selection
 }: SpaceTypesCardProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = selection.spaceKeys.includes(space.key)
+  const row = (type: ObjectType, last: boolean): React.JSX.Element => {
+    const mapping = selection.mappingFor(type)
+    return (
+      <TypeConfigRow
+        key={type.key}
+        type={type}
+        checked={selection.typeKeys.includes(type.key)}
+        from={mapping.from}
+        to={mapping.to}
+        includesTime={mapping.includesTime}
+        colourBy={mapping.colourBy}
+        view={mapping.view}
+        last={last}
+        onToggle={() => selection.toggleType(type.key)}
+        onFromChange={(value) => selection.setFrom(type.key, value)}
+        onToChange={(value) => selection.setTo(type.key, value)}
+        onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
+        onColourByChange={(value) => selection.setColourBy(type.key, value)}
+        onViewChange={(value) => selection.setView(type.key, value)}
+      />
+    )
+  }
   return (
     <Card className={on ? '' : 'opacity-72'}>
       <div
@@ -58,25 +82,15 @@ export function SpaceTypesCard({
       {on && types.length === 0 ? (
         <p className="pt-10 type-body text-small text-ink-tertiary">{t('common.noDatedType')}</p>
       ) : null}
-      {on
-        ? types.map((type, index) => (
-            <TypeConfigRow
-              key={type.key}
-              type={type}
-              checked={selection.typeKeys.includes(type.key)}
-              from={selection.mappingFor(type).from}
-              to={selection.mappingFor(type).to}
-              includesTime={selection.mappingFor(type).includesTime}
-              colourBy={selection.mappingFor(type).colourBy}
-              last={index === types.length - 1}
-              onToggle={() => selection.toggleType(type.key)}
-              onFromChange={(value) => selection.setFrom(type.key, value)}
-              onToChange={(value) => selection.setTo(type.key, value)}
-              onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
-              onColourByChange={(value) => selection.setColourBy(type.key, value)}
-            />
-          ))
-        : null}
+      {on ? types.map((type, index) => row(type, index === types.length - 1 && queries.length === 0)) : null}
+      {on && queries.length > 0 ? (
+        <>
+          <h4 className="pt-12 pb-2 type-caption text-tiny text-ink-tertiary">
+            {t('common.queries')}
+          </h4>
+          {queries.map((query, index) => row(query, index === queries.length - 1))}
+        </>
+      ) : null}
     </Card>
   )
 }

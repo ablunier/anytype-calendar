@@ -13,7 +13,7 @@ import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesH
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
 import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
-import { typesInSpace, weekdayNames } from '@renderer/lib/calendar'
+import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { SessionSection } from './SessionSection'
@@ -160,6 +160,11 @@ function Settings({
               <div className="mb-12">
                 <NotGrantedSpacesHint />
               </div>
+            ) : null}
+            {read && access?.version === 'v1' ? (
+              <p className="mb-12 type-caption text-tiny text-ink-tertiary">
+                {t('config.queriesNeedV2')}
+              </p>
             ) : null}
             {read ? (
               <SpacesAndTypes
@@ -319,6 +324,7 @@ function SpacesAndTypes({
             key={space.key}
             space={space}
             types={typesInSpace(types, space.key)}
+            queries={queriesInSpace(types, space.key)}
             selection={selection}
           />
         ))}

@@ -427,3 +427,96 @@ describe('listSelectOptions', () => {
     expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
   })
 })
+
+describe('listQueries', () => {
+  const QUERY_ID = 'bafyreig35xn3pgwklcxro6eez4qn5afhdxe7yrtpafmrewry6gbtanbt5y'
+  const SEARCH = `/v2/spaces/${SPACE_ID}/search`
+  const DOCUMENT = `/v2/spaces/${SPACE_ID}/objects/${QUERY_ID}`
+  const VIEWS = `/v2/spaces/${SPACE_ID}/queries/${QUERY_ID}/views`
+
+  // As a real account answered, September 2026.
+  const row = { id: QUERY_ID, name: 'Calendar probe', type: 'query' }
+  const document: Reply = {
+    status: 200,
+    body: {
+      $schema: 'https://schemas.anytype.io/anyblock/2.0/object.schema.json',
+      formatVersion: '2.0',
+      id: QUERY_ID,
+      type: 'query',
+      properties: { name: 'Calendar probe', origin: 'api', resolved_layout: 'set' },
+      query_source: { types: ['task'] }
+    }
+  }
+  const views = page([
+    { filters: [{ property: 'done', condition: 'equal', value: false }], id: '63194', name: 'Open' },
+    { id: 'd0e5c', name: 'Cal', type: 'calendar' }
+  ])
+
+  test("searches the space for queries, and reads each one's type and views", async () => {
+    const { gateway, calls } = setup({ [SEARCH]: page([row]), [DOCUMENT]: document, [VIEWS]: views })
+
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).resolves.toEqual({
+      ok: true,
+      value: [
+        {
+          id: QUERY_ID,
+          name: 'Calendar probe',
+          typeKeys: ['task'],
+          views: [
+            { id: '63194', name: 'Open' },
+            { id: 'd0e5c', name: 'Cal' }
+          ]
+        }
+      ]
+    })
+    expect(calls[0]?.url).toBe(`${BASE}${SEARCH}?offset=0&limit=1000`)
+    expect(calls[0]?.init.method).toBe('POST')
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ type: 'query' })
+    expect(calls.map(({ url }) => url)).toContain(`${BASE}${DOCUMENT}?include=properties`)
+  })
+
+  test('reads a query over no type as naming none', async () => {
+    const { gateway } = setup({
+      [SEARCH]: page([row]),
+      [DOCUMENT]: { status: 200, body: { id: QUERY_ID, type: 'query', properties: {} } },
+      [VIEWS]: views
+    })
+    const result = await gateway.listQueries(API_KEY, SPACE_ID)
+    expect(result.ok && result.value[0]?.typeKeys).toEqual([])
+  })
+
+  test.each([
+    ['its document', { [DOCUMENT]: { status: 404, body: { status: 404, code: 'not_found', message: 'x', issues: [] } }, [VIEWS]: views }],
+    ['its views', { [DOCUMENT]: document, [VIEWS]: { status: 404, body: { status: 404, code: 'not_found', message: 'x', issues: [] } } }]
+  ])('leaves out a query deleted before %s could be read', async (_, routes) => {
+    const { gateway } = setup({ [SEARCH]: page([row]), ...routes })
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  test('reads a space the key is no longer granted as holding no queries', async () => {
+    const { gateway } = setup({ [SEARCH]: notGranted })
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  test.each([
+    ['the search', { [SEARCH]: unauthorized }],
+    ['a document', { [SEARCH]: page([row]), [DOCUMENT]: unauthorized, [VIEWS]: views }],
+    ['the views', { [SEARCH]: page([row]), [DOCUMENT]: document, [VIEWS]: unauthorized }]
+  ])('resolves a key refused on %s as unauthorized', async (_, routes) => {
+    const { gateway } = setup(routes)
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).resolves.toEqual({
+      ok: false,
+      failure: 'unauthorized'
+    })
+  })
+
+  test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
+    const { gateway, probe, calls } = setup({ '/v2/auth/whoami': { status: 200, body: {} } })
+    await probe.probe(API_KEY)
+
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).rejects.toThrow('404')
+    await probe.probe(API_KEY)
+
+    expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
+  })
+})

@@ -1,11 +1,14 @@
 /* The only renderer module that reads the shape of a schema snapshot or a selection
  * snapshot; components get view models. */
 
-import type {
-  SchemaSelection,
-  SchemaSpace,
-  SchemaType,
-  SchemaTypeChoice
+import {
+  EMPTY_SCHEMA_SELECTION,
+  type SchemaQuery,
+  type SchemaQueryChoice,
+  type SchemaSelection,
+  type SchemaSpace,
+  type SchemaType,
+  type SchemaTypeChoice
 } from '@anytype-calendar/schema/domain'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type {
@@ -98,11 +101,18 @@ export function hasNotGrantedSpaces(snapshot: SchemaSnapshot): boolean {
   return snapshot.phase !== 'idle' && snapshot.last?.hasNotGrantedSpaces === true
 }
 
-/** Every dated type of the last successful sync, space by space; empty until there is one. */
+/**
+ * Every dated type of the last successful sync, then the queries over them, space by space;
+ * empty until there is one.
+ */
 export function typesFor(snapshot: SchemaSnapshot): ObjectType[] {
-  return syncedSpaces(snapshot).flatMap((space) =>
-    space.types.map((type) => objectTypeFor(space, type))
-  )
+  return syncedSpaces(snapshot).flatMap((space) => [
+    ...space.types.map((type) => objectTypeFor(space, type)),
+    ...space.queries.flatMap((query) => {
+      const type = space.types.find(({ key }) => key === query.typeKey)
+      return type ? [queryTypeFor(space, query, type)] : []
+    })
+  ])
 }
 
 /** `now` is epoch milliseconds. */
@@ -133,41 +143,53 @@ export function isOnboarded(selection: SchemaSelectionSnapshot): boolean {
   return selection.phase === 'saved'
 }
 
-/** Whether any chosen type is inside a chosen space, which is what main puts on the calendar. */
+/**
+ * Whether any chosen type or query is inside a chosen space, which is what main puts on the
+ * calendar.
+ */
 export function tracksAnyType(selection: SchemaSelectionSnapshot): boolean {
   if (selection.phase === 'unset') return false
-  const { spaceIds, types } = selection.selection
-  return types.some((choice) => spaceIds.includes(choice.spaceId))
+  const { spaceIds, types, queries } = selection.selection
+  return [...types, ...queries].some((choice) => spaceIds.includes(choice.spaceId))
 }
 
 /**
  * The saved selection as picks over `types`. A saved date the type no longer has is left
  * out, so the type falls back to its own dates rather than showing a choice it cannot offer;
- * so is a property it no longer colours by.
+ * so is a property it no longer colours by, and a view a query no longer has.
  */
 export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]): TypePicks {
   if (selection.phase === 'unset') return { spaceKeys: [], typeKeys: [], dates: {} }
   const byKey = new Map(types.map((type) => [type.key, type]))
+  const chosen = [
+    ...selection.selection.types.map(({ spaceId, typeKey, ...drawn }) => ({
+      key: objectTypeKey(spaceId, typeKey),
+      mapping: { ...drawn, view: null }
+    })),
+    ...selection.selection.queries.map(({ spaceId, queryId, viewId, ...drawn }) => ({
+      key: querySourceKey(spaceId, queryId),
+      mapping: { ...drawn, view: viewId }
+    }))
+  ]
   const dates: Record<string, DateMapping> = {}
-  for (const { spaceId, typeKey, from, to, includesTime, colourBy } of selection.selection.types) {
-    const key = objectTypeKey(spaceId, typeKey)
+  for (const { key, mapping } of chosen) {
     const type = byKey.get(key)
-    const mapping = type && offeredMapping(type, { from, to, includesTime, colourBy })
-    if (mapping) dates[key] = mapping
+    const offered = type && offeredMapping(type, mapping)
+    if (offered) dates[key] = offered
   }
   return {
     spaceKeys: selection.selection.spaceIds,
-    typeKeys: selection.selection.types.map((choice) => objectTypeKey(choice.spaceId, choice.typeKey)),
+    typeKeys: chosen.map(({ key }) => key),
     dates
   }
 }
 
 /**
- * The picks over the synced spaces and types, as the selection to save: only what the user
- * can see is rewritten. Choices this sync did not see — in another account's space, a space
- * since left, or a type since deleted or stripped of its dates — are carried over from
- * `previous` untouched, so they are there again if it comes back. A seen type whose picked
- * dates are gone is saved with its own, as it is drawn.
+ * The picks over the synced spaces, types and queries, as the selection to save: only what
+ * the user can see is rewritten. Choices this sync did not see — in another account's space,
+ * a space since left, or a type or query since deleted or stripped of its dates — are carried
+ * over from `previous` untouched, so they are there again if it comes back. A seen type or
+ * query whose picked dates are gone is saved with its own, as it is drawn.
  */
 export function schemaSelectionFor(
   snapshot: SchemaSnapshot,
@@ -176,19 +198,33 @@ export function schemaSelectionFor(
 ): SchemaSelection {
   const spaces = syncedSpaces(snapshot)
   const seenSpaces = new Set(spaces.map((space) => space.id))
-  const seenTypes = new Set(
-    spaces.flatMap((space) => space.types.map((type) => objectTypeKey(space.id, type.key)))
-  )
+  const offered = new Map(typesFor(snapshot).map((type) => [type.key, type]))
   const kept: SchemaSelection =
-    previous.phase === 'saved' ? previous.selection : { spaceIds: [], types: [] }
+    previous.phase === 'saved' ? previous.selection : EMPTY_SCHEMA_SELECTION
 
-  const picked = spaces.flatMap((space) =>
-    space.types.flatMap((schemaType): SchemaTypeChoice[] => {
-      const type = objectTypeFor(space, schemaType)
-      if (!picks.typeKeys.includes(type.key)) return []
-      const mapping = picks.dates[type.key]
-      const { from, to, includesTime, colourBy } = (mapping && offeredMapping(type, mapping)) ?? type
-      return [{ spaceId: space.id, typeKey: schemaType.key, from, to, includesTime, colourBy }]
+  /** How a seen, ticked type or query is drawn; null for one not seen or not ticked. */
+  const drawn = (key: string): DateMapping | null => {
+    const type = offered.get(key)
+    if (!type || !picks.typeKeys.includes(key)) return null
+    const mapping = picks.dates[key]
+    const { from, to, includesTime, colourBy } = type
+    return (mapping && offeredMapping(type, mapping)) ?? { from, to, includesTime, colourBy, view: null }
+  }
+
+  const types = spaces.flatMap((space) =>
+    space.types.flatMap((type): SchemaTypeChoice[] => {
+      const mapping = drawn(objectTypeKey(space.id, type.key))
+      if (!mapping) return []
+      const { from, to, includesTime, colourBy } = mapping
+      return [{ spaceId: space.id, typeKey: type.key, from, to, includesTime, colourBy }]
+    })
+  )
+  const queries = spaces.flatMap((space) =>
+    space.queries.flatMap((query): SchemaQueryChoice[] => {
+      const mapping = drawn(querySourceKey(space.id, query.id))
+      if (!mapping) return []
+      const { from, to, includesTime, colourBy, view } = mapping
+      return [{ spaceId: space.id, queryId: query.id, viewId: view, from, to, includesTime, colourBy }]
     })
   )
 
@@ -198,8 +234,12 @@ export function schemaSelectionFor(
       ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id)
     ],
     types: [
-      ...kept.types.filter((choice) => !seenTypes.has(objectTypeKey(choice.spaceId, choice.typeKey))),
-      ...picked
+      ...kept.types.filter((choice) => !offered.has(objectTypeKey(choice.spaceId, choice.typeKey))),
+      ...types
+    ],
+    queries: [
+      ...kept.queries.filter((choice) => !offered.has(querySourceKey(choice.spaceId, choice.queryId))),
+      ...queries
     ]
   }
 }
@@ -211,6 +251,14 @@ function syncedSpaces(snapshot: SchemaSnapshot): SchemaSpace[] {
 /** The key of the ObjectType for a type of a space. */
 export function objectTypeKey(spaceId: string, typeKey: string): string {
   return `${spaceId}:${typeKey}`
+}
+
+/**
+ * The key of the ObjectType for a query of a space. Neither a type key nor an object id holds
+ * a colon, so it cannot be taken for a type's.
+ */
+export function querySourceKey(spaceId: string, queryId: string): string {
+  return `${spaceId}:query:${queryId}`
 }
 
 function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
@@ -226,8 +274,22 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
   }
 }
 
+/** Drawn in its type's hue, since its objects are that type's; its icon says it is a query. */
+function queryTypeFor(space: SchemaSpace, query: SchemaQuery, type: SchemaType): ObjectType {
+  return {
+    ...objectTypeFor(space, type),
+    key: querySourceKey(space.id, query.id),
+    label: query.name,
+    icon: 'funnel',
+    query: {
+      typeLabel: type.name,
+      views: query.views.map(({ id, name }) => ({ key: id, label: name }))
+    }
+  }
+}
+
 /** A newly ticked type starts on its first date, as a single all-day date in its own hue. */
-function defaultMapping(type: SchemaType): DateMapping {
+function defaultMapping(type: SchemaType): Omit<DateMapping, 'view'> {
   return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false, colourBy: null }
 }
 

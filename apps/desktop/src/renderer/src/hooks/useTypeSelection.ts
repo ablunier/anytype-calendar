@@ -16,6 +16,7 @@ export interface TypeSelection {
   setTo: (key: string, value: string | null) => void
   setIncludesTime: (key: string, value: boolean) => void
   setColourBy: (key: string, value: string | null) => void
+  setView: (key: string, value: string) => void
 }
 
 const toggle = (keys: string[], key: string): string[] =>
@@ -71,7 +72,8 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
       update(key, (mapping) => ({ ...mapping, from: value, to: mapping.to === value ? null : mapping.to })),
     setTo: (key, value) => update(key, (mapping) => ({ ...mapping, to: value })),
     setIncludesTime: (key, value) => update(key, (mapping) => ({ ...mapping, includesTime: value })),
-    setColourBy: (key, value) => update(key, (mapping) => ({ ...mapping, colourBy: value }))
+    setColourBy: (key, value) => update(key, (mapping) => ({ ...mapping, colourBy: value })),
+    setView: (key, value) => update(key, (mapping) => ({ ...mapping, view: value }))
   }
 }
 
@@ -81,7 +83,8 @@ function mappingIn(dates: TypePicks['dates'], type: ObjectType): DateMapping {
       from: type.from,
       to: type.to,
       includesTime: type.includesTime,
-      colourBy: type.colourBy
+      colourBy: type.colourBy,
+      view: null
     }
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import type { SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
+import type { SchemaQueryChoice, SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type { ObjectType, TypePicks } from '@renderer/types'
 import {
@@ -8,6 +8,7 @@ import {
   isOnboarded,
   objectTypeKey,
   picksFor,
+  querySourceKey,
   schemaSelectionFor,
   spacesFor,
   syncViewFor,
@@ -51,7 +52,8 @@ const NO_ICON_TYPE: SchemaType = {
 const SPACE: SchemaSpace = {
   id: 'sp_1',
   name: 'Personal',
-  types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE]
+  types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE],
+  queries: []
 }
 
 const SYNCED_AT = 100_000
@@ -82,12 +84,12 @@ describe('tracksAnyType', () => {
   })
 
   test('is true for a chosen type in a chosen space', () => {
-    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [task] } })).toBe(true)
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [task], queries: [] } })).toBe(true)
   })
 
   test('is false when the only chosen type sits in a space no longer chosen', () => {
-    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_2'], types: [task] } })).toBe(false)
-    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: [], types: [] } })).toBe(false)
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: ['sp_2'], types: [task], queries: [] } })).toBe(false)
+    expect(tracksAnyType({ phase: 'saved', selection: { spaceIds: [], types: [], queries: [] } })).toBe(false)
   })
 })
 
@@ -225,7 +227,7 @@ describe('isOnboarded', () => {
   })
 
   test('true once a selection, even an empty one, is saved', () => {
-    expect(isOnboarded({ phase: 'saved', selection: { spaceIds: [], types: [] } })).toBe(true)
+    expect(isOnboarded({ phase: 'saved', selection: { spaceIds: [], types: [], queries: [] } })).toBe(true)
   })
 })
 
@@ -258,13 +260,14 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }],
+        queries: []
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null } }
     })
   })
 
@@ -273,7 +276,8 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy }],
+        queries: []
       }
     })
     expect(picksFor(saved('priority'), TYPES).dates['sp_1:task']?.colourBy).toBe('priority')
@@ -281,7 +285,8 @@ describe('picksFor', () => {
       from: 'due_date',
       to: null,
       includesTime: false,
-      colourBy: null
+      colourBy: null,
+      view: null
     })
   })
 
@@ -290,7 +295,8 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false, colourBy: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false, colourBy: null }],
+        queries: []
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -305,7 +311,8 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: [],
-        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false, colourBy: null }]
+        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false, colourBy: null }],
+        queries: []
       }
     }
     expect(picksFor(selection, TYPES)).toEqual({
@@ -321,7 +328,8 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }],
+      queries: []
     })
   })
 
@@ -329,11 +337,12 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null } }
+      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null }],
+      queries: []
     })
   })
 
@@ -341,7 +350,7 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'due_date', to: null, includesTime: false, colourBy: 'priority' } }
+      dates: { 'sp_1:task': { from: 'due_date', to: null, includesTime: false, colourBy: 'priority', view: null } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]?.colourBy).toBe('priority')
   })
@@ -350,11 +359,12 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null } }
+      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null, view: null } }
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }]
+      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }],
+      queries: []
     })
   })
 
@@ -366,7 +376,8 @@ describe('schemaSelectionFor', () => {
         types: [
           { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null },
           { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null }
-        ]
+        ],
+        queries: []
       }
     }
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
@@ -376,7 +387,119 @@ describe('schemaSelectionFor', () => {
       types: [
         { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null },
         { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null }
-      ]
+      ],
+      queries: []
     })
+  })
+})
+
+describe('queries', () => {
+  const QUERY_SPACE: SchemaSpace = {
+    ...SPACE,
+    queries: [
+      {
+        id: 'q_open',
+        name: 'Open tasks',
+        typeKey: 'task',
+        views: [
+          { id: 'v_open', name: 'Open' },
+          { id: 'v_all', name: 'All' }
+        ]
+      }
+    ]
+  }
+  const WITH_QUERY: SchemaSnapshot = {
+    phase: 'synced',
+    last: { spaces: [QUERY_SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT }
+  }
+  const QUERY_KEY = 'sp_1:query:q_open'
+  const OPEN_TASKS: SchemaQueryChoice = {
+    spaceId: 'sp_1',
+    queryId: 'q_open',
+    viewId: 'v_all',
+    from: 'start_date',
+    to: null,
+    includesTime: true,
+    colourBy: 'priority'
+  }
+  const saved = (...queries: SchemaQueryChoice[]): SchemaSelectionSnapshot => ({
+    phase: 'saved',
+    selection: { spaceIds: ['sp_1'], types: [], queries }
+  })
+
+  test("lists a query after its space's types, in its type's hue, with its views", () => {
+    const types = typesFor(WITH_QUERY)
+    expect(types.map(({ key }) => key)).toEqual(['sp_1:task', 'sp_1:note', 'sp_1:idea', QUERY_KEY])
+    expect(types[3]).toEqual({
+      key: QUERY_KEY,
+      space: 'sp_1',
+      label: 'Open tasks',
+      category: 'sage',
+      icon: 'funnel',
+      query: {
+        typeLabel: 'Task',
+        views: [
+          { key: 'v_open', label: 'Open' },
+          { key: 'v_all', label: 'All' }
+        ]
+      },
+      props: [
+        { key: 'due_date', label: 'Due date' },
+        { key: 'start_date', label: 'Start date' }
+      ],
+      selects: [{ key: 'priority', label: 'Priority' }],
+      from: 'due_date',
+      to: null,
+      includesTime: false,
+      colourBy: null
+    })
+    expect(querySourceKey('sp_1', 'q_open')).toBe(QUERY_KEY)
+  })
+
+  test('is tracked like a type', () => {
+    expect(tracksAnyType(saved(OPEN_TASKS))).toBe(true)
+  })
+
+  test('carries a saved query as a pick, with its view', () => {
+    expect(picksFor(saved(OPEN_TASKS), typesFor(WITH_QUERY))).toEqual({
+      spaceKeys: ['sp_1'],
+      typeKeys: [QUERY_KEY],
+      dates: {
+        [QUERY_KEY]: { from: 'start_date', to: null, includesTime: true, colourBy: 'priority', view: 'v_all' }
+      }
+    })
+  })
+
+  test('reads the first view once the chosen one is gone, keeping the dates', () => {
+    const picks = picksFor(saved({ ...OPEN_TASKS, viewId: 'v_gone' }), typesFor(WITH_QUERY))
+    expect(picks.dates[QUERY_KEY]).toMatchObject({ from: 'start_date', view: null })
+  })
+
+  test('saves a picked query with its view', () => {
+    const picks: TypePicks = {
+      spaceKeys: ['sp_1'],
+      typeKeys: [QUERY_KEY],
+      dates: {
+        [QUERY_KEY]: { from: 'start_date', to: null, includesTime: true, colourBy: 'priority', view: 'v_all' }
+      }
+    }
+    expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' })).toEqual({
+      spaceIds: ['sp_1'],
+      types: [],
+      queries: [OPEN_TASKS]
+    })
+  })
+
+  test('saves a picked query with no view picked as reading its first, on its own dates', () => {
+    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [QUERY_KEY], dates: {} }
+    expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' }).queries).toEqual([
+      { ...OPEN_TASKS, viewId: null, from: 'due_date', includesTime: false, colourBy: null }
+    ])
+  })
+
+  test('drops an unticked query this sync saw, but keeps one it did not see untouched', () => {
+    const unseen = { ...OPEN_TASKS, queryId: 'q_ghost' }
+    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [], dates: {} }
+    expect(schemaSelectionFor(WITH_QUERY, picks, saved(OPEN_TASKS, unseen)).queries).toEqual([unseen])
   })
 })

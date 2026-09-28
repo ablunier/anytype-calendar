@@ -1,4 +1,5 @@
 import type { SchemaProperty } from '../model/date-property'
+import type { SchemaQueryView } from '../model/query'
 import type { SchemaSelectOption } from '../model/select-property'
 import type { SchemaTypeIcon } from '../model/type'
 
@@ -25,6 +26,15 @@ export interface SchemaTypeRef {
   name: string
   icon: SchemaTypeIcon | null
   properties: SchemaProperty[]
+}
+
+export interface SchemaQueryRef {
+  id: string
+  name: string
+  /** The types it runs over, as the API spells their keys; empty for one over no type. */
+  typeKeys: string[]
+  /** Never empty: Anytype keeps at least one. */
+  views: SchemaQueryView[]
 }
 
 /**
@@ -55,4 +65,10 @@ export interface SchemaGateway {
     spaceId: string,
     propertyKey: string
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>>
+
+  /**
+   * Leaves out archived queries. Empty where the API serves none (v1), and for a space no
+   * longer granted.
+   */
+  listQueries(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>>
 }

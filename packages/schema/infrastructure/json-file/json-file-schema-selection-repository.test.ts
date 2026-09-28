@@ -16,6 +16,17 @@ const SELECTION: SchemaSelection = {
       includesTime: false,
       colourBy: 'status'
     }
+  ],
+  queries: [
+    {
+      spaceId: 'sp_1',
+      queryId: 'bafyquery',
+      viewId: '63194',
+      from: 'due_date',
+      to: null,
+      includesTime: true,
+      colourBy: null
+    }
   ]
 }
 
@@ -39,16 +50,26 @@ test('loads what it saved', async () => {
 test('writes the selection under a format version', async () => {
   const { repository, contents } = setup()
   await repository.save(SELECTION)
-  expect(JSON.parse(contents() ?? '')).toEqual({ version: 3, selection: SELECTION })
+  expect(JSON.parse(contents() ?? '')).toEqual({ version: 4, selection: SELECTION })
 })
 
-test('loads a version-2 file as colouring by nothing', async () => {
+test('loads a version-2 file as colouring by nothing, and choosing no query', async () => {
   const [{ colourBy: _, ...choice }] = SELECTION.types as [SchemaTypeChoice]
-  const { repository } = setup(JSON.stringify({ version: 2, selection: { ...SELECTION, types: [choice] } }))
+  const { repository } = setup(
+    JSON.stringify({ version: 2, selection: { spaceIds: SELECTION.spaceIds, types: [choice] } })
+  )
   await expect(repository.load()).resolves.toEqual({
     ...SELECTION,
-    types: [{ ...choice, colourBy: null }]
+    types: [{ ...choice, colourBy: null }],
+    queries: []
   })
+})
+
+test('loads a version-3 file as choosing no query', async () => {
+  const { repository } = setup(
+    JSON.stringify({ version: 3, selection: { spaceIds: SELECTION.spaceIds, types: SELECTION.types } })
+  )
+  await expect(repository.load()).resolves.toEqual({ ...SELECTION, queries: [] })
 })
 
 test('loads no selection when there is no file', async () => {
@@ -60,7 +81,7 @@ test.each([
   ['not an object', '"selection"'],
   ['another version', JSON.stringify({ version: 1, selection: SELECTION })],
   ['no version', JSON.stringify({ selection: SELECTION })],
-  ['not a selection', JSON.stringify({ version: 3, selection: { spaceIds: 'sp_1' } })]
+  ['not a selection', JSON.stringify({ version: 4, selection: { spaceIds: 'sp_1' } })]
 ])('loads no selection from a file that is %s', async (_, text) => {
   await expect(setup(text).repository.load()).resolves.toBeNull()
 })

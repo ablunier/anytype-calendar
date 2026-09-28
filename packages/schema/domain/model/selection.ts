@@ -22,16 +22,33 @@ export interface SchemaTypeChoice {
 }
 
 /**
- * Keyed by Anytype ids only, so a choice whose space, type or property is gone from the
- * account is kept rather than dropped: it is simply matched by nothing until it returns.
- * A type chosen inside an unchosen space is kept too, for when the space is chosen again.
+ * A query put on the calendar, read through one of its views. Its dates and colour-by
+ * property are its type's, chosen as for a type (see SchemaTypeChoice).
+ */
+export interface SchemaQueryChoice {
+  spaceId: string
+  queryId: string
+  /** Null reads the query's first view, whichever that is at the time. */
+  viewId: string | null
+  from: string
+  to: string | null
+  includesTime: boolean
+  colourBy: string | null
+}
+
+/**
+ * Keyed by Anytype ids only, so a choice whose space, type, query or property is gone from
+ * the account is kept rather than dropped: it is simply matched by nothing until it returns.
+ * A type or query chosen inside an unchosen space is kept too, for when the space is chosen
+ * again.
  */
 export interface SchemaSelection {
   spaceIds: string[]
   types: SchemaTypeChoice[]
+  queries: SchemaQueryChoice[]
 }
 
-export const EMPTY_SCHEMA_SELECTION: SchemaSelection = { spaceIds: [], types: [] }
+export const EMPTY_SCHEMA_SELECTION: SchemaSelection = { spaceIds: [], types: [], queries: [] }
 
 /** `unset` until the user first finishes or skips onboarding; an empty selection is `saved`. */
 export type SchemaSelectionState =
@@ -40,37 +57,68 @@ export type SchemaSelectionState =
 
 /**
  * Null unless `value` is a well-formed selection: non-empty ids, a `to` that differs from
- * `from`, and no type chosen twice. Spaces listed twice are collapsed. A choice with no
- * `colourBy` at all, as saved before there was one, colours by nothing.
+ * `from`, and no type or query chosen twice. Spaces listed twice are collapsed. A choice with
+ * no `colourBy` at all, as saved before there was one, colours by nothing; a selection with no
+ * `queries`, as saved before there were any, chooses none.
  */
 export function toSchemaSelection(value: unknown): SchemaSelection | null {
   if (typeof value !== 'object' || value === null) return null
-  const { spaceIds, types } = value as Record<string, unknown>
+  const { spaceIds, types, queries = [] } = value as Record<string, unknown>
   if (!Array.isArray(spaceIds) || !spaceIds.every(isId)) return null
-  if (!Array.isArray(types)) return null
+  const typeChoices = toChoices(types, toTypeChoice, (choice) => choice.typeKey)
+  const queryChoices = toChoices(queries, toQueryChoice, (choice) => choice.queryId)
+  if (!typeChoices || !queryChoices) return null
+  return { spaceIds: [...new Set(spaceIds)], types: typeChoices, queries: queryChoices }
+}
 
-  const choices: SchemaTypeChoice[] = []
+/** Null when any item is not a choice, or two name the same thing in the same space. */
+function toChoices<T extends { spaceId: string }>(
+  items: unknown,
+  toChoice: (item: unknown) => T | null,
+  idOf: (choice: T) => string
+): T[] | null {
+  if (!Array.isArray(items)) return null
+  const choices: T[] = []
   const seen = new Set<string>()
-  for (const item of types) {
+  for (const item of items) {
     const choice = toChoice(item)
     if (!choice) return null
-    // Space ids and type keys never contain a newline, so the pair cannot collide.
-    const pair = `${choice.spaceId}\n${choice.typeKey}`
+    // Space ids, type keys and object ids never contain a newline, so the pair cannot collide.
+    const pair = `${choice.spaceId}\n${idOf(choice)}`
     if (seen.has(pair)) return null
     seen.add(pair)
     choices.push(choice)
   }
-  return { spaceIds: [...new Set(spaceIds)], types: choices }
+  return choices
 }
 
-function toChoice(value: unknown): SchemaTypeChoice | null {
+function toTypeChoice(value: unknown): SchemaTypeChoice | null {
   if (typeof value !== 'object' || value === null) return null
-  const { spaceId, typeKey, from, to, includesTime, colourBy = null } = value as Record<string, unknown>
-  if (!isId(spaceId) || !isId(typeKey) || !isId(from)) return null
+  const { spaceId, typeKey } = value as Record<string, unknown>
+  const drawn = toDrawing(value)
+  if (!isId(spaceId) || !isId(typeKey) || !drawn) return null
+  return { spaceId, typeKey, ...drawn }
+}
+
+function toQueryChoice(value: unknown): SchemaQueryChoice | null {
+  if (typeof value !== 'object' || value === null) return null
+  const { spaceId, queryId, viewId } = value as Record<string, unknown>
+  const drawn = toDrawing(value)
+  if (!isId(spaceId) || !isId(queryId) || !drawn) return null
+  if (viewId !== null && !isId(viewId)) return null
+  return { spaceId, queryId, viewId, ...drawn }
+}
+
+/** How a choice's objects are drawn: the fields type and query choices share. */
+function toDrawing(
+  value: object
+): Pick<SchemaTypeChoice, 'from' | 'to' | 'includesTime' | 'colourBy'> | null {
+  const { from, to, includesTime, colourBy = null } = value as Record<string, unknown>
+  if (!isId(from)) return null
   if (to !== null && (!isId(to) || to === from)) return null
   if (typeof includesTime !== 'boolean') return null
   if (colourBy !== null && !isId(colourBy)) return null
-  return { spaceId, typeKey, from, to, includesTime, colourBy }
+  return { from, to, includesTime, colourBy }
 }
 
 function isId(value: unknown): value is string {
@@ -85,6 +133,7 @@ function isId(value: unknown): value is string {
  * serves. Returns `selection` itself when nothing needed rewriting.
  *
  * A choice whose type is already chosen under its current key is dropped: it is the same type.
+ * Query choices are left alone: only v2 serves queries, so they were chosen by v2's keys.
  */
 export function rekeySchemaSelection(
   selection: SchemaSelection,

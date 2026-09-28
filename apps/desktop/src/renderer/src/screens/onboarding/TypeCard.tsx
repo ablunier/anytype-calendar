@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
-import { dateOptions } from '@renderer/lib/calendar'
+import { dateOptions, viewOptions } from '@renderer/lib/calendar'
 
 export interface TypeCardProps {
   type: ObjectType
@@ -10,10 +10,13 @@ export interface TypeCardProps {
   from: string
   to: string | null
   includesTime: boolean
+  /** A query's view; null for its first. Unused for a type. */
+  view: string | null
   onToggle: () => void
   onFromChange: (value: string) => void
   onToChange: (value: string | null) => void
   onIncludesTimeChange: (value: boolean) => void
+  onViewChange: (value: string) => void
 }
 
 /**
@@ -27,10 +30,12 @@ export function TypeCard({
   from,
   to,
   includesTime,
+  view,
   onToggle,
   onFromChange,
   onToChange,
-  onIncludesTimeChange
+  onIncludesTimeChange,
+  onViewChange
 }: TypeCardProps): React.JSX.Element {
   const { t } = useTranslation()
   /** An empty value can never be a property key. */
@@ -48,6 +53,11 @@ export function TypeCard({
         <TypeTile type={type} />
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <span className="type-ui text-base text-ink-primary">{type.label}</span>
+          {type.query ? (
+            <span className="type-caption text-tiny text-ink-tertiary">
+              {t('common.queryOf', { type: type.query.typeLabel })}
+            </span>
+          ) : null}
         </div>
         <Checkbox
           checked={checked}
@@ -57,6 +67,16 @@ export function TypeCard({
       </div>
       {checked ? (
         <div className="flex flex-col gap-8 px-12 pb-12">
+          {type.query ? (
+            // Until one is picked, Anytype reads the first.
+            <Select
+              size="sm"
+              label={t('common.view')}
+              options={viewOptions(type)}
+              value={view ?? type.query.views[0]?.key ?? ''}
+              onChange={onViewChange}
+            />
+          ) : null}
           <div className="grid grid-cols-2 gap-8">
             <Select
               size="sm"

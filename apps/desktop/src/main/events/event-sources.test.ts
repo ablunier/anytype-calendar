@@ -33,7 +33,8 @@ const SYNCED: SchemaSync = {
               { key: 'stage', name: 'Stage', options: [{ name: 'Draft', color: 'grey' }] }
             ]
           }
-        ]
+        ],
+        queries: []
       }
     ]
   }
@@ -54,7 +55,8 @@ test('keeps the chosen types of chosen spaces only', () => {
             { ...TASK, colourBy: null },
             { ...TASK, spaceId: 'sp_2' },
             { ...TASK, typeKey: 'project', from: 'start_date', to: 'due_date', includesTime: false }
-          ]
+          ],
+          queries: []
         }
       },
       { phase: 'idle' }
@@ -66,7 +68,7 @@ test('keeps the chosen types of chosen spaces only', () => {
 })
 
 test('reads Done, Location and the chosen colours where the synced type has them', () => {
-  expect(eventsSourcesFor({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [TASK] } }, SYNCED)).toEqual([
+  expect(eventsSourcesFor({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [TASK], queries: [] } }, SYNCED)).toEqual([
     {
       spaceId: 'sp_1',
       typeKey: 'task',
@@ -82,7 +84,7 @@ test('reads Done, Location and the chosen colours where the synced type has them
 
 test('colours by nothing when the type no longer has the chosen property', () => {
   const [source] = eventsSourcesFor(
-    { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, colourBy: 'gone' }] } },
+    { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, colourBy: 'gone' }], queries: [] } },
     SYNCED
   )
   expect(source).not.toHaveProperty('colourBy')

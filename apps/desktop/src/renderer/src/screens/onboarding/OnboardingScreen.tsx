@@ -4,7 +4,7 @@ import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesH
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
-import { typesInSpace } from '@renderer/lib/calendar'
+import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { SpacePicker } from './SpacePicker'
@@ -102,6 +102,26 @@ function Picker({
   const { t } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const chosenSpaces = spaces.filter((space) => selection.spaceKeys.includes(space.key))
+  const chosenQueries = selection.activeTypes.filter((type) => type.query !== undefined).length
+  const card = (type: ObjectType): React.JSX.Element => {
+    const mapping = selection.mappingFor(type)
+    return (
+      <TypeCard
+        key={type.key}
+        type={type}
+        checked={selection.typeKeys.includes(type.key)}
+        from={mapping.from}
+        to={mapping.to}
+        includesTime={mapping.includesTime}
+        view={mapping.view}
+        onToggle={() => selection.toggleType(type.key)}
+        onFromChange={(value) => selection.setFrom(type.key, value)}
+        onToChange={(value) => selection.setTo(type.key, value)}
+        onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
+        onViewChange={(value) => selection.setView(type.key, value)}
+      />
+    )
+  }
 
   return (
     <>
@@ -128,6 +148,7 @@ function Picker({
             <div className="flex flex-col gap-20">
               {chosenSpaces.map((space) => {
                 const spaceTypes = typesInSpace(types, space.key)
+                const spaceQueries = queriesInSpace(types, space.key)
                 return (
                   <section key={space.key}>
                     <div className="mb-8 flex items-center gap-8">
@@ -143,24 +164,19 @@ function Picker({
                       </p>
                     ) : (
                       <div className="grid grid-cols-2 items-start gap-10">
-                        {spaceTypes.map((type) => (
-                          <TypeCard
-                            key={type.key}
-                            type={type}
-                            checked={selection.typeKeys.includes(type.key)}
-                            from={selection.mappingFor(type).from}
-                            to={selection.mappingFor(type).to}
-                            includesTime={selection.mappingFor(type).includesTime}
-                            onToggle={() => selection.toggleType(type.key)}
-                            onFromChange={(value) => selection.setFrom(type.key, value)}
-                            onToChange={(value) => selection.setTo(type.key, value)}
-                            onIncludesTimeChange={(value) =>
-                              selection.setIncludesTime(type.key, value)
-                            }
-                          />
-                        ))}
+                        {spaceTypes.map(card)}
                       </div>
                     )}
+                    {spaceQueries.length > 0 ? (
+                      <>
+                        <h3 className="mt-12 mb-8 type-caption text-tiny text-ink-tertiary">
+                          {t('common.queries')}
+                        </h3>
+                        <div className="grid grid-cols-2 items-start gap-10">
+                          {spaceQueries.map(card)}
+                        </div>
+                      </>
+                    ) : null}
                   </section>
                 )
               })}
@@ -175,7 +191,8 @@ function Picker({
       <footer className="flex shrink-0 items-center gap-12 border-t border-line-subtle bg-surface-card px-24 py-12">
         <span className="type-numeral text-small text-ink-secondary">
           {t('common.spacesCount', { count: chosenSpaces.length })} ·{' '}
-          {t('onboarding.typesCount', { count: selection.activeTypes.length })}
+          {t('onboarding.typesCount', { count: selection.activeTypes.length - chosenQueries })}
+          {chosenQueries > 0 ? ` · ${t('onboarding.queriesCount', { count: chosenQueries })}` : null}
         </span>
         <div className="flex-1" />
         <Button variant="ghost" size="md" onClick={onSkip}>

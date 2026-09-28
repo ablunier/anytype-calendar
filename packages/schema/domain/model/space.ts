@@ -1,3 +1,4 @@
+import type { SchemaQuery } from './query'
 import type { SchemaType } from './type'
 
 export interface SchemaSpace {
@@ -7,4 +8,6 @@ export interface SchemaSpace {
   icon?: string
   /** Only the types with a user date property, so only what could go on the calendar. */
   types: SchemaType[]
+  /** Only the ones over a type in `types`; empty where the API serves none (v1). */
+  queries: SchemaQuery[]
 }

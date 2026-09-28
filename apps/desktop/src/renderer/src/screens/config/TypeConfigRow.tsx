@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select, Tooltip } from '@renderer/components/ui'
-import { colourOptions, dateOptions } from '@renderer/lib/calendar'
+import { colourOptions, dateOptions, viewOptions } from '@renderer/lib/calendar'
 
 export interface TypeConfigRowProps {
   type: ObjectType
@@ -11,12 +11,15 @@ export interface TypeConfigRowProps {
   to: string | null
   includesTime: boolean
   colourBy: string | null
+  /** A query's view; null for its first. Unused for a type. */
+  view: string | null
   last: boolean
   onToggle: () => void
   onFromChange: (value: string) => void
   onToChange: (value: string | null) => void
   onIncludesTimeChange: (value: boolean) => void
   onColourByChange: (value: string | null) => void
+  onViewChange: (value: string) => void
 }
 
 export function TypeConfigRow({
@@ -26,12 +29,14 @@ export function TypeConfigRow({
   to,
   includesTime,
   colourBy,
+  view,
   last,
   onToggle,
   onFromChange,
   onToChange,
   onIncludesTimeChange,
-  onColourByChange
+  onColourByChange,
+  onViewChange
 }: TypeConfigRowProps): React.JSX.Element {
   const { t } = useTranslation()
   /** An empty value can never be a property key. */
@@ -63,8 +68,24 @@ export function TypeConfigRow({
         ariaLabel={t('common.showTypeObjects', { label: type.label })}
       />
       <TypeTile type={type} size="sm" />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col gap-4">
         <span className="type-ui text-small text-ink-primary">{type.label}</span>
+        {type.query ? (
+          <>
+            <span className="type-caption text-tiny text-ink-tertiary">
+              {t('common.queryOf', { type: type.query.typeLabel })}
+            </span>
+            {/* Until one is picked, Anytype reads the first. */}
+            <Select
+              size="sm"
+              ariaLabel={t('config.viewFor', { label: type.label })}
+              options={viewOptions(type)}
+              value={view ?? type.query.views[0]?.key ?? ''}
+              disabled={!checked}
+              onChange={onViewChange}
+            />
+          </>
+        ) : null}
       </div>
       <Select
         size="sm"

@@ -17,7 +17,10 @@
     "spacesCount_one": "{{count}} espazo",
     "spacesCount_other": "{{count}} espazos",
     "notGrantedTitle": "Algúns espazos non se comparten con esta aplicación",
-    "notGrantedDescription": "A clave só chega aos espazos que elixiches ao conectar. Para engadir outros, abre a aplicación de Anytype, vai a {{breadcrumb}} e concédellos a Calendar for Anytype, ou pecha sesión e volve conectar para elixilos."
+    "notGrantedDescription": "A clave só chega aos espazos que elixiches ao conectar. Para engadir outros, abre a aplicación de Anytype, vai a {{breadcrumb}} e concédellos a Calendar for Anytype, ou pecha sesión e volve conectar para elixilos.",
+    "queries": "Consultas",
+    "queryOf": "Consulta sobre {{type}}",
+    "view": "Vista"
   },
   "sync": {
     "status": {
@@ -134,7 +137,9 @@
     "typeCard": {
       "includesTime": "Inclúe hora",
       "includesTimeDescription": "Desactivado amosa cada data como de todo o día; activado amosa a hora en que se definiu."
-    }
+    },
+    "queriesCount_one": "{{count}} consulta",
+    "queriesCount_other": "{{count}} consultas"
   },
   "config": {
     "backToCalendar": "Volver ao calendario",
@@ -187,7 +192,9 @@
       "revokeHeading": "Revogar acceso",
       "revokeTitle": "Revogar clave de API",
       "revokeInstructions": "Para revogala en todos os espazos da conta, abre a aplicación de Anytype, vai a {{breadcrumb}} e revoga Calendar for Anytype. Despois pecha sesión aquí. Reconectar implica repetir o proceso do código de 4 díxitos."
-    }
+    },
+    "viewFor": "Vista de {{label}}",
+    "queriesNeedV2": "As consultas aparecen aquí cando Anytype serve a versión 2 da súa API, como fan as versións máis recentes da aplicación."
   },
   "calendar": {
     "couldntRead": "Non se puido ler {{span}}",

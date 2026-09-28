@@ -2,6 +2,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
+  SchemaQueryRef,
   SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
@@ -21,6 +22,7 @@ export interface InMemorySchemaSpace {
   types: InMemorySchemaType[]
   /** By property key: as in Anytype, a property's options are the space's, not a type's. */
   options?: Record<string, SchemaSelectOption[]>
+  queries?: SchemaQueryRef[]
 }
 
 export interface InMemorySchemaGatewayOptions {
@@ -61,6 +63,7 @@ const PROJECT = { name: 'hammer', color: 'orange' }
 /**
  * The design's sample account. Each space's Note has only system dates, so it never shows.
  * Tasks can be ticked done and coloured by priority, and meetings have a location, as under v2.
+ * Studio has a query over its tasks, which InMemoryEventsGateway answers by the same ids.
  */
 export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
   {
@@ -98,7 +101,18 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
       ),
       type('note', 'Note', { name: 'create', color: 'yellow' }, [])
     ],
-    options: { priority: PRIORITY_OPTIONS }
+    options: { priority: PRIORITY_OPTIONS },
+    queries: [
+      {
+        id: 'q_open_tasks',
+        name: 'Open tasks',
+        typeKeys: ['task'],
+        views: [
+          { id: 'v_open', name: 'Open' },
+          { id: 'v_all', name: 'All' }
+        ]
+      }
+    ]
   },
   {
     id: 'sp_reading',
@@ -170,6 +184,19 @@ export class InMemorySchemaGateway implements SchemaGateway {
     await this.#sleep(this.#requestLatencyMs)
     const options = this.#space(spaceId).options?.[propertyKey] ?? []
     return { ok: true, value: options.map((option) => ({ ...option })) }
+  }
+
+  async listQueries(_apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>> {
+    await this.#sleep(this.#requestLatencyMs)
+    const queries = this.#space(spaceId).queries ?? []
+    return {
+      ok: true,
+      value: queries.map(({ typeKeys, views, ...query }) => ({
+        ...query,
+        typeKeys: [...typeKeys],
+        views: views.map((view) => ({ ...view }))
+      }))
+    }
   }
 
   #space(spaceId: string): InMemorySchemaSpace {

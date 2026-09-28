@@ -2,6 +2,7 @@ import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-client/infra
 import type {
   SchemaGateway,
   SchemaGatewayResult,
+  SchemaQueryRef,
   SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeRef
@@ -38,6 +39,11 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     return gateway
       ? gateway.listSelectOptions(apiKey, spaceId, propertyKey)
       : { ok: false, failure: 'unauthorized' }
+  }
+
+  async listQueries(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>> {
+    const gateway = await this.#pick(apiKey)
+    return gateway ? gateway.listQueries(apiKey, spaceId) : { ok: false, failure: 'unauthorized' }
   }
 
   async #pick(apiKey: string): Promise<SchemaGateway | null> {

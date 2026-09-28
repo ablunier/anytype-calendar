@@ -237,8 +237,17 @@ export function indexBy<T extends { key: string }>(items: T[]): Map<string, T> {
   return new Map(items.map((item) => [item.key, item]))
 }
 
+/** The space's types, leaving out its queries. */
 export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[] {
-  return types.filter((type) => type.space === spaceKey)
+  return types.filter((type) => type.space === spaceKey && type.query === undefined)
+}
+
+export function queriesInSpace(types: ObjectType[], spaceKey: string): ObjectType[] {
+  return types.filter((type) => type.space === spaceKey && type.query !== undefined)
+}
+
+export function viewOptions(type: ObjectType): { value: string; label: string }[] {
+  return (type.query?.views ?? []).map(({ key, label }) => ({ value: key, label }))
 }
 
 /** Its colour-by option's hue, else its type's; neutral for a type no longer read. */
@@ -259,15 +268,22 @@ export function offersDates(type: ObjectType, { from, to }: DateMapping): boolea
 
 /**
  * The mapping as the type can still draw it: null when it names a date the type does not have,
- * and colouring by nothing when the property it colours by is gone — that alone is no reason to
- * forget the dates. The mapping itself when the type offers all of it.
+ * colouring by nothing when the property it colours by is gone, and a query's first view when
+ * the one it names is gone — neither alone is reason to forget the dates. The mapping itself
+ * when the type offers all of it.
  */
 export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapping | null {
   if (!offersDates(type, mapping)) return null
-  const { colourBy } = mapping
-  return colourBy === null || type.selects.some((select) => select.key === colourBy)
-    ? mapping
-    : { ...mapping, colourBy: null }
+  const { colourBy, view } = mapping
+  const offersColour = colourBy === null || type.selects.some((select) => select.key === colourBy)
+  // A type has no views, so the one a query names is kept only while the query has it.
+  const offersView = view === null || type.query?.views.some((option) => option.key === view) === true
+  if (offersColour && offersView) return mapping
+  return {
+    ...mapping,
+    ...(offersColour ? {} : { colourBy: null }),
+    ...(offersView ? {} : { view: null })
+  }
 }
 
 /** Each type with the dates in `dates` where it has an entry, and its own where it has none. */

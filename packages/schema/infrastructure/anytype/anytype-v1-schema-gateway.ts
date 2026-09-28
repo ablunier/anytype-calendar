@@ -3,6 +3,7 @@ import type {
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
+  SchemaQueryRef,
   SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
@@ -64,6 +65,11 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
 
   /** v1 serves options only as tags of a property, so select colours are left to v2. */
   async listSelectOptions(): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
+    return { ok: true, value: [] }
+  }
+
+  /** v1 serves no route that reads a query through its views. */
+  async listQueries(): Promise<SchemaGatewayResult<SchemaQueryRef[]>> {
     return { ok: true, value: [] }
   }
 

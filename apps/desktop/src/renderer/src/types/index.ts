@@ -36,13 +36,36 @@ export interface SelectProperty {
   label: string
 }
 
-/** Scoped to a single space: the same Anytype type in two spaces is two entries. */
+/** One of a query's views, which narrow its objects each in its own way. */
+export interface QueryView {
+  key: string
+  label: string
+}
+
+/**
+ * What makes an ObjectType a query: its objects are those of the type it runs over, read
+ * through one of its views, and drawn by that type's dates.
+ */
+export interface QuerySource {
+  /** The label of the type it runs over. */
+  typeLabel: string
+  /** Never empty; the first is read until another is chosen. */
+  views: QueryView[]
+}
+
+/**
+ * What can be put on the calendar: a type, or a query over one (`query` set), which is drawn
+ * in its type's hue. Scoped to a single space: the same Anytype type in two spaces is two
+ * entries.
+ */
 export interface ObjectType {
   key: string
   space: string
   label: string
   category: CategoryHue
   icon: IconName
+  /** Set for a query. */
+  query?: QuerySource
   /** Date properties only. */
   props: DateProperty[]
   /** Empty where the API cannot say what the options' colours are (v1). */
@@ -66,11 +89,17 @@ export interface DateMapping {
   to: string | null
   includesTime: boolean
   colourBy: string | null
+  /**
+   * A query's view (`QueryView.key`) to read through; null for a type, and for a query until
+   * one is picked, which reads its first.
+   */
+  view: string | null
 }
 
 /** What the user has ticked, keyed by `Space.key` and `ObjectType.key`. */
 export interface TypePicks {
   spaceKeys: string[]
+  /** Queries' too, since each is an ObjectType. */
   typeKeys: string[]
   /** Only types whose dates differ from their own `from`/`to` need an entry. */
   dates: Record<string, DateMapping>
@@ -87,7 +116,7 @@ export interface CalendarEvent {
   /** Anytype's object id, the same on every read. */
   id: string
   title: string
-  /** Key of the owning ObjectType. */
+  /** Key of the ObjectType it was read through: its type, or a query. */
   type: string
   /** Key of the owning Space. */
   space: string

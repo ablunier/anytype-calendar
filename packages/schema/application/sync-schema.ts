@@ -7,6 +7,8 @@ import {
   type SchemaApiKeySource,
   type SchemaGateway,
   type SchemaGatewayResult,
+  type SchemaQuery,
+  type SchemaQueryRef,
   type SchemaSelectOption,
   type SchemaSelectProperty,
   type SchemaSpace,
@@ -73,8 +75,12 @@ export class SyncSchema {
     const listed: SchemaSpaceList = accepted(await this.#gateway.listSpaces(apiKey))
     const spaces = await Promise.all(
       listed.spaces.map(async ({ id, name, icon }) => {
-        const types = await this.#fetchDatedTypes(apiKey, id)
-        return icon === undefined ? { id, name, types } : { id, name, icon, types }
+        const [types, queries] = await Promise.all([
+          this.#fetchDatedTypes(apiKey, id),
+          this.#gateway.listQueries(apiKey, id).then(accepted)
+        ])
+        const space = { id, name, types, queries: datedQueries(queries, types) }
+        return icon === undefined ? space : { ...space, icon }
       })
     )
     return { spaces, hasNotGrantedSpaces: listed.hasNotGrantedSpaces }
@@ -122,6 +128,21 @@ export class SyncSchema {
     )
     return new Map(keys.map((key, index) => [key, lists[index] ?? []]))
   }
+}
+
+/**
+ * Only a query over exactly one type, and that a dated one, can be placed by that type's dates.
+ * A query names its type the way the API serves keys, which for a type renamed between majors
+ * may be the type's former key.
+ */
+function datedQueries(queries: readonly SchemaQueryRef[], types: readonly SchemaType[]): SchemaQuery[] {
+  return queries.flatMap(({ id, name, typeKeys, views }) => {
+    const [only, ...others] = typeKeys
+    if (only === undefined || others.length > 0) return []
+    const type =
+      types.find(({ key }) => key === only) ?? types.find(({ formerKey }) => formerKey === only)
+    return type ? [{ id, name, typeKey: type.key, views }] : []
+  })
 }
 
 function accepted<T>(result: SchemaGatewayResult<T>): T {
