@@ -55,7 +55,8 @@ export function TypeConfigRow({
     />
   )
   /* The columns of SpaceTypesCard's header, so every row's controls line up under it. A query's
-   * view goes on a line of its own under its name, leaving the first line a type row's. */
+   * name takes a line of its own, and its view the name's column on the next, so all its
+   * controls share one line: the name column is too narrow to hold a select beside the name. */
   return (
     <div
       className={[
@@ -70,14 +71,26 @@ export function TypeConfigRow({
         ariaLabel={t('common.showTypeObjects', { label: type.label })}
       />
       <TypeTile type={type} size="sm" />
-      <div className="flex min-w-0 flex-col">
+      <div className={['flex min-w-0 items-baseline gap-8', type.query ? 'col-span-5' : ''].join(' ')}>
         <span className="type-ui text-small text-ink-primary">{type.label}</span>
         {type.query ? (
-          <span className="type-caption text-tiny text-ink-tertiary">
+          <span className="truncate type-caption text-tiny text-ink-tertiary">
             {t('common.queryOf', { type: type.query.typeLabel })}
           </span>
         ) : null}
       </div>
+      {type.query ? (
+        // Until one is picked, Anytype reads the first.
+        <Select
+          size="sm"
+          className="col-start-3"
+          ariaLabel={t('config.viewFor', { label: type.label })}
+          options={viewOptions(type)}
+          value={view ?? type.query.views[0]?.key ?? ''}
+          disabled={!checked}
+          onChange={onViewChange}
+        />
+      ) : null}
       <Select
         size="sm"
         className="w-152"
@@ -112,18 +125,6 @@ export function TypeConfigRow({
       ) : (
         colourSelect
       )}
-      {type.query ? (
-        // Until one is picked, Anytype reads the first.
-        <Select
-          size="sm"
-          className="col-start-3"
-          ariaLabel={t('config.viewFor', { label: type.label })}
-          options={viewOptions(type)}
-          value={view ?? type.query.views[0]?.key ?? ''}
-          disabled={!checked}
-          onChange={onViewChange}
-        />
-      ) : null}
     </div>
   )
 }
