@@ -15,13 +15,16 @@ read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property) and tracks the last sync, which feeds the post-sign-in success
 card and onboarding. Under v2 a sync also reads each space's image, whether each type has
-Anytype's own Done and Location, and its select properties' option colours. It also persists
-the user's selection — which spaces and types go on the calendar, each type's From/To date
-property, whether that type's dates carry a time of day, and which select property, if any,
-colours its objects (`colourBy`) — which onboarding and Settings save.
+Anytype's own Done and Location, its select properties' option colours, and its queries over
+a single dated type, with their views. It also persists
+the user's selection — which spaces, types and queries go on the calendar, each one's From/To
+date property (a query's are its type's), whether those dates carry a time of day, which
+select property, if any, colours its objects (`colourBy`), and a query's view — which
+onboarding and Settings save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
-selected types whose dates fall in it, with their Done, Location and colour-by option where
-v2 serves them, which the calendar screen draws as a month grid or as an hour grid. No screen
+selected types and queries whose dates fall in it, with their Done, Location and colour-by
+option where v2 serves them, which the calendar screen draws as a month grid or as an hour
+grid. An object a type and a query both bring is drawn once, as the type places it. No screen
 runs on mock data.
 
 ## Commands
@@ -166,9 +169,10 @@ Standard electron-vite three-process layout:
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
-  store (`events/event-sources.ts`: only the chosen types of chosen spaces; Done, Location and
-  the colour-by property only where the last schema sync saw the type with them, since v2
-  refuses a search `field` the type lacks), and places a
+  store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
+  first; Done, Location and the colour-by property only where the last schema sync saw the
+  type — for a query, the type it runs over — with them, since v2 refuses a search `field` the
+  type lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
@@ -281,7 +285,10 @@ Standard electron-vite three-process layout:
     `SyncView` and `TypePicks`, and turns picks back into the `SchemaSelection` to save.
     `lib/events.ts` does the same for an `EventsSnapshot` (`hooks/useEvents.ts`): the span
     on screen, its status, and its objects as `CalendarEvent`s in local `YYYY-MM-DD` dates
-    and `HH:MM` times, keyed to their `ObjectType` with `lib/schema.ts`'s `objectTypeKey`.
+    and `HH:MM` times, keyed to their `ObjectType` with `lib/schema.ts`'s `objectTypeKey`, or
+    `querySourceKey` for one read through a query: a query is an `ObjectType` too, with
+    `query` set (its views) and its type's hue and dates, so the pickers, the picks and the
+    chips treat both alike. `typesInSpace` and `queriesInSpace` (`lib/calendar.ts`) split them.
     A result kept from another span is never drawn on this one. It also owns the span algebra
     the renderer needs: `spanFor` (the span a view wants around a date), `anchorOf` (the date
     a span is anchored on — the first of a month, the first day of a week, the day itself),
@@ -380,6 +387,17 @@ key works with both; a key paired through v2 (scoped) does not work with v1:
   with no id: a search row names the picked option by its name, as a list (`["P4"]`). v1 has
   no such route, so `colourBy` is offered only under v2. `color` is one of the same ten names
   type icons use, drawn with the same hues (`hueOf`, `lib/schema.ts`).
+- A query (Anytype's "set": its type key is `query`) is found by searching `{ type: 'query' }`,
+  which, like every search, leaves archived objects out. Its row names no type: the document
+  (`GET …/objects/{id}?include=properties`) has `query_source: { types: ['task'] }`. Its views
+  are `GET …/queries/{id}/views` → `{ id, name, type?, filters? }`, `id` a compact suffix of the
+  24-hex view id, accepted back like the full one; Anytype refuses to delete a query's last
+  view. `GET …/queries/{id}/objects?view=&fields=a,b` pages rows shaped like a search's, through
+  the view's own filters and no others, so it cannot be narrowed by date. Without `view` the
+  first applies, with a `warnings` entry (`path: 'view'`) naming it; an unresolvable
+  placeholder in a view's filters is a warning too, not an error. `fields` is checked against
+  the space's properties, not the type's; an unknown view answers 404. v1 has no query routes,
+  so queries are offered only under v2, and a v1 read matches a chosen one with nothing.
 - A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
   the image's bytes (PNG seen). `AnytypeClient.download` reads it through the injected
   `fetchBytes`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
