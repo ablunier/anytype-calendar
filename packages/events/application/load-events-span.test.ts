@@ -28,6 +28,7 @@ const OCTOBER = { kind: 'month', year: 2026, month: 9 } as const
 const DECEMBER = { kind: 'month', year: 2026, month: 11 } as const
 
 const TASKS: EventsSource = {
+  kind: 'type',
   spaceId: 'sp_1',
   typeKey: 'task',
   from: 'due_date',
@@ -35,6 +36,7 @@ const TASKS: EventsSource = {
   includesTime: true
 }
 const PROJECTS: EventsSource = {
+  kind: 'type',
   spaceId: 'sp_2',
   typeKey: 'project',
   from: 'start_date',
@@ -48,6 +50,9 @@ const ref = (id: string, start: number, end: number | null = null): EventsObject
   start,
   end
 })
+
+const keyOf = (source: EventsSource): string =>
+  source.kind === 'type' ? source.typeKey : source.queryId
 
 const ok = <T>(value: T): EventsGatewayResult<T> => ({ ok: true, value })
 const unauthorized = { ok: false, failure: 'unauthorized' } as const
@@ -66,7 +71,7 @@ function setup({
   refs = {} as Record<string, EventsObjectRef[]>
 } = {}) {
   const gateway = {
-    listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[source.typeKey] ?? []))
+    listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[keyOf(source)] ?? []))
   }
   const store = new EventsSpanStore()
   const loadEventsSpan = new LoadEventsSpan({
@@ -108,7 +113,7 @@ test("asks each source for the month's window and keeps the objects that overlap
         {
           id: 'spans in',
           spaceId: 'sp_2',
-          typeKey: 'project',
+          source: { kind: 'type', typeKey: 'project' },
           title: 'spans in',
           start: Date.UTC(2026, 7, 28),
           end: Date.UTC(2026, 8, 2),
@@ -117,7 +122,7 @@ test("asks each source for the month's window and keeps the objects that overlap
         {
           id: 'late task',
           spaceId: 'sp_1',
-          typeKey: 'task',
+          source: { kind: 'type', typeKey: 'task' },
           title: 'late task',
           start: Date.UTC(2026, 8, 20, 15),
           end: null,
@@ -126,7 +131,7 @@ test("asks each source for the month's window and keeps the objects that overlap
         {
           id: 'runs out',
           spaceId: 'sp_2',
-          typeKey: 'project',
+          source: { kind: 'type', typeKey: 'project' },
           title: 'runs out',
           start: Date.UTC(2026, 8, 29),
           end: Date.UTC(2026, 9, 3),
@@ -135,6 +140,33 @@ test("asks each source for the month's window and keeps the objects that overlap
       ]
     }
   })
+})
+
+test('draws an object a type and a query over it both bring once, as the type places it', async () => {
+  const OPEN_TASKS: EventsSource = {
+    kind: 'query',
+    spaceId: 'sp_1',
+    queryId: 'q_open',
+    viewId: null,
+    from: 'start_date',
+    to: null,
+    includesTime: false
+  }
+  const { store, loadEventsSpan } = setup({
+    sources: [TASKS, OPEN_TASKS],
+    refs: {
+      task: [ref('shared', Date.UTC(2026, 8, 20, 15))],
+      q_open: [ref('shared', Date.UTC(2026, 8, 3)), ref('query only', Date.UTC(2026, 8, 4))]
+    }
+  })
+
+  await loadEventsSpan.execute(SEPTEMBER)
+
+  const { last } = store.get() as Extract<EventsSpanLoad, { phase: 'loaded' }>
+  expect(last.objects.map(({ id, source, start }) => [id, source, start])).toEqual([
+    ['query only', { kind: 'query', queryId: 'q_open' }, Date.UTC(2026, 8, 4)],
+    ['shared', { kind: 'type', typeKey: 'task' }, Date.UTC(2026, 8, 20, 15)]
+  ])
 })
 
 test('asks for December across the turn of the year', async () => {
@@ -240,7 +272,7 @@ test('reads the selection as it is when the load starts', async () => {
   await loadEventsSpan.execute(SEPTEMBER)
   sources = [PROJECTS]
   await loadEventsSpan.execute()
-  expect(gateway.listObjects.mock.calls.map(([, source]) => source.typeKey)).toEqual(['task', 'project'])
+  expect(gateway.listObjects.mock.calls.map(([, source]) => keyOf(source))).toEqual(['task', 'project'])
 })
 
 test('fails as unauthorized without a stored key, asking Anytype nothing', async () => {

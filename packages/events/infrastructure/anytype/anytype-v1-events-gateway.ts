@@ -32,6 +32,8 @@ export class AnytypeV1EventsGateway implements EventsGateway {
     source: EventsSource,
     window: EventsWindow
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
+    // v1 serves no route that reads a query through its views.
+    if (source.kind === 'query') return { ok: true, value: [] }
     const path = `/v1/spaces/${encodeURIComponent(source.spaceId)}/search`
     const body = { types: [source.typeKey], filters: windowFilter(source, window) }
     const items: unknown[] = []

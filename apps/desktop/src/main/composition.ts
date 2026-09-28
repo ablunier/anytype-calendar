@@ -220,7 +220,7 @@ export function composeServices(): AppServices {
         ? new AnytypeEventsGateway({
             probe,
             v1: new AnytypeV1EventsGateway(client),
-            v2: new AnytypeV2EventsGateway({ client, probe })
+            v2: new AnytypeV2EventsGateway({ client, probe, warn: (message) => console.warn(message) })
           })
         : inMemoryEventsGateway(zone),
     apiKeys,

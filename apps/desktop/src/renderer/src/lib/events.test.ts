@@ -25,7 +25,7 @@ const NOW = local(8, 14, 9, 30)
 const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   id: 'obj_1',
   spaceId: 'sp_1',
-  typeKey: 'task',
+  source: { kind: 'type', typeKey: 'task' },
   title: 'Ship it',
   start: local(8, 3),
   end: null,
@@ -151,6 +151,11 @@ describe('eventsFor', () => {
     expect(eventsFor(loaded([object({})]), SEPTEMBER)).toEqual([
       { id: 'obj_1', title: 'Ship it', type: 'sp_1:task', space: 'sp_1', date: '2026-09-03', allDay: true }
     ])
+  })
+
+  test('keys an object read through a query to the query, as lib/schema keys it', () => {
+    const [event] = eventsFor(loaded([object({ source: { kind: 'query', queryId: 'q_open' } })]), SEPTEMBER) ?? []
+    expect(event?.type).toBe('sp_1:query:q_open')
   })
 
   test('carries whether it is done, its location, and the hue of the option it is coloured by', () => {

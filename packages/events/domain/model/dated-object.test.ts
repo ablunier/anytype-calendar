@@ -11,6 +11,7 @@ const HOUR_MS = 3_600_000
 const DAY_MS = 24 * HOUR_MS
 
 const ALL_DAY_SOURCE: EventsSource = {
+  kind: 'type',
   spaceId: 'sp_1',
   typeKey: 'project',
   from: 'start_date',
@@ -26,11 +27,27 @@ describe('toEventsDatedObject', () => {
     expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE)).toEqual({
       id: 'obj_1',
       spaceId: 'sp_1',
-      typeKey: 'project',
+      source: { kind: 'type', typeKey: 'project' },
       title: 'Launch',
       start,
       end,
       allDay: true
+    })
+  })
+
+  test('names the query it was read through, not the type the query runs over', () => {
+    const source: EventsSource = {
+      kind: 'query',
+      spaceId: 'sp_1',
+      queryId: 'bafyquery',
+      viewId: '63194',
+      from: 'due_date',
+      to: null,
+      includesTime: false
+    }
+    expect(toEventsDatedObject({ id: 'o', title: '', start: 1, end: null }, source).source).toEqual({
+      kind: 'query',
+      queryId: 'bafyquery'
     })
   })
 
@@ -115,7 +132,7 @@ describe('compareEventsDatedObjects', () => {
   const object = (id: string, title: string, start: number): EventsDatedObject => ({
     id,
     spaceId: 'sp_1',
-    typeKey: 'task',
+    source: { kind: 'type', typeKey: 'task' },
     title,
     start,
     end: null,

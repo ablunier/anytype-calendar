@@ -24,8 +24,9 @@ export type EventsGatewayResult<T> = { ok: true; value: T } | { ok: false; failu
 export interface EventsGateway {
   /**
    * The source's objects that have a From value and may overlap the window: every one that
-   * does, and possibly some that do not — Anytype compares dates by whole days — so callers
-   * check the overlap themselves. Leaves out archived objects.
+   * does, and possibly some that do not — Anytype compares dates by whole days, and a query
+   * cannot be narrowed by date at all — so callers check the overlap themselves. Leaves out
+   * archived objects. A query, or a view of one, that is gone holds no objects.
    */
   listObjects(
     apiKey: string,

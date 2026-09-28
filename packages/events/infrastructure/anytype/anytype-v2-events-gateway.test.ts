@@ -15,6 +15,7 @@ const BASE = 'http://127.0.0.1:31009'
 const SPACE_ID = 'bafy.space'
 
 const APPOINTMENTS: EventsSource = {
+  kind: 'type',
   spaceId: SPACE_ID,
   typeKey: 'appointment',
   from: 'data',
@@ -22,6 +23,7 @@ const APPOINTMENTS: EventsSource = {
   includesTime: true
 }
 const PROJECTS: EventsSource = {
+  kind: 'type',
   spaceId: SPACE_ID,
   typeKey: 'project',
   from: 'start_date',
@@ -46,7 +48,11 @@ function setup(...replies: (Reply | { status: number; text: string })[]) {
     }
   })
   const probe = new AnytypeDialectProbe({ client })
-  return { gateway: new AnytypeV2EventsGateway({ client, probe }), probe, calls }
+  const warnings: string[] = []
+  const warn = (message: string): void => {
+    warnings.push(message)
+  }
+  return { gateway: new AnytypeV2EventsGateway({ client, probe, warn }), probe, calls, warnings }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -261,6 +267,91 @@ test('rejects, and forgets the dialect, when Anytype no longer has the v2 route'
   await probe.probe(API_KEY)
 
   expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
+})
+
+describe('a query', () => {
+  const QUERY_ID = 'bafyreig35xn3pgwklcxro6eez4qn5afhdxe7yrtpafmrewry6gbtanbt5y'
+  const OPEN_TASKS: EventsSource = {
+    kind: 'query',
+    spaceId: SPACE_ID,
+    queryId: QUERY_ID,
+    viewId: '63194',
+    from: 'due_date',
+    to: null,
+    includesTime: true,
+    done: 'done'
+  }
+  const OBJECTS = `${BASE}/v2/spaces/${SPACE_ID}/queries/${QUERY_ID}/objects`
+
+  // As a real account answered, September 2026: an object with no due date has no properties.
+  const answer = page([
+    { id: 'obj_1', name: 'Cancelar LinkedIn premium', type: 'task' },
+    { id: 'obj_2', name: 'Cita en alergoloxía', type: 'task', properties: { due_date: '2027-06-01T13:45:00Z' } }
+  ])
+
+  test('reads the query through its view, asking for the fields only, whatever the window', async () => {
+    const { gateway, calls } = setup(answer)
+
+    await expect(gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)).resolves.toEqual({
+      ok: true,
+      value: [
+        {
+          id: 'obj_2',
+          title: 'Cita en alergoloxía',
+          start: Date.parse('2027-06-01T13:45:00Z'),
+          end: null,
+          done: false
+        }
+      ]
+    })
+    expect(calls[0]?.url).toBe(`${OBJECTS}?view=63194&fields=due_date,done&offset=0&limit=1000`)
+    expect(calls[0]?.init.method).toBe('GET')
+  })
+
+  test('reads the first view when none is chosen', async () => {
+    const { gateway, calls } = setup(answer)
+    await gateway.listObjects(API_KEY, { ...OPEN_TASKS, viewId: null }, WINDOW)
+    expect(calls[0]?.url).toBe(`${OBJECTS}?fields=due_date,done&offset=0&limit=1000`)
+  })
+
+  test('follows the pages until Anytype has no more', async () => {
+    const { gateway, calls } = setup(
+      page([row('obj_1', 'A', { due_date: '2026-09-02T10:00:00Z' })], true),
+      page([row('obj_2', 'B', { due_date: '2026-09-03T10:00:00Z' })])
+    )
+    const result = await gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)
+    expect(result.ok && result.value.map(({ id }) => id)).toEqual(['obj_1', 'obj_2'])
+    expect(calls[1]?.url).toBe(`${OBJECTS}?view=63194&fields=due_date,done&offset=1&limit=1000`)
+  })
+
+  test.each([
+    ['a query or view that is gone', v2Error(404, 'not_found')],
+    ['a field the space does not have', v2Error(400, 'validation_failed')],
+    ['a space outside the grant', v2Error(403, 'space_not_granted')]
+  ])('reads %s as no objects', async (_, reply) => {
+    const { gateway } = setup(reply)
+    await expect(gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  const warned = (path: string, message: string): Reply => ({
+    status: 200,
+    body: { data: [], total: 0, offset: 0, limit: 1000, has_more: false, warnings: [{ path, message, hint: 'x' }] }
+  })
+
+  test('tells what Anytype warned about, once however often the query is read', async () => {
+    const { gateway, warnings } = setup(warned('view.filters', 'the calling member could not be resolved'))
+
+    await gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)
+    await gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)
+
+    expect(warnings).toEqual(['Anytype warned when asked for objects: the calling member could not be resolved'])
+  })
+
+  test('does not tell which view was applied when none was chosen', async () => {
+    const { gateway, warnings } = setup(warned('view', 'its first view "Open" was applied'))
+    await gateway.listObjects(API_KEY, { ...OPEN_TASKS, viewId: null }, WINDOW)
+    expect(warnings).toEqual([])
+  })
 })
 
 describe('malformed answers', () => {

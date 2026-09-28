@@ -1,7 +1,8 @@
 import {
   isUnmatchedRoute,
   type AnytypeClient,
-  type AnytypeDialectProbe
+  type AnytypeDialectProbe,
+  type AnytypeRequest
 } from '@anytype-calendar/anytype-client/infrastructure'
 import type {
   EventsGateway,
@@ -21,11 +22,14 @@ const UNAUTHORIZED = 401
  * key was never granted, to be matched by nothing until it returns; that is an answer of no
  * objects, not a failed span. Anytype refuses an unknown type key, or a filter or field over a
  * key the type does not have, with a 400; a space outside the grant with a 403; and a space
- * that is not open with a 404.
+ * that is not open, or a query or view that is gone, with a 404.
  */
 const GONE_STATUSES = new Set([400, 403, 404])
 
-type Page = { data: unknown[]; hasMore: boolean }
+type Page = { data: unknown[]; hasMore: boolean; warnings: Warning[] }
+
+/** What a read could not do as asked, beside its result, e.g. a view's placeholder it could not resolve. */
+type Warning = { path: string; message: string }
 
 /**
  * Searches each type with date filters, asking only for the From and To values back, and the
@@ -35,14 +39,29 @@ type Page = { data: unknown[]; hasMore: boolean }
  * digit). Like v1, a date filter rounds out to whole days (`greater_or_equal` to the start of
  * its day, `less_or_equal` to the end), so it can only return extra objects, never miss one —
  * which is what the port promises.
+ *
+ * A query is read through its view, which applies the view's own filters; the route takes no
+ * others, so every object of the query comes back, whatever its dates.
  */
 export class AnytypeV2EventsGateway implements EventsGateway {
   readonly #client: AnytypeClient
   readonly #probe: AnytypeDialectProbe
+  readonly #warn: (message: string) => void
+  /** Each told once: a query is read again on every load, and would repeat the same ones. */
+  readonly #warned = new Set<string>()
 
-  constructor({ client, probe }: { client: AnytypeClient; probe: AnytypeDialectProbe }) {
+  constructor({
+    client,
+    probe,
+    warn = () => {}
+  }: {
+    client: AnytypeClient
+    probe: AnytypeDialectProbe
+    warn?: (message: string) => void
+  }) {
     this.#client = client
     this.#probe = probe
+    this.#warn = warn
   }
 
   async listObjects(
@@ -50,20 +69,38 @@ export class AnytypeV2EventsGateway implements EventsGateway {
     source: EventsSource,
     window: EventsWindow
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
-    const path = `/v2/spaces/${encodeURIComponent(source.spaceId)}/search`
-    const body = {
-      type: source.typeKey,
-      filters: windowFilters(source, window),
-      fields: fieldsOf(source)
-    }
-    const items: unknown[] = []
-    for (;;) {
-      const response = await this.#client.request({
+    const space = `/v2/spaces/${encodeURIComponent(source.spaceId)}`
+    if (source.kind === 'type') {
+      const body = {
+        type: source.typeKey,
+        filters: windowFilters(source, window),
+        fields: fieldsOf(source)
+      }
+      return this.#readAll(apiKey, source, (paging) => ({
         method: 'POST',
-        path: `${path}?offset=${items.length}&limit=${PAGE_LIMIT}`,
+        path: `${space}/search?${paging}`,
         apiKey,
         body
-      })
+      }))
+    }
+
+    const view = source.viewId === null ? '' : `view=${encodeURIComponent(source.viewId)}&`
+    const fields = fieldsOf(source).map(encodeURIComponent).join(',')
+    const path = `${space}/queries/${encodeURIComponent(source.queryId)}/objects?${view}fields=${fields}`
+    return this.#readAll(apiKey, source, (paging) => ({ method: 'GET', path: `${path}&${paging}`, apiKey }))
+  }
+
+  /** `request` is given the paging to ask for, as a query string. */
+  async #readAll(
+    apiKey: string,
+    source: EventsSource,
+    request: (paging: string) => AnytypeRequest
+  ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
+    const items: unknown[] = []
+    for (;;) {
+      const response = await this.#client.request(
+        request(`offset=${items.length}&limit=${PAGE_LIMIT}`)
+      )
       if (!response.ok) {
         if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
         if (isUnmatchedRoute(response)) {
@@ -71,15 +108,29 @@ export class AnytypeV2EventsGateway implements EventsGateway {
         } else if (GONE_STATUSES.has(response.status)) {
           return { ok: true, value: [] }
         }
-        throw new Error(`Anytype answered ${response.status} when searched for objects`)
+        throw new Error(`Anytype answered ${response.status} when asked for objects`)
       }
       const page = toPage(response.body)
       if (!page) throw malformed()
+      this.#report(source, page.warnings)
       items.push(...page.data)
       // An empty page that claims more would otherwise be asked for forever.
       if (!page.hasMore || page.data.length === 0) break
     }
     return { ok: true, value: items.flatMap((item) => toRef(item, source)) }
+  }
+
+  /**
+   * A query read with no view chosen is warned which one was applied; that is what was asked
+   * for, so it is not repeated.
+   */
+  #report(source: EventsSource, warnings: readonly Warning[]): void {
+    for (const { path, message } of warnings) {
+      if (source.kind === 'query' && source.viewId === null && path === 'view') continue
+      if (this.#warned.has(message)) continue
+      this.#warned.add(message)
+      this.#warn(`Anytype warned when asked for objects: ${message}`)
+    }
   }
 }
 
@@ -158,7 +209,15 @@ function toPage(body: unknown): Page | null {
   const data = field(body, 'data')
   const hasMore = field(body, 'has_more')
   if (!Array.isArray(data) || typeof hasMore !== 'boolean') return null
-  return { data, hasMore }
+  const warnings = field(body, 'warnings')
+  return {
+    data,
+    hasMore,
+    warnings: (Array.isArray(warnings) ? warnings : []).flatMap((warning) => {
+      const message = stringField(warning, 'message')
+      return message === undefined ? [] : [{ path: stringField(warning, 'path') ?? '', message }]
+    })
+  }
 }
 
 function field(value: unknown, name: string): unknown {

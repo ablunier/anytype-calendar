@@ -21,14 +21,38 @@ export interface InMemoryEventsObject {
   options?: Record<string, string>
 }
 
+/** A query over one type, whose views can each leave out the objects ticked done. */
+export interface InMemoryEventsQuery {
+  id: string
+  spaceId: string
+  typeKey: string
+  /** In order: the first is read when no view is chosen. */
+  views: { id: string; openOnly: boolean }[]
+}
+
 export interface InMemoryEventsGatewayOptions {
   sleep: (ms: number) => Promise<void>
   zone: EventsTimeZone
   now: () => number
   /** Defaults to inMemoryEventsSample around the month `now` falls in. */
   objects?: InMemoryEventsObject[]
+  /** Defaults to IN_MEMORY_EVENTS_QUERIES. */
+  queries?: InMemoryEventsQuery[]
   requestLatencyMs?: number
 }
+
+/** IN_MEMORY_SCHEMA_SPACES' queries, by the same ids. */
+export const IN_MEMORY_EVENTS_QUERIES: InMemoryEventsQuery[] = [
+  {
+    id: 'q_open_tasks',
+    spaceId: 'sp_studio',
+    typeKey: 'task',
+    views: [
+      { id: 'v_open', openOnly: true },
+      { id: 'v_all', openOnly: false }
+    ]
+  }
+]
 
 /** A date `month` months from the seeded month, and `time` as `HH:MM` for a timed one. */
 interface SeedDate {
@@ -139,23 +163,39 @@ export function inMemoryEventsSample(month: EventsMonth, zone: EventsTimeZone): 
 export class InMemoryEventsGateway implements EventsGateway {
   readonly #sleep: (ms: number) => Promise<void>
   readonly #objects: InMemoryEventsObject[]
+  readonly #queries: InMemoryEventsQuery[]
   readonly #requestLatencyMs: number
 
-  constructor({ sleep, zone, now, objects, requestLatencyMs = 300 }: InMemoryEventsGatewayOptions) {
+  constructor({
+    sleep,
+    zone,
+    now,
+    objects,
+    queries = IN_MEMORY_EVENTS_QUERIES,
+    requestLatencyMs = 300
+  }: InMemoryEventsGatewayOptions) {
     this.#sleep = sleep
     this.#objects = objects ?? inMemoryEventsSample(zone.dayOf(now()), zone)
+    this.#queries = queries
     this.#requestLatencyMs = requestLatencyMs
   }
 
-  /** Returns every object of the source with a From value, as the port allows. */
+  /**
+   * Returns every object of the source with a From value, as the port allows. A query, or a
+   * view of one, it does not know holds nothing, as a gone one does in Anytype.
+   */
   async listObjects(
     _apiKey: string,
-    { spaceId, typeKey, from, to, done, location, colourBy }: EventsSource
+    source: EventsSource
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     await this.#sleep(this.#requestLatencyMs)
+    const { spaceId, from, to, done, location, colourBy } = source
+    const read = this.#read(source)
+    if (!read) return { ok: true, value: [] }
     const refs = this.#objects.flatMap((object) => {
       const start = object.dates[from]
-      if (object.spaceId !== spaceId || object.typeKey !== typeKey || start === undefined) return []
+      if (object.spaceId !== spaceId || object.typeKey !== read.typeKey || start === undefined) return []
+      if (read.openOnly && object.done === true) return []
       const ref: EventsObjectRef = {
         id: object.id,
         title: object.title,
@@ -169,6 +209,16 @@ export class InMemoryEventsGateway implements EventsGateway {
       return [ref]
     })
     return { ok: true, value: refs }
+  }
+
+  #read(source: EventsSource): { typeKey: string; openOnly: boolean } | null {
+    if (source.kind === 'type') return { typeKey: source.typeKey, openOnly: false }
+    const query = this.#queries.find(
+      ({ id, spaceId }) => id === source.queryId && spaceId === source.spaceId
+    )
+    const view =
+      source.viewId === null ? query?.views[0] : query?.views.find(({ id }) => id === source.viewId)
+    return query && view ? { typeKey: query.typeKey, openOnly: view.openOnly } : null
   }
 }
 

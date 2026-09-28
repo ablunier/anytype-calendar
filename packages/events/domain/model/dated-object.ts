@@ -1,12 +1,13 @@
 import type { EventsObjectRef } from '../gateways/events-gateway'
 import type { EventsWindow } from './window'
-import type { EventsSource } from './source'
+import { eventsSourceKey, type EventsSource, type EventsSourceKey } from './source'
 
 export interface EventsDatedObject {
   /** Anytype's object id. */
   id: string
   spaceId: string
-  typeKey: string
+  /** The pick it was read through. */
+  source: EventsSourceKey
   title: string
   /** Epoch milliseconds, from the type's From property. */
   start: number
@@ -30,10 +31,19 @@ export interface EventsDatedObject {
  */
 export function toEventsDatedObject(
   { id, title, start, end, done, location, option }: EventsObjectRef,
-  { spaceId, typeKey, includesTime, colourBy }: EventsSource
+  source: EventsSource
 ): EventsDatedObject {
+  const { spaceId, includesTime, colourBy } = source
   const kept = end !== null && end >= start ? end : null
-  const object: EventsDatedObject = { id, spaceId, typeKey, title, start, end: kept, allDay: !includesTime }
+  const object: EventsDatedObject = {
+    id,
+    spaceId,
+    source: eventsSourceKey(source),
+    title,
+    start,
+    end: kept,
+    allDay: !includesTime
+  }
   if (done !== undefined) object.done = done
   if (location !== undefined && location !== '') object.location = location
   const colour =

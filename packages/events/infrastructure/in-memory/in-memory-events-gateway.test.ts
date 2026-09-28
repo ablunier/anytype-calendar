@@ -29,6 +29,7 @@ const monthWindow = ({ year, month }: EventsMonth): EventsWindow => ({
 })
 
 const TASKS: EventsSource = {
+  kind: 'type',
   spaceId: 'sp_1',
   typeKey: 'task',
   from: 'due_date',
@@ -36,6 +37,7 @@ const TASKS: EventsSource = {
   includesTime: false
 }
 const PROJECTS: EventsSource = {
+  kind: 'type',
   spaceId: 'sp_1',
   typeKey: 'project',
   from: 'start_date',
@@ -108,14 +110,57 @@ test('carries Done, Location and the colour-by option only where the source name
   })
 })
 
+test("answers a query with its type's objects its view keeps, reading the first view by default", async () => {
+  const sleeps: number[] = []
+  const gateway = new InMemoryEventsGateway({
+    sleep: async (ms) => {
+      sleeps.push(ms)
+    },
+    zone: UTC,
+    now: () => NOW,
+    objects: [OBJECTS[0]!, { ...OBJECTS[0]!, id: 'o6', title: 'Finished', done: true }, OBJECTS[3]!],
+    queries: [
+      {
+        id: 'q_open',
+        spaceId: 'sp_1',
+        typeKey: 'task',
+        views: [
+          { id: 'v_open', openOnly: true },
+          { id: 'v_all', openOnly: false }
+        ]
+      }
+    ]
+  })
+  const query = (viewId: string | null, queryId = 'q_open'): EventsSource => ({
+    kind: 'query',
+    spaceId: 'sp_1',
+    queryId,
+    viewId,
+    from: 'due_date',
+    to: null,
+    includesTime: false
+  })
+  const ids = async (source: EventsSource): Promise<string[]> => {
+    const result = await gateway.listObjects('ak_any', source)
+    return result.ok ? result.value.map(({ id }) => id) : []
+  }
+
+  expect(await ids(query(null))).toEqual(['o1'])
+  expect(await ids(query('v_all'))).toEqual(['o1', 'o6'])
+  expect(await ids(query('v_gone'))).toEqual([])
+  expect(await ids(query(null, 'q_gone'))).toEqual([])
+})
+
 test('seeds the design sample around the current month by default', async () => {
   const { gateway } = setup()
   const window = monthWindow(DECEMBER)
   const tasks = await gateway.listObjects('ak_any', {
+    kind: 'type',
     spaceId: 'sp_personal',
     typeKey: 'task',
     from: 'due_date',
-    to: null
+    to: null,
+    includesTime: false
   })
   const inDecember = tasks.ok ? tasks.value.filter((ref) => overlapsEventsWindow(ref, window)) : []
   expect(inDecember.map(({ title }) => title)).toContain('Reply to Iris')

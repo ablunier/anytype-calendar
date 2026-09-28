@@ -12,7 +12,7 @@ import {
 import type { EventsSnapshot } from '@shared/ipc'
 import type { CalendarEvent, CalendarMonth, CalendarView, SyncView } from '@renderer/types'
 import { addDays, buildWeek, isoDate } from './calendar'
-import { elapsedSince, hueOf, objectTypeKey } from './schema'
+import { elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
 
 /** The span main holds, or before any load the one `now` (epoch milliseconds) opens on. */
 export function shownSpanFor(snapshot: EventsSnapshot, view: CalendarView, now: number): EventsSpan {
@@ -130,7 +130,7 @@ function resultFor(snapshot: EventsSnapshot, span: EventsSpan): EventsSpanResult
 function calendarEventFor({
   id,
   spaceId,
-  typeKey,
+  source,
   title,
   start,
   end,
@@ -142,7 +142,10 @@ function calendarEventFor({
   return {
     id,
     title,
-    type: objectTypeKey(spaceId, typeKey),
+    type:
+      source.kind === 'type'
+        ? objectTypeKey(spaceId, source.typeKey)
+        : querySourceKey(spaceId, source.queryId),
     space: spaceId,
     date: localDate(start),
     allDay,

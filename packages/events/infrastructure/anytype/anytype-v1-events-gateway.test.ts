@@ -11,6 +11,7 @@ const BASE = 'http://127.0.0.1:31009'
 const SPACE_ID = 'bafy.space'
 
 const TASKS: EventsSource = {
+  kind: 'type',
   spaceId: SPACE_ID,
   typeKey: 'task',
   from: 'due_date',
@@ -18,6 +19,7 @@ const TASKS: EventsSource = {
   includesTime: false
 }
 const PROJECTS: EventsSource = {
+  kind: 'type',
   spaceId: SPACE_ID,
   typeKey: 'project',
   from: 'start_date',
@@ -228,6 +230,21 @@ test('resolves no objects when Anytype cannot filter on the property', async () 
     body: { object: 'error', status: 400, code: 'bad_request', message: 'failed to build expression filters' }
   })
   await expect(gateway.listObjects(API_KEY, TASKS, WINDOW)).resolves.toEqual({ ok: true, value: [] })
+})
+
+test('matches a query with nothing, asking Anytype nothing', async () => {
+  const { gateway, calls } = setup()
+  const query: EventsSource = {
+    kind: 'query',
+    spaceId: 'bafy.space',
+    queryId: 'bafyquery',
+    viewId: null,
+    from: 'due_date',
+    to: null,
+    includesTime: false
+  }
+  await expect(gateway.listObjects(API_KEY, query, WINDOW)).resolves.toEqual({ ok: true, value: [] })
+  expect(calls).toEqual([])
 })
 
 test('rejects on any other error status', async () => {

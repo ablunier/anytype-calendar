@@ -102,7 +102,7 @@ export class LoadEventsSpan {
           .filter((object) => overlapsEventsWindow(object, window))
       })
     )
-    return perSource.flat().sort(compareEventsDatedObjects)
+    return firstOfEach(perSource.flat()).sort(compareEventsDatedObjects)
   }
 
   #openingSpan(): EventsSpan {
@@ -110,4 +110,19 @@ export class LoadEventsSpan {
     const { year, month } = this.#zone.dayOf(this.#now())
     return { kind: 'month', year, month }
   }
+}
+
+/**
+ * An object both a chosen type and a chosen query over it bring is drawn once, as the first
+ * source in the selection's order places it.
+ */
+function firstOfEach(objects: readonly EventsDatedObject[]): EventsDatedObject[] {
+  const seen = new Set<string>()
+  return objects.filter(({ spaceId, id }) => {
+    // Space ids and object ids never contain a newline, so the pair cannot collide.
+    const key = `${spaceId}\n${id}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
