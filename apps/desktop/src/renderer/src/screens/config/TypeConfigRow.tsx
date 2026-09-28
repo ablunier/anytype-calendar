@@ -54,10 +54,12 @@ export function TypeConfigRow({
       onChange={(value) => onColourByChange(value === typeColour.value ? null : value)}
     />
   )
+  /* The columns of SpaceTypesCard's header, so every row's controls line up under it. A query's
+   * view goes on a line of its own under its name, leaving the first line a type row's. */
   return (
     <div
       className={[
-        'flex items-center gap-12 py-10',
+        'grid grid-cols-[auto_auto_minmax(0,1fr)_var(--spacing-152)_var(--spacing-152)_var(--spacing-56)_var(--spacing-116)] items-center gap-x-12 gap-y-8 py-10',
         last ? '' : 'border-b border-line-hairline'
       ].join(' ')}
     >
@@ -68,23 +70,12 @@ export function TypeConfigRow({
         ariaLabel={t('common.showTypeObjects', { label: type.label })}
       />
       <TypeTile type={type} size="sm" />
-      <div className="flex min-w-0 flex-1 flex-col gap-4">
+      <div className="flex min-w-0 flex-col">
         <span className="type-ui text-small text-ink-primary">{type.label}</span>
         {type.query ? (
-          <>
-            <span className="type-caption text-tiny text-ink-tertiary">
-              {t('common.queryOf', { type: type.query.typeLabel })}
-            </span>
-            {/* Until one is picked, Anytype reads the first. */}
-            <Select
-              size="sm"
-              ariaLabel={t('config.viewFor', { label: type.label })}
-              options={viewOptions(type)}
-              value={view ?? type.query.views[0]?.key ?? ''}
-              disabled={!checked}
-              onChange={onViewChange}
-            />
-          </>
+          <span className="type-caption text-tiny text-ink-tertiary">
+            {t('common.queryOf', { type: type.query.typeLabel })}
+          </span>
         ) : null}
       </div>
       <Select
@@ -105,7 +96,7 @@ export function TypeConfigRow({
         disabled={!checked}
         onChange={(value) => onToChange(value === none.value ? null : value)}
       />
-      <div className="flex w-56 shrink-0 justify-center">
+      <div className="flex justify-center">
         <Checkbox
           checked={includesTime}
           onChange={onIncludesTimeChange}
@@ -121,6 +112,18 @@ export function TypeConfigRow({
       ) : (
         colourSelect
       )}
+      {type.query ? (
+        // Until one is picked, Anytype reads the first.
+        <Select
+          size="sm"
+          className="col-start-3"
+          ariaLabel={t('config.viewFor', { label: type.label })}
+          options={viewOptions(type)}
+          value={view ?? type.query.views[0]?.key ?? ''}
+          disabled={!checked}
+          onChange={onViewChange}
+        />
+      ) : null}
     </div>
   )
 }
