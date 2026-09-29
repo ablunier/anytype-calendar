@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import {
-  AnytypeClient,
-  AnytypeDialectProbe,
-  type AnytypeFetch
-} from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import { AnytypeV2SchemaGateway } from './anytype-v2-schema-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
@@ -24,6 +21,16 @@ function setup(routes: Record<string, Reply | Reply[]>, files: Record<string, Fi
   const served: Record<string, number> = {}
   const client = new AnytypeClient({
     fetch: async (url, init) => {
+      if (url.includes('/files/')) {
+        downloads.push(url)
+        const file = files[url.slice(BASE.length)] ?? { status: 404, contentType: null, bytes: [] }
+        return {
+          status: file.status,
+          headers: { get: (name) => (name === 'Content-Type' ? file.contentType : null) },
+          text: async () => '',
+          arrayBuffer: async () => new Uint8Array(file.bytes).buffer
+        }
+      }
       calls.push({ url, init })
       const path = url.slice(BASE.length).split('?')[0] ?? ''
       const route = routes[path]
@@ -32,18 +39,11 @@ function setup(routes: Record<string, Reply | Reply[]>, files: Record<string, Fi
       const n = (served[path] = (served[path] ?? 0) + 1)
       const reply = replies[Math.min(n, replies.length) - 1] as Reply
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
-    },
-    fetchBytes: async (url) => {
-      downloads.push(url)
-      const file = files[url.slice(BASE.length)] ?? { status: 404, contentType: null, bytes: [] }
-      return { ...file, bytes: async () => new Uint8Array(file.bytes) }
     }
   })
-  const probe = new AnytypeDialectProbe({ client })
   const encodeBase64 = (bytes: Uint8Array): string => [...bytes].join(',')
   return {
-    gateway: new AnytypeV2SchemaGateway({ client, probe, encodeBase64 }),
-    probe,
+    gateway: new AnytypeV2SchemaGateway({ client, v1: new AnytypeV1Client(client), encodeBase64 }),
     calls,
     downloads
   }
@@ -144,11 +144,9 @@ describe('listSpaces', () => {
     await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({ ok: false, failure: 'unauthorized' })
   })
 
-  test('rejects when the body is not a v2 page', async () => {
-    const { gateway } = setup({
-      '/v2/spaces': { status: 200, body: { data: [], pagination: { has_more: false } } }
-    })
-    await expect(gateway.listSpaces(API_KEY)).rejects.toThrow('spaces')
+  test('rejects when the body is not a page', async () => {
+    const { gateway } = setup({ '/v2/spaces': { status: 200, body: { spaces: [] } } })
+    await expect(gateway.listSpaces(API_KEY)).rejects.toThrow('page')
   })
 })
 
@@ -365,14 +363,9 @@ describe('listTypes', () => {
     await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('types')
   })
 
-  test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
-    const { gateway, probe, calls } = setup({ '/v2/auth/whoami': { status: 200, body: {} } })
-    await probe.probe(API_KEY)
-
+  test('rejects when Anytype no longer has the v2 route', async () => {
+    const { gateway } = setup({})
     await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('404')
-    await probe.probe(API_KEY)
-
-    expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
   })
 })
 
@@ -417,14 +410,9 @@ describe('listSelectOptions', () => {
     })
   })
 
-  test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
-    const { gateway, probe, calls } = setup({ '/v2/auth/whoami': { status: 200, body: {} } })
-    await probe.probe(API_KEY)
-
+  test('rejects when Anytype no longer has the v2 route', async () => {
+    const { gateway } = setup({})
     await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).rejects.toThrow('404')
-    await probe.probe(API_KEY)
-
-    expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
   })
 })
 
@@ -510,13 +498,8 @@ describe('listQueries', () => {
     })
   })
 
-  test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
-    const { gateway, probe, calls } = setup({ '/v2/auth/whoami': { status: 200, body: {} } })
-    await probe.probe(API_KEY)
-
+  test('rejects when Anytype no longer has the v2 route', async () => {
+    const { gateway } = setup({})
     await expect(gateway.listQueries(API_KEY, SPACE_ID)).rejects.toThrow('404')
-    await probe.probe(API_KEY)
-
-    expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
   })
 })

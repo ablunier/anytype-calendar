@@ -18,7 +18,8 @@
     }
   },
   "dependencies": {
-    "@anytype-calendar/anytype-client": "*",
+    "@ablunier/anytype-client": "*",
+    "@anytype-calendar/anytype-v1": "*",
     "@anytype-calendar/kernel": "*"
   },
   "scripts": {

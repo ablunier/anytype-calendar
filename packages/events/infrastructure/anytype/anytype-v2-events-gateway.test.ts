@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  AnytypeClient,
-  AnytypeDialectProbe,
-  type AnytypeFetch
-} from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import type { EventsSource } from '../../domain'
 import { AnytypeV2EventsGateway } from './anytype-v2-events-gateway'
 
@@ -47,12 +43,11 @@ function setup(...replies: (Reply | { status: number; text: string })[]) {
       return { status: reply.status, text: async () => text }
     }
   })
-  const probe = new AnytypeDialectProbe({ client })
   const warnings: string[] = []
   const warn = (message: string): void => {
     warnings.push(message)
   }
-  return { gateway: new AnytypeV2EventsGateway({ client, probe, warn }), probe, calls, warnings }
+  return { gateway: new AnytypeV2EventsGateway({ client, warn }), calls, warnings }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -255,18 +250,9 @@ test('rejects on any other error status', async () => {
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).rejects.toThrow('500')
 })
 
-test('rejects, and forgets the dialect, when Anytype no longer has the v2 route', async () => {
-  const { gateway, probe, calls } = setup(
-    { status: 200, body: {} },
-    { status: 404, text: '404 page not found' },
-    { status: 200, body: {} }
-  )
-  await probe.probe(API_KEY)
-
+test('rejects when Anytype no longer has the v2 route', async () => {
+  const { gateway } = setup({ status: 404, text: '404 page not found' })
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).rejects.toThrow('404')
-  await probe.probe(API_KEY)
-
-  expect(calls.filter(({ url }) => url.includes('/whoami'))).toHaveLength(2)
 })
 
 describe('a query', () => {
@@ -356,7 +342,6 @@ describe('a query', () => {
 
 describe('malformed answers', () => {
   test.each([
-    ['the body is not a v2 page', { status: 200, body: { data: [], pagination: { has_more: false } } }],
     ['an object has no id', page([{ name: 'No id', properties: {} }])],
     ['a date is not a string', page([row('obj_1', 'Bad', { data: 42 })])],
     ['a date does not parse', page([row('obj_1', 'Bad', { data: 'next tuesday' })])]

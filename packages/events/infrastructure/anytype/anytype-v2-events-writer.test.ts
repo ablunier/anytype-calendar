@@ -1,9 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
-import {
-  AnytypeClient,
-  AnytypeDialectProbe,
-  type AnytypeFetch
-} from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import { AnytypeV2EventsWriter } from './anytype-v2-events-writer'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
@@ -16,7 +12,11 @@ const TARGET = { spaceId: SPACE_ID, id: 'bafyobj' }
 
 function setup(...replies: Reply[]) {
   const calls: FetchCall[] = []
+  let ids = 0
+  const onUnsupported = vi.fn()
   const client = new AnytypeClient({
+    randomId: () => `idem-${++ids}`,
+    onUnsupported,
     fetch: async (url, init) => {
       calls.push({ url, init })
       const reply = replies[Math.min(calls.length, replies.length) - 1]
@@ -26,10 +26,8 @@ function setup(...replies: Reply[]) {
       return { status: reply.status, text: async () => text }
     }
   })
-  const probe = new AnytypeDialectProbe({ client })
-  let ids = 0
-  const writer = new AnytypeV2EventsWriter({ client, probe, randomId: () => `idem-${++ids}` })
-  return { writer, probe, calls }
+  const writer = new AnytypeV2EventsWriter(client)
+  return { writer, onUnsupported, calls }
 }
 
 const edited: Reply = { status: 200, body: { etag: 'e2', diff_stats: {} } }
@@ -117,14 +115,13 @@ describe('refusals', () => {
     })
   })
 
-  test('reads a bare 404 as an Anytype without v2, and asks for the dialect again next time', async () => {
-    const { writer, probe } = setup({ status: 404, text: '404 page not found' })
-    const forget = vi.spyOn(probe, 'forget')
+  test('reads a bare 404 as an Anytype without v2', async () => {
+    const { writer, onUnsupported } = setup({ status: 404, text: '404 page not found' })
     await expect(writer.setDone(API_KEY, TARGET, 'done', false)).resolves.toEqual({
       ok: false,
       failure: 'unsupported'
     })
-    expect(forget).toHaveBeenCalled()
+    expect(onUnsupported).toHaveBeenCalled()
   })
 
   test('rejects an answer Anytype should never give', async () => {

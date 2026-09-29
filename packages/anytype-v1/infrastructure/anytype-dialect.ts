@@ -1,4 +1,4 @@
-import type { AnytypeClient, AnytypeResponse } from '../http/anytype-client'
+import type { AnytypeClient, AnytypeWhoami } from '@ablunier/anytype-client'
 
 /**
  * Which major of the local API a gateway speaks. Both are served by the same process, on the
@@ -10,8 +10,8 @@ export type AnytypeDialectResult =
   | {
       ok: true
       dialect: AnytypeDialect
-      /** The body of `GET /v2/auth/whoami`, unvalidated; null under v1 or a forced dialect. */
-      whoami: unknown
+      /** Null under v1 or a forced v1. */
+      whoami: AnytypeWhoami | null
     }
   | { ok: false; failure: 'unauthorized' }
 
@@ -22,7 +22,8 @@ export interface AnytypeDialectProbeOptions {
 }
 
 const UNAUTHORIZED = 401
-const NOT_FOUND = 404
+
+type Cached = { apiKey: string; result: Promise<AnytypeDialectResult>; dialect: AnytypeDialect | null }
 
 /**
  * Asks Anytype once per key which major it serves, and remembers the answer: every context's
@@ -32,7 +33,7 @@ const NOT_FOUND = 404
 export class AnytypeDialectProbe {
   readonly #client: AnytypeClient
   readonly #forced: AnytypeDialect | undefined
-  #cached: { apiKey: string; result: Promise<AnytypeDialectResult> } | null = null
+  #cached: Cached | null = null
 
   constructor({ client, forced }: AnytypeDialectProbeOptions) {
     this.#client = client
@@ -43,43 +44,35 @@ export class AnytypeDialectProbe {
     if (this.#forced === 'v1') return Promise.resolve({ ok: true, dialect: 'v1', whoami: null })
     if (this.#cached?.apiKey === apiKey) return this.#cached.result
 
-    const result = this.#ask(apiKey)
-    const cached = { apiKey, result }
+    const cached: Cached = { apiKey, result: this.#ask(apiKey), dialect: null }
     this.#cached = cached
     const drop = (): void => {
       if (this.#cached === cached) this.#cached = null
     }
-    result.then((answer) => {
-      if (!answer.ok) drop()
+    cached.result.then((answer) => {
+      if (answer.ok) cached.dialect = answer.dialect
+      else drop()
     }, drop)
-    return result
+    return cached.result
   }
 
-  /** For when a v2 route stops answering: Anytype may have been downgraded under the app. */
   forget(): void {
     this.#cached = null
   }
 
+  /**
+   * For when a v2 route stops answering: Anytype may have been downgraded under the app. An
+   * answer of v1 already expects that, and a probe still asking reaches its own answer.
+   */
+  forgetV2(): void {
+    if (this.#cached?.dialect === 'v2') this.#cached = null
+  }
+
   async #ask(apiKey: string): Promise<AnytypeDialectResult> {
-    const response = await this.#client.request({
-      method: 'GET',
-      path: '/v2/auth/whoami?ids=full&spaces=true',
-      apiKey
-    })
+    const response = await this.#client.withApiKey(apiKey).auth.whoami({ spaces: true })
     if (response.ok) return { ok: true, dialect: 'v2', whoami: response.body }
     if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
-    if (isUnmatchedRoute(response) && this.#forced !== 'v2') {
-      return { ok: true, dialect: 'v1', whoami: null }
-    }
+    if (response.unsupported && this.#forced !== 'v2') return { ok: true, dialect: 'v1', whoami: null }
     throw new Error(`Anytype answered ${response.status} when asked which API it serves`)
   }
-}
-
-/**
- * An Anytype without v2 has no route for it, and an unmatched route answers a bare 404 with no
- * error envelope. A v2 handler's own 404 (an unknown space, type or object) always carries a
- * `code`, so the two cannot be confused.
- */
-export function isUnmatchedRoute(response: AnytypeResponse): boolean {
-  return !response.ok && response.status === NOT_FOUND && response.error.code === ''
 }

@@ -1,7 +1,7 @@
 import type {
   AnytypeDialectProbe,
   AnytypeDialectResult
-} from '@anytype-calendar/anytype-client/infrastructure'
+} from '@anytype-calendar/anytype-v1/infrastructure'
 import type { AuthAccess, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 import { grantFromWhoami } from './anytype-grant'
 import type { AnytypeV2AuthGateway } from './anytype-v2-auth-gateway'

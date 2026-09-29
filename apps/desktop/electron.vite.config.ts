@@ -11,6 +11,12 @@ const workspaceAlias = {
   replacement: resolve(__dirname, '../../packages/$1/$2/index.ts')
 }
 
+// The Anytype client is published on its own, so its name has no layer to match the pattern.
+const clientAlias = {
+  find: /^@ablunier\/anytype-client$/,
+  replacement: resolve(__dirname, '../../packages/anytype-client/src/index.ts')
+}
+
 // The IPC contract, imported by all three processes.
 const sharedAlias = { find: '@shared', replacement: resolve(__dirname, 'src/shared') }
 
@@ -22,7 +28,7 @@ const bundleDeps = { externalizeDeps: false }
 export default defineConfig({
   main: {
     resolve: {
-      alias: [sharedAlias, workspaceAlias]
+      alias: [sharedAlias, workspaceAlias, clientAlias]
     },
     build: bundleDeps
   },

@@ -1,13 +1,13 @@
 {
   "extends": "../../tsconfig.package.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
-    // No ambient type packages, as in every context: `fetch` is injected by the
-    // composition root rather than taken from the platform.
+    // No ambient type packages and no DOM: `fetch` is typed structurally, so the client runs
+    // on any platform that has one, and takes one injected where it has none.
     "types": []
   },
-  "include": ["infrastructure/**/*"],
+  "include": ["src/**/*"],
   // Tests import vitest, which would otherwise be emitted into dist/. Vitest transpiles
   // them directly from source.
   "exclude": ["**/*.test.ts", "dist"]

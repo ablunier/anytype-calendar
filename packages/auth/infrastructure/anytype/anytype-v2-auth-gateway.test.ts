@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import { AnytypeV2AuthGateway } from './anytype-v2-auth-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }

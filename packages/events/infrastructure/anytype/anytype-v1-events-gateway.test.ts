@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type { EventsSource } from '../../domain'
 import { AnytypeV1EventsGateway } from './anytype-v1-events-gateway'
 
@@ -40,7 +41,7 @@ function setup(...replies: Reply[]) {
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
     }
   })
-  return { gateway: new AnytypeV1EventsGateway(client), calls }
+  return { gateway: new AnytypeV1EventsGateway(new AnytypeV1Client(client)), calls }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -254,8 +255,6 @@ test('rejects on any other error status', async () => {
 
 describe('malformed answers', () => {
   test.each([
-    ['the body is not a page', { status: 200, body: { objects: [] } }],
-    ['the page has no has_more', { status: 200, body: { data: [], pagination: {} } }],
     ['an object has no id', page([{ name: 'No id', properties: [] }])],
     ['an object has no properties', page([{ id: 'obj_1', name: 'No properties' }])],
     ['a date is not a string', page([object('obj_1', 'Bad', [{ key: 'due_date', format: 'date', date: 42 }])])],
@@ -263,6 +262,11 @@ describe('malformed answers', () => {
   ])('rejects when %s', async (_, reply) => {
     const { gateway } = setup(reply)
     await expect(gateway.listObjects(API_KEY, TASKS, WINDOW)).rejects.toThrow('objects')
+  })
+
+  test('rejects when the body is not a page', async () => {
+    const { gateway } = setup({ status: 200, body: { objects: [] } })
+    await expect(gateway.listObjects(API_KEY, TASKS, WINDOW)).rejects.toThrow('page')
   })
 
   test('rejects when a To date does not parse', async () => {
@@ -275,11 +279,13 @@ describe('malformed answers', () => {
 
 test('rejects when Anytype cannot be reached', async () => {
   const gateway = new AnytypeV1EventsGateway(
-    new AnytypeClient({
-      fetch: async () => {
-        throw new TypeError('fetch failed')
-      }
-    })
+    new AnytypeV1Client(
+      new AnytypeClient({
+        fetch: async () => {
+          throw new TypeError('fetch failed')
+        }
+      })
+    )
   )
   await expect(gateway.listObjects(API_KEY, TASKS, WINDOW)).rejects.toThrow('fetch failed')
 })

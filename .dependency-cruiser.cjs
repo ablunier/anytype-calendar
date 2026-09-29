@@ -69,12 +69,25 @@ module.exports = {
       name: 'infrastructure-only-own-domain',
       comment:
         "A context's infrastructure layer holds its driven adapters. It may import itself " +
-        "and its own context's domain (to implement its ports), plus the shared Anytype " +
-        'HTTP client, nothing else. anytype-client is not a context: it has only an ' +
+        "and its own context's domain (to implement its ports), plus the Anytype client and " +
+        'the private v1 package, nothing else. anytype-v1 is not a context: it has only an ' +
         'infrastructure layer, so this same rule keeps it a leaf that imports no context.',
       severity: 'error',
       from: { path: '^packages/([^/]+)/infrastructure/' },
-      to: { pathNot: '^packages/(?:$1/(?:infrastructure|domain)|anytype-client/infrastructure)/' }
+      to: {
+        pathNot:
+          '^(?:packages/(?:$1/(?:infrastructure|domain)|anytype-v1/infrastructure|anytype-client/src)/' +
+          '|node_modules/@ablunier/anytype-client/)'
+      }
+    },
+    {
+      name: 'anytype-client-is-standalone',
+      comment:
+        '@ablunier/anytype-client is published on its own: it imports nothing beyond itself, ' +
+        'no package of this repo, no npm package, no Node core module.',
+      severity: 'error',
+      from: { path: '^packages/anytype-client/' },
+      to: { pathNot: '^packages/anytype-client/' }
     },
     {
       name: 'packages-never-import-apps',

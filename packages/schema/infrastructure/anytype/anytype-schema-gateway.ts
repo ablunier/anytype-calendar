@@ -1,4 +1,4 @@
-import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-client/infrastructure'
+import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-v1/infrastructure'
 import type {
   SchemaGateway,
   SchemaGatewayResult,

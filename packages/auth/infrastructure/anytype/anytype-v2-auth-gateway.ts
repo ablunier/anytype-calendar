@@ -1,7 +1,4 @@
-import {
-  isUnmatchedRoute,
-  type AnytypeClient
-} from '@anytype-calendar/anytype-client/infrastructure'
+import type { AnytypeClient } from '@ablunier/anytype-client'
 import type { AuthExchangeResult } from '../../domain'
 import { grantFromPairing } from './anytype-grant'
 
@@ -31,42 +28,27 @@ export class AnytypeV2AuthGateway {
    * the lack of one means an Anytype whose key check runs before it finds no such route.
    */
   async createChallenge(appName: string): Promise<string | null> {
-    const response = await this.#client.request({
-      method: 'POST',
-      path: '/v2/auth/challenges',
-      body: { app_name: appName }
-    })
-    if (isUnmatchedRoute(response) || response.status === UNAUTHORIZED) return null
-    const challengeId = response.ok ? stringField(response.body, 'challenge_id') : undefined
+    const response = await this.#client.auth.createChallenge({ appName })
+    if (!response.ok && (response.unsupported || response.status === UNAUTHORIZED)) return null
+    const challengeId = response.ok ? nonEmpty(response.body?.challenge_id) : undefined
     if (challengeId === undefined) throw unexpected('challenge', response)
     return challengeId
   }
 
   async exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult> {
-    const response = await this.#client.request({
-      method: 'POST',
-      path: '/v2/auth/api_keys',
-      body: { challenge_id: challengeId, code }
-    })
+    const response = await this.#client.auth.createApiKey({ challengeId, code })
     if (!response.ok && REJECTED_CODE_STATUSES.has(response.status)) {
       return { ok: false, failure: 'invalid-code' }
     }
     const body = response.ok ? response.body : undefined
-    const apiKey = stringField(body, 'api_key')
+    const apiKey = nonEmpty(body?.api_key)
     if (apiKey === undefined) throw unexpected('API key', response)
-    const grant = grantFromPairing(field(body, 'grant'))
+    const grant = grantFromPairing(body?.grant)
     return { ok: true, apiKey, access: { apiVersion: 'v2', grant } }
   }
 }
 
-function field(body: unknown, name: string): unknown {
-  return typeof body === 'object' && body !== null
-    ? (body as Record<string, unknown>)[name]
-    : undefined
-}
-
-function stringField(body: unknown, name: string): string | undefined {
-  const value = field(body, name)
+function nonEmpty(value: unknown): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined
 }
 

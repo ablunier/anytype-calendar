@@ -1,4 +1,4 @@
-import type { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
+import { listAllV1, type AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type {
   EventsGateway,
   EventsGatewayResult,
@@ -7,13 +7,8 @@ import type {
   EventsWindow
 } from '../../domain'
 
-/** The largest page the local API serves. */
-const PAGE_LIMIT = 1_000
-
 const BAD_REQUEST = 400
 const UNAUTHORIZED = 401
-
-type Page = { data: unknown[]; hasMore: boolean }
 
 /**
  * Searches each type with date filters. The local API rounds a date filter out to whole days
@@ -21,9 +16,9 @@ type Page = { data: unknown[]; hasMore: boolean }
  * never miss one — which is what the port promises.
  */
 export class AnytypeV1EventsGateway implements EventsGateway {
-  readonly #client: AnytypeClient
+  readonly #client: AnytypeV1Client
 
-  constructor(client: AnytypeClient) {
+  constructor(client: AnytypeV1Client) {
     this.#client = client
   }
 
@@ -34,31 +29,19 @@ export class AnytypeV1EventsGateway implements EventsGateway {
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     // v1 serves no route that reads a query through its views.
     if (source.kind === 'query') return { ok: true, value: [] }
-    const path = `/v1/spaces/${encodeURIComponent(source.spaceId)}/search`
     const body = { types: [source.typeKey], filters: windowFilter(source, window) }
-    const items: unknown[] = []
-    for (;;) {
-      const response = await this.#client.request({
-        method: 'POST',
-        path: `${path}?offset=${items.length}&limit=${PAGE_LIMIT}`,
-        apiKey,
-        body
-      })
-      if (!response.ok) {
-        if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
-        // Anytype refuses to build a filter over a property key the space does not have. A
-        // saved selection keeps a choice whose property is gone, to be matched by nothing
-        // until it returns, so that is an answer of no objects, not a failed month.
-        if (response.status === BAD_REQUEST) return { ok: true, value: [] }
-        throw new Error(`Anytype answered ${response.status} when searched for objects`)
-      }
-      const page = toPage(response.body)
-      if (!page) throw malformed()
-      items.push(...page.data)
-      // An empty page that claims more would otherwise be asked for forever.
-      if (!page.hasMore || page.data.length === 0) break
+    const response = await listAllV1((paging) =>
+      this.#client.search.inSpace(apiKey, source.spaceId, body, paging)
+    )
+    if (!response.ok) {
+      if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
+      // Anytype refuses to build a filter over a property key the space does not have. A
+      // saved selection keeps a choice whose property is gone, to be matched by nothing
+      // until it returns, so that is an answer of no objects, not a failed month.
+      if (response.status === BAD_REQUEST) return { ok: true, value: [] }
+      throw new Error(`Anytype answered ${response.status} when searched for objects`)
     }
-    return { ok: true, value: items.flatMap((item) => toRef(item, source)) }
+    return { ok: true, value: response.body.flatMap((item) => toRef(item, source)) }
   }
 }
 
@@ -124,13 +107,6 @@ function dateIn(properties: unknown[], key: string): number | null {
   const instant = typeof value === 'string' ? Date.parse(value) : NaN
   if (Number.isNaN(instant)) throw malformed()
   return instant
-}
-
-function toPage(body: unknown): Page | null {
-  const data = field(body, 'data')
-  const hasMore = field(field(body, 'pagination'), 'has_more')
-  if (!Array.isArray(data) || typeof hasMore !== 'boolean') return null
-  return { data, hasMore }
 }
 
 function field(value: unknown, name: string): unknown {

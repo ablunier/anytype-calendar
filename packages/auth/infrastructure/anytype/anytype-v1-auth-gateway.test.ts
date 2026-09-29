@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import { AnytypeV1AuthGateway } from './anytype-v1-auth-gateway'
+
+const v1Gateway = (client: AnytypeClient): AnytypeV1AuthGateway =>
+  new AnytypeV1AuthGateway(new AnytypeV1Client(client))
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 
@@ -12,7 +16,7 @@ function setup(status: number, body: unknown) {
       return { status, text: async () => JSON.stringify(body) }
     }
   })
-  return { gateway: new AnytypeV1AuthGateway(client), calls }
+  return { gateway: v1Gateway(client), calls }
 }
 
 const authFailure = {
@@ -44,7 +48,7 @@ describe('createChallenge', () => {
   })
 
   test('rejects when Anytype cannot be reached', async () => {
-    const gateway = new AnytypeV1AuthGateway(
+    const gateway = v1Gateway(
       new AnytypeClient({
         fetch: async () => {
           throw new TypeError('fetch failed')
@@ -128,7 +132,7 @@ describe('verifyApiKey', () => {
   })
 
   test('rejects when Anytype cannot be reached', async () => {
-    const gateway = new AnytypeV1AuthGateway(
+    const gateway = v1Gateway(
       new AnytypeClient({
         fetch: async () => {
           throw new TypeError('fetch failed')

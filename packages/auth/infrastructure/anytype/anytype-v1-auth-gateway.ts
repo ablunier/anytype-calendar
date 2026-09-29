@@ -1,4 +1,4 @@
-import type { AnytypeClient } from '@anytype-calendar/anytype-client/infrastructure'
+import type { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type { AuthAccess, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 
 /**
@@ -16,29 +16,21 @@ const UNAUTHORIZED = 401
 const V1_ACCESS: AuthAccess = { apiVersion: 'v1', grant: null }
 
 export class AnytypeV1AuthGateway implements AuthGateway {
-  readonly #client: AnytypeClient
+  readonly #client: AnytypeV1Client
 
-  constructor(client: AnytypeClient) {
+  constructor(client: AnytypeV1Client) {
     this.#client = client
   }
 
   async createChallenge(appName: string): Promise<string> {
-    const response = await this.#client.request({
-      method: 'POST',
-      path: '/v1/auth/challenges',
-      body: { app_name: appName }
-    })
+    const response = await this.#client.auth.createChallenge({ appName })
     const challengeId = response.ok ? stringField(response.body, 'challenge_id') : undefined
     if (challengeId === undefined) throw unexpected('challenge', response)
     return challengeId
   }
 
   async exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult> {
-    const response = await this.#client.request({
-      method: 'POST',
-      path: '/v1/auth/api_keys',
-      body: { challenge_id: challengeId, code }
-    })
+    const response = await this.#client.auth.createApiKey({ challengeId, code })
     if (!response.ok && REJECTED_CODE_STATUSES.has(response.status)) {
       return { ok: false, failure: 'invalid-code' }
     }
@@ -52,7 +44,7 @@ export class AnytypeV1AuthGateway implements AuthGateway {
    * can read; the body is ignored — only whether Anytype accepted the key matters.
    */
   async verifyApiKey(apiKey: string): Promise<AuthVerifyResult> {
-    const response = await this.#client.request({ method: 'GET', path: '/v1/spaces', apiKey })
+    const response = await this.#client.spaces.list(apiKey)
     if (response.ok) return { ok: true, access: V1_ACCESS }
     if (response.status === UNAUTHORIZED) return { ok: false, failure: 'invalid-key' }
     throw unexpected('spaces list', response)

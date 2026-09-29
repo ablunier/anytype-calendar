@@ -1,4 +1,5 @@
-import type { AnytypeClient, AnytypeResponse } from '@anytype-calendar/anytype-client/infrastructure'
+import type { AnytypeFailure } from '@ablunier/anytype-client'
+import { listAllV1, type AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type {
   SchemaGateway,
   SchemaGatewayResult,
@@ -10,9 +11,6 @@ import type {
   SchemaTypeRef
 } from '../../domain'
 
-/** The largest page the local API serves. */
-const PAGE_LIMIT = 1_000
-
 /**
  * `anytype.onetoone` (a direct chat) and `anytype.techspace` (Anytype's own bookkeeping)
  * hold nothing the user would put on a calendar.
@@ -21,17 +19,15 @@ const OBJECT_SPACE_KINDS = new Set(['anytype.space', 'anytype.chatspace'])
 
 const UNAUTHORIZED = 401
 
-type Page = { data: unknown[]; hasMore: boolean }
-
 export class AnytypeV1SchemaGateway implements SchemaGateway {
-  readonly #client: AnytypeClient
+  readonly #client: AnytypeV1Client
 
-  constructor(client: AnytypeClient) {
+  constructor(client: AnytypeV1Client) {
     this.#client = client
   }
 
   async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
-    const result = await this.#listAll(apiKey, '/v1/spaces', 'spaces')
+    const result = await this.#listAll((paging) => this.#client.spaces.list(apiKey, paging), 'spaces')
     if (!result.ok) return result
     const spaces = result.value.flatMap((item) => {
       const kind = stringField(item, 'object')
@@ -43,8 +39,7 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
   }
 
   async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
-    const path = `/v1/spaces/${encodeURIComponent(spaceId)}/types`
-    const result = await this.#listAll(apiKey, path, 'types')
+    const result = await this.#listAll((paging) => this.#client.types.list(apiKey, spaceId, paging), 'types')
     if (!result.ok) return result
     const types = result.value.flatMap((item) => {
       const key = stringField(item, 'key')
@@ -74,29 +69,16 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
   }
 
   async #listAll(
-    apiKey: string,
-    path: string,
+    page: Parameters<typeof listAllV1>[0],
     what: string
   ): Promise<SchemaGatewayResult<unknown[]>> {
-    const items: unknown[] = []
-    for (;;) {
-      const response = await this.#client.request({
-        method: 'GET',
-        path: `${path}?offset=${items.length}&limit=${PAGE_LIMIT}`,
-        apiKey
-      })
-      if (!response.ok) return refused(response, what)
-      const page = toPage(response.body)
-      if (!page) throw malformed(what)
-      items.push(...page.data)
-      // An empty page that claims more would otherwise be asked for forever.
-      if (!page.hasMore || page.data.length === 0) return { ok: true, value: items }
-    }
+    const response = await listAllV1(page)
+    return response.ok ? { ok: true, value: response.body } : refused(response, what)
   }
 }
 
 function refused(
-  response: Extract<AnytypeResponse, { ok: false }>,
+  response: AnytypeFailure,
   what: string
 ): { ok: false; failure: 'unauthorized' } {
   if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
@@ -117,13 +99,6 @@ function toIcon(icon: unknown): SchemaTypeIcon | null {
   return field(icon, 'format') === 'icon' && name !== undefined && color !== undefined
     ? { name, color }
     : null
-}
-
-function toPage(body: unknown): Page | null {
-  const data = field(body, 'data')
-  const hasMore = field(field(body, 'pagination'), 'has_more')
-  if (!Array.isArray(data) || typeof hasMore !== 'boolean') return null
-  return { data, hasMore }
 }
 
 function field(value: unknown, name: string): unknown {

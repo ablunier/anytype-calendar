@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import {
-  AnytypeClient,
   AnytypeDialectProbe,
-  type AnytypeDialect,
-  type AnytypeFetch
-} from '@anytype-calendar/anytype-client/infrastructure'
+  AnytypeV1Client,
+  type AnytypeDialect
+} from '@anytype-calendar/anytype-v1/infrastructure'
 import { AnytypeAuthGateway } from './anytype-auth-gateway'
 import { AnytypeV1AuthGateway } from './anytype-v1-auth-gateway'
 import { AnytypeV2AuthGateway } from './anytype-v2-auth-gateway'
@@ -54,11 +54,11 @@ function setup(routes: Record<string, Reply | Reply[]>, forced?: AnytypeDialect)
     const reply = list[Math.min(n, list.length) - 1] as Reply
     return { status: reply.status, text: async () => reply.text }
   }
-  const client = new AnytypeClient({ fetch })
+  const client = new AnytypeClient({ fetch, onUnsupported: () => probe.forgetV2() })
   const probe = new AnytypeDialectProbe(forced ? { client, forced } : { client })
   const gateway = new AnytypeAuthGateway({
     probe,
-    v1: new AnytypeV1AuthGateway(client),
+    v1: new AnytypeV1AuthGateway(new AnytypeV1Client(client)),
     v2: new AnytypeV2AuthGateway(client)
   })
   return { gateway, calls }

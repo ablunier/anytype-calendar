@@ -1,12 +1,13 @@
-import { randomBytes, randomUUID } from 'crypto'
+import { randomBytes } from 'crypto'
 import { join } from 'path'
 import { setTimeout as sleep } from 'timers/promises'
 import { app, safeStorage } from 'electron'
+import { AnytypeClient } from '@ablunier/anytype-client'
 import {
-  AnytypeClient,
   AnytypeDialectProbe,
+  AnytypeV1Client,
   type AnytypeDialect
-} from '@anytype-calendar/anytype-client/infrastructure'
+} from '@anytype-calendar/anytype-v1/infrastructure'
 import {
   AuthSessionStore,
   CheckAuthAccess,
@@ -146,7 +147,10 @@ export function composeServices(): AppServices {
   // here), or the API key ak_fake_2749 pasted directly, and the schema and object reads
   // return the design's sample account.
   const fakeAnytype = process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1'
-  const client = fakeAnytype ? null : anytypeClient()
+  // A v2 route answering as if it did not exist means Anytype was downgraded under the app, so
+  // the major it serves is asked again.
+  const client = fakeAnytype ? null : anytypeClient(() => probe?.forgetV2())
+  const v1 = client ? new AnytypeV1Client(client) : null
   // Every context asks this which major of the API Anytype serves: v2 where it can, v1 where
   // it cannot. ANYTYPE_CALENDAR_API=v1 forces the fallback against an Anytype that has v2, for
   // development only: v1 refuses a key paired through v2, and a refused key is signed out.
@@ -160,10 +164,10 @@ export function composeServices(): AppServices {
 
   const authSession = new AuthSessionStore()
   const authGateway =
-    client && probe
+    client && v1 && probe
       ? new AnytypeAuthGateway({
           probe,
-          v1: new AnytypeV1AuthGateway(client),
+          v1: new AnytypeV1AuthGateway(v1),
           v2: new AnytypeV2AuthGateway(client)
         })
       : inMemoryAuthGateway()
@@ -187,13 +191,13 @@ export function composeServices(): AppServices {
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
     gateway:
-      client && probe
+      client && v1 && probe
         ? new AnytypeSchemaGateway({
             probe,
-            v1: new AnytypeV1SchemaGateway(client),
+            v1: new AnytypeV1SchemaGateway(v1),
             v2: new AnytypeV2SchemaGateway({
               client,
-              probe,
+              v1,
               encodeBase64: (bytes) => Buffer.from(bytes).toString('base64')
             })
           })
@@ -227,7 +231,7 @@ export function composeServices(): AppServices {
 
   const zone = new LocalEventsTimeZone()
   const eventsState = new EventsSpanStore()
-  const events = client && probe ? anytypeEvents(client, probe) : inMemoryEvents(zone)
+  const events = client && v1 && probe ? anytypeEvents(client, v1, probe) : inMemoryEvents(zone)
   const eventSources = { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) }
   const loadEventsSpan = new LoadEventsSpan({
     gateway: events.gateway,
@@ -380,21 +384,11 @@ export function composeServices(): AppServices {
   }
 }
 
-function anytypeClient(): AnytypeClient {
+function anytypeClient(onUnsupported: () => void): AnytypeClient {
   return new AnytypeClient({
     fetch: (url, init) =>
       fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) }),
-    fetchBytes: async (url, init) => {
-      const response = await fetch(url, {
-        ...init,
-        signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS)
-      })
-      return {
-        status: response.status,
-        contentType: response.headers.get('Content-Type'),
-        bytes: async () => new Uint8Array(await response.arrayBuffer())
-      }
-    }
+    onUnsupported
   })
 }
 
@@ -418,15 +412,16 @@ function inMemorySchemaGateway(): SchemaGateway {
 /** Only v2 takes writes; the IPC handlers let an edit through only while reading through it. */
 function anytypeEvents(
   client: AnytypeClient,
+  v1: AnytypeV1Client,
   probe: AnytypeDialectProbe
 ): { gateway: EventsGateway; writer: EventsWriter } {
   return {
     gateway: new AnytypeEventsGateway({
       probe,
-      v1: new AnytypeV1EventsGateway(client),
-      v2: new AnytypeV2EventsGateway({ client, probe, warn: (message) => console.warn(message) })
+      v1: new AnytypeV1EventsGateway(v1),
+      v2: new AnytypeV2EventsGateway({ client, warn: (message) => console.warn(message) })
     }),
-    writer: new AnytypeV2EventsWriter({ client, probe, randomId: randomUUID })
+    writer: new AnytypeV2EventsWriter(client)
   }
 }
 

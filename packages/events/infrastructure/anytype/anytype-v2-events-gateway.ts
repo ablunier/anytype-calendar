@@ -1,9 +1,13 @@
 import {
-  isUnmatchedRoute,
+  listAll,
   type AnytypeClient,
-  type AnytypeDialectProbe,
-  type AnytypeRequest
-} from '@anytype-calendar/anytype-client/infrastructure'
+  type AnytypeFilter,
+  type AnytypeIssue,
+  type AnytypeObjectRow,
+  type AnytypePage,
+  type AnytypePaging,
+  type AnytypeResult
+} from '@ablunier/anytype-client'
 import type {
   EventsGateway,
   EventsGatewayResult,
@@ -11,9 +15,6 @@ import type {
   EventsSource,
   EventsWindow
 } from '../../domain'
-
-/** The largest page the local API serves. */
-const PAGE_LIMIT = 1_000
 
 const UNAUTHORIZED = 401
 
@@ -25,11 +26,6 @@ const UNAUTHORIZED = 401
  * that is not open, or a query or view that is gone, with a 404.
  */
 const GONE_STATUSES = new Set([400, 403, 404])
-
-type Page = { data: unknown[]; hasMore: boolean; warnings: Warning[] }
-
-/** What a read could not do as asked, beside its result, e.g. a view's placeholder it could not resolve. */
-type Warning = { path: string; message: string }
 
 /**
  * Searches each type with date filters, asking only for the From and To values back, and the
@@ -45,22 +41,12 @@ type Warning = { path: string; message: string }
  */
 export class AnytypeV2EventsGateway implements EventsGateway {
   readonly #client: AnytypeClient
-  readonly #probe: AnytypeDialectProbe
   readonly #warn: (message: string) => void
   /** Each told once: a query is read again on every load, and would repeat the same ones. */
   readonly #warned = new Set<string>()
 
-  constructor({
-    client,
-    probe,
-    warn = () => {}
-  }: {
-    client: AnytypeClient
-    probe: AnytypeDialectProbe
-    warn?: (message: string) => void
-  }) {
+  constructor({ client, warn = () => {} }: { client: AnytypeClient; warn?: (message: string) => void }) {
     this.#client = client
-    this.#probe = probe
     this.#warn = warn
   }
 
@@ -69,62 +55,40 @@ export class AnytypeV2EventsGateway implements EventsGateway {
     source: EventsSource,
     window: EventsWindow
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
-    const space = `/v2/spaces/${encodeURIComponent(source.spaceId)}`
+    const api = this.#client.withApiKey(apiKey)
     if (source.kind === 'type') {
-      const body = {
+      const search = {
         type: source.typeKey,
         filters: windowFilters(source, window),
         fields: fieldsOf(source)
       }
-      return this.#readAll(apiKey, source, (paging) => ({
-        method: 'POST',
-        path: `${space}/search?${paging}`,
-        apiKey,
-        body
-      }))
+      return this.#readAll(source, (paging) => api.search.inSpace(source.spaceId, search, paging))
     }
-
-    const view = source.viewId === null ? '' : `view=${encodeURIComponent(source.viewId)}&`
-    const fields = fieldsOf(source).map(encodeURIComponent).join(',')
-    const path = `${space}/queries/${encodeURIComponent(source.queryId)}/objects?${view}fields=${fields}`
-    return this.#readAll(apiKey, source, (paging) => ({ method: 'GET', path: `${path}&${paging}`, apiKey }))
+    const view = source.viewId === null ? {} : { view: source.viewId }
+    return this.#readAll(source, (paging) =>
+      api.queries.listObjects(source.spaceId, source.queryId, { ...view, fields: fieldsOf(source) }, paging)
+    )
   }
 
-  /** `request` is given the paging to ask for, as a query string. */
   async #readAll(
-    apiKey: string,
     source: EventsSource,
-    request: (paging: string) => AnytypeRequest
+    page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<AnytypePage<AnytypeObjectRow>>>
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
-    const items: unknown[] = []
-    for (;;) {
-      const response = await this.#client.request(
-        request(`offset=${items.length}&limit=${PAGE_LIMIT}`)
-      )
-      if (!response.ok) {
-        if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
-        if (isUnmatchedRoute(response)) {
-          this.#probe.forget()
-        } else if (GONE_STATUSES.has(response.status)) {
-          return { ok: true, value: [] }
-        }
-        throw new Error(`Anytype answered ${response.status} when asked for objects`)
-      }
-      const page = toPage(response.body)
-      if (!page) throw malformed()
-      this.#report(source, page.warnings)
-      items.push(...page.data)
-      // An empty page that claims more would otherwise be asked for forever.
-      if (!page.hasMore || page.data.length === 0) break
+    const response = await listAll(page)
+    if (!response.ok) {
+      if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
+      if (!response.unsupported && GONE_STATUSES.has(response.status)) return { ok: true, value: [] }
+      throw new Error(`Anytype answered ${response.status} when asked for objects`)
     }
-    return { ok: true, value: items.flatMap((item) => toRef(item, source)) }
+    for (const { warnings } of response.body.pages) this.#report(source, warnings ?? [])
+    return { ok: true, value: response.body.data.flatMap((row) => toRef(row, source)) }
   }
 
   /**
    * A query read with no view chosen is warned which one was applied; that is what was asked
    * for, so it is not repeated.
    */
-  #report(source: EventsSource, warnings: readonly Warning[]): void {
+  #report(source: EventsSource, warnings: readonly AnytypeIssue[]): void {
     for (const { path, message } of warnings) {
       if (source.kind === 'query' && source.viewId === null && path === 'view') continue
       if (this.#warned.has(message)) continue
@@ -146,13 +110,13 @@ function fieldsOf({ from, to, done, location, colourBy }: EventsSource): string[
  * domain places on its From alone. `less_or_equal` also matches an empty date, hence
  * `not_empty`. Top-level leaves combine with an implicit AND.
  */
-function windowFilters({ from, to }: EventsSource, window: EventsWindow): unknown[] {
+function windowFilters({ from, to }: EventsSource, window: EventsWindow): AnytypeFilter[] {
   // Unix seconds, rounded outward so the window only widens.
   const start = Math.floor(window.start / 1000)
   const end = Math.ceil(window.end / 1000)
-  const notEmpty = { property: from, condition: 'not_empty' }
-  const fromBeforeEnd = { property: from, condition: 'less_or_equal', value: end }
-  const fromAfterStart = { property: from, condition: 'greater_or_equal', value: start }
+  const notEmpty: AnytypeFilter = { property: from, condition: 'not_empty' }
+  const fromBeforeEnd: AnytypeFilter = { property: from, condition: 'less_or_equal', value: end }
+  const fromAfterStart: AnytypeFilter = { property: from, condition: 'greater_or_equal', value: start }
   if (to === null) return [notEmpty, fromAfterStart, fromBeforeEnd]
   return [
     notEmpty,
@@ -168,13 +132,11 @@ function windowFilters({ from, to }: EventsSource, window: EventsWindow): unknow
  * A row carries only the fields asked for, and leaves out any the object has no value for: an
  * unticked Done among them.
  */
-function toRef(item: unknown, { from, to, done, location, colourBy }: EventsSource): EventsObjectRef[] {
-  const id = stringField(item, 'id')
-  const properties = field(item, 'properties')
-  if (id === undefined) throw malformed()
+function toRef(row: AnytypeObjectRow, { from, to, done, location, colourBy }: EventsSource): EventsObjectRef[] {
+  const { id, name, properties } = row
+  if (typeof id !== 'string' || id === '') throw malformed()
   const start = dateIn(properties, from)
   if (start === null) return []
-  const name = field(item, 'name')
   const ref: EventsObjectRef = {
     id,
     title: typeof name === 'string' ? name : '',
@@ -203,21 +165,6 @@ function dateIn(properties: unknown, key: string): number | null {
   const instant = typeof value === 'string' ? Date.parse(value) : NaN
   if (Number.isNaN(instant)) throw malformed()
   return instant
-}
-
-function toPage(body: unknown): Page | null {
-  const data = field(body, 'data')
-  const hasMore = field(body, 'has_more')
-  if (!Array.isArray(data) || typeof hasMore !== 'boolean') return null
-  const warnings = field(body, 'warnings')
-  return {
-    data,
-    hasMore,
-    warnings: (Array.isArray(warnings) ? warnings : []).flatMap((warning) => {
-      const message = stringField(warning, 'message')
-      return message === undefined ? [] : [{ path: stringField(warning, 'path') ?? '', message }]
-    })
-  }
 }
 
 function field(value: unknown, name: string): unknown {

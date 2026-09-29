@@ -9,6 +9,8 @@
     "paths": {
       // `*` captures "<context>/<layer>", e.g. auth/domain.
       "@anytype-calendar/*": ["./packages/*/index.ts"],
+      // Published on its own, so its name carries no layer.
+      "@ablunier/anytype-client": ["./packages/anytype-client/src/index.ts"],
       // The desktop app's internal aliases. Mirror apps/desktop's tsconfigs and the
       // electron.vite.config.ts resolve.alias — repeated here because dependency-cruiser
       // reads only this file, and would otherwise report every aliased import as

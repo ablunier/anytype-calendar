@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { AnytypeClient, type AnytypeFetch } from '@anytype-calendar/anytype-client/infrastructure'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import { AnytypeV1SchemaGateway } from './anytype-v1-schema-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
@@ -19,7 +20,7 @@ function setup(...replies: Reply[]) {
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
     }
   })
-  return { gateway: new AnytypeV1SchemaGateway(client), calls }
+  return { gateway: new AnytypeV1SchemaGateway(new AnytypeV1Client(client)), calls }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -91,7 +92,7 @@ describe('listSpaces', () => {
 
   test('rejects when the body is not a page', async () => {
     const { gateway } = setup({ status: 200, body: { spaces: [] } })
-    await expect(gateway.listSpaces(API_KEY)).rejects.toThrow('spaces')
+    await expect(gateway.listSpaces(API_KEY)).rejects.toThrow('page')
   })
 
   test('rejects when a space has no id', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { AnytypeClient, type AnytypeFetch } from '../http/anytype-client'
+import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import { AnytypeDialectProbe, type AnytypeDialect } from './anytype-dialect'
 
 type Reply = { status: number; text: string }
@@ -15,10 +15,16 @@ function setup(replies: Reply[], forced?: AnytypeDialect) {
     urls.push(url)
     const reply = replies[Math.min(urls.length, replies.length) - 1]
     if (!reply) throw new Error('no reply scripted')
-    return { status: reply.status, text: async () => reply.text }
+    return {
+      status: reply.status,
+      headers: { get: () => null },
+      text: async () => reply.text,
+      arrayBuffer: async () => new ArrayBuffer(0)
+    }
   }
-  const client = new AnytypeClient({ fetch })
-  return { probe: new AnytypeDialectProbe(forced ? { client, forced } : { client }), urls }
+  const client = new AnytypeClient({ fetch, onUnsupported: () => probe.forgetV2() })
+  const probe = new AnytypeDialectProbe(forced ? { client, forced } : { client })
+  return { probe, urls }
 }
 
 describe('probe', () => {
@@ -88,5 +94,24 @@ describe('probe', () => {
     const { probe } = setup([NO_ROUTE], 'v2')
 
     await expect(probe.probe('ak')).rejects.toThrow('404')
+  })
+
+  test('forgets a v2 answer when a v2 route stops answering', async () => {
+    const { probe, urls } = setup([V2, NO_ROUTE])
+
+    await probe.probe('ak')
+    probe.forgetV2()
+    await expect(probe.probe('ak')).resolves.toMatchObject({ dialect: 'v1' })
+    expect(urls).toHaveLength(2)
+  })
+
+  test('keeps a v1 answer, its own unmatched route included, when a v2 route stops answering', async () => {
+    const { probe, urls } = setup([NO_ROUTE])
+
+    await probe.probe('ak')
+    probe.forgetV2()
+    await probe.probe('ak')
+
+    expect(urls).toHaveLength(1)
   })
 })
