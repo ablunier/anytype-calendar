@@ -5,6 +5,7 @@ import { eventsSpanWindow } from './window'
 
 const UTC: EventsTimeZone = {
   startOfDay: ({ year, month, day }) => Date.UTC(year, month, day),
+  at: ({ year, month, day }, minute) => Date.UTC(year, month, day, 0, minute),
   dayOf: (instant) => {
     const date = new Date(instant)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
@@ -60,6 +61,9 @@ describe('eventsSpanWindow', () => {
       startOfDay: ({ year, month, day }) =>
         Date.UTC(year, month, day) -
         (Date.UTC(year, month, day) < Date.UTC(2026, 9, 25) ? 2 : 1) * HOUR_MS,
+      at: () => {
+        throw new Error('unused')
+      },
       dayOf: () => {
         throw new Error('unused')
       }

@@ -11,6 +11,13 @@ test("a day's start falls on that day, at local midnight", () => {
   expect(zone.dayOf(start - 1)).toEqual({ year: 2026, month: 8, day: 13 })
 })
 
+test('places a wall-clock time on its day, whatever the day does to the clocks', () => {
+  const at = zone.at({ year: 2026, month: 2, day: 29 }, 10 * 60 + 15)
+  const date = new Date(at)
+  expect([date.getDate(), date.getHours(), date.getMinutes()]).toEqual([29, 10, 15])
+  expect(zone.at({ year: 42, month: 5, day: 3 }, 0)).toBe(zone.startOfDay({ year: 42, month: 5, day: 3 }))
+})
+
 test('rolls over the year at the end of December', () => {
   const start = zone.startOfDay({ year: 2027, month: 0, day: 1 })
   expect(zone.dayOf(start - 1)).toEqual({ year: 2026, month: 11, day: 31 })

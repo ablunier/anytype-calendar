@@ -11,6 +11,7 @@ import { InMemoryEventsGateway, inMemoryEventsSample, type InMemoryEventsObject 
 
 const UTC: EventsTimeZone = {
   startOfDay: ({ year, month, day }) => Date.UTC(year, month, day),
+  at: ({ year, month, day }, minute) => Date.UTC(year, month, day, 0, minute),
   dayOf: (instant) => {
     const date = new Date(instant)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }

@@ -222,10 +222,9 @@ export class InMemoryEventsGateway implements EventsGateway {
   }
 }
 
-/** A time is added to the day's start, so on a day the clocks change it lands an hour off. */
 function instantOf({ month, day, time }: SeedDate, seeded: EventsMonth, zone: EventsTimeZone): number {
-  const start = zone.startOfDay({ ...shiftEventsMonth(seeded, month), day })
-  if (time === undefined) return start
+  const date = { ...shiftEventsMonth(seeded, month), day }
+  if (time === undefined) return zone.startOfDay(date)
   const [hours = 0, minutes = 0] = time.split(':').map(Number)
-  return start + (hours * 60 + minutes) * 60_000
+  return zone.at(date, hours * 60 + minutes)
 }

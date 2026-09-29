@@ -11,6 +11,11 @@ export interface EventsTimeZone {
    * the 31st, or a week before the 1st — without doing calendar arithmetic themselves.
    */
   startOfDay(day: EventsDay): number
+  /**
+   * Epoch milliseconds of the wall-clock time `minute` minutes past the day's midnight. Not
+   * `startOfDay` plus the minutes: on a day the clocks change, that lands an hour off.
+   */
+  at(day: EventsDay, minute: number): number
   /** `instant` is epoch milliseconds. */
   dayOf(instant: number): EventsDay
 }

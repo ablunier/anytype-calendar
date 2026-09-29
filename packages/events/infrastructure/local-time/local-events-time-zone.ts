@@ -9,6 +9,12 @@ export class LocalEventsTimeZone implements EventsTimeZone {
     return date.getTime()
   }
 
+  at({ year, month, day }: EventsDay, minute: number): number {
+    const date = new Date(year, month, day, 0, minute)
+    date.setFullYear(year, month, day)
+    return date.getTime()
+  }
+
   dayOf(instant: number): EventsDay {
     const date = new Date(instant)
     return { year: date.getFullYear(), month: date.getMonth(), day: date.getDate() }
