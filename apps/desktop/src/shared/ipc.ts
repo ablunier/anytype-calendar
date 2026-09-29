@@ -57,6 +57,18 @@ export type WeekStartSnapshot = number
 
 export type TimeFormatSnapshot = '24h' | '12h'
 
+export interface UpdateSnapshot {
+  /** The running app's version. */
+  current: string
+  /**
+   * A newer release's version. Only macOS and Linux look for one: Windows updates itself, and
+   * an unpackaged app does not look unless asked to.
+   */
+  available: string | null
+  /** The user closed the notice for `available`; Settings still shows it. */
+  dismissed: boolean
+}
+
 export const IpcChannel = {
   sessionGet: 'session:get',
   sessionChanged: 'session:changed',
@@ -97,7 +109,11 @@ export const IpcChannel = {
   calendarViewGet: 'calendarView:get',
   calendarViewChanged: 'calendarView:changed',
   calendarViewSave: 'calendarView:save',
-  shellOpenObject: 'shell:open-object'
+  shellOpenObject: 'shell:open-object',
+  updateGet: 'update:get',
+  updateChanged: 'update:changed',
+  updateDismiss: 'update:dismiss',
+  updateOpenRelease: 'update:open-release'
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */
@@ -186,6 +202,13 @@ export interface CalendarApi {
     onChange(listener: (view: CalendarViewSnapshot) => void): () => void
     /** Rejects when the value is not one of the three views. */
     save(view: CalendarViewSnapshot): Promise<void>
+  }
+  update: {
+    get(): Promise<UpdateSnapshot>
+    onChange(listener: (state: UpdateSnapshot) => void): () => void
+    dismiss(): Promise<void>
+    /** Opens the available release's page in the browser; main holds its URL. */
+    openRelease(): Promise<void>
   }
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */

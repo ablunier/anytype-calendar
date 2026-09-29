@@ -86,6 +86,9 @@ import { WeekStartStore } from './week-start/week-start-store'
 import { LoadWeekNumbers } from './week-numbers/load-week-numbers'
 import { SaveWeekNumbers } from './week-numbers/save-week-numbers'
 import { WeekNumbersStore } from './week-numbers/week-numbers-store'
+import { fetchLatestRelease } from './updates/auto-update'
+import { CheckForUpdate, DismissUpdateNotice } from './updates/check-for-update'
+import { UpdateNoticeStore } from './updates/update-notice-store'
 
 /**
  * A closed Anytype refuses the connection at once; this bounds one that accepts it and
@@ -132,6 +135,9 @@ export interface AppServices {
   timeFormatState: TimeFormatStore
   loadTimeFormat: LoadTimeFormat
   saveTimeFormat: SaveTimeFormat
+  updateNotice: UpdateNoticeStore
+  checkForUpdate: CheckForUpdate
+  dismissUpdateNotice: DismissUpdateNotice
 }
 
 /** The only place adapters are chosen. Call it once the app is ready: safeStorage needs that. */
@@ -269,6 +275,14 @@ export function composeServices(): AppServices {
   const loadTimeFormat = new LoadTimeFormat({ config: appConfig, store: timeFormatState })
   const saveTimeFormat = new SaveTimeFormat({ config: appConfig, store: timeFormatState })
 
+  const updateNotice = new UpdateNoticeStore(app.getVersion())
+  const checkForUpdate = new CheckForUpdate({
+    config: appConfig,
+    store: updateNotice,
+    fetchLatest: fetchLatestRelease
+  })
+  const dismissUpdateNotice = new DismissUpdateNotice({ config: appConfig, store: updateNotice })
+
   // Contexts never know about each other, so the links live here. Being connected — signed
   // in just now, or a key restored at launch — is what reads the account and the month;
   // anything else forgets both. The stores notify only on change, and a reset while idle is
@@ -359,7 +373,10 @@ export function composeServices(): AppServices {
     saveCalendarView,
     timeFormatState,
     loadTimeFormat,
-    saveTimeFormat
+    saveTimeFormat,
+    updateNotice,
+    checkForUpdate,
+    dismissUpdateNotice
   }
 }
 

@@ -10,7 +10,8 @@ import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
 import { registerThemeIpc } from './theme/theme-ipc'
 import { registerTimeFormatIpc } from './time-format/time-format-ipc'
-import { startAutoUpdate } from './updates/auto-update'
+import { startUpdates } from './updates/auto-update'
+import { registerUpdateIpc } from './updates/update-ipc'
 import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
 import { registerCalendarViewIpc } from './calendar-view/calendar-view-ipc'
 import { registerWeekStartIpc } from './week-start/week-start-ipc'
@@ -66,6 +67,7 @@ app.whenReady().then(async () => {
   registerTimeFormatIpc(services)
   registerCalendarViewIpc(services)
   registerShellIpc()
+  registerUpdateIpc(services)
   // The span a launch opens on is read from these two, and restoring the session is what
   // starts that first load, so they have to be in place before it runs.
   await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
@@ -84,7 +86,7 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
-  startAutoUpdate()
+  startUpdates(services.checkForUpdate)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

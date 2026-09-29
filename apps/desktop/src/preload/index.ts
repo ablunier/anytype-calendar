@@ -11,6 +11,7 @@ import {
   type SessionSnapshot,
   type ThemeSnapshot,
   type TimeFormatSnapshot,
+  type UpdateSnapshot,
   type WeekNumbersSnapshot,
   type WeekStartSnapshot
 } from '@shared/ipc'
@@ -139,6 +140,18 @@ const api: CalendarApi = {
       }
     },
     save: (view) => ipcRenderer.invoke(IpcChannel.calendarViewSave, view)
+  },
+  update: {
+    get: () => ipcRenderer.invoke(IpcChannel.updateGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: UpdateSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.updateChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.updateChanged, forward)
+      }
+    },
+    dismiss: () => ipcRenderer.invoke(IpcChannel.updateDismiss),
+    openRelease: () => ipcRenderer.invoke(IpcChannel.updateOpenRelease)
   },
   shell: {
     openObject: (objectId, spaceId) =>
