@@ -215,6 +215,7 @@ Not built yet, roughly grouped:
 
 - Keyboard shortcuts / command palette
 - System notifications for upcoming events
+- Auto-update in all platforms
 
 ## Notes for contributors
 
