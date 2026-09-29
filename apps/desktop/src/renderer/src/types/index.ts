@@ -217,6 +217,18 @@ export type ApiAccessView =
       canEdit: boolean
     }
 
+/**
+ * Whether the calendar can edit objects: `editable`, or why not — the key was granted read
+ * only, Anytype serves only v1, or Anytype has not yet been asked what the key may do.
+ */
+export type EditAccess = 'editable' | 'read-only' | 'needs-v2' | 'checking'
+
+/** A day, `YYYY-MM-DD`, and for a time grid the minute of it from midnight. */
+export interface CalendarSlot {
+  date: string
+  minute: number | null
+}
+
 export type DetailTarget =
   | { kind: 'event'; event: CalendarEvent }
   /** `date` is `YYYY-MM-DD`. */

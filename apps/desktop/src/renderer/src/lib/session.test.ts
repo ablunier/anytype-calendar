@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { SessionSnapshot } from '@shared/ipc'
-import { apiAccessFor, apiKeyFor, authViewFor } from './session'
+import { apiAccessFor, apiKeyFor, authViewFor, editAccessFor } from './session'
 
 const CHALLENGE = { id: 'ch_1', expiresAt: 60_000 }
 const ATTEMPT = { challenge: CHALLENGE, code: '1234' }
@@ -132,5 +132,27 @@ describe('apiAccessFor', () => {
       spaceCount: null,
       canEdit: true
     })
+  })
+})
+
+describe('editAccessFor', () => {
+  const connected = (access: Extract<SessionSnapshot, { phase: 'connected' }>['access']): SessionSnapshot => ({
+    phase: 'connected',
+    key: KEY,
+    access
+  })
+
+  test('can edit through a v2 key granted read/write, or one with no grant of its own', () => {
+    const grant = { allSpaces: true, spaceIds: [], permission: 'readwrite' as const }
+    expect(editAccessFor(connected({ apiVersion: 'v2', grant }))).toBe('editable')
+    expect(editAccessFor(connected({ apiVersion: 'v2', grant: null }))).toBe('editable')
+  })
+
+  test('says why it cannot edit otherwise', () => {
+    const grant = { allSpaces: true, spaceIds: [], permission: 'read' as const }
+    expect(editAccessFor(connected({ apiVersion: 'v2', grant }))).toBe('read-only')
+    expect(editAccessFor(connected({ apiVersion: 'v1', grant: null }))).toBe('needs-v2')
+    expect(editAccessFor(connected(null))).toBe('checking')
+    expect(editAccessFor({ phase: 'signed-out' })).toBe('checking')
   })
 })

@@ -18,7 +18,7 @@ export interface InputProps {
   hint?: string
   error?: string
   icon?: IconName
-  type?: 'text' | 'password' | 'email'
+  type?: 'text' | 'password' | 'email' | 'time'
   size?: FieldSize
   disabled?: boolean
   /** For keys and identifiers. */

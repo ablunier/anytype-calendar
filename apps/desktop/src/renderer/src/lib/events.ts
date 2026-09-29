@@ -6,13 +6,15 @@ import {
   sameEventsSpan,
   shownEventsSpan,
   type EventsDatedObject,
+  type EventsReschedule,
+  type EventsSlot,
   type EventsSpan,
   type EventsSpanResult
 } from '@anytype-calendar/events/domain'
-import type { EventsSnapshot } from '@shared/ipc'
-import type { CalendarEvent, CalendarMonth, CalendarView, SyncView } from '@renderer/types'
+import type { EventsCreateRequest, EventsRescheduleRequest, EventsSnapshot } from '@shared/ipc'
+import type { CalendarEvent, CalendarMonth, CalendarSlot, CalendarView, ObjectType, SyncView } from '@renderer/types'
 import { addDays, buildWeek, isoDate } from './calendar'
-import { elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
+import { anytypeTypeKeyOf, elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
 
 /** The span main holds, or before any load the one `now` (epoch milliseconds) opens on. */
 export function shownSpanFor(snapshot: EventsSnapshot, view: CalendarView, now: number): EventsSpan {
@@ -119,6 +121,33 @@ export function localDate(instant: number): string {
 export function localTime(instant: number): string {
   const date = new Date(instant)
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+/**
+ * Moves `event` to start at `slot`, keeping how long it lasts. A slot with no minute, e.g. a
+ * month cell, keeps the time of day of a timed event.
+ */
+export function moveRequestFor(event: CalendarEvent, slot: CalendarSlot): EventsRescheduleRequest {
+  return rescheduleRequestFor(event, { kind: 'move', start: eventsSlotOf(slot) })
+}
+
+/** Pulls the end of `event` to `slot`, keeping where it starts. */
+export function resizeRequestFor(event: CalendarEvent, slot: CalendarSlot): EventsRescheduleRequest {
+  return rescheduleRequestFor(event, { kind: 'resize', end: eventsSlotOf(slot) })
+}
+
+/** `type` is one of the calendar's types, never a query: a query has no type of its own to create. */
+export function createRequestFor(type: ObjectType, name: string, slot: CalendarSlot): EventsCreateRequest {
+  return { spaceId: type.space, typeKey: anytypeTypeKeyOf(type), name, at: eventsSlotOf(slot) }
+}
+
+function rescheduleRequestFor(event: CalendarEvent, change: EventsReschedule): EventsRescheduleRequest {
+  return { spaceId: event.space, id: event.id, change }
+}
+
+function eventsSlotOf({ date, minute }: CalendarSlot): EventsSlot {
+  const [year, month = 1, day = 1] = date.split('-').map(Number)
+  return { day: { year, month: month - 1, day }, minute }
 }
 
 function resultFor(snapshot: EventsSnapshot, span: EventsSpan): EventsSpanResult | undefined {

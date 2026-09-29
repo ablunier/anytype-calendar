@@ -35,6 +35,8 @@ export interface ButtonProps {
   loading?: boolean
   fullWidth?: boolean
   type?: 'button' | 'submit' | 'reset'
+  /** The id of a form it submits from outside, e.g. from a dialog's footer. */
+  form?: string
   className?: string
   onClick?: () => void
 }
@@ -49,12 +51,14 @@ export function Button({
   loading = false,
   fullWidth = false,
   type = 'button',
+  form,
   className,
   onClick
 }: ButtonProps): React.JSX.Element {
   return (
     <button
       type={type}
+      form={form}
       disabled={disabled || loading}
       onClick={onClick}
       className={[

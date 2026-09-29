@@ -4,6 +4,7 @@ import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
+import { grabbedDate, type DayDrag } from './useDayDrag'
 
 export interface MonthDayCellProps {
   cell: MonthCell
@@ -22,6 +23,9 @@ export interface MonthDayCellProps {
   onSelect: () => void
   onKeyDown: (event: KeyboardEvent) => void
   onOpenEvent: (event: CalendarEvent) => void
+  /** Null where objects cannot be moved. */
+  drag: DayDrag | null
+  onCreate: () => void
 }
 
 export function MonthDayCell({
@@ -37,7 +41,9 @@ export function MonthDayCell({
   onFocus,
   onSelect,
   onKeyDown,
-  onOpenEvent
+  onOpenEvent,
+  drag,
+  onCreate
 }: MonthDayCellProps): React.JSX.Element {
   const { t } = useTranslation()
   /* Outside days belong to the adjacent month: they carry their objects, so a range crosses
@@ -57,11 +63,15 @@ export function MonthDayCell({
       onClick={interactive ? onSelect : undefined}
       onFocus={interactive ? onFocus : undefined}
       onKeyDown={interactive ? onKeyDown : undefined}
+      onDoubleClick={onCreate}
+      {...drag?.targetFor(cell.date)}
       className={[
         'flex min-h-daycell flex-col gap-4 border-r border-b border-grid-line p-6',
         'transition-colors duration-fast ease-standard',
         interactive ? 'cursor-pointer' : '',
-        isSelected
+        drag?.overDate === cell.date
+          ? 'bg-surface-accent-soft'
+          : isSelected
           ? 'bg-surface-selected'
           : isToday
             ? 'bg-today-wash'
@@ -108,6 +118,14 @@ export function MonthDayCell({
             time={segment.continuesBefore ? undefined : segment.event.time}
             allDay={segment.event.allDay}
             done={segment.event.done}
+            lifted={drag?.draggingId === segment.event.id}
+            {...(drag
+              ? {
+                  onDragStart: (event: React.DragEvent) =>
+                    drag.start(segment.event, grabbedDate(event, cell.date, segment.span), event),
+                  onDragEnd: drag.end
+                }
+              : {})}
             onClick={() => onOpenEvent(segment.event)}
           />
         )

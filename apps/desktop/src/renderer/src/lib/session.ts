@@ -1,7 +1,8 @@
 /* The only renderer module that reads a session's shape; components get view models. */
 
+import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
 import type { SessionSnapshot } from '@shared/ipc'
-import type { ApiAccessView, ApiKeyView, AuthView } from '@renderer/types'
+import type { ApiAccessView, ApiKeyView, AuthView, EditAccess } from '@renderer/types'
 
 /** Null once connected. */
 export function authViewFor(session: SessionSnapshot): AuthView | null {
@@ -50,4 +51,10 @@ export function apiAccessFor(session: SessionSnapshot): ApiAccessView | null {
     spaceCount: grant.allSpaces ? null : grant.spaceIds.length,
     canEdit: grant.permission === 'readwrite'
   }
+}
+
+export function editAccessFor(session: SessionSnapshot): EditAccess {
+  if (session.phase !== 'connected' || session.access === null) return 'checking'
+  if (authAccessCanWrite(session.access)) return 'editable'
+  return session.access.apiVersion === 'v1' ? 'needs-v2' : 'read-only'
 }

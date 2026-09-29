@@ -4,6 +4,7 @@ import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
+import { grabbedDate, useDayDrag } from './useDayDrag'
 
 /** A band has room to grow, unlike a month cell, so nothing is hidden behind a `+N more`. */
 const BAND_LANES = 8
@@ -14,23 +15,29 @@ export interface AllDayBandProps {
   eventsByDay: CalendarEvent[][]
   typesByKey: Map<string, ObjectType>
   onOpenEvent: (event: CalendarEvent, date: string) => void
+  /** `date` is the day its first day lands on. Left off where objects cannot be moved. */
+  onMoveEvent?: (event: CalendarEvent, date: string) => void
+  onCreate: (date: string) => void
 }
 
 /**
  * The strip above the hour grid: objects with no time of day, and ranges that cross midnight,
  * drawn as one bar across the days they cover. It reuses the month grid's own lane packing —
- * the same problem, one row of it.
+ * the same problem, one row of it. Its bars move by whole days, as the month's do.
  */
 export function AllDayBand({
   days,
   eventsByDay,
   typesByKey,
-  onOpenEvent
+  onOpenEvent,
+  onMoveEvent,
+  onCreate
 }: AllDayBandProps): React.JSX.Element {
   const { t } = useTranslation()
   // One bar per object, so an object covering several of these days is laid out once.
   const events = [...new Map(eventsByDay.flat().map((event) => [event.id, event])).values()]
   const layout = layOutWeek(events, days, BAND_LANES)
+  const drag = useDayDrag((event, date) => onMoveEvent?.(event, date))
 
   return (
     <div className="flex shrink-0 border-b border-grid-line-strong bg-surface-card">
@@ -44,7 +51,13 @@ export function AllDayBand({
         {days.map((day, index) => (
           <div
             key={day.date}
-            className={['min-h-20', index === 0 ? '' : 'border-l border-grid-line'].join(' ')}
+            onDoubleClick={() => onCreate(day.date)}
+            {...(onMoveEvent ? drag.targetFor(day.date) : {})}
+            className={[
+              'min-h-20',
+              index === 0 ? '' : 'border-l border-grid-line',
+              drag.overDate === day.date ? 'bg-surface-accent-soft' : ''
+            ].join(' ')}
           >
             {/* Reserves the row's height: the bars themselves are out of the flow. */}
             <div className="lane-stack" style={{ '--lanes': layout.lanes } as CSSProperties} />
@@ -61,6 +74,18 @@ export function AllDayBand({
               allDay={segment.event.allDay}
               time={segment.continuesBefore ? undefined : segment.event.time}
               {...(segment.event.done === undefined ? {} : { done: segment.event.done })}
+              lifted={drag.draggingId === segment.event.id}
+              {...(onMoveEvent
+                ? {
+                    onDragStart: (event: React.DragEvent) =>
+                      drag.start(
+                        segment.event,
+                        grabbedDate(event, days[segment.column]?.date ?? '', segment.span),
+                        event
+                      ),
+                    onDragEnd: drag.end
+                  }
+                : {})}
               onClick={() =>
                 onOpenEvent(segment.event, days[segment.column]?.date ?? days[0]?.date ?? '')
               }

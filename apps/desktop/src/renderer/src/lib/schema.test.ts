@@ -3,6 +3,8 @@ import type { SchemaQueryChoice, SchemaSpace, SchemaType } from '@anytype-calend
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type { ObjectType, TypePicks } from '@renderer/types'
 import {
+  anytypeTypeKeyOf,
+  creatableTypesFor,
   elapsedSince,
   hasNotGrantedSpaces,
   isOnboarded,
@@ -96,6 +98,32 @@ describe('tracksAnyType', () => {
 describe('objectTypeKey', () => {
   test('is the key typesFor gives the type', () => {
     expect(objectTypeKey('sp_1', 'task')).toBe(typesFor(SYNCED)[0]?.key)
+  })
+
+  test("is undone by anytypeTypeKeyOf, even for a space id with dots and a key that is Anytype's own", () => {
+    const [task] = typesFor(SYNCED)
+    expect(task && anytypeTypeKeyOf(task)).toBe('task')
+    const minted = { space: 'bafy.a:b', key: objectTypeKey('bafy.a:b', '6a67272659c08021576f3127') }
+    expect(anytypeTypeKeyOf(minted as ObjectType)).toBe('6a67272659c08021576f3127')
+  })
+})
+
+describe('creatableTypesFor', () => {
+  const query: SchemaQueryChoice['queryId'] = 'q_1'
+  const space: SchemaSpace = {
+    ...SPACE,
+    queries: [{ id: query, name: 'Open tasks', typeKey: 'task', views: [{ id: 'v_1', name: 'All' }] }]
+  }
+  const types = typesFor({ phase: 'synced', last: { spaces: [space], hasNotGrantedSpaces: false, syncedAt: 0 } })
+
+  test('offers the chosen types of chosen spaces, never a query', () => {
+    const picks: TypePicks = {
+      spaceKeys: ['sp_1'],
+      typeKeys: [objectTypeKey('sp_1', 'task'), querySourceKey('sp_1', query)],
+      dates: {}
+    }
+    expect(creatableTypesFor(types, picks).map(({ key }) => key)).toEqual([objectTypeKey('sp_1', 'task')])
+    expect(creatableTypesFor(types, { ...picks, spaceKeys: [] })).toEqual([])
   })
 })
 

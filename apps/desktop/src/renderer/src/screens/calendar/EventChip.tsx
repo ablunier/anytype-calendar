@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import type { EventSegment } from '@renderer/lib/month-layout'
@@ -13,6 +13,11 @@ export interface EventChipProps {
   time?: string
   allDay?: boolean
   done?: boolean
+  /** Given where it can be dragged to another day; left off where it cannot. */
+  onDragStart?: (drag: DragEvent) => void
+  onDragEnd?: () => void
+  /** Being dragged: drawn faint, so the day it lands on shows through. */
+  lifted?: boolean
   onClick: () => void
 }
 
@@ -31,6 +36,9 @@ export function EventChip({
   time,
   allDay = false,
   done = false,
+  onDragStart,
+  onDragEnd,
+  lifted = false,
   onClick
 }: EventChipProps): React.JSX.Element {
   const { i18n } = useTranslation()
@@ -44,6 +52,11 @@ export function EventChip({
         event.stopPropagation()
         onClick()
       }}
+      // A double-click on a bar is two clicks on it, not a double-click on the day to create.
+      onDoubleClick={(event) => event.stopPropagation()}
+      draggable={onDragStart !== undefined}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       style={{ '--column': column, '--span': span, '--lane': lane } as CSSProperties}
       className={[
         'event-span flex min-h-20 items-center gap-6 border border-transparent px-6 py-2',
@@ -51,7 +64,8 @@ export function EventChip({
         continuesBefore ? 'event-span-open-start' : 'rounded-l-chip',
         continuesAfter ? 'event-span-open-end' : 'rounded-r-chip',
         allDay ? `${catBg[category]} text-stone-000` : `${catBgSoft[category]} ${catText[category]}`,
-        done ? 'opacity-55' : ''
+        lifted ? 'opacity-40' : done ? 'opacity-55' : '',
+        onDragStart ? 'cursor-grab' : ''
       ].join(' ')}
     >
       {!allDay ? (

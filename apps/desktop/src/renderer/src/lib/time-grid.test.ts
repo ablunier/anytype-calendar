@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import type { CalendarEvent } from '@renderer/types'
-import { layOutDayColumn, MINUTES_PER_DAY, MIN_SLOT_MINUTES, splitDayEvents } from './time-grid'
+import {
+  draggedPlacement,
+  layOutDayColumn,
+  MINUTES_PER_DAY,
+  MIN_SLOT_MINUTES,
+  splitDayEvents,
+  timeOfMinute
+} from './time-grid'
 
 const DAY = '2026-09-23'
 
@@ -124,4 +131,43 @@ describe('layOutDayColumn', () => {
       layOutDayColumn(ids.map((id) => timed(id, '09:00', '10:00'))).map((s) => s.event.id)
     expect(order(['b', 'a'])).toEqual(order(['a', 'b']))
   })
+})
+
+describe('draggedPlacement', () => {
+  const drag = { dayIndex: 2, startMinute: 9 * 60 + 10, endMinute: 10 * 60 + 10, minutes: 0, days: 0, dayCount: 7 }
+
+  test('moves an object to the nearest quarter hour and another day, keeping its length', () => {
+    expect(draggedPlacement({ ...drag, mode: 'move', minutes: 52, days: 3 })).toEqual({
+      dayIndex: 5,
+      startMinute: 10 * 60,
+      endMinute: 11 * 60
+    })
+  })
+
+  test("keeps a move on the view's days and within the day", () => {
+    expect(draggedPlacement({ ...drag, mode: 'move', minutes: -2000, days: -9 })).toMatchObject({
+      dayIndex: 0,
+      startMinute: 0
+    })
+    expect(draggedPlacement({ ...drag, mode: 'move', minutes: 2000, days: 9 })).toEqual({
+      dayIndex: 6,
+      startMinute: MINUTES_PER_DAY - 15,
+      endMinute: MINUTES_PER_DAY
+    })
+  })
+
+  test('pulls only the end of a resize, never before a quarter hour past the start nor to midnight', () => {
+    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 38, days: 2 })).toEqual({
+      dayIndex: 2,
+      startMinute: 9 * 60 + 10,
+      endMinute: 10 * 60 + 45
+    })
+    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: -600 }).endMinute).toBe(9 * 60 + 25)
+    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 6000 }).endMinute).toBe(MINUTES_PER_DAY - 15)
+  })
+})
+
+test('timeOfMinute writes minutes from midnight as HH:MM', () => {
+  expect(timeOfMinute(0)).toBe('00:00')
+  expect(timeOfMinute(9 * 60 + 5)).toBe('09:05')
 })

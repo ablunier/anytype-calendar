@@ -126,6 +126,15 @@ export function addDays(date: string, delta: number): string {
   return isoDate(moved.getFullYear(), moved.getMonth(), moved.getDate())
 }
 
+/** Days from `from` to `to`, both `YYYY-MM-DD`; negative when `to` comes first. */
+export function daysBetween(from: string, to: string): number {
+  const utc = (date: string): number => {
+    const [year, month = 1, day = 1] = date.split('-').map(Number)
+    return Date.UTC(year, month - 1, day)
+  }
+  return Math.round((utc(to) - utc(from)) / 86_400_000)
+}
+
 /** The seven days of the week holding `date`, from the user's own first day of the week. */
 export function buildWeek(date: string, weekStart = 0): DayColumn[] {
   const [year, month = 1, day = 1] = date.split('-').map(Number)

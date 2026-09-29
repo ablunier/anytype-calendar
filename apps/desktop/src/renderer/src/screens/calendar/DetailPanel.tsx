@@ -10,8 +10,11 @@ export interface DetailPanelProps {
   events: CalendarEvent[]
   typesByKey: Map<string, ObjectType>
   spacesByKey: Map<string, Space>
+  /** Why the calendar cannot write to Anytype; null when it can. */
+  readOnlyReason: string | null
   onClose: () => void
   onOpenEvent: (event: CalendarEvent) => void
+  onSetDone: (event: CalendarEvent, done: boolean) => void
 }
 
 export function DetailPanel({
@@ -19,10 +22,18 @@ export function DetailPanel({
   events,
   typesByKey,
   spacesByKey,
+  readOnlyReason,
   onClose,
-  onOpenEvent
+  onOpenEvent,
+  onSetDone
 }: DetailPanelProps): React.JSX.Element {
   const { t } = useTranslation()
+  /* The event as it is now, not as it was when opened: ticked, moved, or read again since. It
+   * is kept as opened once the span no longer holds it, e.g. after a move out of the span. */
+  const event =
+    detail.kind === 'event'
+      ? (events.find(({ id, space }) => id === detail.event.id && space === detail.event.space) ?? detail.event)
+      : null
   return (
     <aside
       aria-label={
@@ -34,20 +45,22 @@ export function DetailPanel({
         <IconButton icon="x" label={t('calendar.detailPanel.close')} onClick={onClose} />
       </div>
 
-      {detail.kind === 'event' ? (
+      {event ? (
         <EventDetail
-          event={detail.event}
-          type={typesByKey.get(detail.event.type)}
+          event={event}
+          type={typesByKey.get(event.type)}
           spacesByKey={spacesByKey}
+          readOnlyReason={readOnlyReason}
+          onSetDone={(done) => onSetDone(event, done)}
         />
-      ) : (
+      ) : detail.kind === 'day' ? (
         <DayDetail
           date={detail.date}
           events={eventsOnDay(events, detail.date)}
           typesByKey={typesByKey}
           onOpenEvent={onOpenEvent}
         />
-      )}
+      ) : null}
     </aside>
   )
 }

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
 import {
   addDays,
+  daysBetween,
   formatTime,
   buildMonthGrid,
   buildWeek,
@@ -484,5 +485,15 @@ describe('weekLabel', () => {
 
   test('names both years across New Year', () => {
     expect(label('2026-12-28', '2027-01-03')).toBe('Dec 28, 2026 – Jan 3, 2027')
+  })
+})
+
+describe('daysBetween', () => {
+  test('counts calendar days, across months, years and changes of the clocks', () => {
+    expect(daysBetween('2026-09-14', '2026-09-16')).toBe(2)
+    expect(daysBetween('2026-09-16', '2026-09-14')).toBe(-2)
+    expect(daysBetween('2026-12-30', '2027-01-02')).toBe(3)
+    expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2)
+    expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
   })
 })

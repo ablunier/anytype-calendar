@@ -20,7 +20,8 @@
     "notGrantedDescription": "La clave solo llega a los espacios que elegiste al conectar. Para añadir otros, abre la aplicación de Anytype, ve a {{breadcrumb}} y concédeselos a Calendar for Anytype, o cierra sesión y vuelve a conectar para elegirlos.",
     "queries": "Consultas",
     "queryOf": "Consulta sobre {{type}}",
-    "view": "Vista"
+    "view": "Vista",
+    "dismiss": "Cerrar"
   },
   "sync": {
     "status": {
@@ -240,7 +241,8 @@
       "location": "Ubicación",
       "allDay": "Todo el día",
       "done": "Hecho",
-      "readOnlyNotice": "Esta vista es de solo lectura. Edita el objeto en Anytype y se actualizará aquí en la próxima lectura.",
+      "readOnlyNotice": "Edita el objeto en Anytype y se actualizará aquí en la próxima lectura.",
+      "editNotice": "Arrástralo en el calendario para cambiar sus fechas. Edita todo lo demás en Anytype y se actualizará aquí en la próxima lectura.",
       "openInAnytype": "Abrir en Anytype"
     },
     "detailPanel": {
@@ -258,6 +260,33 @@
       "month": "Mes",
       "week": "Semana",
       "day": "Día"
+    },
+    "edit": {
+      "failure": {
+        "unauthorized": "Anytype rechazó la clave y no se cambió nada. Vuelve a iniciar sesión para seguir editando.",
+        "notGranted": "Esta clave no puede editar ese espacio y no se cambió nada. Dale permiso de edición en Anytype o vuelve a conectar.",
+        "rateLimited": "Anytype está recibiendo demasiados cambios a la vez. Inténtalo de nuevo en un momento.",
+        "unsupported": "Este Anytype no acepta cambios desde el calendario. Actualiza Anytype para editar aquí.",
+        "unreachable": "No se pudo contactar con Anytype y no se cambió nada. ¿Está abierto?",
+        "gone": "Ese objeto ya no está en el calendario y no se cambió nada. Puede que haya cambiado en Anytype.",
+        "invalid": "Ese cambio no se puede hacer en este objeto.",
+        "rejected": "Anytype rechazó el cambio: {{message}}",
+        "rejectedSilently": "Anytype rechazó el cambio."
+      },
+      "readOnly": {
+        "key": "Esta clave solo puede leer. Para editar aquí, dale permiso de edición en Anytype o vuelve a conectar.",
+        "needsV2": "Editar aquí requiere un Anytype más reciente, que sirva la API v2.",
+        "checking": "Comprobando qué puede hacer esta clave en Anytype…"
+      },
+      "noTypes": "Elige un tipo en Ajustes para crear sus objetos aquí."
+    },
+    "create": {
+      "title": "Nuevo objeto",
+      "name": "Nombre",
+      "type": "Tipo",
+      "typeInSpace": "{{type}} · {{space}}",
+      "time": "Hora",
+      "submit": "Crear"
     }
   }
 }

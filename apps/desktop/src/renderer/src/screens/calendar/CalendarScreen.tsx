@@ -1,15 +1,23 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import type {
+  EventsCreateRequest,
+  EventsEditResult,
+  EventsRescheduleRequest,
+  EventsSetDoneRequest
+} from '@shared/ipc'
+import type {
   CalendarEvent,
+  CalendarSlot,
   CalendarView,
   DetailTarget,
+  EditAccess,
   ObjectType,
   Space,
   SyncView
 } from '@renderer/types'
-import { Button, EmptyState } from '@renderer/components/ui'
+import { Button, EmptyState, Toast } from '@renderer/components/ui'
 import {
   buildMonthGrid,
   buildWeek,
@@ -19,9 +27,11 @@ import {
   spacesByKeys,
   weekLabel
 } from '@renderer/lib/calendar'
-import { anchorOf } from '@renderer/lib/events'
+import { editFailureText, readOnlyText } from '@renderer/lib/edit-text'
+import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor } from '@renderer/lib/events'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import { CalendarTopBar } from './CalendarTopBar'
+import { CreateEventDialog } from './CreateEventDialog'
 import { DateNavigator } from './DateNavigator'
 import { DetailPanel } from './DetailPanel'
 import { MonthGrid } from './MonthGrid'
@@ -47,6 +57,12 @@ export interface CalendarScreenProps {
   theme: 'light' | 'dark'
   showWeekNumbers: boolean
   weekStart: number
+  editAccess: EditAccess
+  /** The types a new object can be created as. */
+  creatableTypes: ObjectType[]
+  onReschedule: (request: EventsRescheduleRequest) => Promise<EventsEditResult>
+  onCreate: (request: EventsCreateRequest) => Promise<EventsEditResult>
+  onSetDone: (request: EventsSetDoneRequest) => Promise<EventsEditResult>
   onToggleTheme: () => void
   onOpenSettings: () => void
   onView: (view: CalendarView) => void
@@ -56,7 +72,14 @@ export interface CalendarScreenProps {
   onReread: () => void
 }
 
-/** Draws one span. Keyed by it, so another span starts with no day selected and no panel. */
+/**
+ * Draws one span. Keyed by it, so another span starts with no day selected and no panel.
+ *
+ * Where the session can write, objects are moved by dragging them, created by double-clicking
+ * an empty day or hour, and ticked done from their panel; an edit that fails says why in a
+ * toast, since the object has already gone back to where it was. Where it cannot, dragging is
+ * off and a double-click says why.
+ */
 export function CalendarScreen({
   span,
   events,
@@ -70,6 +93,11 @@ export function CalendarScreen({
   theme,
   showWeekNumbers,
   weekStart,
+  editAccess,
+  creatableTypes,
+  onReschedule,
+  onCreate,
+  onSetDone,
   onToggleTheme,
   onOpenSettings,
   onView,
@@ -118,6 +146,38 @@ export function CalendarScreen({
   const selectDate = (date: string): void => {
     setSelectedDate(date)
     setDetail({ kind: 'day', date })
+  }
+
+  const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
+  const [creating, setCreating] = useState<CalendarSlot | null>(null)
+  const readOnly = readOnlyText(t, editAccess)
+  const canEdit = readOnly === null
+
+  const say = (message: string): void => setToast((last) => ({ id: (last?.id ?? 0) + 1, message }))
+  const dismissToast = useCallback(() => setToast(null), [])
+
+  /** Resolves whether the edit landed, having said why when it did not. */
+  const edit = async (request: Promise<EventsEditResult>): Promise<boolean> => {
+    let result: EventsEditResult
+    try {
+      result = await request
+    } catch {
+      result = { ok: false, failure: 'unreachable' }
+    }
+    if (!result.ok) say(editFailureText(t, result))
+    return result.ok
+  }
+
+  const moveEvent = (event: CalendarEvent, slot: CalendarSlot): void => {
+    void edit(onReschedule(moveRequestFor(event, slot)))
+  }
+  const resizeEvent = (event: CalendarEvent, slot: CalendarSlot): void => {
+    void edit(onReschedule(resizeRequestFor(event, slot)))
+  }
+  const askToCreate = (slot: CalendarSlot): void => {
+    if (readOnly !== null) say(readOnly)
+    else if (creatableTypes.length === 0) say(t('calendar.edit.noTypes'))
+    else setCreating(slot)
   }
 
   const selectDay = (day: number): void => {
@@ -174,8 +234,12 @@ export function CalendarScreen({
               />
             </Centered>
           ) : /* A time grid is drawn even when empty: its hours are the point, and the
-                 all-day band would otherwise be the only thing on screen. */
-          events !== null && events.length === 0 && span.kind === 'month' ? (
+                 all-day band would otherwise be the only thing on screen. So is a month
+                 where objects can be created, which takes a day to double-click. */
+          events !== null &&
+            events.length === 0 &&
+            span.kind === 'month' &&
+            !(canEdit && creatableTypes.length > 0) ? (
             <Centered>
               <EmptyState
                 icon="calendar-days"
@@ -203,6 +267,10 @@ export function CalendarScreen({
               onFocusDay={setFocusedDay}
               onSelectDay={selectDay}
               onOpenEvent={openEvent}
+              {...(canEdit
+                ? { onMoveEvent: (event: CalendarEvent, date: string) => moveEvent(event, { date, minute: null }) }
+                : {})}
+              onCreate={(date) => askToCreate({ date, minute: null })}
             />
           ) : (
             <TimeGrid
@@ -215,6 +283,8 @@ export function CalendarScreen({
               selectedDate={selectedDate}
               onSelectDay={selectDate}
               onOpenEvent={openEvent}
+              {...(canEdit ? { onMoveEvent: moveEvent, onResizeEvent: resizeEvent } : {})}
+              onCreate={askToCreate}
             />
           )}
         </main>
@@ -225,11 +295,27 @@ export function CalendarScreen({
             events={events ?? []}
             typesByKey={typesByKey}
             spacesByKey={spacesByKey}
+            readOnlyReason={readOnly}
             onClose={() => setDetail(null)}
             onOpenEvent={openEvent}
+            onSetDone={(event, done) =>
+              void edit(onSetDone({ spaceId: event.space, id: event.id, done }))
+            }
           />
         ) : null}
       </div>
+
+      {creating ? (
+        <CreateEventDialog
+          slot={creating}
+          types={creatableTypes}
+          spacesByKey={spacesByKey}
+          onClose={() => setCreating(null)}
+          onCreate={(type, name, slot) => edit(onCreate(createRequestFor(type, name, slot)))}
+        />
+      ) : null}
+
+      {toast ? <Toast key={toast.id} message={toast.message} onDismiss={dismissToast} /> : null}
     </div>
   )
 }

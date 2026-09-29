@@ -13,6 +13,15 @@ export const MINUTES_PER_DAY = 1440
 /** Below this a box would be too flat to read or to click, so it is drawn this tall anyway. */
 export const MIN_SLOT_MINUTES = 30
 
+/** What a drag in the time grid rounds to. */
+export const SNAP_MINUTES = 15
+
+/**
+ * The last a dragged object may end at: midnight would make it end on the next day, sending
+ * it from the grid to the all-day band.
+ */
+const LAST_END_MINUTE = MINUTES_PER_DAY - SNAP_MINUTES
+
 export interface TimedSegment {
   event: CalendarEvent
   /** Minutes from the day's midnight, clamped to it. */
@@ -104,8 +113,57 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
   return placed
 }
 
+export interface TimedDrag {
+  /** `move` keeps its length; `resize` pulls its end and keeps its start. */
+  mode: 'move' | 'resize'
+  /** Where it was drawn when the drag began: its column among the view's days, and its minutes. */
+  dayIndex: number
+  startMinute: number
+  endMinute: number
+  /** How far the pointer has gone, in minutes down the day and columns across. */
+  minutes: number
+  days: number
+  dayCount: number
+}
+
+/**
+ * Where a dragged object lands, snapped to the grid's quarter hours and kept on the view's
+ * days. A move keeps how long it is drawn; a resize never ends before a quarter hour past its
+ * start, nor at midnight.
+ */
+export function draggedPlacement({
+  mode,
+  dayIndex,
+  startMinute,
+  endMinute,
+  minutes,
+  days,
+  dayCount
+}: TimedDrag): { dayIndex: number; startMinute: number; endMinute: number } {
+  if (mode === 'resize') {
+    const end = Math.max(Math.min(snap(endMinute + minutes), LAST_END_MINUTE), startMinute + SNAP_MINUTES)
+    return { dayIndex, startMinute, endMinute: end }
+  }
+  const length = endMinute - startMinute
+  const start = Math.min(Math.max(snap(startMinute + minutes), 0), LAST_END_MINUTE)
+  return {
+    dayIndex: Math.min(Math.max(dayIndex + days, 0), dayCount - 1),
+    startMinute: start,
+    endMinute: Math.min(start + length, MINUTES_PER_DAY)
+  }
+}
+
+/** Minutes from midnight to `HH:MM`. */
+export function timeOfMinute(minute: number): string {
+  return `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
+}
+
+function snap(minute: number): number {
+  return Math.round(minute / SNAP_MINUTES) * SNAP_MINUTES
+}
+
 /** `HH:MM` to minutes from midnight; an absent time is midnight. */
-function minutesOf(time: string | undefined): number {
+export function minutesOf(time: string | undefined): number {
   if (time === undefined) return 0
   const [hours = 0, minutes = 0] = time.split(':').map(Number)
   return hours * 60 + minutes

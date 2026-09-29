@@ -33,28 +33,46 @@ function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element
   )
 }
 
-interface ReadOnlyToggleProps {
+interface DetailToggleProps {
   checked: boolean
   label: string
+  /** Left off for a read-only toggle. */
+  onChange?: (checked: boolean) => void
 }
 
-/** A read-only stand-in for a toggle switch: this panel never writes back to Anytype. */
-function ReadOnlyToggle({ checked, label }: ReadOnlyToggleProps): React.JSX.Element {
+/** A switch; read-only unless it is given `onChange`. */
+function DetailToggle({ checked, label, onChange }: DetailToggleProps): React.JSX.Element {
+  const track = (
+    <span
+      className={[
+        'flex h-18 w-30 shrink-0 items-center rounded-pill p-2',
+        'transition-colors duration-fast ease-standard',
+        checked ? 'justify-end bg-surface-accent' : 'justify-start bg-surface-sunken border border-line-strong'
+      ].join(' ')}
+    >
+      <span className="size-icon-14 rounded-pill bg-surface-card shadow-1" />
+    </span>
+  )
+  const text = <span className="type-ui text-small text-ink-body">{label}</span>
+  if (!onChange) {
+    return (
+      <div role="switch" aria-checked={checked} aria-readonly aria-label={label} className="flex items-center gap-10">
+        {track}
+        {text}
+      </div>
+    )
+  }
   return (
-    <div className="flex items-center gap-10">
-      <span
-        role="switch"
-        aria-checked={checked}
-        aria-readonly
-        className={[
-          'flex h-18 w-30 shrink-0 items-center rounded-pill p-2',
-          checked ? 'justify-end bg-surface-accent' : 'justify-start bg-surface-sunken border border-line-strong'
-        ].join(' ')}
-      >
-        <span className="size-icon-14 rounded-pill bg-surface-card shadow-1" />
-      </span>
-      <span className="type-ui text-small text-ink-body">{label}</span>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex items-center gap-10 rounded-control text-left"
+    >
+      {track}
+      {text}
+    </button>
   )
 }
 
@@ -62,13 +80,22 @@ export interface EventDetailProps {
   event: CalendarEvent
   type: ObjectType | undefined
   spacesByKey: Map<string, Space>
+  /** Why this panel cannot write to Anytype; null when it can. */
+  readOnlyReason: string | null
+  onSetDone: (done: boolean) => void
 }
 
 /**
  * Every date names the relation that surfaced it ("Due date") — the system's rule that
  * trust comes from being explicit about why something is on the grid.
  */
-export function EventDetail({ event, type, spacesByKey }: EventDetailProps): React.JSX.Element {
+export function EventDetail({
+  event,
+  type,
+  spacesByKey,
+  readOnlyReason,
+  onSetDone
+}: EventDetailProps): React.JSX.Element {
   const { t } = useTranslation()
   const space = spacesByKey.get(event.space)
 
@@ -123,16 +150,24 @@ export function EventDetail({ event, type, spacesByKey }: EventDetailProps): Rea
           </div>
         ) : null}
 
-        <ReadOnlyToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
+        {/* How a type is drawn is the user's choice in Settings, not the object's. */}
+        <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
+        {/* A read-only Done needs no tooltip of its own: the notice below says why. */}
         {event.done === undefined ? null : (
-          <ReadOnlyToggle checked={event.done} label={t('calendar.eventDetail.done')} />
+          <DetailToggle
+            checked={event.done}
+            label={t('calendar.eventDetail.done')}
+            {...(readOnlyReason === null ? { onChange: onSetDone } : {})}
+          />
         )}
       </div>
 
       <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">
         <Icon name="info" size={14} className="mt-2 text-ink-tertiary" />
         <span className="type-caption text-tiny text-ink-secondary">
-          {t('calendar.eventDetail.readOnlyNotice')}
+          {readOnlyReason === null
+            ? t('calendar.eventDetail.editNotice')
+            : `${readOnlyReason} ${t('calendar.eventDetail.readOnlyNotice')}`}
         </span>
       </p>
 

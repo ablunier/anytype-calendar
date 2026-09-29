@@ -4,6 +4,7 @@ import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { MonthDayCell } from './MonthDayCell'
+import { useDayDrag } from './useDayDrag'
 
 export interface MonthGridProps {
   cells: MonthCell[]
@@ -22,6 +23,10 @@ export interface MonthGridProps {
   onSelectDay: (day: number) => void
   /** `date` is the day whose cell the event was opened from, `YYYY-MM-DD`. */
   onOpenEvent: (event: CalendarEvent, date: string) => void
+  /** `date` is the day its first day lands on, `YYYY-MM-DD`. Left off where objects cannot be moved. */
+  onMoveEvent?: (event: CalendarEvent, date: string) => void
+  /** Asks for a new object on the day, `YYYY-MM-DD`. */
+  onCreate: (date: string) => void
 }
 
 function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
@@ -44,6 +49,9 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * its week's segment starts in, which keeps the grid's rows and cells intact, and is
  * positioned against the week row, whose seven equal columns it needs to span. That is why
  * the week numbers sit beside the row, in a gutter of their own, and not in a column of it.
+ *
+ * A bar is moved by dragging it onto another day, whole days at a time; a timed object keeps
+ * its time of day. The day of the bar it is held by is the one that lands where it is dropped.
  */
 export function MonthGrid({
   cells,
@@ -56,11 +64,14 @@ export function MonthGrid({
   focusedDay,
   onFocusDay,
   onSelectDay,
-  onOpenEvent
+  onOpenEvent,
+  onMoveEvent,
+  onCreate
 }: MonthGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLDivElement>(null)
   const shouldRefocus = useRef(false)
+  const drag = useDayDrag((event, date) => onMoveEvent?.(event, date))
 
   const weeks = useMemo(() => {
     const chunks = chunkWeeks(cells)
@@ -150,6 +161,8 @@ export function MonthGrid({
                   onSelect={() => onSelectDay(cell.day)}
                   onKeyDown={(event) => handleKeyDown(event, cell.day)}
                   onOpenEvent={(event) => onOpenEvent(event, cell.date)}
+                  drag={onMoveEvent ? drag : null}
+                  onCreate={() => onCreate(cell.date)}
                 />
               ))}
             </div>

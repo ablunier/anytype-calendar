@@ -26,6 +26,7 @@ import {
   switchDateFor
 } from './lib/events'
 import {
+  creatableTypesFor,
   hasNotGrantedSpaces,
   isOnboarded,
   picksFor,
@@ -35,7 +36,7 @@ import {
   tracksAnyType,
   typesFor
 } from './lib/schema'
-import { apiAccessFor, apiKeyFor, authViewFor } from './lib/session'
+import { apiAccessFor, apiKeyFor, authViewFor, editAccessFor } from './lib/session'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
 import { CalendarScreen } from './screens/calendar/CalendarScreen'
@@ -173,6 +174,7 @@ function App(): React.JSX.Element | null {
   }
   const types = typesFor(schema)
   const picks = picksFor(selection, types)
+  const typesOnCalendar = withDates(types, picks.dates)
   const today = localDate(now)
   return (
     <TimeFormatContext value={timeFormat}>
@@ -181,7 +183,7 @@ function App(): React.JSX.Element | null {
         span={span}
         events={eventsFor(events, span)}
         status={spanStatusFor(events, span, now)}
-        types={withDates(types, picks.dates)}
+        types={typesOnCalendar}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
         tracksAnything={tracksAnyType(selection)}
@@ -190,6 +192,11 @@ function App(): React.JSX.Element | null {
         theme={theme}
         showWeekNumbers={showWeekNumbers}
         weekStart={weekStart}
+        editAccess={editAccessFor(session)}
+        creatableTypes={creatableTypesFor(typesOnCalendar, picks)}
+        onReschedule={(request) => window.api.events.reschedule(request)}
+        onCreate={(request) => window.api.events.create(request)}
+        onSetDone={(request) => window.api.events.setDone(request)}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setScreen('config')}
         onView={showView}

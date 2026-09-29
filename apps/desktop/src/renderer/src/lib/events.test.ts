@@ -1,12 +1,16 @@
 import { describe, expect, test } from 'vitest'
 import type { EventsDatedObject, EventsSpanResult } from '@anytype-calendar/events/domain'
 import type { EventsSnapshot } from '@shared/ipc'
+import type { CalendarEvent, ObjectType } from '@renderer/types'
 import {
   anchorOf,
+  createRequestFor,
   eventsFor,
   localDate,
   localTime,
   monthOf,
+  moveRequestFor,
+  resizeRequestFor,
   shiftSpan,
   shownSpanFor,
   spanFor,
@@ -254,5 +258,40 @@ describe('switchDateFor', () => {
     // The week of Monday 21 September ends on Sunday the 27th.
     expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-27')).toBe('2026-09-27')
     expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-28')).toBe('2026-09-21')
+  })
+})
+
+describe('edit requests', () => {
+  const event: CalendarEvent = {
+    id: 'obj_1',
+    title: 'Standup',
+    type: 'bafy.space:meeting',
+    space: 'bafy.space',
+    date: '2026-09-14',
+    time: '09:00',
+    allDay: false
+  }
+
+  test('name the object and the slot as a day of the calendar, its month zero-based', () => {
+    expect(moveRequestFor(event, { date: '2026-10-01', minute: 600 })).toEqual({
+      spaceId: 'bafy.space',
+      id: 'obj_1',
+      change: { kind: 'move', start: { day: { year: 2026, month: 9, day: 1 }, minute: 600 } }
+    })
+    expect(resizeRequestFor(event, { date: '2026-09-14', minute: 615 })).toEqual({
+      spaceId: 'bafy.space',
+      id: 'obj_1',
+      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 615 } }
+    })
+  })
+
+  test("create the type Anytype knows, in the type's space", () => {
+    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as ObjectType
+    expect(createRequestFor(type, 'Retro', { date: '2026-09-18', minute: null })).toEqual({
+      spaceId: 'bafy.space',
+      typeKey: 'meeting',
+      name: 'Retro',
+      at: { day: { year: 2026, month: 8, day: 18 }, minute: null }
+    })
   })
 })

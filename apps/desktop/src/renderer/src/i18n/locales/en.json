@@ -20,7 +20,8 @@
     "notGrantedDescription": "The key reaches only the spaces you picked when connecting. To add others, open the Anytype app, go to {{breadcrumb}} and grant them to Calendar for Anytype, or sign out and connect again to pick them.",
     "queries": "Queries",
     "queryOf": "Query over {{type}}",
-    "view": "View"
+    "view": "View",
+    "dismiss": "Dismiss"
   },
   "sync": {
     "status": {
@@ -240,7 +241,8 @@
       "location": "Location",
       "allDay": "All day",
       "done": "Done",
-      "readOnlyNotice": "This view is read-only. Edit the object in Anytype and it updates here on the next read.",
+      "readOnlyNotice": "Edit the object in Anytype and it updates here on the next read.",
+      "editNotice": "Drag it on the calendar to change its dates. Edit anything else in Anytype, and it updates here on the next read.",
       "openInAnytype": "Open in Anytype"
     },
     "detailPanel": {
@@ -258,6 +260,33 @@
       "month": "Month",
       "week": "Week",
       "day": "Day"
+    },
+    "edit": {
+      "failure": {
+        "unauthorized": "Anytype refused the key, so nothing was changed. Sign in again to keep editing.",
+        "notGranted": "This key can't edit that space, so nothing was changed. Grant it edit access in Anytype, or connect again.",
+        "rateLimited": "Anytype is taking too many changes at once. Try again in a moment.",
+        "unsupported": "This Anytype can't take changes from the calendar. Update Anytype to edit here.",
+        "unreachable": "Couldn't reach Anytype, so nothing was changed. Is it running?",
+        "gone": "That object is no longer on the calendar, so nothing was changed. It may have changed in Anytype.",
+        "invalid": "That change can't be made to this object.",
+        "rejected": "Anytype refused the change: {{message}}",
+        "rejectedSilently": "Anytype refused the change."
+      },
+      "readOnly": {
+        "key": "This key can only read. To edit here, grant it edit access in Anytype, or connect again.",
+        "needsV2": "Editing here needs a newer Anytype, one that serves API v2.",
+        "checking": "Checking what this key may do in Anytype…"
+      },
+      "noTypes": "Choose a type in Settings to create its objects here."
+    },
+    "create": {
+      "title": "New object",
+      "name": "Name",
+      "type": "Type",
+      "typeInSpace": "{{type}} · {{space}}",
+      "time": "Time",
+      "submit": "Create"
     }
   }
 }

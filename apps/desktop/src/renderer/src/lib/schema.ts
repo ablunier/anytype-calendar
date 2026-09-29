@@ -253,6 +253,22 @@ export function objectTypeKey(spaceId: string, typeKey: string): string {
   return `${spaceId}:${typeKey}`
 }
 
+/** The key Anytype knows a type by, from the ObjectType of one: the inverse of objectTypeKey. */
+export function anytypeTypeKeyOf(type: ObjectType): string {
+  return type.key.slice(type.space.length + 1)
+}
+
+/**
+ * The types a new object can be created as: the chosen ones of chosen spaces. Not queries,
+ * whose objects are those of a type, created as that type.
+ */
+export function creatableTypesFor(types: ObjectType[], picks: TypePicks): ObjectType[] {
+  return types.filter(
+    (type) =>
+      type.query === undefined && picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space)
+  )
+}
+
 /**
  * The key of the ObjectType for a query of a space. Neither a type key nor an object id holds
  * a colon, so it cannot be taken for a type's.
