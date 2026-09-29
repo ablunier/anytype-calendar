@@ -8,24 +8,39 @@ month, week or day view — so a `Task` with a due date, a `Meeting` with a star
 a `Note` with a creation date all show up in one place, without leaving your data or moving
 it anywhere.
 
-You pick which spaces and object types to track, and which date property of each type
-anchors it on the grid (a type with both a start and an end property is drawn as a range).
+You pick which spaces, object types and queries (Anytype "sets") to track, and which date
+property of each type anchors it on the grid (a type with both a start and an end property
+is drawn as a range).
 
-> **Status: early.** The desktop UI is fully built and navigable. `auth` is fully wired: it
-> signs in against the real Anytype local API, either through the 4-digit challenge/code
-> flow or by pasting a key you already hold, and keeps the key, encrypted, across restarts.
-> `schema` is real too — it reads each space's dated types from your Anytype data and feeds
-> the post-sign-in success card, onboarding, and Settings, which save which spaces/types you
-> track and each type's From/To date property. `events` puts those types' objects on the
-> calendar: any month, week or day can be browsed, a type with a To date is drawn as one
-> continuous bar across the days it spans, timed objects are placed by the hour in the week
-> and day views, the event detail panel can open the object in Anytype, and what is on screen
-> is read again when you come back to the window. The app remembers your light/dark choice
-> and which view you were in across restarts. The installers are packaged with Electron Forge
-> and published from a GitHub Actions release workflow. Editing and recurrence are not built
-> yet. The backend is organised as one package per bounded context — `auth`, `schema`
-> and `events` so far — plus two shared packages, `anytype-client` (the local API HTTP
-> transport) and `kernel` (shared use-case plumbing).
+> **Status: beta (`1.0.0-beta.2`).** Every screen runs against your real Anytype data — no
+> mock data anywhere.
+>
+> - **Sign-in** through Anytype's 4-digit challenge/code flow, or by pasting a key you
+>   already hold. The key is kept, encrypted, across restarts. Where Anytype serves the
+>   (pre-release) API v2 the app uses it — you then choose in Anytype which spaces the key
+>   reaches and whether it may write — and falls back to v1 where not. Settings shows the
+>   API major in use and what the key was granted.
+> - **Schema**: the app reads each space's dated types (and, under v2, its queries over a
+>   single dated type, its image, and its select properties' option colours). Onboarding
+>   and Settings save which spaces, types and queries go on the calendar, each one's From/To
+>   date property, whether those dates carry a time of day, which select property colours
+>   its objects, and which view a query reads through.
+> - **Calendar**: month, week and day views. A range is one continuous bar across the days
+>   it spans, timed objects are placed by the hour in the week and day views, and the detail
+>   panel shows an object's Done and Location (v2) and opens it in Anytype. What is on
+>   screen is read again when you come back to the window.
+> - **Editing** (v2, with a read/write key): drag an object to move it, double-click a day
+>   or an hour to create one, and tick it done from its panel.
+> - **Preferences**: light/dark theme, the view to open on, first day of the week, ISO week
+>   numbers, 12/24-hour time, and the language — English, Spanish or Galician, following
+>   the OS by default.
+> - **Releases**: installers for Linux, Windows and macOS are built by a GitHub Actions
+>   workflow. Windows builds update themselves; macOS and Linux builds say when a newer
+>   release is out.
+>
+> Recurrence is not built yet. The backend is organised as one package per bounded
+> context — `auth`, `schema` and `events` — plus two shared packages, `anytype-client`
+> (the local API HTTP transport) and `kernel` (shared use-case plumbing).
 
 ## Requirements
 
@@ -53,17 +68,23 @@ directly in Anytype under Settings → API Keys), you can paste it instead of ru
 code flow. The key is then stored in the app's user-data directory
 (`~/.config/anytype-calendar-desktop/credential.bin` in dev on Linux), encrypted with the
 OS keychain through Electron's `safeStorage`. Once connected, the app reads your spaces'
-dated types and walks you through onboarding — which spaces and types to track, and each
-type's From/To date property — or reopens straight past it if you'd already done that on a
-previous run. The calendar then shows the objects of the types you picked, in whichever of
-the three views you were last in: a type with a To date is drawn as one continuous bar
-across the days it spans, and clicking into a day opens the event detail panel, which can
-open the object directly in Anytype. The week and day views lay timed objects out by the
-hour, with a band above the grid for dates that carry no time and for ranges crossing
-midnight. Dates without a time are drawn as all-day, and times are shown in your computer's
-time zone. The calendar's top bar also has a light/dark theme toggle, remembered across
-restarts. Signing out deletes the credential file. The local API cannot revoke a key,
-so to revoke one, delete it in the Anytype app under Settings → API Keys.
+dated types (and queries, under API v2) and walks you through onboarding — which spaces,
+types and queries to track, and each type's From/To date property — or reopens straight
+past it if you'd already done that on a previous run. The calendar then shows the objects
+of what you picked, in the view chosen in Settings (the month by default): a type with a To
+date is drawn as one continuous bar across the days it spans, and clicking into a day opens
+the event detail panel, which can open the object directly in Anytype. The week and day
+views lay timed objects out by the hour, with a band above the grid for dates that carry no
+time and for ranges crossing midnight. Dates without a time are drawn as all-day, and times
+are shown in your computer's time zone. If the key may write, objects can be dragged to
+another day or hour, created by double-clicking, and ticked done from their panel. The
+calendar's top bar also has a light/dark theme toggle, remembered across restarts. Signing
+out deletes the credential file. The local API cannot revoke a key, so to revoke one,
+delete it in the Anytype app under Settings → API Keys.
+
+Against an Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback
+(and `v2` forbids it). Use it only with a legacy key: v1 refuses a key paired through v2,
+and a refused key is signed out, which deletes it.
 
 To work without Anytype, sign in against a simulated one:
 
@@ -75,7 +96,8 @@ The terminal then logs each challenge and the code to type — always `2749` (or
 API key `ak_fake_2749` directly). The simulated key is kept in a separate
 `credential-fake.bin`, the schema comes from four sample spaces
 `InMemorySchemaGateway` builds, and the objects from a sample month `InMemoryEventsGateway`
-seeds around the current one — never anything from a real Anytype instance.
+seeds around the current one — never anything from a real Anytype instance. Edits made
+there are kept in memory for the session.
 
 ## Scripts
 
@@ -137,8 +159,8 @@ Organised by bounded context first, then by hexagonal layer, then by role:
 
 ```
 packages/auth/     signing in, and keeping the key
-packages/schema/   the account's dated types, and which of them go on the calendar
-packages/events/   the objects of those types in the month on screen
+packages/schema/   the account's dated types and queries, and which of them go on the calendar
+packages/events/   the objects of those in the month, week or day on screen, and edits to them
   domain/           model/, gateways/, repositories/  — the pure center
   application/      use cases, orchestrating the domain through its ports
   infrastructure/   driven adapters implementing those ports, by technology (in-memory/, anytype/, encrypted-file/, local-time/)
@@ -181,13 +203,15 @@ in the running app.
 ### The renderer
 
 `apps/desktop/src/renderer/src` holds the React app: `App.tsx` is the root,
-`screens/<flow>/` has one directory per screen (`auth`, `onboarding`, `config`, `month`),
+`screens/<flow>/` has one directory per screen (`auth`, `onboarding`, `config`,
+`calendar` — the last drawing the month grid and the week/day hour grid),
 `components/ui/` the presentational primitives, and `lib/` the pure modules that turn the
 snapshots main pushes into what the screens draw (`lib/session.ts`, `lib/schema.ts`,
 `lib/events.ts`). Nothing is mocked: every screen runs against the `auth`, `schema` and
 `events` contexts' adapters over IPC. Navigation is local `useState`, not a router — four
-fixed screens, no URLs — but the month on screen is held in main, and the arrows only ask
-for another.
+fixed screens, no URLs — but the span on screen (a month, week or day) is held in main, and
+the arrows, Today and the view switcher only ask for another. Translations live under
+`i18n/locales/` (`react-i18next`).
 
 Imports that leave their own directory go through the `@renderer/*` alias
 (`@renderer/components/ui`), and same-directory imports stay relative (`./EventChip`) — so
@@ -216,6 +240,7 @@ Not built yet, roughly grouped:
 - Keyboard shortcuts / command palette
 - System notifications for upcoming events
 - Auto-update in all platforms
+- Anytwo compatibility
 
 ## Notes for contributors
 
