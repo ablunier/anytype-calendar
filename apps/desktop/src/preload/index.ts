@@ -67,7 +67,10 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.eventsChanged, forward)
       }
     },
-    showSpan: (span) => ipcRenderer.invoke(IpcChannel.eventsShowSpan, span)
+    showSpan: (span) => ipcRenderer.invoke(IpcChannel.eventsShowSpan, span),
+    reschedule: (request) => ipcRenderer.invoke(IpcChannel.eventsReschedule, request),
+    create: (request) => ipcRenderer.invoke(IpcChannel.eventsCreate, request),
+    setDone: (request) => ipcRenderer.invoke(IpcChannel.eventsSetDone, request)
   },
   theme: {
     get: () => ipcRenderer.invoke(IpcChannel.themeGet),

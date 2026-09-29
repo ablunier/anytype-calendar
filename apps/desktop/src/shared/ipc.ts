@@ -1,5 +1,15 @@
 import type { AuthSession } from '@anytype-calendar/auth/domain'
-import type { EventsSpan, EventsSpanKind, EventsSpanLoad } from '@anytype-calendar/events/domain'
+import type {
+  CompleteEventsObjectInput,
+  CreateEventsObjectInput,
+  RescheduleEventsObjectInput
+} from '@anytype-calendar/events/application'
+import type {
+  EventsEditOutcome,
+  EventsSpan,
+  EventsSpanKind,
+  EventsSpanLoad
+} from '@anytype-calendar/events/domain'
 import type {
   SchemaSelection,
   SchemaSelectionState,
@@ -16,6 +26,17 @@ export type SchemaSelectionSnapshot = SchemaSelectionState
 
 /** Safe to hand to the renderer: the key is read in main and never stored in an EventsSpanLoad. */
 export type EventsSnapshot = EventsSpanLoad
+
+/** Moves an object, or pulls its To date: `id` is Anytype's object id. */
+export type EventsRescheduleRequest = RescheduleEventsObjectInput
+
+/** Creates an object of a chosen type, placed by that type's dates. */
+export type EventsCreateRequest = CreateEventsObjectInput
+
+export type EventsSetDoneRequest = CompleteEventsObjectInput
+
+/** How an edit went; a failure the renderer shows, since nothing else will. */
+export type EventsEditResult = EventsEditOutcome
 
 /**
  * Which of the three views a launch opens on. What is on screen now is the shown span's own
@@ -55,6 +76,9 @@ export const IpcChannel = {
   eventsGet: 'events:get',
   eventsChanged: 'events:changed',
   eventsShowSpan: 'events:show-span',
+  eventsReschedule: 'events:reschedule',
+  eventsCreate: 'events:create',
+  eventsSetDone: 'events:set-done',
   themeGet: 'theme:get',
   themeChanged: 'theme:changed',
   themeSave: 'theme:save',
@@ -117,6 +141,15 @@ export interface CalendarApi {
      * Rejects when the span is malformed; does nothing while signed out.
      */
     showSpan(span: EventsSpan): Promise<void>
+    /**
+     * Each edit is written to Anytype, and the span read again once it lands; meanwhile a moved
+     * or ticked object is already drawn as edited. Resolves `not-granted` without asking
+     * Anytype when the session cannot write (see `authAccessCanWrite`); rejects when the
+     * request is malformed.
+     */
+    reschedule(request: EventsRescheduleRequest): Promise<EventsEditResult>
+    create(request: EventsCreateRequest): Promise<EventsEditResult>
+    setDone(request: EventsSetDoneRequest): Promise<EventsEditResult>
   }
   theme: {
     get(): Promise<ThemeSnapshot>

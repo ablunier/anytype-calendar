@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 import { join } from 'path'
 import { setTimeout as sleep } from 'timers/promises'
 import { app, safeStorage } from 'electron'
@@ -29,15 +29,19 @@ import {
   InMemoryCredentialRepository
 } from '@anytype-calendar/auth/infrastructure'
 import {
+  CompleteEventsObject,
+  CreateEventsObject,
   EventsSpanStore,
   LoadEventsSpan,
+  RescheduleEventsObject,
   ResetEventsSpan
 } from '@anytype-calendar/events/application'
-import type { EventsGateway, EventsTimeZone } from '@anytype-calendar/events/domain'
+import type { EventsGateway, EventsTimeZone, EventsWriter } from '@anytype-calendar/events/domain'
 import {
   AnytypeEventsGateway,
   AnytypeV1EventsGateway,
   AnytypeV2EventsGateway,
+  AnytypeV2EventsWriter,
   InMemoryEventsGateway,
   LocalEventsTimeZone
 } from '@anytype-calendar/events/infrastructure'
@@ -107,6 +111,9 @@ export interface AppServices {
   saveSchemaSelection: SaveSchemaSelection
   eventsState: EventsSpanStore
   loadEventsSpan: LoadEventsSpan
+  rescheduleEventsObject: RescheduleEventsObject
+  createEventsObject: CreateEventsObject
+  completeEventsObject: CompleteEventsObject
   themeState: ThemeStore
   loadTheme: LoadTheme
   saveTheme: SaveTheme
@@ -214,17 +221,12 @@ export function composeServices(): AppServices {
 
   const zone = new LocalEventsTimeZone()
   const eventsState = new EventsSpanStore()
+  const events = client && probe ? anytypeEvents(client, probe) : inMemoryEvents(zone)
+  const eventSources = { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) }
   const loadEventsSpan = new LoadEventsSpan({
-    gateway:
-      client && probe
-        ? new AnytypeEventsGateway({
-            probe,
-            v1: new AnytypeV1EventsGateway(client),
-            v2: new AnytypeV2EventsGateway({ client, probe, warn: (message) => console.warn(message) })
-          })
-        : inMemoryEventsGateway(zone),
+    gateway: events.gateway,
     apiKeys,
-    sources: { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) },
+    sources: eventSources,
     zone,
     store: eventsState,
     // A launch opens on the view last chosen, so the first read is the one the window draws.
@@ -232,6 +234,17 @@ export function composeServices(): AppServices {
       defaultEventsSpan(calendarViewState.get(), zone.dayOf(Date.now()), weekStartState.get())
   })
   const resetEventsSpan = new ResetEventsSpan(eventsState)
+  const editDeps = {
+    writer: events.writer,
+    apiKeys,
+    sources: eventSources,
+    zone,
+    store: eventsState,
+    load: loadEventsSpan
+  }
+  const rescheduleEventsObject = new RescheduleEventsObject(editDeps)
+  const createEventsObject = new CreateEventsObject(editDeps)
+  const completeEventsObject = new CompleteEventsObject(editDeps)
 
   const themeState = new ThemeStore()
   const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
@@ -326,6 +339,9 @@ export function composeServices(): AppServices {
     saveSchemaSelection,
     eventsState,
     loadEventsSpan,
+    rescheduleEventsObject,
+    createEventsObject,
+    completeEventsObject,
     themeState,
     loadTheme,
     saveTheme,
@@ -382,8 +398,25 @@ function inMemorySchemaGateway(): SchemaGateway {
   return new InMemorySchemaGateway({ sleep: (ms) => sleep(ms) })
 }
 
-function inMemoryEventsGateway(zone: EventsTimeZone): EventsGateway {
-  return new InMemoryEventsGateway({ sleep: (ms) => sleep(ms), zone, now: Date.now })
+/** Only v2 takes writes; the IPC handlers let an edit through only while reading through it. */
+function anytypeEvents(
+  client: AnytypeClient,
+  probe: AnytypeDialectProbe
+): { gateway: EventsGateway; writer: EventsWriter } {
+  return {
+    gateway: new AnytypeEventsGateway({
+      probe,
+      v1: new AnytypeV1EventsGateway(client),
+      v2: new AnytypeV2EventsGateway({ client, probe, warn: (message) => console.warn(message) })
+    }),
+    writer: new AnytypeV2EventsWriter({ client, probe, randomId: randomUUID })
+  }
+}
+
+/** One fake for both, so an edit shows on the next read. */
+function inMemoryEvents(zone: EventsTimeZone): { gateway: EventsGateway; writer: EventsWriter } {
+  const fake = new InMemoryEventsGateway({ sleep: (ms) => sleep(ms), zone, now: Date.now })
+  return { gateway: fake, writer: fake }
 }
 
 /** Never writes the key in plaintext: without OS encryption it lasts only until quit. */

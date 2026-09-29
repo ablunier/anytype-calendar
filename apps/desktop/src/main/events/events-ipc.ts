@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { toEventsSpan } from '@anytype-calendar/events/domain'
+import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
+import { toEventsSpan, type EventsEditOutcome } from '@anytype-calendar/events/domain'
 import { IpcChannel } from '@shared/ipc'
 import type { AppServices } from '../composition'
+import { toCreateRequest, toRescheduleRequest, toSetDoneRequest } from './edit-requests'
 import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
 
 export function registerEventsIpc({
@@ -9,11 +11,37 @@ export function registerEventsIpc({
   checkAuthAccess,
   schemaSync,
   eventsState,
-  loadEventsSpan
+  loadEventsSpan,
+  rescheduleEventsObject,
+  createEventsObject,
+  completeEventsObject
 }: AppServices): void {
   const connected = (): boolean => authSession.get().phase === 'connected'
 
-  ipcMain.handle(IpcChannel.eventsGet, () => eventsState.get())
+  /* The renderer hides every edit a session cannot make, but it is not trusted to: a key
+   * granted read only, or v1, would have Anytype refuse the write anyway, after the object had
+   * been drawn moved. */
+  const edit = <T>(parse: (value: unknown) => T | null, run: (request: T) => Promise<EventsEditOutcome>) =>
+    (_event: unknown, value: unknown): Promise<EventsEditOutcome> => {
+      const request = parse(value)
+      if (!request) throw new TypeError('not an edit request')
+      const session = authSession.get()
+      if (session.phase !== 'connected' || !authAccessCanWrite(session.access)) {
+        return Promise.resolve({ ok: false, failure: 'not-granted' })
+      }
+      return run(request)
+    }
+  ipcMain.handle(
+    IpcChannel.eventsReschedule,
+    edit(toRescheduleRequest, (request) => rescheduleEventsObject.execute(request))
+  )
+  ipcMain.handle(IpcChannel.eventsCreate, edit(toCreateRequest, (request) => createEventsObject.execute(request)))
+  ipcMain.handle(
+    IpcChannel.eventsSetDone,
+    edit(toSetDoneRequest, (request) => completeEventsObject.execute(request))
+  )
+
+  ipcMain.handle(IpcChannel.eventsGet, () => eventsState.shown())
   ipcMain.handle(IpcChannel.eventsShowSpan, (_event, value: unknown) => {
     // Renderer input is untrusted, and this one becomes search filters.
     const span = toEventsSpan(value)
