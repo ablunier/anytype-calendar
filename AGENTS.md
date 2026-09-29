@@ -24,7 +24,9 @@ onboarding and Settings save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
 selected types and queries whose dates fall in it, with their Done, Location and colour-by
 option where v2 serves them, which the calendar screen draws as a month grid or as an hour
-grid. An object a type and a query both bring is drawn once, as the type places it. No screen
+grid. An object a type and a query both bring is drawn once, as the type places it. Where the
+key reads through v2 and may write, the calendar also edits: an object is moved by dragging
+it, created by double-clicking a day or an hour, and ticked done from its panel. No screen
 runs on mock data.
 
 ## Commands
@@ -185,7 +187,21 @@ Standard electron-vite three-process layout:
   null `grant` is a legacy key, or v1, which cannot say, and reaches every space with write
   access. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
-  result. Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
+  result. Edits (`RescheduleEventsObject`, `CreateEventsObject`, `CompleteEventsObject`) write
+  through `EventsWriter` — `AnytypeV2EventsWriter`, or in fake mode the same
+  `InMemoryEventsGateway` that reads, so an edit shows on the next read — and then re-run
+  `LoadEventsSpan`. Meanwhile the moved or ticked object is held in `EventsSpanStore` as an
+  edit in flight: `get()` is the load the use cases dispatch to, `shown()` draws the edits over
+  it and is what IPC pushes, so a drag never snaps back while Anytype is asked, and a refused
+  write drops it. `events-ipc.ts` validates each request (`events/edit-requests.ts`) and
+  answers `not-granted` without writing unless `authAccessCanWrite(session.access)`: v2 and a
+  read/write grant, or no grant of its own. The renderer reads the same rule as an
+  `EditAccess` (`editAccessFor`, `lib/session.ts`), which turns dragging off and has a
+  double-click say why; every failed edit is a toast (`lib/edit-text.ts`). A move is
+  worked out in the domain (`rescheduleEventsDatedObject`): an all-day date is written as the
+  first instant of its day and a range keeps its day count, a timed one lands on the wall-clock
+  minute asked for (`EventsTimeZone.at`, which a DST day would put an hour off as
+  `startOfDay` plus minutes) and keeps its length. Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
   from the saved view and week start — which is why `main/index.ts` awaits those two
   preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
@@ -422,6 +438,13 @@ key works with both; a key paired through v2 (scoped) does not work with v1:
   403 on a space's types, or on one type, reads as no types: the grant changed since the list.
 - Paging puts `has_more`, `total` and a `message` hint at the top level. v2's own errors are
   `{ status, code, message, issues[] }`; pairing, key and rate-limit refusals keep v1's shape.
+  `AnytypeApiError` carries the issues, and a refused write is shown in its first one's words.
+- Writes (v1 has none): `PATCH …/objects/{id}` with `{ ops: [{ op: 'set_properties', set:
+  { [key]: value } }] }`, atomic; `POST …/objects` with the shortcut `{ type, name, properties }`
+  answers `201 { id, etag }`. A date is written as RFC 3339, like it is read. Every write carries
+  an `Idempotency-Key` (a replay of the same key and body returns the stored response), and one
+  that got no answer is sent once more with it. No `If-Match`: search rows have no etag, so the
+  last write wins. A read-only key answers 403 `write_not_granted`, a busy one 429.
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 
