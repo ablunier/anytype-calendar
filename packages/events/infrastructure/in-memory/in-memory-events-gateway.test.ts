@@ -198,3 +198,36 @@ test('gives every seeded object its own id', () => {
   const ids = inMemoryEventsSample(DECEMBER, UTC).map(({ id }) => id)
   expect(new Set(ids).size).toBe(ids.length)
 })
+
+test('moves, ticks and creates objects, which the next read answers', async () => {
+  const { gateway } = setup(OBJECTS)
+  const window = { start: 0, end: 10_000 }
+
+  await expect(gateway.reschedule('k', { spaceId: 'sp_1', id: 'o4' }, { start_date: 3_000, due_date: 6_000 })).resolves.toEqual({
+    ok: true,
+    value: null
+  })
+  await gateway.setDone('k', { spaceId: 'sp_1', id: 'o1' }, 'done', true)
+  await expect(
+    gateway.create('k', { spaceId: 'sp_1', typeKey: 'project', name: 'New', dates: { start_date: 4_000 } })
+  ).resolves.toEqual({ ok: true, value: { id: 'obj_new_1' } })
+
+  const projects = await gateway.listObjects('k', PROJECTS, window)
+  expect(projects.ok && projects.value).toEqual([
+    { id: 'o4', title: 'Range', start: 3_000, end: 6_000 },
+    { id: 'o5', title: 'Open', start: 2_000, end: null },
+    { id: 'obj_new_1', title: 'New', start: 4_000, end: null }
+  ])
+  const tasks = await gateway.listObjects('k', { ...TASKS, done: 'done' }, window)
+  expect(tasks.ok && tasks.value[0]).toMatchObject({ id: 'o1', done: true })
+  // The objects it was given are its own copies.
+  expect(OBJECTS[0]?.done).toBeUndefined()
+})
+
+test('refuses to write an object it does not have', async () => {
+  const { gateway } = setup(OBJECTS)
+  await expect(gateway.setDone('k', { spaceId: 'sp_2', id: 'o1' }, 'done', true)).resolves.toMatchObject({
+    ok: false,
+    failure: 'rejected'
+  })
+})

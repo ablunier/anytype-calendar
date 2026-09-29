@@ -4,5 +4,6 @@
 export * from './anytype/anytype-events-gateway'
 export * from './anytype/anytype-v1-events-gateway'
 export * from './anytype/anytype-v2-events-gateway'
+export * from './anytype/anytype-v2-events-writer'
 export * from './in-memory/in-memory-events-gateway'
 export * from './local-time/local-events-time-zone'

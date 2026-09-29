@@ -1,11 +1,16 @@
 import {
   shiftEventsMonth,
+  type EventsDateValues,
   type EventsGateway,
   type EventsGatewayResult,
   type EventsMonth,
+  type EventsNewObject,
   type EventsObjectRef,
+  type EventsObjectTarget,
   type EventsSource,
-  type EventsTimeZone
+  type EventsTimeZone,
+  type EventsWriteResult,
+  type EventsWriter
 } from '../../domain'
 
 export interface InMemoryEventsObject {
@@ -159,12 +164,16 @@ export function inMemoryEventsSample(month: EventsMonth, zone: EventsTimeZone): 
   }))
 }
 
-/** Simulates the Anytype local API's object search with no I/O. Accepts any key. */
-export class InMemoryEventsGateway implements EventsGateway {
+/**
+ * Simulates the Anytype local API's object search, and its writes to the same objects, with no
+ * I/O. Accepts any key, and lets it write anywhere.
+ */
+export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   readonly #sleep: (ms: number) => Promise<void>
   readonly #objects: InMemoryEventsObject[]
   readonly #queries: InMemoryEventsQuery[]
   readonly #requestLatencyMs: number
+  #created = 0
 
   constructor({
     sleep,
@@ -175,7 +184,8 @@ export class InMemoryEventsGateway implements EventsGateway {
     requestLatencyMs = 300
   }: InMemoryEventsGatewayOptions) {
     this.#sleep = sleep
-    this.#objects = objects ?? inMemoryEventsSample(zone.dayOf(now()), zone)
+    // Copied, since writes change them.
+    this.#objects = (objects ?? inMemoryEventsSample(zone.dayOf(now()), zone)).map((object) => ({ ...object }))
     this.#queries = queries
     this.#requestLatencyMs = requestLatencyMs
   }
@@ -211,6 +221,46 @@ export class InMemoryEventsGateway implements EventsGateway {
     return { ok: true, value: refs }
   }
 
+  async reschedule(
+    _apiKey: string,
+    target: EventsObjectTarget,
+    dates: EventsDateValues
+  ): Promise<EventsWriteResult> {
+    await this.#sleep(this.#requestLatencyMs)
+    const object = this.#find(target)
+    if (!object) return GONE
+    object.dates = { ...object.dates, ...dates }
+    return { ok: true, value: null }
+  }
+
+  async create(
+    _apiKey: string,
+    { spaceId, typeKey, name, dates }: EventsNewObject
+  ): Promise<EventsWriteResult<{ id: string }>> {
+    await this.#sleep(this.#requestLatencyMs)
+    const id = `obj_new_${++this.#created}`
+    this.#objects.push({ id, spaceId, typeKey, title: name, dates: { ...dates } })
+    return { ok: true, value: { id } }
+  }
+
+  /** `key` goes unread: the fake keeps Done as a field of its own. */
+  async setDone(
+    _apiKey: string,
+    target: EventsObjectTarget,
+    _key: string,
+    done: boolean
+  ): Promise<EventsWriteResult> {
+    await this.#sleep(this.#requestLatencyMs)
+    const object = this.#find(target)
+    if (!object) return GONE
+    object.done = done
+    return { ok: true, value: null }
+  }
+
+  #find({ spaceId, id }: EventsObjectTarget): InMemoryEventsObject | undefined {
+    return this.#objects.find((object) => object.spaceId === spaceId && object.id === id)
+  }
+
   #read(source: EventsSource): { typeKey: string; openOnly: boolean } | null {
     if (source.kind === 'type') return { typeKey: source.typeKey, openOnly: false }
     const query = this.#queries.find(
@@ -221,6 +271,8 @@ export class InMemoryEventsGateway implements EventsGateway {
     return query && view ? { typeKey: query.typeKey, openOnly: view.openOnly } : null
   }
 }
+
+const GONE = { ok: false, failure: 'rejected', message: 'object not found' } as const
 
 function instantOf({ month, day, time }: SeedDate, seeded: EventsMonth, zone: EventsTimeZone): number {
   const date = { ...shiftEventsMonth(seeded, month), day }
