@@ -47,8 +47,7 @@ Run from the repo root unless noted.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
 - `npm test` — `vitest run` across all vitest projects: one per layer kind (`domain`,
   `application`, `infrastructure`), each spanning every context
-  (`packages/*/<layer>/**/*.test.ts`), plus `anytype-client` (the Anytype client's
-  `src/`), `renderer` (the renderer's pure `lib/` modules) and `main` (the main process's pure glue, e.g. `events/focus-refresh.ts`, which
+  (`packages/*/<layer>/**/*.test.ts`), plus `renderer` (the renderer's pure `lib/` modules) and `main` (the main process's pure glue, e.g. `events/focus-refresh.ts`, which
   must import neither Electron nor Node core). Tests run against package sources, no build needed;
   `passWithNoTests` is on so a scaffolded context with no tests yet doesn't fail the run.
   Vitest project config lives in `vitest.config.ts` at the root.
@@ -74,7 +73,7 @@ Run from the repo root unless noted.
 ### Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently `auth`, `schema` and `events`), and its
-layers are folders inside it — except `anytype-client`, `anytype-v1` and `kernel` (see below):
+layers are folders inside it — except `anytype-v1` and `kernel` (see below):
 
 ```
 packages/<context>/
@@ -86,12 +85,10 @@ packages/<context>/
   dist/<layer>/       tsc -b output (gitignored)
 ```
 
-`packages/anytype-client` is `@ablunier/anytype-client`, a typed client for Anytype's local
-API v2 that is being extracted to be published on its own (its `README.md` has its surface
-and the API's quirks). It is not part of the hexagon: it has a `src/` rather than a layer,
-imports nothing at all (`anytype-client-is-standalone`), and, since its name carries no
-layer, is aliased explicitly in `electron.vite.config.ts`, `vitest.config.ts` and
-`tsconfig.paths.json` and has its own vitest project. Adapters call one method per route
+Anytype is reached through `@ablunier/anytype-client`, a typed client for its local API v2
+published from its own repo (`github.com/ablunier/anytype-client`, `../anytype-client` beside
+this one; its `README.md` has its surface and the API's quirks). A route it lacks, or a fix,
+goes there and is released as a new version, not patched here. Adapters call one method per route
 (`client.withApiKey(key).types.get(…)`) and never build a path; `listAll` pages a list. Error
 statuses resolve as values (`{ ok: false, status, error, unsupported }`), and only transport
 failure rejects (`AnytypeTransportError`). The composition root injects `fetch`, with a
@@ -133,7 +130,7 @@ context's `application` layer without adding a dependency edge of its own
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
   pattern-based and need no edits. A context whose adapters talk to Anytype also lists
   `@ablunier/anytype-client` and `@anytype-calendar/anytype-v1` as dependencies and
-  references `../anytype-client` and `../anytype-v1` from its tsconfig, as `auth` does;
+  references `../anytype-v1` from its tsconfig, as `auth` does;
   likewise for `kernel` in a context's `application` layer (`auth`, `schema` and
   `events` all do). Either way, run `npm install` afterward so npm workspaces symlinks the new package
   into `node_modules` — without it, `tsc -b` fails with `TS2307: Cannot find module`.
@@ -158,8 +155,7 @@ Rules worth knowing before adding an import:
   it from importing anything at all, context or otherwise.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
   reach into its own `domain`, `packages/anytype-v1/infrastructure` and the Anytype client
-  (`packages/anytype-client/src`, or `node_modules/@ablunier/anytype-client` once it is an npm
-  dependency). The same rule keeps `anytype-v1` itself a leaf that imports no context.
+  (`node_modules/@ablunier/anytype-client`). The same rule keeps `anytype-v1` itself a leaf that imports no context.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires
   them together. The rules capture the context name and refer back to it (`$1`), so this
   holds for every context without a rule per package.
