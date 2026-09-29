@@ -29,3 +29,13 @@ export function sameAuthAccess(a: AuthAccess, b: AuthAccess): boolean {
     x.spaceIds.every((id, index) => id === y.spaceIds[index])
   )
 }
+
+/**
+ * Whether objects can be edited through the key: only v2 takes writes, and only a key granted
+ * read/write — or one with no grant of its own — may make them. Null, before Anytype has been
+ * asked, cannot.
+ */
+export function authAccessCanWrite(access: AuthAccess | null): boolean {
+  if (access === null || access.apiVersion !== 'v2') return false
+  return access.grant === null || access.grant.permission === 'readwrite'
+}
