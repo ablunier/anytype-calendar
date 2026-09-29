@@ -10,7 +10,8 @@ it anywhere.
 
 You pick which spaces, object types and queries (Anytype "sets") to track, and which date
 property of each type anchors it on the grid (a type with both a start and an end property
-is drawn as a range).
+is drawn as a range). Objects take their type's Anytype colour, or the colour of the option
+picked in a select property of your choice.
 
 > **Status: beta (`1.0.0-beta.2`).** Every screen runs against your real Anytype data — no
 > mock data anywhere.
@@ -19,7 +20,8 @@ is drawn as a range).
 >   already hold. The key is kept, encrypted, across restarts. Where Anytype serves the
 >   (pre-release) API v2 the app uses it — you then choose in Anytype which spaces the key
 >   reaches and whether it may write — and falls back to v1 where not. Settings shows the
->   API major in use and what the key was granted.
+>   API major in use and what the key was granted, and onboarding and Settings say when the
+>   key leaves some of your spaces out.
 > - **Schema**: the app reads each space's dated types (and, under v2, its queries over a
 >   single dated type, its image, and its select properties' option colours). Onboarding
 >   and Settings save which spaces, types and queries go on the calendar, each one's From/To
@@ -27,8 +29,9 @@ is drawn as a range).
 >   its objects, and which view a query reads through.
 > - **Calendar**: month, week and day views. A range is one continuous bar across the days
 >   it spans, timed objects are placed by the hour in the week and day views, and the detail
->   panel shows an object's Done and Location (v2) and opens it in Anytype. What is on
->   screen is read again when you come back to the window.
+>   panel shows an object's Done and Location (v2) and opens it in Anytype. An object that
+>   both a type and a query bring is drawn once. What is on screen is read again when you
+>   come back to the window.
 > - **Editing** (v2, with a read/write key): drag an object to move it, double-click a day
 >   or an hour to create one, and tick it done from its panel.
 > - **Preferences**: light/dark theme, the view to open on, first day of the week, ISO week
@@ -36,13 +39,13 @@ is drawn as a range).
 >   the OS by default.
 > - **Releases**: installers for Linux, Windows and macOS are built by a GitHub Actions
 >   workflow. Windows builds update themselves; macOS and Linux builds say when a newer
->   release is out.
+>   release is out. Settings → About shows the running version.
 >
 > Recurrence is not built yet. The backend is organised as one package per bounded
 > context — `auth`, `schema` and `events` — plus two shared packages, `anytype-v1` (what the
 > app still reads through v1) and `kernel` (shared use-case plumbing). Anytype is reached
 > through [`@ablunier/anytype-client`](https://github.com/ablunier/anytype-client), a typed
-> client for the local API v2 published on its own.
+> client for the local API v2 that is published on npm as its own project.
 
 ## Requirements
 
@@ -137,11 +140,11 @@ The builds are not code-signed. Windows SmartScreen warns on first run ("More in
 anyway"). macOS refuses to open the app at first: try once, then allow it under System
 Settings → Privacy & Security → "Open Anyway".
 
-Installed Windows builds update themselves: once an hour the app asks
+Installed Windows builds update themselves: every 10 minutes the app asks
 [update.electronjs.org](https://update.electronjs.org) for a newer published release of this
 repository (which must stay public) and offers to restart into it. macOS only applies updates
 to a code-signed app, and Linux's `.deb` has no updater, so there the app checks GitHub for a
-newer release at launch and every few hours, says so in the calendar's top bar and in
+newer release at launch and every 6 hours, says so in the calendar's top bar and in
 Settings → About, and links to the release page to download it by hand.
 
 ## Repo layout
@@ -182,15 +185,22 @@ A context's domain has no npm dependencies and no Node core imports, and the who
 compiles with no ambient types (`types: []`), so platform globals like `process` or
 `setTimeout` are out of reach too — infrastructure receives such capabilities from the
 composition root instead. Adapters are reached through ports the domain declares, never
-imported directly by the use cases. `packages/anytype-v1` and `packages/kernel` are the two shared packages — not contexts, each
-with only one layer, so the same aliasing, test projects and lint rules apply to them
-unedited. `anytype-v1` has only an `infrastructure/` layer and imports only the client; `kernel` has only an
+imported directly by the use cases. `packages/anytype-v1` and `packages/kernel` are the two
+shared packages — not contexts, each with only one layer, so the same aliasing, test
+projects and lint rules apply to them unedited. `anytype-v1` has only an `infrastructure/`
+layer and imports only the Anytype client; `kernel` has only an
 `application/` layer (the `DispatchGuard` dispatch/staleness-guard pattern used by use cases
 that race an async gateway call against a later reset) and, uniquely, imports nothing at
 all — not even Node core or npm — so it stays safely importable from any context's
 application layer without adding a dependency edge of its own. Contexts never import each
 other; `apps/desktop`'s main process wires them together. No package imports from
 `apps/**`, and `electron`/`react` belong solely to `apps/desktop`.
+
+Each context's `infrastructure/anytype/` holds a v1 gateway, a v2 gateway and one that picks
+between them per call, through the probe in `anytype-v1` that asks Anytype which major of
+the API it serves. Both talk to Anytype through `@ablunier/anytype-client`'s methods rather
+than building requests themselves; a route the client lacks is added there and released,
+not patched here. Dropping v1 later means deleting `anytype-v1` and one gateway per context.
 
 All of that is enforced by `.dependency-cruiser.cjs` via `npm run lint:arch`, which reads
 the rules alongside the reasoning for each one. Run it before opening a PR that adds
