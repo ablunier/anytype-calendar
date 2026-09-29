@@ -39,10 +39,18 @@ export interface AnytypeRequest {
   headers?: Record<string, string>
 }
 
-/** Empty strings when the error body did not carry the field. */
+/** Empty strings, and no issues, when the error body did not carry the field. */
 export interface AnytypeApiError {
   /** e.g. `bad_request`, `internal_server_error`. */
   code: string
+  message: string
+  /** v2 only: which input was refused, and why. */
+  issues: AnytypeApiIssue[]
+}
+
+export interface AnytypeApiIssue {
+  /** e.g. `ops[0].set.due_date`; empty when the issue names no input. */
+  path: string
   message: string
 }
 
@@ -134,7 +142,18 @@ function parseErrorBody(text: string): unknown {
 function toApiError(body: unknown): AnytypeApiError {
   const fields = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {}
   return {
-    code: typeof fields['code'] === 'string' ? fields['code'] : '',
-    message: typeof fields['message'] === 'string' ? fields['message'] : ''
+    code: stringIn(fields, 'code'),
+    message: stringIn(fields, 'message'),
+    issues: (Array.isArray(fields['issues']) ? fields['issues'] : []).flatMap((issue: unknown) => {
+      const issueFields =
+        typeof issue === 'object' && issue !== null ? (issue as Record<string, unknown>) : {}
+      const message = stringIn(issueFields, 'message')
+      return message === '' ? [] : [{ path: stringIn(issueFields, 'path'), message }]
+    })
   }
+}
+
+function stringIn(fields: Record<string, unknown>, name: string): string {
+  const value = fields[name]
+  return typeof value === 'string' ? value : ''
 }

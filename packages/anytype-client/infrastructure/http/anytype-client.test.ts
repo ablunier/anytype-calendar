@@ -93,7 +93,36 @@ describe('request', () => {
     await expect(client.request({ method: 'POST', path: '/v1/auth/api_keys' })).resolves.toEqual({
       ok: false,
       status: 500,
-      error: { code: 'internal_server_error', message: 'failed to authenticate user' }
+      error: { code: 'internal_server_error', message: 'failed to authenticate user', issues: [] }
+    })
+  })
+
+  test("resolves a v2 error status with the issues it names, leaving out any that say nothing", async () => {
+    const { client } = setup(
+      400,
+      JSON.stringify({
+        status: 400,
+        code: 'invalid_input',
+        message: 'invalid ops',
+        issues: [
+          { path: 'ops[0].set.due_date', message: 'not a date', hint: 'use RFC 3339' },
+          { path: 'ops[0]' },
+          { message: 'the batch was refused' }
+        ]
+      })
+    )
+
+    await expect(client.request({ method: 'PATCH', path: '/v2/x' })).resolves.toEqual({
+      ok: false,
+      status: 400,
+      error: {
+        code: 'invalid_input',
+        message: 'invalid ops',
+        issues: [
+          { path: 'ops[0].set.due_date', message: 'not a date' },
+          { path: '', message: 'the batch was refused' }
+        ]
+      }
     })
   })
 
@@ -103,7 +132,7 @@ describe('request', () => {
     await expect(client.request({ method: 'GET', path: '/v1/x' })).resolves.toEqual({
       ok: false,
       status: 404,
-      error: { code: '', message: '' }
+      error: { code: '', message: '', issues: [] }
     })
   })
 
@@ -113,7 +142,7 @@ describe('request', () => {
     await expect(client.request({ method: 'GET', path: '/v2/auth/whoami' })).resolves.toEqual({
       ok: false,
       status: 404,
-      error: { code: '', message: '' }
+      error: { code: '', message: '', issues: [] }
     })
   })
 
