@@ -47,8 +47,8 @@ Run from the repo root unless noted.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
 - `npm test` — `vitest run` across all vitest projects: one per layer kind (`domain`,
   `application`, `infrastructure`), each spanning every context
-  (`packages/*/<layer>/**/*.test.ts`), plus `renderer` (the renderer's pure `lib/`
-  modules) and `main` (the main process's pure glue, e.g. `events/focus-refresh.ts`, which
+  (`packages/*/<layer>/**/*.test.ts`), plus `anytype-client` (the Anytype client's
+  `src/`), `renderer` (the renderer's pure `lib/` modules) and `main` (the main process's pure glue, e.g. `events/focus-refresh.ts`, which
   must import neither Electron nor Node core). Tests run against package sources, no build needed;
   `passWithNoTests` is on so a scaffolded context with no tests yet doesn't fail the run.
   Vitest project config lives in `vitest.config.ts` at the root.
@@ -74,7 +74,7 @@ Run from the repo root unless noted.
 ### Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently `auth`, `schema` and `events`), and its
-layers are folders inside it — except `anytype-client` and `kernel` (see below):
+layers are folders inside it — except `anytype-client`, `anytype-v1` and `kernel` (see below):
 
 ```
 packages/<context>/
@@ -86,18 +86,29 @@ packages/<context>/
   dist/<layer>/       tsc -b output (gitignored)
 ```
 
-`packages/anytype-client` and `packages/kernel` are not contexts but shared packages, each
+`packages/anytype-client` is `@ablunier/anytype-client`, a typed client for Anytype's local
+API v2 that is being extracted to be published on its own (its `README.md` has its surface
+and the API's quirks). It is not part of the hexagon: it has a `src/` rather than a layer,
+imports nothing at all (`anytype-client-is-standalone`), and, since its name carries no
+layer, is aliased explicitly in `electron.vite.config.ts`, `vitest.config.ts` and
+`tsconfig.paths.json` and has its own vitest project. Adapters call one method per route
+(`client.withApiKey(key).types.get(…)`) and never build a path; `listAll` pages a list. Error
+statuses resolve as values (`{ ok: false, status, error, unsupported }`), and only transport
+failure rejects (`AnytypeTransportError`). The composition root injects `fetch`, with a
+timeout. Writes carry an `Idempotency-Key` and are retried once when they got no answer.
+
+`packages/anytype-v1` and `packages/kernel` are not contexts but shared packages, each
 with only one layer, so the pattern-based aliases, vitest projects and lint rules apply to
-them unedited. `anytype-client` is the HTTP transport for the Anytype local API
-(`AnytypeClient`) that every context's `infrastructure/anytype/` adapters use; it resolves
-error statuses as values and rejects only on transport failure (or a success that is not
-JSON), and `fetch` is injected by the composition root. It also holds `AnytypeDialectProbe`,
-which asks Anytype once per key which major of the API it serves (`GET /v2/auth/whoami`: an
-answer means v2, a bare plain-text 404 means a build without v2). Each context's
+them unedited. `anytype-v1` holds what the app still needs of v1, which the client does not
+serve: `AnytypeV1Client` (the few v1 routes read, through the same `AnytypeClient`, with v1's
+`Anytype-Version` header; `listAllV1` pages them) and `AnytypeDialectProbe`, which asks
+Anytype once per key which major of the API it serves (`whoami`: an answer means v2, an
+`unsupported` one — a bare plain-text 404 — means a build without v2). Each context's
 `infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
 `Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
-means deleting one file per context. A v2 adapter that meets the bare 404 calls
-`probe.forget()`, and so does leaving the `connected` session. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+means deleting `anytype-v1` and one file per context. The client's `onUnsupported` calls
+`probe.forgetV2()`, so any v2 route meeting the bare 404 drops a v2 answer, and leaving the
+`connected` session calls `probe.forget()`. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -120,9 +131,10 @@ context's `application` layer without adding a dependency edge of its own
 - Adding a context: one `package.json`, one `tsconfig.json`, and a project reference in the
   root `tsconfig.json` and both `apps/desktop` tsconfigs, plus a dependency in
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
-  pattern-based and need no edits. A context whose adapters use `anytype-client` also
-  lists it as a dependency and references `../anytype-client` from its tsconfig, as `auth`
-  does; likewise for `kernel` in a context's `application` layer (`auth`, `schema` and
+  pattern-based and need no edits. A context whose adapters talk to Anytype also lists
+  `@ablunier/anytype-client` and `@anytype-calendar/anytype-v1` as dependencies and
+  references `../anytype-client` and `../anytype-v1` from its tsconfig, as `auth` does;
+  likewise for `kernel` in a context's `application` layer (`auth`, `schema` and
   `events` all do). Either way, run `npm install` afterward so npm workspaces symlinks the new package
   into `node_modules` — without it, `tsc -b` fails with `TS2307: Cannot find module`.
 
@@ -131,7 +143,7 @@ context's `application` layer without adding a dependency edge of its own
 ```
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
 packages/<ctx>/application     -> its own context's domain, plus kernel (use cases / orchestration)
-packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client (driven adapters implementing domain ports)
+packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client and anytype-v1 (driven adapters implementing domain ports)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
 
@@ -145,8 +157,9 @@ Rules worth knowing before adding an import:
   leaf that imports no context, and a separate `kernel-is-pure` rule additionally forbids
   it from importing anything at all, context or otherwise.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
-  reach into its own `domain` and `packages/anytype-client/infrastructure`. The same rule
-  keeps `anytype-client` itself a leaf that imports no context.
+  reach into its own `domain`, `packages/anytype-v1/infrastructure` and the Anytype client
+  (`packages/anytype-client/src`, or `node_modules/@ablunier/anytype-client` once it is an npm
+  dependency). The same rule keeps `anytype-v1` itself a leaf that imports no context.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires
   them together. The rules capture the context name and refer back to it (`$1`), so this
   holds for every context without a rule per package.
@@ -173,7 +186,7 @@ Standard electron-vite three-process layout:
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
-  warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
+  warning. Every context's Anytype gateway shares one `AnytypeClient` and one `AnytypeV1Client`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
@@ -387,9 +400,11 @@ v1 facts, checked against a real account on API version `2025-11-08`:
 v2 (pre-release: it may change without a new version; spec at
 `https://developers.anytype.io/openapi-v2.yaml`), checked against a real account in September
 2026. The same process and port serve both majors, so a v2 build still serves v1, and a legacy
-key works with both; a key paired through v2 (scoped) does not work with v1:
+key works with both; a key paired through v2 (scoped) does not work with v1. The client's
+types spell these out, and its `README.md` repeats the ones its users need; a new fact about
+the wire belongs there too:
 - Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
-  adapters always ask, since the saved selection stores full ids. Both spellings are accepted
+  client always asks, since the saved selection stores full ids. Both spellings are accepted
   back. The list holds only the key's granted spaces, never the tech space, and says nothing
   of a space's kind, so one-to-one chats cannot be left out. Its top-level
   `has_not_granted_spaces` says the grant leaves some of the account's spaces out; the schema
@@ -421,8 +436,8 @@ key works with both; a key paired through v2 (scoped) does not work with v1:
   the space's properties, not the type's; an unknown view answers 404. v1 has no query routes,
   so queries are offered only under v2, and a v1 read matches a chosen one with nothing.
 - A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
-  the image's bytes (PNG seen). `AnytypeClient.download` reads it through the injected
-  `fetchBytes`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
+  the image's bytes (PNG seen). `files.content` reads it through the same injected
+  `fetch`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
   composition root), cached by file id since a changed image gets a new id. The renderer's
   CSP allows `img-src data:` for it.
 - **Keys differ from v1's where a user's type or property collides with one Anytype bundles**

@@ -39,8 +39,10 @@ is drawn as a range).
 >   release is out.
 >
 > Recurrence is not built yet. The backend is organised as one package per bounded
-> context — `auth`, `schema` and `events` — plus two shared packages, `anytype-client`
-> (the local API HTTP transport) and `kernel` (shared use-case plumbing).
+> context — `auth`, `schema` and `events` — plus `anytype-client` (a typed client for the
+> local API v2, being extracted to be published as `@ablunier/anytype-client`) and two shared
+> packages, `anytype-v1` (what the app still reads through v1) and `kernel` (shared use-case
+> plumbing).
 
 ## Requirements
 
@@ -147,7 +149,8 @@ Settings → About, and links to the release page to download it by hand.
 ```
 apps/desktop             Electron app — main (the composition root), preload, and the React renderer
 packages/<context>       One bounded context per package (currently: auth, schema, events), layered inside
-packages/anytype-client  The shared Anytype local API HTTP client every context's adapters use
+packages/anytype-client  @ablunier/anytype-client, the typed Anytype local API v2 client every context's adapters use
+packages/anytype-v1      The v1 routes the app still reads, and the probe that picks v1 or v2 per key
 packages/kernel          Shared use-case plumbing (DispatchGuard) any context's application layer can import
 tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
 docs/deps-notes.md       Why several dependencies are pinned where they are
@@ -172,7 +175,7 @@ point inward only, within a context:
 ```
 domain          -> nothing
 application     -> its own domain, plus kernel
-infrastructure  -> its own domain, plus anytype-client
+infrastructure  -> its own domain, plus anytype-client and anytype-v1
 apps/desktop    -> any context's layers, plus Electron and React
 ```
 
@@ -180,10 +183,11 @@ A context's domain has no npm dependencies and no Node core imports, and the who
 compiles with no ambient types (`types: []`), so platform globals like `process` or
 `setTimeout` are out of reach too — infrastructure receives such capabilities from the
 composition root instead. Adapters are reached through ports the domain declares, never
-imported directly by the use cases. `packages/anytype-client` and `packages/kernel` are the
-two shared packages — not contexts, each with only one layer, so the same aliasing, test
-projects and lint rules apply to them unedited. `anytype-client` has only an
-`infrastructure/` layer (the HTTP transport) and imports nothing else; `kernel` has only an
+imported directly by the use cases. `packages/anytype-client` stands apart: it is meant to be
+published on its own, so it has a `src/` rather than layers and imports nothing at all.
+`packages/anytype-v1` and `packages/kernel` are the two shared packages — not contexts, each
+with only one layer, so the same aliasing, test projects and lint rules apply to them
+unedited. `anytype-v1` has only an `infrastructure/` layer and imports only the client; `kernel` has only an
 `application/` layer (the `DispatchGuard` dispatch/staleness-guard pattern used by use cases
 that race an async gateway call against a later reset) and, uniquely, imports nothing at
 all — not even Node core or npm — so it stays safely importable from any context's
