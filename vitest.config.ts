@@ -8,16 +8,10 @@ const workspaceAlias = {
   replacement: resolve(__dirname, 'packages/$1/$2/index.ts')
 }
 
-// The Anytype client is published on its own, so its name has no layer to match the pattern.
-const clientAlias = {
-  find: /^@ablunier\/anytype-client$/,
-  replacement: resolve(__dirname, 'packages/anytype-client/src/index.ts')
-}
-
 // One project per layer kind across all contexts, so `--project domain` runs every
 // context's domain tests at once.
 const layerProject = (layer: 'domain' | 'application' | 'infrastructure') => ({
-  resolve: { alias: [workspaceAlias, clientAlias] },
+  resolve: { alias: [workspaceAlias] },
   test: {
     name: layer,
     root: __dirname,
@@ -36,8 +30,7 @@ const rendererProject = {
     alias: [
       { find: '@renderer', replacement: resolve(__dirname, 'apps/desktop/src/renderer/src') },
       { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
-      workspaceAlias,
-      clientAlias
+      workspaceAlias
     ]
   },
   test: {
@@ -54,8 +47,7 @@ const mainProject = {
   resolve: {
     alias: [
       { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
-      workspaceAlias,
-      clientAlias
+      workspaceAlias
     ]
   },
   test: {
@@ -63,15 +55,6 @@ const mainProject = {
     root: __dirname,
     environment: 'node' as const,
     include: ['apps/desktop/src/main/**/*.test.ts']
-  }
-}
-
-const clientProject = {
-  test: {
-    name: 'anytype-client',
-    root: __dirname,
-    environment: 'node' as const,
-    include: ['packages/anytype-client/src/**/*.test.ts']
   }
 }
 
@@ -83,7 +66,6 @@ export default defineConfig({
       layerProject('domain'),
       layerProject('application'),
       layerProject('infrastructure'),
-      clientProject,
       rendererProject,
       mainProject
     ]

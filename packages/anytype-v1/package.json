@@ -10,7 +10,7 @@
     }
   },
   "dependencies": {
-    "@ablunier/anytype-client": "*"
+    "@ablunier/anytype-client": "^0.1.0"
   },
   "scripts": {
     "build": "tsc -b",

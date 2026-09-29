@@ -76,18 +76,9 @@ module.exports = {
       from: { path: '^packages/([^/]+)/infrastructure/' },
       to: {
         pathNot:
-          '^(?:packages/(?:$1/(?:infrastructure|domain)|anytype-v1/infrastructure|anytype-client/src)/' +
+          '^(?:packages/(?:$1/(?:infrastructure|domain)|anytype-v1/infrastructure)/' +
           '|node_modules/@ablunier/anytype-client/)'
       }
-    },
-    {
-      name: 'anytype-client-is-standalone',
-      comment:
-        '@ablunier/anytype-client is published on its own: it imports nothing beyond itself, ' +
-        'no package of this repo, no npm package, no Node core module.',
-      severity: 'error',
-      from: { path: '^packages/anytype-client/' },
-      to: { pathNot: '^packages/anytype-client/' }
     },
     {
       name: 'packages-never-import-apps',

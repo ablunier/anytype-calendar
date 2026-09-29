@@ -23,7 +23,7 @@
   },
   "keywords": [],
   "dependencies": {
-    "@ablunier/anytype-client": "*",
+    "@ablunier/anytype-client": "^0.1.0",
     "@anytype-calendar/anytype-v1": "*",
     "@anytype-calendar/auth": "*",
     "@anytype-calendar/events": "*",

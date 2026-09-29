@@ -1,7 +1,6 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/anytype-client" },
     { "path": "./packages/anytype-v1" },
     { "path": "./packages/auth" },
     { "path": "./packages/events" },
