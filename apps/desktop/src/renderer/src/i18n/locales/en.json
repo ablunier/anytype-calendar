@@ -195,7 +195,11 @@
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     },
     "viewFor": "View of {{label}}",
-    "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do."
+    "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do.",
+    "about": {
+      "heading": "About",
+      "version": "Version"
+    }
   },
   "calendar": {
     "couldntRead": "Couldn't read {{span}}",
@@ -288,5 +292,9 @@
       "time": "Time",
       "submit": "Create"
     }
+  },
+  "updates": {
+    "available": "Version {{version}} available",
+    "dismiss": "Hide until the next version"
   }
 }

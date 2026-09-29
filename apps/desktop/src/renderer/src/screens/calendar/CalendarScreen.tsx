@@ -70,6 +70,10 @@ export interface CalendarScreenProps {
   onNext: () => void
   onToday: () => void
   onReread: () => void
+  /** A newer release's version, while its notice has not been closed. */
+  updateNotice: string | null
+  onOpenRelease: () => void
+  onDismissUpdate: () => void
 }
 
 /**
@@ -104,7 +108,10 @@ export function CalendarScreen({
   onPrev,
   onNext,
   onToday,
-  onReread
+  onReread,
+  updateNotice,
+  onOpenRelease,
+  onDismissUpdate
 }: CalendarScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const typesByKey = useMemo(() => indexBy(types), [types])
@@ -193,6 +200,9 @@ export function CalendarScreen({
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
         onReread={onReread}
+        updateNotice={updateNotice}
+        onOpenRelease={onOpenRelease}
+        onDismissUpdate={onDismissUpdate}
       />
 
       <DateNavigator

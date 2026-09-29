@@ -16,6 +16,7 @@ import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSel
 import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
+import { AboutSection } from './AboutSection'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -49,6 +50,11 @@ export interface ConfigScreenProps {
   onSave: (picks: TypePicks) => Promise<void>
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
+  /** Null until main has answered. */
+  appVersion: string | null
+  /** A newer release's version, shown even after its notice was closed. */
+  updateAvailable: string | null
+  onOpenRelease: () => void
 }
 
 /**
@@ -82,7 +88,10 @@ function Settings({
   onReread,
   onSave,
   onCopyKey,
-  onSignOut
+  onSignOut,
+  appVersion,
+  updateAvailable,
+  onOpenRelease
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const selection = useTypeSelection(types, initial)
@@ -265,6 +274,12 @@ function Settings({
             access={access}
             onCopyKey={onCopyKey}
             onSignOut={onSignOut}
+          />
+
+          <AboutSection
+            version={appVersion}
+            updateAvailable={updateAvailable}
+            onOpenRelease={onOpenRelease}
           />
         </div>
       </main>

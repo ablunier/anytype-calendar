@@ -195,7 +195,11 @@
       "revokeInstructions": "Para revogala en todos os espazos da conta, abre a aplicación de Anytype, vai a {{breadcrumb}} e revoga Calendar for Anytype. Despois pecha sesión aquí. Reconectar implica repetir o proceso do código de 4 díxitos."
     },
     "viewFor": "Vista de {{label}}",
-    "queriesNeedV2": "As consultas aparecen aquí cando Anytype serve a versión 2 da súa API, como fan as versións máis recentes da aplicación."
+    "queriesNeedV2": "As consultas aparecen aquí cando Anytype serve a versión 2 da súa API, como fan as versións máis recentes da aplicación.",
+    "about": {
+      "heading": "Acerca de",
+      "version": "Versión"
+    }
   },
   "calendar": {
     "couldntRead": "Non se puido ler {{span}}",
@@ -288,5 +292,9 @@
       "time": "Hora",
       "submit": "Crear"
     }
+  },
+  "updates": {
+    "available": "Versión {{version}} dispoñible",
+    "dismiss": "Agochar ata a seguinte versión"
   }
 }

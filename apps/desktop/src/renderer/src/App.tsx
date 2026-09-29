@@ -12,6 +12,7 @@ import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
 import { TimeFormatContext } from './hooks/TimeFormatContext'
 import { useTimeFormat } from './hooks/useTimeFormat'
+import { useUpdate } from './hooks/useUpdate'
 import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { useWeekStart } from './hooks/useWeekStart'
 import { withDates } from './lib/calendar'
@@ -69,6 +70,7 @@ function App(): React.JSX.Element | null {
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
   const events = useEvents()
+  const update = useUpdate()
   const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
 
@@ -158,6 +160,9 @@ function App(): React.JSX.Element | null {
         }
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
+        appVersion={update?.current ?? null}
+        updateAvailable={update?.available ?? null}
+        onOpenRelease={() => void window.api.update.openRelease()}
       />
     )
   }
@@ -207,6 +212,9 @@ function App(): React.JSX.Element | null {
           void window.api.schema.sync()
           showSpan(span)
         }}
+        updateNotice={update && !update.dismissed ? update.available : null}
+        onOpenRelease={() => void window.api.update.openRelease()}
+        onDismissUpdate={() => void window.api.update.dismiss()}
       />
     </TimeFormatContext>
   )
