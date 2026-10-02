@@ -4,3 +4,4 @@ dist
 *.tsbuildinfo
 *.log
 CLAUDE.md
+.claude
