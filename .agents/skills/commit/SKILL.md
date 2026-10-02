@@ -1,5 +1,5 @@
 ---
-name: commit-conventions
+name: commit
 description: This repo's git commit conventions — conventional-commit type/scope format, which scope names to use, when to split a change into multiple commits, body style, and the AI attribution footer. Load before writing any git commit or commit message in this repository.
 ---
 
@@ -100,10 +100,14 @@ context together in one file. Don't commit it whole with either change. Either:
 Commits made with AI assistance in this repo carry a trailer:
 
 ```
-Co-Authored-By: <model name as the current session's system instructions specify> <noreply@anthropic.com>
+Co-Authored-By: <agent or model name> <its vendor's no-reply address>
 ```
 
-Use whatever attribution the *active* session's system instructions give — don't hardcode a
-model name from an earlier commit (this repo's history alone spans two: `Claude Opus 5` and
-`Claude Sonnet 5`). A commit made without AI assistance carries no such trailer; don't add
-one to a commit you didn't help write.
+for example `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Name the agent or
+model that is actually writing the commit: if your own instructions give an attribution
+line, use that one verbatim; otherwise use your model's name and your vendor's no-reply
+address. Never copy the name from an earlier commit — this repo's history already spans
+several. One trailer, as the last line of the message, after a blank line.
+
+A commit made without AI assistance carries no such trailer; don't add one to a commit you
+didn't help write.
