@@ -55,6 +55,9 @@ export function AuthCode({
           setCode(next)
           setActiveIndex(Math.min(event.target.selectionStart ?? next.length, next.length))
         }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && code.length === 4) onVerify(code)
+        }}
         onSelect={(event) => {
           const input = event.currentTarget
           setActiveIndex(input.selectionStart ?? input.value.length)
