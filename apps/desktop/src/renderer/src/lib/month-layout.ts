@@ -29,12 +29,16 @@ export interface WeekLayout {
   hidden: number[]
 }
 
-/** The lane order: long bars take the top lanes, and ties resolve the same way every read. */
+/**
+ * The lane order: long bars take the top lanes, a day's objects stack by time of day (all-day
+ * first), and ties resolve the same way every read.
+ */
 function byDrawingOrder(a: EventSegment, b: EventSegment): number {
   return (
     a.column - b.column ||
     b.span - a.span ||
     a.event.date.localeCompare(b.event.date) ||
+    (a.event.time ?? '').localeCompare(b.event.time ?? '') ||
     a.event.id.localeCompare(b.event.id)
   )
 }

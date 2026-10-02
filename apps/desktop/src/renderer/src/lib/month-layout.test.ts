@@ -113,6 +113,23 @@ describe('layOutWeek', () => {
     expect(lanes).toBe(2)
   })
 
+  test('stacks a day by time of day, all-day first, whatever the ids say', () => {
+    const timed = (id: string, time: string): CalendarEvent => ({
+      ...event(id, '2026-09-09'),
+      time,
+      allDay: false
+    })
+    const { segments } = layOutWeek(
+      [timed('a', '10:00'), timed('b', '09:00'), event('c', '2026-09-09')],
+      SECOND_WEEK
+    )
+    expect(segments.map(({ event: { id }, lane }) => [id, lane])).toEqual([
+      ['c', 0],
+      ['b', 1],
+      ['a', 2]
+    ])
+  })
+
   test('drops what will not fit and counts it on each of its own days only', () => {
     const events = [
       event('a', '2026-09-07', '2026-09-13'),
