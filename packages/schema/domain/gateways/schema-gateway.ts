@@ -25,6 +25,10 @@ export interface SchemaTypeRef {
   formerKey?: string
   name: string
   icon: SchemaTypeIcon | null
+  /**
+   * The ones the type lists, then any its templates show in their content without the type
+   * listing them, where the API serves templates (v2).
+   */
   properties: SchemaProperty[]
 }
 

@@ -5,6 +5,7 @@ import {
   type AnytypeClient,
   type AnytypeFailure,
   type AnytypeIcon,
+  type AnytypeObjectDocument,
   type AnytypePage,
   type AnytypePaging,
   type AnytypePropertyDefinition,
@@ -169,7 +170,76 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     const formerKeys = read.some(({ unsure }) => unsure.length > 0)
       ? await this.#v1DatePropertyKeys(apiKey, spaceId)
       : new Map<string, SchemaProperty[]>()
-    return { ok: true, value: read.map((type) => withFormerPropertyKeys(type, formerKeys)) }
+    const own = read.map((type) => withFormerPropertyKeys(type, formerKeys))
+    const fromTemplates = await this.#templateProperties(api, spaceId, own)
+    if (!fromTemplates.ok) return fromTemplates
+    return {
+      ok: true,
+      value: own.map((type) => {
+        const more = fromTemplates.value.get(type.key)
+        return more ? { ...type, properties: [...type.properties, ...more] } : type
+      })
+    }
+  }
+
+  /**
+   * By type key, the properties its templates show in their content (a `property` block)
+   * without the type listing them: an object started from such a template carries them all the
+   * same. A block names only the key, so the space's properties are read for the rest, and
+   * only when some template has one.
+   */
+  async #templateProperties(
+    api: AnytypeApi,
+    spaceId: string,
+    types: readonly SchemaTypeRef[]
+  ): Promise<SchemaGatewayResult<Map<string, SchemaProperty[]>>> {
+    const listed = await this.#listAll((paging) => api.templates.list(spaceId, {}, paging), 'templates')
+    if (!listed.ok) return listed
+    const ownKeys = new Map(types.map(({ key, properties }) => [key, new Set(properties.map((property) => property.key))]))
+    const templates = listed.value.items.flatMap((item) => {
+      const id = nonEmpty(item.id)
+      const typeKey = nonEmpty(item.template_for)
+      return id !== undefined && typeKey !== undefined && ownKeys.has(typeKey) ? [{ id, typeKey }] : []
+    })
+
+    const blockKeys: string[][] = []
+    let refused = false
+    await eachAtMost(TYPE_READS_AT_ONCE, templates, async ({ id }, index) => {
+      const document = await api.objects.get(spaceId, id, { include: 'blocks' })
+      if (document.ok) {
+        blockKeys[index] = toPropertyBlockKeys(document.body)
+        return
+      }
+      if (document.status === UNAUTHORIZED) refused = true
+      else if (!isGone(document)) throw unexpected(document, 'a template')
+    })
+    if (refused) return { ok: false, failure: 'unauthorized' }
+
+    const added = new Map<string, Set<string>>()
+    templates.forEach(({ typeKey }, index) => {
+      for (const key of blockKeys[index] ?? []) {
+        if (ownKeys.get(typeKey)?.has(key)) continue
+        added.set(typeKey, (added.get(typeKey) ?? new Set()).add(key))
+      }
+    })
+    if (added.size === 0) return { ok: true, value: new Map() }
+
+    const properties = await this.#listAll((paging) => api.properties.list(spaceId, paging), 'properties')
+    if (!properties.ok) return properties
+    const byKey = new Map(
+      properties.value.items.flatMap((item): [string, SchemaProperty][] => {
+        const key = nonEmpty(item.key)
+        const format = nonEmpty(item.format)
+        return key !== undefined && format !== undefined ? [[key, { key, name: nonEmpty(item.name) ?? '', format }]] : []
+      })
+    )
+    return {
+      ok: true,
+      value: new Map(
+        // A block may name a property the space no longer has.
+        [...added].map(([typeKey, keys]) => [typeKey, [...keys].flatMap((key) => byKey.get(key) ?? [])])
+      )
+    }
   }
 
   /**
@@ -248,11 +318,13 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
     // A space taken out of the grant holds nothing; so does a property deleted since its type
     // was read, for which the options route answers 404 or 400, and a query deleted since it
-    // was listed, whose views route answers 404.
+    // was listed, whose views route answers 404. Templates only add to what the types say, so
+    // a build that does not serve them, or the space's properties, reads as having none.
     if (
       response.status === FORBIDDEN ||
       (what === 'options' && response.status === BAD_REQUEST) ||
-      ((what === 'options' || what === 'views') && isGone(response))
+      ((what === 'options' || what === 'views') && isGone(response)) ||
+      ((what === 'templates' || what === 'properties') && response.status === NOT_FOUND)
     ) {
       return { ok: true, value: { items: [], pages: [] } }
     }
@@ -329,6 +401,14 @@ function withFormerPropertyKeys(
       return formerKey === undefined || formerKey === property.key ? property : { ...property, formerKey }
     })
   }
+}
+
+function toPropertyBlockKeys(document: AnytypeObjectDocument | null): string[] {
+  const blocks = document?.blocks
+  return (Array.isArray(blocks) ? blocks : []).flatMap((block) => {
+    const key = block?.type === 'property' ? nonEmpty(block.property) : undefined
+    return key === undefined ? [] : [SYSTEM_KEY_SPELLINGS[key] ?? key]
+  })
 }
 
 function toProperty(item: AnytypePropertyDefinition | null): SchemaProperty {

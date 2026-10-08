@@ -168,6 +168,8 @@ const definition = (property: string, name: string, format = 'date') => ({
 })
 
 const TYPES = `/v2/spaces/${SPACE_ID}/types`
+const TEMPLATES = `/v2/spaces/${SPACE_ID}/templates`
+const OBJECTS = `/v2/spaces/${SPACE_ID}/objects`
 
 describe('listTypes', () => {
   test('reads each listed type for its icon and properties', async () => {
@@ -199,8 +201,114 @@ describe('listTypes', () => {
     })
     expect(calls.map(({ url }) => url)).toEqual([
       `${BASE}${TYPES}?offset=0&limit=1000`,
-      `${BASE}${TYPES}/appointment`
+      `${BASE}${TYPES}/appointment`,
+      `${BASE}${TEMPLATES}?offset=0&limit=1000`
     ])
+  })
+
+  describe('templates', () => {
+    const pageType = {
+      [TYPES]: page([{ key: 'page', name: 'Page' }]),
+      [`${TYPES}/page`]: { status: 200, body: typeDocument('Page', [definition('tag', 'Tag', 'multi_select')]) }
+    }
+    const template = (blocks: unknown[]): Reply => ({ status: 200, body: { kind: 'template', template_for: 'page', blocks } })
+    const PROPERTIES = `/v2/spaces/${SPACE_ID}/properties`
+    const spaceProperties = page([
+      { key: 'due_date', name: 'Due date', format: 'date' },
+      { key: 'tag', name: 'Tag', format: 'multi_select' }
+    ])
+    const propertiesOf = async (gateway: ReturnType<typeof setup>['gateway']) => {
+      const result = await gateway.listTypes(API_KEY, SPACE_ID)
+      return result.ok ? result.value.map(({ properties }) => properties.map(({ key }) => key)) : result
+    }
+
+    test('adds the properties a template shows in its content without the type listing them', async () => {
+      const { gateway, calls } = setup({
+        ...pageType,
+        [TEMPLATES]: page([{ id: 'tpl_1', name: 'Trip', template_for: 'page' }]),
+        [`${OBJECTS}/tpl_1`]: template([
+          { id: 'a', type: 'heading_2', text: 'When' },
+          { id: 'b', type: 'property', property: 'due_date' },
+          { id: 'c', type: 'property', property: 'tag' }
+        ]),
+        [PROPERTIES]: spaceProperties
+      })
+
+      const result = await gateway.listTypes(API_KEY, SPACE_ID)
+
+      expect(result.ok && result.value[0]?.properties).toEqual([
+        { key: 'tag', name: 'Tag', format: 'multi_select' },
+        { key: 'due_date', name: 'Due date', format: 'date' }
+      ])
+      expect(calls.map(({ url }) => url)).toContain(`${BASE}${OBJECTS}/tpl_1?include=blocks`)
+    })
+
+    test('adds a property once, however many templates show it', async () => {
+      const { gateway } = setup({
+        ...pageType,
+        [TEMPLATES]: page([
+          { id: 'tpl_1', template_for: 'page' },
+          { id: 'tpl_2', template_for: 'page' }
+        ]),
+        [`${OBJECTS}/tpl_1`]: template([{ type: 'property', property: 'due_date' }]),
+        [`${OBJECTS}/tpl_2`]: template([{ type: 'property', property: 'due_date' }]),
+        [PROPERTIES]: spaceProperties
+      })
+
+      await expect(propertiesOf(gateway)).resolves.toEqual([['tag', 'due_date']])
+    })
+
+    test('does not read the space for properties when no template adds one', async () => {
+      const { gateway, calls } = setup({
+        ...pageType,
+        [TEMPLATES]: page([{ id: 'tpl_1', template_for: 'page' }]),
+        [`${OBJECTS}/tpl_1`]: template([{ type: 'property', property: 'tag' }])
+      })
+
+      await expect(propertiesOf(gateway)).resolves.toEqual([['tag']])
+      expect(calls.map(({ url }) => url)).not.toContain(`${BASE}${PROPERTIES}?offset=0&limit=1000`)
+    })
+
+    test("leaves alone a template of a type that was not read, and a block naming a property the space lacks", async () => {
+      const { gateway, calls } = setup({
+        ...pageType,
+        [TEMPLATES]: page([
+          { id: 'tpl_1', template_for: 'page' },
+          { id: 'tpl_2', template_for: 'note' }
+        ]),
+        [`${OBJECTS}/tpl_1`]: template([{ type: 'property', property: 'status' }]),
+        [PROPERTIES]: spaceProperties
+      })
+
+      await expect(propertiesOf(gateway)).resolves.toEqual([['tag']])
+      expect(calls.map(({ url }) => url)).not.toContain(`${BASE}${OBJECTS}/tpl_2?include=blocks`)
+    })
+
+    test('skips a template deleted between the list and its read', async () => {
+      const { gateway } = setup({
+        ...pageType,
+        [TEMPLATES]: page([{ id: 'tpl_1', template_for: 'page' }]),
+        [`${OBJECTS}/tpl_1`]: { status: 404, body: { status: 404, code: 'not_found', message: 'x', issues: [] } }
+      })
+
+      await expect(propertiesOf(gateway)).resolves.toEqual([['tag']])
+    })
+
+    test('reads a build that serves no templates as having none', async () => {
+      const { gateway } = setup(pageType)
+
+      await expect(propertiesOf(gateway)).resolves.toEqual([['tag']])
+    })
+
+    test('resolves a key refused while reading a template as unauthorized', async () => {
+      const { gateway } = setup({
+        ...pageType,
+        [TEMPLATES]: page([{ id: 'tpl_1', template_for: 'page' }]),
+        [`${OBJECTS}/tpl_1`]: unauthorized
+      })
+
+      await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({ ok: false, failure: 'unauthorized' })
+    })
   })
 
   test("spells Anytype's own keys the way the rest of the API does", async () => {
