@@ -13,7 +13,8 @@ the user already holds, and keeps the key across restarts. The connected session
 which major of the API the app reads through and what the key was granted (its spaces, and
 read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
-with a user date property) and tracks the last sync, which feeds the post-sign-in success
+with a user date property, their own or one their templates show in their content) and tracks
+the last sync, which feeds the post-sign-in success
 card and onboarding. Under v2 a sync also reads each space's image, whether each type has
 Anytype's own Done and Location, its select properties' option colours, and its queries over
 a single dated type, with their views. It also persists
@@ -189,7 +190,7 @@ Standard electron-vite three-process layout:
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location and the colour-by property only where the last schema sync saw the
   type — for a query, the type it runs over — with them, since v2 refuses a search `field` the
-  type lacks), and places a
+  space lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
@@ -450,7 +451,17 @@ the wire belongs there too:
   so the adapters do not use it. Rows are `{ id, name, type, properties: { [key]: value } }`
   with only the `fields` asked for: a date is a bare RFC 3339 string, and one the object has
   no value for is left out — so is an unticked Done, read as not done.
-- An unknown type key or a `fields`/filter key the type lacks answers 400, a space not open
+- An object can carry a property its type does not list, typically one a template shows in
+  its content as a block (`{ type: 'property', property: 'due_date' }`; blocks are a flat list).
+  A search with `type` refuses such a key in `fields` and filters (400 `unknown property key`),
+  so the events read never sends `type`: it filters on it instead (`{ property: 'type',
+  condition: 'equal', value: 'page' }`, the type's key, not its object id), which checks keys
+  against the space and returns the same objects. The schema sync finds those properties by
+  reading each space's templates (`GET …/templates`, rows `{ id, name, template_for }`, then
+  each document with `?include=blocks`) and, only when one adds a key, the space's properties
+  (`GET …/properties` → `{ key, name, format }`). A build serving neither reads as no templates.
+  A property set by hand on single objects, in no template, is not found.
+- An unknown type key or a `fields`/filter key the space lacks answers 400, a space not open
   404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects". A
   403 on a space's types, or on one type, reads as no types: the grant changed since the list.
 - Paging puts `has_more`, `total` and a `message` hint at the top level. v2's own errors are
