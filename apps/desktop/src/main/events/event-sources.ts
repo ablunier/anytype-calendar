@@ -15,7 +15,7 @@ import {
  *
  * Done, Location and the colour-by property are read only where the last read of the account
  * saw the type with them — for a query, the type it runs over: v2 refuses a search for a field
- * the type lacks, so a property named without being there would hide every object of the type.
+ * the space lacks, so a property named without being there would hide every object of the type.
  * Before that read, each is read by its dates alone.
  */
 export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSync): EventsSource[] {

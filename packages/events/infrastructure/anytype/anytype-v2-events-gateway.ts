@@ -18,11 +18,14 @@ import type {
 
 const UNAUTHORIZED = 401
 
+/** Filtered on by a type's key, not its object id. */
+const TYPE_PROPERTY_KEY = 'type'
+
 /**
  * A saved selection keeps a choice whose type, property or space is gone, or whose space this
  * key was never granted, to be matched by nothing until it returns; that is an answer of no
  * objects, not a failed span. Anytype refuses an unknown type key, or a filter or field over a
- * key the type does not have, with a 400; a space outside the grant with a 403; and a space
+ * key the space does not have, with a 400; a space outside the grant with a 403; and a space
  * that is not open, or a query or view that is gone, with a 404.
  */
 const GONE_STATUSES = new Set([400, 403, 404])
@@ -34,7 +37,9 @@ const GONE_STATUSES = new Set([400, 403, 404])
  * spelling for the keys Anytype mints for user properties (`6a650e02…`: they may start with a
  * digit). Like v1, a date filter rounds out to whole days (`greater_or_equal` to the start of
  * its day, `less_or_equal` to the end), so it can only return extra objects, never miss one —
- * which is what the port promises.
+ * which is what the port promises. The type is one more filter rather than the search's
+ * `type`, which would refuse a property the type does not list, as one its objects carry from
+ * a template's content is not.
  *
  * A query is read through its view, which applies the view's own filters; the route takes no
  * others, so every object of the query comes back, whatever its dates.
@@ -58,8 +63,10 @@ export class AnytypeV2EventsGateway implements EventsGateway {
     const api = this.#client.withApiKey(apiKey)
     if (source.kind === 'type') {
       const search = {
-        type: source.typeKey,
-        filters: windowFilters(source, window),
+        filters: [
+          { property: TYPE_PROPERTY_KEY, condition: 'equal', value: source.typeKey } satisfies AnytypeFilter,
+          ...windowFilters(source, window)
+        ],
         fields: fieldsOf(source)
       }
       return this.#readAll(source, (paging) => api.search.inSpace(source.spaceId, search, paging))
@@ -98,7 +105,7 @@ export class AnytypeV2EventsGateway implements EventsGateway {
   }
 }
 
-/** Only keys the type has: v2 refuses a field the type lacks as a bad request. */
+/** Only keys the space has: v2 refuses a field it lacks as a bad request. */
 function fieldsOf({ from, to, done, location, colourBy }: EventsSource): string[] {
   return [from, to, done, location, colourBy?.key].filter((key) => key != null)
 }

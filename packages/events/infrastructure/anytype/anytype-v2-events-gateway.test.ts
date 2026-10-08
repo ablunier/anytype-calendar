@@ -80,8 +80,8 @@ describe('a single date', () => {
     expect(calls[0]?.init.method).toBe('POST')
     expect(calls[0]?.init.headers).toMatchObject({ Authorization: `Bearer ${API_KEY}` })
     expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
-      type: 'appointment',
       filters: [
+        { property: 'type', condition: 'equal', value: 'appointment' },
         { property: 'data', condition: 'not_empty' },
         { property: 'data', condition: 'greater_or_equal', value: START_SECONDS },
         { property: 'data', condition: 'less_or_equal', value: END_SECONDS }
@@ -111,8 +111,8 @@ describe('a range', () => {
       ]
     })
     expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
-      type: 'project',
       filters: [
+        { property: 'type', condition: 'equal', value: 'project' },
         { property: 'start_date', condition: 'not_empty' },
         { property: 'start_date', condition: 'less_or_equal', value: END_SECONDS },
         {
