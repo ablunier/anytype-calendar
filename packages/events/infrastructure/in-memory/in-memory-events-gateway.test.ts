@@ -231,3 +231,55 @@ test('refuses to write an object it does not have', async () => {
     failure: 'rejected'
   })
 })
+
+test('carries the panel properties the source names, and names what they link to', async () => {
+  const { gateway } = setup([
+    {
+      id: 'o1',
+      spaceId: 'sp_personal',
+      typeKey: 'task',
+      title: 'Task',
+      dates: { due_date: 1_000 },
+      values: { notes: 'Bring the keys', project: ['o2', 'participant-A8mara'], cost: 'free' }
+    },
+    { id: 'o2', spaceId: 'sp_personal', typeKey: 'project', title: 'Launch', dates: {} }
+  ])
+  const source: EventsSource = {
+    ...TASKS,
+    spaceId: 'sp_personal',
+    panel: [
+      { key: 'notes', format: 'text' },
+      { key: 'project', format: 'objects' },
+      { key: 'cost', format: 'number' }
+    ]
+  }
+
+  const objects = await gateway.listObjects('ak', source)
+  const linked = await gateway.listLinkedObjects('ak', 'sp_personal', ['o2', 'participant-A8mara', 'o9'])
+
+  expect(objects.ok && objects.value[0]?.details).toEqual([
+    { key: 'notes', format: 'text', value: 'Bring the keys' },
+    { key: 'project', format: 'objects', ids: ['o2', 'participant-A8mara'] }
+  ])
+  expect(linked).toEqual({
+    ok: true,
+    value: [
+      { id: 'o2', name: 'Launch', member: false },
+      { id: 'participant-A8mara', name: 'Mara', member: true }
+    ]
+  })
+})
+
+test('reads and ticks Done by the checkbox the source names', async () => {
+  const { gateway } = setup([
+    { id: 'o1', spaceId: 'sp_1', typeKey: 'task', title: 'Task', dates: { due_date: 1_000 }, values: { finished: true } }
+  ])
+  const source: EventsSource = { ...TASKS, done: 'finished' }
+
+  const before = await gateway.listObjects('ak', source)
+  await gateway.setDone('ak', { spaceId: 'sp_1', id: 'o1' }, 'finished', false)
+  const after = await gateway.listObjects('ak', source)
+
+  expect(before.ok && before.value[0]?.done).toBe(true)
+  expect(after.ok && after.value[0]?.done).toBe(false)
+})

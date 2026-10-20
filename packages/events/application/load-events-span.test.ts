@@ -72,7 +72,10 @@ function setup({
   refs = {} as Record<string, EventsObjectRef[]>
 } = {}) {
   const gateway = {
-    listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[keyOf(source)] ?? []))
+    listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[keyOf(source)] ?? [])),
+    listLinkedObjects: vi.fn<EventsGateway['listLinkedObjects']>(async (_key, _space, ids) =>
+      ok(ids.flatMap((id) => (id.startsWith('gone') ? [] : [{ id, name: `Name of ${id}`, member: false }])))
+    )
   }
   const store = new EventsSpanStore()
   const loadEventsSpan = new LoadEventsSpan({
@@ -118,7 +121,8 @@ test("asks each source for the month's window and keeps the objects that overlap
           title: 'spans in',
           start: Date.UTC(2026, 7, 28),
           end: Date.UTC(2026, 8, 2),
-          allDay: true
+          allDay: true,
+          details: []
         },
         {
           id: 'late task',
@@ -127,7 +131,8 @@ test("asks each source for the month's window and keeps the objects that overlap
           title: 'late task',
           start: Date.UTC(2026, 8, 20, 15),
           end: null,
-          allDay: false
+          allDay: false,
+          details: []
         },
         {
           id: 'runs out',
@@ -136,7 +141,8 @@ test("asks each source for the month's window and keeps the objects that overlap
           title: 'runs out',
           start: Date.UTC(2026, 8, 29),
           end: Date.UTC(2026, 9, 3),
-          allDay: true
+          allDay: true,
+          details: []
         }
       ]
     }
@@ -412,4 +418,70 @@ test('an object of an all-day source is all-day, whatever the instant', async ()
   })
   await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: true }] } })
+})
+
+describe('linked objects', () => {
+  const LINKING_TASKS: EventsSource = { ...TASKS, panel: [{ key: 'project', format: 'objects' }] }
+  const LINKING_QUERY: EventsSource = {
+    kind: 'query',
+    spaceId: 'sp_1',
+    queryId: 'q_open',
+    viewId: null,
+    from: 'due_date',
+    to: null,
+    includesTime: true,
+    panel: [{ key: 'project', format: 'objects' }]
+  }
+  const linking = (id: string, ...ids: string[]): EventsObjectRef => ({
+    ...ref(id, Date.UTC(2026, 8, 10)),
+    details: [{ key: 'project', format: 'objects', ids }]
+  })
+
+  test('names them with one read per space, for every id the span links to', async () => {
+    const { gateway, store, loadEventsSpan } = setup({
+      sources: [LINKING_TASKS, LINKING_QUERY, PROJECTS],
+      refs: {
+        task: [linking('a', 'obj_1', 'obj_2'), linking('b', 'obj_2', 'gone_3')],
+        q_open: [linking('c', 'obj_4')]
+      }
+    })
+
+    await loadEventsSpan.execute(SEPTEMBER)
+
+    expect(gateway.listLinkedObjects.mock.calls).toEqual([[API_KEY, 'sp_1', ['obj_1', 'obj_2', 'gone_3', 'obj_4']]])
+    const { last } = store.get() as Extract<EventsSpanLoad, { phase: 'loaded' }>
+    expect(last.objects.map(({ id, details }) => [id, details])).toEqual([
+      [
+        'a',
+        [
+          {
+            key: 'project',
+            format: 'objects',
+            objects: [
+              { id: 'obj_1', name: 'Name of obj_1', member: false },
+              { id: 'obj_2', name: 'Name of obj_2', member: false }
+            ]
+          }
+        ]
+      ],
+      ['b', [{ key: 'project', format: 'objects', objects: [{ id: 'obj_2', name: 'Name of obj_2', member: false }] }]],
+      ['c', [{ key: 'project', format: 'objects', objects: [{ id: 'obj_4', name: 'Name of obj_4', member: false }] }]]
+    ])
+  })
+
+  test('asks nothing when no object links to anything', async () => {
+    const { gateway, loadEventsSpan } = setup({ refs: { task: [ref('a', Date.UTC(2026, 8, 10))] } })
+    await loadEventsSpan.execute(SEPTEMBER)
+    expect(gateway.listLinkedObjects).not.toHaveBeenCalled()
+  })
+
+  test('fails as unauthorized when the read of linked objects is refused', async () => {
+    const { gateway, store, loadEventsSpan } = setup({
+      sources: [LINKING_TASKS],
+      refs: { task: [linking('a', 'obj_1')] }
+    })
+    gateway.listLinkedObjects.mockResolvedValueOnce(unauthorized)
+    await loadEventsSpan.execute(SEPTEMBER)
+    expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unauthorized' })
+  })
 })

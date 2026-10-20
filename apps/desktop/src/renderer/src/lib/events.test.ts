@@ -34,6 +34,7 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   start: local(8, 3),
   end: null,
   allDay: true,
+  details: [],
   ...overrides
 })
 

@@ -2,6 +2,7 @@ import { listAllV1, type AnytypeV1Client } from '@anytype-calendar/anytype-v1/in
 import type {
   EventsGateway,
   EventsGatewayResult,
+  EventsLinkedObject,
   EventsObjectRef,
   EventsSource,
   EventsWindow
@@ -42,6 +43,11 @@ export class AnytypeV1EventsGateway implements EventsGateway {
       throw new Error(`Anytype answered ${response.status} when searched for objects`)
     }
     return { ok: true, value: response.body.flatMap((item) => toRef(item, source)) }
+  }
+
+  /** v1 reads no panel properties, so no object links to anything. */
+  async listLinkedObjects(): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
+    return { ok: true, value: [] }
   }
 }
 

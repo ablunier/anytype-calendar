@@ -31,7 +31,8 @@ describe('toEventsDatedObject', () => {
       title: 'Launch',
       start,
       end,
-      allDay: true
+      allDay: true,
+      details: []
     })
   })
 
