@@ -36,6 +36,30 @@ export interface SelectProperty {
   label: string
 }
 
+/** A property offered by name, e.g. as the Done checkbox or the Location text. */
+export interface NamedProperty {
+  key: string
+  label: string
+}
+
+/** How the detail panel draws a property's value. */
+export type PanelFormat =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'multi_select'
+  | 'url'
+  | 'email'
+  | 'phone'
+  | 'objects'
+
+/** A property the detail panel can show of a type's objects. */
+export interface PanelProperty {
+  key: string
+  label: string
+  format: PanelFormat
+}
+
 /** One of a query's views, which narrow its objects each in its own way. */
 export interface QueryView {
   key: string
@@ -47,6 +71,8 @@ export interface QueryView {
  * through one of its views, and drawn by that type's dates.
  */
 export interface QuerySource {
+  /** The `ObjectType.key` of the type it runs over. */
+  typeKey: string
   /** The label of the type it runs over. */
   typeLabel: string
   /** Never empty; the first is read until another is chosen. */
@@ -70,6 +96,9 @@ export interface ObjectType {
   props: DateProperty[]
   /** Empty where the API cannot say what the options' colours are (v1). */
   selects: SelectProperty[]
+  checkboxes: NamedProperty[]
+  texts: NamedProperty[]
+  panelProps: PanelProperty[]
   /** Key of the mandatory start-date property the type starts with. */
   from: string
   /** Key of the optional end-date property; a type with one is drawn as a range. */
@@ -78,6 +107,12 @@ export interface ObjectType {
   includesTime: boolean
   /** Key of the select property whose options colour its objects; starts null (the type's own hue). */
   colourBy: string | null
+  /** Keys of the properties the detail panel shows, in order; starts empty. */
+  panel: string[]
+  /** Key of the checkbox its objects are ticked done by; starts on Anytype's own, where it has it. */
+  done: string | null
+  /** Key of the text that says where its objects take place; starts on Anytype's own, where it has it. */
+  location: string | null
 }
 
 /**
@@ -89,6 +124,9 @@ export interface DateMapping {
   to: string | null
   includesTime: boolean
   colourBy: string | null
+  panel: string[]
+  done: string | null
+  location: string | null
   /**
    * A query's view (`QueryView.key`) to read through; null for a type, and for a query until
    * one is picked, which reads its first.

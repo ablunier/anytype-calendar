@@ -1,4 +1,5 @@
 import type { SchemaDateProperty } from './date-property'
+import type { SchemaNamedProperty, SchemaPanelProperty } from './panel-property'
 import type { SchemaSelectProperty } from './select-property'
 
 /** Anytype's own icon name and color, e.g. `checkbox` / `lime`. */
@@ -18,10 +19,12 @@ export interface SchemaType {
   icon: SchemaTypeIcon | null
   /** Never empty — see userDateProperties. */
   dateProperties: SchemaDateProperty[]
-  /** Whether it has Anytype's own Done checkbox. */
-  hasDone: boolean
-  /** Whether it has Anytype's own Location text. */
-  hasLocation: boolean
+  /** What its objects can be ticked done by. */
+  checkboxProperties: SchemaNamedProperty[]
+  /** What can say where its objects take place. */
+  textProperties: SchemaNamedProperty[]
+  /** What the detail panel can show of its objects; select options only where the API lists them (v2). */
+  panelProperties: SchemaPanelProperty[]
   /** Only the ones with options; empty where the API cannot list options (v1). */
   selectProperties: SchemaSelectProperty[]
 }

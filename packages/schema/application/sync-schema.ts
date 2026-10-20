@@ -1,12 +1,13 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
+  namedProperties,
   nextSchemaSync,
-  SCHEMA_DONE_KEY,
-  SCHEMA_LOCATION_KEY,
+  panelProperties,
   userDateProperties,
   type SchemaApiKeySource,
   type SchemaGateway,
   type SchemaGatewayResult,
+  type SchemaPanelProperty,
   type SchemaQuery,
   type SchemaQueryRef,
   type SchemaSelectOption,
@@ -97,14 +98,17 @@ export class SyncSchema {
       refs.flatMap(({ ref }) => ref.properties)
     )
     return refs.map(({ ref: { key, formerKey, name, icon, properties }, dateProperties }) => {
-      const has = (propertyKey: string): boolean => properties.some((property) => property.key === propertyKey)
       const type: SchemaType = {
         key,
         name,
         icon,
         dateProperties,
-        hasDone: has(SCHEMA_DONE_KEY),
-        hasLocation: has(SCHEMA_LOCATION_KEY),
+        checkboxProperties: namedProperties(properties, 'checkbox'),
+        textProperties: namedProperties(properties, 'text'),
+        panelProperties: panelProperties(properties).map((property): SchemaPanelProperty => {
+          if (!hasOptions(property.format)) return property
+          return { ...property, options: options.get(property.key) ?? [] }
+        }),
         selectProperties: properties.flatMap((property): SchemaSelectProperty[] => {
           const found = property.format === 'select' ? options.get(property.key) : undefined
           if (!found || found.length === 0) return []
@@ -122,7 +126,7 @@ export class SyncSchema {
     spaceId: string,
     properties: SchemaTypeRef['properties']
   ): Promise<Map<string, SchemaSelectOption[]>> {
-    const keys = [...new Set(properties.filter(({ format }) => format === 'select').map(({ key }) => key))]
+    const keys = [...new Set(properties.filter(({ format }) => hasOptions(format)).map(({ key }) => key))]
     const lists = await Promise.all(
       keys.map(async (key) => accepted(await this.#gateway.listSelectOptions(apiKey, spaceId, key)))
     )
@@ -143,6 +147,10 @@ function datedQueries(queries: readonly SchemaQueryRef[], types: readonly Schema
       types.find(({ key }) => key === only) ?? types.find(({ formerKey }) => formerKey === only)
     return type ? [{ id, name, typeKey: type.key, views }] : []
   })
+}
+
+function hasOptions(format: string): boolean {
+  return format === 'select' || format === 'multi_select'
 }
 
 function accepted<T>(result: SchemaGatewayResult<T>): T {

@@ -17,8 +17,8 @@ export interface SchemaSelectProperty {
 }
 
 /**
- * Properties Anytype bundles whose value the calendar shows beside an object's dates. A type
- * has each only if it lists it; only these keys count, not a user property of the same name.
+ * Properties Anytype bundles that a type's objects are ticked done by and placed by, until the
+ * user picks others: a selection saved before they could be picked reads as these.
  */
 export const SCHEMA_DONE_KEY = 'done'
 export const SCHEMA_LOCATION_KEY = 'location'

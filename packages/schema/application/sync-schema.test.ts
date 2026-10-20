@@ -31,6 +31,7 @@ const LOCATION: SchemaProperty = { key: 'location', name: 'Location', format: 't
 const PRIORITY: SchemaProperty = { key: 'priority', name: 'Priority', format: 'select' }
 const STAGE: SchemaProperty = { key: 'stage', name: 'Stage', format: 'select' }
 const P1 = { name: 'P1', color: 'red' }
+const WORK = { name: 'Work', color: 'blue' }
 
 const TYPES: Record<string, SchemaTypeRef[]> = {
   sp_personal: [
@@ -79,7 +80,7 @@ function setup(apiKey: string | null = API_KEY) {
     listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? [])),
     // Stage has no options, so it colours nothing.
     listSelectOptions: vi.fn<SchemaGateway['listSelectOptions']>(async (_key, _space, property) =>
-      ok(property === 'priority' ? [P1] : [])
+      ok(property === 'priority' ? [P1] : property === 'tag' ? [WORK] : [])
     ),
     listQueries: vi.fn<SchemaGateway['listQueries']>(async (_key, spaceId) => ok(QUERIES[spaceId] ?? []))
   }
@@ -114,8 +115,13 @@ test('reads every space with its dated types', async () => {
               name: 'Task',
               icon: { name: 'checkbox', color: 'lime' },
               dateProperties: [{ key: 'due_date', name: 'Due date' }],
-              hasDone: true,
-              hasLocation: false,
+              checkboxProperties: [{ key: 'done', name: 'Done' }],
+              textProperties: [],
+              panelProperties: [
+                { key: 'tag', name: 'Tag', format: 'multi_select', options: [WORK] },
+                { key: 'priority', name: 'Priority', format: 'select', options: [P1] },
+                { key: 'stage', name: 'Stage', format: 'select', options: [] }
+              ],
               selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
             },
             {
@@ -126,8 +132,12 @@ test('reads every space with its dated types', async () => {
                 { key: 'start_date', name: 'Start date' },
                 { key: 'finish_date', name: 'Finish date' }
               ],
-              hasDone: false,
-              hasLocation: true,
+              checkboxProperties: [],
+              textProperties: [{ key: 'location', name: 'Location' }],
+              panelProperties: [
+                { key: 'location', name: 'Location', format: 'text' },
+                { key: 'priority', name: 'Priority', format: 'select', options: [P1] }
+              ],
               selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
             }
           ],
@@ -155,13 +165,62 @@ test('keys a query that names its type by its former key to the type as the spac
   expect(last.spaces[0]?.queries).toEqual([{ id: 'q_books', name: 'Reading', typeKey: '6a67', views: VIEWS }])
 })
 
-test("asks for a select property's options once per space, and only for dated types", async () => {
+test("asks for a select or multi-select property's options once per space, and only for dated types", async () => {
   const { gateway, syncSchema } = setup()
   await syncSchema.execute()
   expect(gateway.listSelectOptions.mock.calls).toEqual([
+    [API_KEY, 'sp_personal', 'tag'],
     [API_KEY, 'sp_personal', 'priority'],
     [API_KEY, 'sp_personal', 'stage']
   ])
+})
+
+test('offers the panel neither hidden properties, nor the name and type it draws anyway, nor other formats', async () => {
+  const { gateway, store, syncSchema } = setup()
+  const property = (key: string, format: string, hidden?: boolean): SchemaProperty =>
+    hidden === undefined ? { key, name: key, format } : { key, name: key, format, hidden }
+  gateway.listTypes.mockImplementation(async (_key, spaceId) =>
+    ok(
+      spaceId === 'sp_personal'
+        ? [
+            {
+              key: 'job',
+              name: 'Job',
+              icon: null,
+              properties: [
+                DUE,
+                property('name', 'text'),
+                property('type', 'objects'),
+                property('last_modified_by', 'objects', true),
+                property('salary', 'text'),
+                property('openings', 'number'),
+                property('contacts', 'objects'),
+                property('site', 'url'),
+                property('mail', 'email'),
+                property('phone', 'phone'),
+                property('cv', 'files'),
+                property('remote', 'checkbox'),
+                property('applied', 'date'),
+                property('hidden_note', 'text', true)
+              ]
+            }
+          ]
+        : []
+    )
+  )
+  await syncSchema.execute()
+  const { last } = store.get() as Extract<SchemaSync, { phase: 'synced' }>
+  const [job] = last.spaces[0]?.types ?? []
+  expect(job?.panelProperties.map(({ key }) => key)).toEqual([
+    'salary',
+    'openings',
+    'contacts',
+    'site',
+    'mail',
+    'phone'
+  ])
+  expect(job?.checkboxProperties).toEqual([{ key: 'remote', name: 'remote' }])
+  expect(job?.textProperties.map(({ key }) => key)).toEqual(['salary', 'hidden_note'])
 })
 
 test('fails as unauthorized when options are refused', async () => {
