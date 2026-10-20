@@ -21,6 +21,7 @@ const event = (id: string, date: string, until?: string): CalendarEvent => ({
   space: 'sp_1',
   date,
   allDay: true,
+  details: [],
   ...(until === undefined ? {} : { until })
 })
 

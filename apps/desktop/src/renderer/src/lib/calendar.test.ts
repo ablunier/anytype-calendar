@@ -11,6 +11,7 @@ import {
   dateOptions,
   eventHue,
   eventsOnDay,
+  formatNumber,
   indexBy,
   isoDate,
   isoWeekNumber,
@@ -150,7 +151,7 @@ describe('weekdaysFrom and isWeekendColumn', () => {
 })
 
 describe('eventsOnDay', () => {
-  const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true }
+  const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true, details: [] }
   const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
   const range: CalendarEvent = {
     ...base,
@@ -405,6 +406,13 @@ describe('mappingIn', () => {
   })
 })
 
+describe('formatNumber', () => {
+  test("writes a number the locale's way", () => {
+    expect(formatNumber(1234.5, 'en')).toBe('1,234.5')
+    expect(formatNumber(1234.5, 'es')).toBe(new Intl.NumberFormat('es').format(1234.5))
+  })
+})
+
 describe('eventHue', () => {
   const event: CalendarEvent = {
     id: 'o',
@@ -412,7 +420,8 @@ describe('eventHue', () => {
     type: TASK.key,
     space: 'sp_1',
     date: '2026-09-01',
-    allDay: true
+    allDay: true,
+    details: []
   }
 
   test("is the event's own hue, else its type's, else neutral", () => {

@@ -20,6 +20,7 @@ function timed(id: string, time: string, end?: string, until?: string): Calendar
     date: DAY,
     time,
     allDay: false,
+    details: [],
     ...(end === undefined ? {} : { end }),
     ...(until === undefined ? {} : { until })
   }
@@ -42,7 +43,8 @@ describe('splitDayEvents', () => {
       type: 'sp_1:task',
       space: 'sp_1',
       date: DAY,
-      allDay: true
+      allDay: true,
+      details: []
     }
     const { band, timed: kept } = splitDayEvents([allDay], DAY)
     expect(band.map((e) => e.id)).toEqual(['holiday'])

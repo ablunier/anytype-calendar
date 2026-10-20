@@ -61,6 +61,7 @@ const GALICIAN_CALENDAR = {
 }
 
 const localeSupport = new Map<string, boolean>()
+const numberLocaleSupport = new Map<string, boolean>()
 
 function supportsLocale(locale: string): boolean {
   let supported = localeSupport.get(locale)
@@ -349,8 +350,32 @@ export function locationOptions(type: ObjectType): { value: string; label: strin
   return type.texts.map(({ key, label }) => ({ value: key, label }))
 }
 
+/** Falls back to the key for a property the type no longer has. */
+export function panelLabel(type: ObjectType, key: string): string {
+  return type.panelProps.find((prop) => prop.key === key)?.label ?? key
+}
+
 export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
   return spaces.filter((space) => keys.includes(space.key))
+}
+
+/**
+ * As Galician writes it: `.` between thousands, from four digits up, and `,` before decimals.
+ * Chromium carries no Galician number data either, so it is spelled out from English's.
+ */
+export function formatNumber(value: number, locale: string): string {
+  if (!usesGalicianNumberFallback(locale)) return new Intl.NumberFormat(locale).format(value)
+  return new Intl.NumberFormat('en').format(value).replace(/[,.]/g, (mark) => (mark === ',' ? '.' : ','))
+}
+
+function usesGalicianNumberFallback(locale: string): boolean {
+  if (locale !== 'gl') return false
+  let supported = numberLocaleSupport.get(locale)
+  if (supported === undefined) {
+    supported = Intl.NumberFormat.supportedLocalesOf([locale]).length > 0
+    numberLocaleSupport.set(locale, supported)
+  }
+  return !supported
 }
 
 /** `HH:MM` in local time, drawn the way the user chose to read the clock. */

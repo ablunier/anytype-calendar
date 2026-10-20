@@ -4,6 +4,7 @@ import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
+import { EventDetails } from './EventDetails'
 
 interface DetailDateProps {
   date: string
@@ -149,6 +150,8 @@ export function EventDetail({
             <span className="type-body text-small text-pretty text-ink-body">{event.location}</span>
           </div>
         ) : null}
+
+        <EventDetails event={event} type={type} />
 
         {/* How a type is drawn is the user's choice in Settings, not the object's. */}
         <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />

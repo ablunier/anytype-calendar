@@ -6,13 +6,22 @@ import {
   sameEventsSpan,
   shownEventsSpan,
   type EventsDatedObject,
+  type EventsDetail,
   type EventsReschedule,
   type EventsSlot,
   type EventsSpan,
   type EventsSpanResult
 } from '@anytype-calendar/events/domain'
 import type { EventsCreateRequest, EventsRescheduleRequest, EventsSnapshot } from '@shared/ipc'
-import type { CalendarEvent, CalendarMonth, CalendarSlot, CalendarView, ObjectType, SyncView } from '@renderer/types'
+import type {
+  CalendarEvent,
+  CalendarMonth,
+  CalendarSlot,
+  CalendarView,
+  EventDetail,
+  ObjectType,
+  SyncView
+} from '@renderer/types'
 import { addDays, buildWeek, isoDate } from './calendar'
 import { anytypeTypeKeyOf, elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
 
@@ -166,7 +175,8 @@ function calendarEventFor({
   allDay,
   done,
   location,
-  colour
+  colour,
+  details
 }: EventsDatedObject): CalendarEvent {
   return {
     id,
@@ -182,6 +192,51 @@ function calendarEventFor({
     ...(end === null ? {} : { until: localDate(end), ...(allDay ? {} : { end: localTime(end) }) }),
     ...(done === undefined ? {} : { done }),
     ...(location === undefined ? {} : { location }),
-    ...(colour === undefined ? {} : { category: hueOf(colour) })
+    ...(colour === undefined ? {} : { category: hueOf(colour) }),
+    details: details.map(eventDetailFor)
   }
+}
+
+/** A URL, address or number that cannot be opened as a link is drawn as text. */
+function eventDetailFor(detail: EventsDetail): EventDetail {
+  const { key } = detail
+  switch (detail.format) {
+    case 'number':
+      return { key, kind: 'number', value: detail.value }
+    case 'select':
+    case 'multi_select':
+      return {
+        key,
+        kind: 'options',
+        options: detail.options.map(({ name, color }) => ({ name, category: hueOf(color) }))
+      }
+    case 'objects':
+      return { key, kind: 'objects', objects: detail.objects.map(({ id, name, member }) => ({ id, name, member })) }
+    case 'text':
+      return { key, kind: 'text', text: detail.value }
+    default: {
+      const href = linkFor(detail.format, detail.value)
+      return href === null ? { key, kind: 'text', text: detail.value } : { key, kind: 'link', text: detail.value, href }
+    }
+  }
+}
+
+/** A URL with no scheme (`example.com/jobs`) is taken for a web page, as a browser would. */
+function linkFor(format: 'url' | 'email' | 'phone', value: string): string | null {
+  const trimmed = value.trim()
+  if (format === 'email') return trimmed.includes('@') ? `mailto:${trimmed}` : null
+  if (format === 'phone') {
+    const number = trimmed.replace(/[\s().-]/g, '')
+    return /^\+?\d+$/.test(number) ? `tel:${number}` : null
+  }
+  const web = (text: string): string | null => {
+    try {
+      const url = new URL(text)
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null
+    } catch {
+      return null
+    }
+  }
+  if (/^[a-z][a-z\d+.-]*:/i.test(trimmed)) return web(trimmed)
+  return trimmed.includes('.') && !/\s/.test(trimmed) ? web(`https://${trimmed}`) : null
 }

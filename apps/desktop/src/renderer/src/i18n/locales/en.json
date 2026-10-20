@@ -272,7 +272,9 @@
       "done": "Done",
       "readOnlyNotice": "Edit the object in Anytype and it updates here on the next read.",
       "editNotice": "Drag it on the calendar to change its dates. Edit anything else in Anytype, and it updates here on the next read.",
-      "openInAnytype": "Open in Anytype"
+      "openInAnytype": "Open in Anytype",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "detailPanel": {
       "eventDetailLabel": "Event detail",

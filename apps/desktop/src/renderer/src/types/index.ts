@@ -170,7 +170,21 @@ export interface CalendarEvent {
   location?: string
   /** The hue of its option in the property its type is coloured by, drawn instead of the type's. */
   category?: CategoryHue
+  /** In the order its type's panel shows them. */
+  details: EventDetail[]
 }
+
+/**
+ * One property the detail panel shows, keyed by the property, whose label its type says. Never
+ * empty. A link's `href` is one main opens: `http(s)`, `mailto:` or `tel:`.
+ */
+export type EventDetail =
+  | { key: string; kind: 'text'; text: string }
+  | { key: string; kind: 'number'; value: number }
+  | { key: string; kind: 'link'; text: string; href: string }
+  | { key: string; kind: 'options'; options: { name: string; category: CategoryHue }[] }
+  /** A member is shown by name, not opened: Anytype has no object to open for one. */
+  | { key: string; kind: 'objects'; objects: { id: string; name: string; member: boolean }[] }
 
 /** One calendar day of whatever the view draws: a cell of the month grid, a day column. */
 export interface DayColumn {

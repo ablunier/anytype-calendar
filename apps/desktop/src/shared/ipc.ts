@@ -110,6 +110,7 @@ export const IpcChannel = {
   calendarViewChanged: 'calendarView:changed',
   calendarViewSave: 'calendarView:save',
   shellOpenObject: 'shell:open-object',
+  shellOpenLink: 'shell:open-link',
   updateGet: 'update:get',
   updateChanged: 'update:changed',
   updateDismiss: 'update:dismiss',
@@ -213,5 +214,7 @@ export interface CalendarApi {
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */
     openObject(objectId: string, spaceId: string): Promise<void>
+    /** Opens a web page in the browser, or a `mailto:` or `tel:` link in its app. Rejects any other link. */
+    openLink(link: string): Promise<void>
   }
 }

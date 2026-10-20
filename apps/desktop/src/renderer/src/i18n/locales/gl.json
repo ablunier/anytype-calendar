@@ -272,7 +272,9 @@
       "done": "Feito",
       "readOnlyNotice": "Edita o obxecto en Anytype e actualizarase aquí na próxima lectura.",
       "editNotice": "Arrástrao no calendario para cambiar as súas datas. Edita todo o demais en Anytype e actualizarase aquí na próxima lectura.",
-      "openInAnytype": "Abrir en Anytype"
+      "openInAnytype": "Abrir en Anytype",
+      "showMore": "Ver máis",
+      "showLess": "Ver menos"
     },
     "detailPanel": {
       "eventDetailLabel": "Detalle do evento",
