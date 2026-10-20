@@ -17,6 +17,7 @@ function timed(id: string, time: string, end?: string, until?: string): Calendar
     title: id,
     type: 'sp_1:task',
     space: 'sp_1',
+    rank: 0,
     date: DAY,
     time,
     allDay: false,
@@ -41,6 +42,7 @@ describe('splitDayEvents', () => {
       title: 'holiday',
       type: 'sp_1:task',
       space: 'sp_1',
+      rank: 0,
       date: DAY,
       allDay: true
     }

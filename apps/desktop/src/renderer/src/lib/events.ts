@@ -27,6 +27,15 @@ export function monthOf(instant: number): CalendarMonth {
   return { year: date.getFullYear(), month: date.getMonth() }
 }
 
+/** The first and last day, `YYYY-MM-DD`, that the span draws as its own: not a month's padding days. */
+export function spanDays(span: EventsSpan): { first: string; last: string } {
+  const first = anchorOf(span)
+  if (span.kind === 'month') {
+    return { first, last: isoDate(span.year, span.month, new Date(span.year, span.month + 1, 0).getDate()) }
+  }
+  return { first, last: span.kind === 'week' ? addDays(first, 6) : first }
+}
+
 /** The span a view wants around `date` (`YYYY-MM-DD`), given the user's first day of the week. */
 export function spanFor(view: CalendarView, date: string, weekStart: number): EventsSpan {
   const [year, month = 1, day = 1] = date.split('-').map(Number)
@@ -82,7 +91,8 @@ export function shiftSpan(span: EventsSpan, delta: number): EventsSpan {
 
 /**
  * The span's events, or null while it has not been read. A result kept from another span
- * does not count, so the grid never draws one span's events on another.
+ * does not count, so the grid never draws one span's events on another. An object brought by
+ * several sources is several events here: `visibleEvents` picks the one to draw.
  */
 export function eventsFor(snapshot: EventsSnapshot, span: EventsSpan): CalendarEvent[] | null {
   return resultFor(snapshot, span)?.objects.map(calendarEventFor) ?? null
@@ -160,6 +170,7 @@ function calendarEventFor({
   id,
   spaceId,
   source,
+  rank,
   title,
   start,
   end,
@@ -176,6 +187,7 @@ function calendarEventFor({
         ? objectTypeKey(spaceId, source.typeKey)
         : querySourceKey(spaceId, source.queryId),
     space: spaceId,
+    rank,
     date: localDate(start),
     allDay,
     ...(allDay ? {} : { time: localTime(start) }),
