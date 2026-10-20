@@ -199,6 +199,31 @@
     "about": {
       "heading": "About",
       "version": "Version"
+    },
+    "done": "Done",
+    "location": "Location",
+    "panel": "Panel",
+    "doneFor": "Done property for {{label}}",
+    "locationFor": "Location property for {{label}}",
+    "panelFor": "Properties the detail panel shows for {{label}}:",
+    "panelNothing": "Nothing more",
+    "panelCount_one": "{{count}} property",
+    "panelCount_other": "{{count}} properties",
+    "panelTitle": "Detail panel for {{label}}",
+    "panelDescription": "Pick what the panel shows below the dates, in this order. Drag to reorder, or use the arrows.",
+    "panelEmpty": "This type has no other property the panel can show.",
+    "panelClose": "Done",
+    "moveUp": "Move {{label}} up",
+    "moveDown": "Move {{label}} down",
+    "panelFormat": {
+      "text": "Text",
+      "number": "Number",
+      "select": "Select",
+      "multi_select": "Multi-select",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Phone",
+      "objects": "Objects"
     }
   },
   "calendar": {

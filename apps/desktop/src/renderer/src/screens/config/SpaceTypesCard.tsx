@@ -10,13 +10,16 @@ export interface SpaceTypesCardProps {
   types: ObjectType[]
   queries: ObjectType[]
   selection: TypeSelection
+  /** Whether types can pick their Done, Location and panel properties: only under v2. */
+  details: boolean
 }
 
 export function SpaceTypesCard({
   space,
   types,
   queries,
-  selection
+  selection,
+  details
 }: SpaceTypesCardProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = selection.spaceKeys.includes(space.key)
@@ -32,6 +35,10 @@ export function SpaceTypesCard({
         includesTime={mapping.includesTime}
         colourBy={mapping.colourBy}
         view={mapping.view}
+        panel={mapping.panel}
+        done={mapping.done}
+        location={mapping.location}
+        details={details}
         last={last}
         onToggle={() => selection.toggleType(type.key)}
         onFromChange={(value) => selection.setFrom(type.key, value)}
@@ -39,6 +46,9 @@ export function SpaceTypesCard({
         onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
         onColourByChange={(value) => selection.setColourBy(type.key, value)}
         onViewChange={(value) => selection.setView(type.key, value)}
+        onPanelChange={(value) => selection.setPanel(type.key, value)}
+        onDoneChange={(value) => selection.setDone(type.key, value)}
+        onLocationChange={(value) => selection.setLocation(type.key, value)}
       />
     )
   }

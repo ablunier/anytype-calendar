@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
-import { Checkbox, Select, Tooltip } from '@renderer/components/ui'
-import { colourOptions, dateOptions, viewOptions } from '@renderer/lib/calendar'
+import { Button, Checkbox, Select, Tooltip } from '@renderer/components/ui'
+import { colourOptions, dateOptions, doneOptions, locationOptions, viewOptions } from '@renderer/lib/calendar'
+import { PanelDialog } from './PanelDialog'
 
 export interface TypeConfigRowProps {
   type: ObjectType
@@ -13,6 +15,14 @@ export interface TypeConfigRowProps {
   colourBy: string | null
   /** A query's view; null for its first. Unused for a type. */
   view: string | null
+  panel: string[]
+  done: string | null
+  location: string | null
+  /**
+   * Whether to offer Done, Location and the panel's properties: only v2 reads them, so under v1
+   * they would change nothing.
+   */
+  details: boolean
   last: boolean
   onToggle: () => void
   onFromChange: (value: string) => void
@@ -20,6 +30,9 @@ export interface TypeConfigRowProps {
   onIncludesTimeChange: (value: boolean) => void
   onColourByChange: (value: string | null) => void
   onViewChange: (value: string) => void
+  onPanelChange: (value: string[]) => void
+  onDoneChange: (value: string | null) => void
+  onLocationChange: (value: string | null) => void
 }
 
 export function TypeConfigRow({
@@ -30,15 +43,23 @@ export function TypeConfigRow({
   includesTime,
   colourBy,
   view,
+  panel,
+  done,
+  location,
+  details,
   last,
   onToggle,
   onFromChange,
   onToChange,
   onIncludesTimeChange,
   onColourByChange,
-  onViewChange
+  onViewChange,
+  onPanelChange,
+  onDoneChange,
+  onLocationChange
 }: TypeConfigRowProps): React.JSX.Element {
   const { t } = useTranslation()
+  const [panelOpen, setPanelOpen] = useState(false)
   /** An empty value can never be a property key. */
   const none = { value: '', label: t('common.none') }
   const typeColour = { value: '', label: t('config.typeColour') }
@@ -125,6 +146,54 @@ export function TypeConfigRow({
       ) : (
         colourSelect
       )}
+      {details ? (
+        <div className="col-span-5 col-start-3 flex flex-wrap items-center gap-x-16 gap-y-8">
+          <label className="flex items-center gap-8">
+            <span className="type-caption text-tiny text-ink-tertiary">{t('config.done')}</span>
+            <Select
+              size="sm"
+              className="w-152"
+              ariaLabel={t('config.doneFor', { label: type.label })}
+              options={[none, ...doneOptions(type)]}
+              value={done ?? none.value}
+              disabled={!checked}
+              onChange={(value) => onDoneChange(value === none.value ? null : value)}
+            />
+          </label>
+          <label className="flex items-center gap-8">
+            <span className="type-caption text-tiny text-ink-tertiary">{t('config.location')}</span>
+            <Select
+              size="sm"
+              className="w-152"
+              ariaLabel={t('config.locationFor', { label: type.label })}
+              options={[none, ...locationOptions(type)]}
+              value={location ?? none.value}
+              disabled={!checked}
+              onChange={(value) => onLocationChange(value === none.value ? null : value)}
+            />
+          </label>
+          <span className="flex items-center gap-8">
+            <span className="type-caption text-tiny text-ink-tertiary">{t('config.panel')}</span>
+            <Button
+              variant="secondary"
+              size="sm"
+              iconRight="chevron-down"
+              disabled={!checked}
+              onClick={() => setPanelOpen(true)}
+            >
+              <span className="sr-only">{t('config.panelFor', { label: type.label })}</span>
+              {panel.length === 0 ? t('config.panelNothing') : t('config.panelCount', { count: panel.length })}
+            </Button>
+          </span>
+          <PanelDialog
+            type={type}
+            open={panelOpen}
+            panel={panel}
+            onChange={onPanelChange}
+            onClose={() => setPanelOpen(false)}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

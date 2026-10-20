@@ -199,6 +199,31 @@
     "about": {
       "heading": "Acerca de",
       "version": "Versión"
+    },
+    "done": "Hecho",
+    "location": "Ubicación",
+    "panel": "Panel",
+    "doneFor": "Propiedad de hecho para {{label}}",
+    "locationFor": "Propiedad de ubicación para {{label}}",
+    "panelFor": "Propiedades que muestra el panel de detalle para {{label}}:",
+    "panelNothing": "Nada más",
+    "panelCount_one": "{{count}} propiedad",
+    "panelCount_other": "{{count}} propiedades",
+    "panelTitle": "Panel de detalle de {{label}}",
+    "panelDescription": "Elige qué muestra el panel debajo de las fechas, en este orden. Arrastra para reordenar o usa las flechas.",
+    "panelEmpty": "Este tipo no tiene otra propiedad que el panel pueda mostrar.",
+    "panelClose": "Hecho",
+    "moveUp": "Subir {{label}}",
+    "moveDown": "Bajar {{label}}",
+    "panelFormat": {
+      "text": "Texto",
+      "number": "Número",
+      "select": "Selección",
+      "multi_select": "Selección múltiple",
+      "url": "URL",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "objects": "Objetos"
     }
   },
   "calendar": {

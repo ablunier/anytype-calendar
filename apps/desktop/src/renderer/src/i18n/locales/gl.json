@@ -199,6 +199,31 @@
     "about": {
       "heading": "Acerca de",
       "version": "Versión"
+    },
+    "done": "Feito",
+    "location": "Localización",
+    "panel": "Panel",
+    "doneFor": "Propiedade de feito para {{label}}",
+    "locationFor": "Propiedade de localización para {{label}}",
+    "panelFor": "Propiedades que amosa o panel de detalle para {{label}}:",
+    "panelNothing": "Nada máis",
+    "panelCount_one": "{{count}} propiedade",
+    "panelCount_other": "{{count}} propiedades",
+    "panelTitle": "Panel de detalle de {{label}}",
+    "panelDescription": "Escolle que amosa o panel debaixo das datas, nesta orde. Arrastra para reordenar ou usa as frechas.",
+    "panelEmpty": "Este tipo non ten outra propiedade que o panel poida amosar.",
+    "panelClose": "Feito",
+    "moveUp": "Subir {{label}}",
+    "moveDown": "Baixar {{label}}",
+    "panelFormat": {
+      "text": "Texto",
+      "number": "Número",
+      "select": "Selección",
+      "multi_select": "Selección múltiple",
+      "url": "URL",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "objects": "Obxectos"
     }
   },
   "calendar": {
