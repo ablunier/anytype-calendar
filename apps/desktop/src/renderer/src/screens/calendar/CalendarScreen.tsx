@@ -30,6 +30,8 @@ import {
 import { editFailureText, readOnlyText } from '@renderer/lib/edit-text'
 import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor } from '@renderer/lib/events'
 import { syncDetailText } from '@renderer/lib/sync-text'
+import { allHidden, visibleEvents } from '@renderer/lib/visibility'
+import { CalendarSidebar } from './CalendarSidebar'
 import { CalendarTopBar } from './CalendarTopBar'
 import { CreateEventDialog } from './CreateEventDialog'
 import { DateNavigator } from './DateNavigator'
@@ -48,6 +50,11 @@ export interface CalendarScreenProps {
   types: ObjectType[]
   spaces: Space[]
   trackedSpaceKeys: string[]
+  /** The chosen types and queries of the tracked spaces: what the sidebar can hide. */
+  sources: ObjectType[]
+  /** Keys of the sources not drawn. They are read all the same. */
+  hiddenSources: ReadonlySet<string>
+  sidebarCollapsed: boolean
   /** False when no chosen type sits in a chosen space, so no span can hold anything. */
   tracksAnything: boolean
   /** `YYYY-MM-DD`. */
@@ -63,6 +70,10 @@ export interface CalendarScreenProps {
   onReschedule: (request: EventsRescheduleRequest) => Promise<EventsEditResult>
   onCreate: (request: EventsCreateRequest) => Promise<EventsEditResult>
   onSetDone: (request: EventsSetDoneRequest) => Promise<EventsEditResult>
+  onSetSourcesShown: (keys: string[], shown: boolean) => void
+  onToggleSidebar: () => void
+  /** `date` is `YYYY-MM-DD`. */
+  onSelectDate: (date: string) => void
   onToggleTheme: () => void
   onOpenSettings: () => void
   onView: (view: CalendarView) => void
@@ -86,11 +97,14 @@ export interface CalendarScreenProps {
  */
 export function CalendarScreen({
   span,
-  events,
+  events: loadedEvents,
   status,
   types,
   spaces,
   trackedSpaceKeys,
+  sources,
+  hiddenSources,
+  sidebarCollapsed,
   tracksAnything,
   today,
   nowMinute,
@@ -102,6 +116,9 @@ export function CalendarScreen({
   onReschedule,
   onCreate,
   onSetDone,
+  onSetSourcesShown,
+  onToggleSidebar,
+  onSelectDate,
   onToggleTheme,
   onOpenSettings,
   onView,
@@ -117,6 +134,15 @@ export function CalendarScreen({
   const typesByKey = useMemo(() => indexBy(types), [types])
   const spacesByKey = useMemo(() => indexBy(spaces), [spaces])
   const anchor = anchorOf(span)
+  const events = useMemo(
+    () => (loadedEvents === null ? null : visibleEvents(loadedEvents, hiddenSources)),
+    [loadedEvents, hiddenSources]
+  )
+  const creatable = useMemo(
+    () => creatableTypes.filter(({ key }) => !hiddenSources.has(key)),
+    [creatableTypes, hiddenSources]
+  )
+  const everythingHidden = allHidden(sources, hiddenSources)
 
   const cells = useMemo(
     () => (span.kind === 'month' ? buildMonthGrid(span.year, span.month, weekStart) : []),
@@ -139,11 +165,20 @@ export function CalendarScreen({
       ? cells.some((cell) => !cell.outside && cell.date === today)
       : days.some((day) => day.date === today)
 
-  const [detail, setDetail] = useState<DetailTarget | null>(null)
+  const [openDetail, setDetail] = useState<DetailTarget | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [focusedDay, setFocusedDay] = useState(
     () => cells.find((cell) => !cell.outside && cell.date === today)?.day ?? 1
   )
+
+  /* An object whose source is hidden has gone from the grid, so its panel goes too. One the
+   * span no longer holds at all is a different case — moved out of it — and stays as opened. */
+  const detail =
+    openDetail?.kind === 'event' &&
+    (loadedEvents ?? []).some((event) => sameObject(event, openDetail.event)) &&
+    !(events ?? []).some((event) => sameObject(event, openDetail.event))
+      ? null
+      : openDetail
 
   const openEvent = (event: CalendarEvent, date?: string): void => {
     if (date !== undefined) setSelectedDate(date)
@@ -183,7 +218,9 @@ export function CalendarScreen({
   }
   const askToCreate = (slot: CalendarSlot): void => {
     if (readOnly !== null) say(readOnly)
-    else if (creatableTypes.length === 0) say(t('calendar.edit.noTypes'))
+    else if (creatable.length === 0) {
+      say(t(creatableTypes.length === 0 ? 'calendar.edit.noTypes' : 'calendar.edit.typesHidden'))
+    }
     else setCreating(slot)
   }
 
@@ -208,7 +245,6 @@ export function CalendarScreen({
       <DateNavigator
         title={label}
         view={span.kind}
-        legendSpaces={trackedSpaces}
         onView={onView}
         onPrev={onPrev}
         onNext={onNext}
@@ -216,6 +252,19 @@ export function CalendarScreen({
       />
 
       <div className="flex min-h-0 flex-1">
+        <CalendarSidebar
+          collapsed={sidebarCollapsed}
+          span={span}
+          today={today}
+          weekStart={weekStart}
+          showWeekNumbers={showWeekNumbers}
+          spaces={trackedSpaces}
+          sources={sources}
+          hidden={hiddenSources}
+          onSelectDate={onSelectDate}
+          onSetShown={onSetSourcesShown}
+          onToggleCollapsed={onToggleSidebar}
+        />
         <main className="flex min-w-0 flex-1 flex-col">
           {!tracksAnything ? (
             <Centered>
@@ -226,6 +275,24 @@ export function CalendarScreen({
                 action={
                   <Button variant="secondary" size="sm" onClick={onOpenSettings}>
                     {t('calendar.openSettings')}
+                  </Button>
+                }
+              />
+            </Centered>
+          ) : everythingHidden ? (
+            <Centered>
+              <EmptyState
+                icon="eye-off"
+                title={t('calendar.everythingHidden')}
+                description={t('calendar.everythingHiddenDescription')}
+                action={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    iconLeft="eye"
+                    onClick={() => onSetSourcesShown(sources.map(({ key }) => key), true)}
+                  >
+                    {t('calendar.showAll')}
                   </Button>
                 }
               />
@@ -249,7 +316,7 @@ export function CalendarScreen({
           events !== null &&
             events.length === 0 &&
             span.kind === 'month' &&
-            !(canEdit && creatableTypes.length > 0) ? (
+            !(canEdit && creatable.length > 0) ? (
             <Centered>
               <EmptyState
                 icon="calendar-days"
@@ -318,7 +385,7 @@ export function CalendarScreen({
       {creating ? (
         <CreateEventDialog
           slot={creating}
-          types={creatableTypes}
+          types={creatable}
           spacesByKey={spacesByKey}
           onClose={() => setCreating(null)}
           onCreate={(type, name, slot) => edit(onCreate(createRequestFor(type, name, slot)))}
@@ -328,6 +395,10 @@ export function CalendarScreen({
       {toast ? <Toast key={toast.id} message={toast.message} onDismiss={dismissToast} /> : null}
     </div>
   )
+}
+
+function sameObject(a: CalendarEvent, b: CalendarEvent): boolean {
+  return a.id === b.id && a.space === b.space
 }
 
 function labelFor(span: EventsSpan, days: { date: string }[], locale: string): string {

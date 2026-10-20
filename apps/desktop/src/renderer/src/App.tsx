@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import type { AuthView, CalendarView, ConnectedScreen } from './types'
+import { useCalendarVisibility } from './hooks/useCalendarVisibility'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
 import { useLocale } from './hooks/useLocale'
@@ -37,6 +38,7 @@ import {
   tracksAnyType,
   typesFor
 } from './lib/schema'
+import { prunedHidden, sourcesOnCalendar, withVisibility } from './lib/visibility'
 import { apiAccessFor, apiKeyFor, authViewFor, editAccessFor } from './lib/session'
 import { AuthScreen } from './screens/auth/AuthScreen'
 import { ConfigScreen } from './screens/config/ConfigScreen'
@@ -66,6 +68,8 @@ function App(): React.JSX.Element | null {
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
   const [calendarView, setCalendarView] = useCalendarView()
+  const [visibility, updateVisibility] = useCalendarVisibility()
+  const hiddenSources = useMemo(() => new Set(visibility.hidden), [visibility.hidden])
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -181,6 +185,17 @@ function App(): React.JSX.Element | null {
   const picks = picksFor(selection, types)
   const typesOnCalendar = withDates(types, picks.dates)
   const today = localDate(now)
+  const sources = sourcesOnCalendar(typesOnCalendar, picks)
+  /* Only keys of sources the calendar still holds are saved, so what the selection dropped
+   * since stops being remembered. */
+  const setSourcesShown = (keys: string[], shown: boolean): void =>
+    updateVisibility(({ hidden, collapsed }) => ({
+      hidden: prunedHidden(
+        withVisibility(new Set(hidden), keys, shown),
+        sources.map(({ key }) => key)
+      ),
+      collapsed
+    }))
   return (
     <TimeFormatContext value={timeFormat}>
       <CalendarScreen
@@ -191,6 +206,9 @@ function App(): React.JSX.Element | null {
         types={typesOnCalendar}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
+        sources={sources}
+        hiddenSources={hiddenSources}
+        sidebarCollapsed={visibility.collapsed}
         tracksAnything={tracksAnyType(selection)}
         today={today}
         nowMinute={minutesOf(now)}
@@ -202,6 +220,11 @@ function App(): React.JSX.Element | null {
         onReschedule={(request) => window.api.events.reschedule(request)}
         onCreate={(request) => window.api.events.create(request)}
         onSetDone={(request) => window.api.events.setDone(request)}
+        onSetSourcesShown={setSourcesShown}
+        onToggleSidebar={() =>
+          updateVisibility((current) => ({ ...current, collapsed: !current.collapsed }))
+        }
+        onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart))}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => setScreen('config')}
         onView={showView}

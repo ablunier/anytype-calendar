@@ -282,7 +282,8 @@
         "needsV2": "Editar aquí require un Anytype máis recente, que sirva a API v2.",
         "checking": "Comprobando que pode facer esta clave en Anytype…"
       },
-      "noTypes": "Escolle un tipo en Axustes para crear os seus obxectos aquí."
+      "noTypes": "Escolle un tipo en Axustes para crear os seus obxectos aquí.",
+      "typesHidden": "Amosa un tipo na barra lateral para crear aquí os seus obxectos."
     },
     "create": {
       "title": "Novo obxecto",
@@ -291,6 +292,19 @@
       "typeInSpace": "{{type}} · {{space}}",
       "time": "Hora",
       "submit": "Crear"
+    },
+    "everythingHidden": "Todo está agochado",
+    "everythingHiddenDescription": "Todos os espazos, tipos e consultas do calendario están desactivados na barra lateral. Non se quitou nada da túa selección.",
+    "showAll": "Amosar todo",
+    "sidebar": {
+      "label": "Barra lateral do calendario",
+      "miniMonth": "Navegador de meses",
+      "sources": "Espazos, tipos e consultas",
+      "showOnCalendar": "Amosar no calendario",
+      "show": "Amosar {{name}}",
+      "hide": "Agochar {{name}}",
+      "collapse": "Agochar a barra lateral",
+      "expand": "Amosar a barra lateral"
     }
   },
   "updates": {
