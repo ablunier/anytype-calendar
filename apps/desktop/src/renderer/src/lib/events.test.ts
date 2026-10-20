@@ -30,6 +30,7 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   id: 'obj_1',
   spaceId: 'sp_1',
   source: { kind: 'type', typeKey: 'task' },
+  rank: 0,
   title: 'Ship it',
   start: local(8, 3),
   end: null,

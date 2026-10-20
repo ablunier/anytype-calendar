@@ -127,7 +127,10 @@ function shownObject(
 ): { object: EventsDatedObject; source: EventsSource } | null {
   const shown = store.shown()
   const objects = shown.phase === 'idle' ? [] : (shown.last?.objects ?? [])
-  const object = objects.find((candidate) => sameEventsObject(candidate, { spaceId, id }))
+  // Of the copies a type and a query each read, the one the lowest-ranked pick places.
+  const object = objects
+    .filter((candidate) => sameEventsObject(candidate, { spaceId, id }))
+    .reduce<EventsDatedObject | null>((first, copy) => (first && first.rank <= copy.rank ? first : copy), null)
   if (!object) return null
   const source = sources
     .current()

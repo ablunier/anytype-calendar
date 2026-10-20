@@ -43,6 +43,7 @@ const object = (fields: Partial<EventsDatedObject>): EventsDatedObject => ({
   id: 'obj_1',
   spaceId: 'sp_1',
   source: { kind: 'type', typeKey: 'meeting' },
+  rank: 0,
   title: 'Standup',
   start: local(28, 10),
   end: local(28, 11),
@@ -174,6 +175,17 @@ describe('drawing the edits in flight', () => {
     const later = { ...standup, start: local(28, 14), end: local(28, 15) }
     const shown = withEventsEdits(loaded, [early, later])
     expect(shown.phase === 'loaded' && shown.last.objects).toEqual([review, later])
+  })
+
+  test('replaces only the copy read through the edited pick', () => {
+    const query = object({ source: { kind: 'query', queryId: 'q_1' }, rank: 1, start: local(30, 9), end: null })
+    const both: EventsSpanLoad = {
+      phase: 'loaded',
+      last: { span: { kind: 'month', year: 2026, month: 2 }, objects: [standup, query], loadedAt: 0 }
+    }
+    const moved = object({ start: local(29, 10) })
+    const shown = withEventsEdits(both, [moved])
+    expect(shown.phase === 'loaded' && shown.last.objects).toEqual([moved, query])
   })
 
   test('leaves the load as it is when no edit is of an object in it', () => {
