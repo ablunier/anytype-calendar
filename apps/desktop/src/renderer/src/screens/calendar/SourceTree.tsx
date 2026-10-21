@@ -42,6 +42,13 @@ export function SourceTree({
         return (
           <li key={space.key} className="flex flex-col">
             <div className="flex items-center gap-2">
+              <ToggleRow
+                state={state}
+                name={space.name}
+                marker={<SpaceMonogram space={space} />}
+                onToggle={() => onSetShown(keys, state === 'hidden')}
+                strong
+              />
               <button
                 type="button"
                 aria-expanded={!folded}
@@ -53,16 +60,9 @@ export function SourceTree({
               >
                 <Icon name={folded ? 'chevron-right' : 'chevron-down'} size={14} />
               </button>
-              <ToggleRow
-                state={state}
-                name={space.name}
-                marker={<SpaceMonogram space={space} />}
-                onToggle={() => onSetShown(keys, state === 'hidden')}
-                strong
-              />
             </div>
             {folded ? null : (
-              <ul className="m-0 flex list-none flex-col p-0 pl-24">
+              <ul className="m-0 flex list-none flex-col p-0 pl-16">
                 {children.map((source) => {
                   const sourceState = visibilityOf([source.key], hidden)
                   return (

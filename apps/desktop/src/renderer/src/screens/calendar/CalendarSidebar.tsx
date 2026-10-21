@@ -44,16 +44,16 @@ export function CalendarSidebar({
   return (
     <aside
       aria-label={t('calendar.sidebar.label')}
-      className="flex w-240 shrink-0 flex-col gap-16 overflow-y-auto border-r border-line-subtle bg-surface-card p-12"
+      className="flex w-240 shrink-0 flex-col gap-16 overflow-hidden border-r border-line-subtle bg-surface-card p-12"
     >
       <div className="flex shrink-0 justify-end">
         <IconButton size="sm" icon="panel-left-close" label={t('calendar.sidebar.collapse')} onClick={onToggleCollapsed} />
       </div>
       <MiniMonth {...miniMonth} />
-      <div className="flex shrink-0 flex-col gap-8">
-        <h2 className="type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.calendars')}</h2>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
+        <h2 className="shrink-0 type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.calendars')}</h2>
         {/* Each source of objects is a group of its own; Anytype's is a product name, left untranslated. */}
-        <section aria-labelledby="sidebar-group-anytype" className="flex flex-col gap-4">
+        <section aria-labelledby="sidebar-group-anytype" className="flex shrink-0 flex-col gap-4">
           <h3 id="sidebar-group-anytype" className="m-0 px-4 type-ui text-small text-ink-secondary">
             Anytype
           </h3>
