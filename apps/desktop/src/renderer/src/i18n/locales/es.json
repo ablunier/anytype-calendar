@@ -306,11 +306,66 @@
       "expand": "Mostrar la barra lateral",
       "calendars": "Calendarios",
       "collapseSpace": "Contraer {{name}}",
-      "expandSpace": "Expandir {{name}}"
+      "expandSpace": "Expandir {{name}}",
+      "subscriptions": "Suscritos"
+    },
+    "feedDetail": {
+      "starts": "Empieza",
+      "ends": "Termina",
+      "description": "Descripción",
+      "readOnlyNotice": "De {{calendar}}, un calendario suscrito. Aquí es de solo lectura: cámbialo donde se publica y se actualizará en la próxima lectura.",
+      "openLink": "Abrir enlace"
     }
   },
   "updates": {
     "available": "Versión {{version}} disponible",
     "dismiss": "Ocultar hasta la próxima versión"
+  },
+  "feeds": {
+    "heading": "Calendarios suscritos",
+    "description": "De Google, Outlook, iCloud y otros, por su dirección iCal. Solo lectura.",
+    "readAll": "Volver a leer todos",
+    "listLabel": "Calendarios suscritos",
+    "none": "Aún no hay calendarios. Añade uno por su dirección iCal: la dirección secreta en formato iCal de Google, el enlace publicado de Outlook o cualquier enlace .ics o webcal://.",
+    "changeFailed": "No se pudo guardar tu último cambio.",
+    "removeConfirm": "¿Quitarlo?",
+    "remove": "Quitar",
+    "removeNamed": "Quitar {{name}}",
+    "moveUp": "Subir {{name}}",
+    "moveDown": "Bajar {{name}}",
+    "edit": "Editar {{name}}",
+    "name": "Nombre",
+    "save": "Guardar",
+    "addHeading": "Añadir un calendario",
+    "url": "Dirección iCal",
+    "urlHint": "Un enlace que termina en .ics o empieza por webcal://. Se lee una vez antes de añadirlo.",
+    "nameOptional": "Nombre (opcional)",
+    "namePlaceholder": "El nombre propio del calendario",
+    "add": "Añadir calendario",
+    "failure": {
+      "unreachable": "No se pudo acceder. Revisa la dirección y tu conexión.",
+      "http": "El servidor respondió con un error ({{status}}). Puede que la dirección haya cambiado o se haya revocado.",
+      "notCalendar": "Esa dirección no es un calendario iCal. Busca el enlace en formato iCal (.ics).",
+      "invalidUrl": "Eso no es una dirección web. Debe empezar por https:// o webcal://.",
+      "invalidName": "Ponle un nombre de hasta 200 caracteres."
+    },
+    "status": {
+      "read": "leído {{elapsed}}",
+      "neverRead": "aún sin leer",
+      "reading": "leyendo…",
+      "keptCopy": "Se muestra la última copia ({{read}})."
+    },
+    "colours": {
+      "grey": "Gris",
+      "yellow": "Amarillo",
+      "orange": "Naranja",
+      "red": "Rojo",
+      "pink": "Rosa",
+      "purple": "Morado",
+      "blue": "Azul",
+      "ice": "Hielo",
+      "teal": "Verde azulado",
+      "lime": "Lima"
+    }
   }
 }

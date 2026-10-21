@@ -306,11 +306,66 @@
       "expand": "Amosar a barra lateral",
       "calendars": "Calendarios",
       "collapseSpace": "Contraer {{name}}",
-      "expandSpace": "Expandir {{name}}"
+      "expandSpace": "Expandir {{name}}",
+      "subscriptions": "Subscritos"
+    },
+    "feedDetail": {
+      "starts": "Comeza",
+      "ends": "Remata",
+      "description": "Descrición",
+      "readOnlyNotice": "De {{calendar}}, un calendario subscrito. Aquí é só de lectura: cámbiao onde se publica e actualizarase na seguinte lectura.",
+      "openLink": "Abrir ligazón"
     }
   },
   "updates": {
     "available": "Versión {{version}} dispoñible",
     "dismiss": "Agochar ata a seguinte versión"
+  },
+  "feeds": {
+    "heading": "Calendarios subscritos",
+    "description": "De Google, Outlook, iCloud e outros, polo seu enderezo iCal. Só lectura.",
+    "readAll": "Ler todos de novo",
+    "listLabel": "Calendarios subscritos",
+    "none": "Aínda non hai calendarios. Engade un polo seu enderezo iCal: o enderezo secreto en formato iCal de Google, a ligazón publicada de Outlook ou calquera ligazón .ics ou webcal://.",
+    "changeFailed": "Non se puido gardar o teu último cambio.",
+    "removeConfirm": "Quitalo?",
+    "remove": "Quitar",
+    "removeNamed": "Quitar {{name}}",
+    "moveUp": "Subir {{name}}",
+    "moveDown": "Baixar {{name}}",
+    "edit": "Editar {{name}}",
+    "name": "Nome",
+    "save": "Gardar",
+    "addHeading": "Engadir un calendario",
+    "url": "Enderezo iCal",
+    "urlHint": "Unha ligazón que remata en .ics ou comeza por webcal://. Lese unha vez antes de engadila.",
+    "nameOptional": "Nome (opcional)",
+    "namePlaceholder": "O nome propio do calendario",
+    "add": "Engadir calendario",
+    "failure": {
+      "unreachable": "Non se puido acceder. Revisa o enderezo e a túa conexión.",
+      "http": "O servidor respondeu cun erro ({{status}}). Pode que o enderezo cambiase ou se revogase.",
+      "notCalendar": "Ese enderezo non é un calendario iCal. Busca a ligazón en formato iCal (.ics).",
+      "invalidUrl": "Iso non é un enderezo web. Debe comezar por https:// ou webcal://.",
+      "invalidName": "Ponlle un nome de ata 200 caracteres."
+    },
+    "status": {
+      "read": "lido {{elapsed}}",
+      "neverRead": "aínda sen ler",
+      "reading": "lendo…",
+      "keptCopy": "Móstrase a última copia ({{read}})."
+    },
+    "colours": {
+      "grey": "Gris",
+      "yellow": "Amarelo",
+      "orange": "Laranxa",
+      "red": "Vermello",
+      "pink": "Rosa",
+      "purple": "Morado",
+      "blue": "Azul",
+      "ice": "Xeo",
+      "teal": "Verde azulado",
+      "lime": "Lima"
+    }
   }
 }

@@ -1,6 +1,7 @@
 /* What the calendar's sidebar hides. A hidden source is still read: its events are dropped
  * here, from what is drawn, so showing it again needs no request to Anytype. The pure part of
- * the sidebar, over source keys (`ObjectType.key`, which `CalendarEvent.type` carries too). */
+ * the sidebar, over source keys (`ObjectType.key` and `FeedSource.key`, which
+ * `CalendarEvent.type` carries too). */
 
 import type { CalendarEvent, ObjectType, TypePicks } from '@renderer/types'
 
@@ -62,6 +63,6 @@ export function prunedHidden(hidden: readonly string[], known: readonly string[]
 }
 
 /** True when the calendar holds sources and every one of them is hidden. */
-export function allHidden(sources: ObjectType[], hidden: ReadonlySet<string>): boolean {
+export function allHidden(sources: { key: string }[], hidden: ReadonlySet<string>): boolean {
   return sources.length > 0 && sources.every(({ key }) => hidden.has(key))
 }

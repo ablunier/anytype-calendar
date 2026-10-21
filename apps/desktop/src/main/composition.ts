@@ -37,7 +37,14 @@ import {
   RescheduleEventsObject,
   ResetEventsSpan
 } from '@anytype-calendar/events/application'
-import type { EventsGateway, EventsTimeZone, EventsWriter } from '@anytype-calendar/events/domain'
+import {
+  eventsSpanWindow,
+  shownEventsSpan,
+  type EventsGateway,
+  type EventsSpan,
+  type EventsTimeZone,
+  type EventsWriter
+} from '@anytype-calendar/events/domain'
 import {
   AnytypeEventsGateway,
   AnytypeV1EventsGateway,
@@ -46,6 +53,32 @@ import {
   InMemoryEventsGateway,
   LocalEventsTimeZone
 } from '@anytype-calendar/events/infrastructure'
+import {
+  AddFeedsSubscription,
+  EditFeedsSubscription,
+  FeedsStore,
+  LoadFeeds,
+  RefreshFeeds,
+  RemoveFeedsSubscription,
+  ReorderFeedsSubscriptions,
+  SaveFeedsSubscriptions,
+  ShowFeedsWindow
+} from '@anytype-calendar/feeds/application'
+import type {
+  FeedsCache,
+  FeedsGateway,
+  FeedsSubscriptionRepository
+} from '@anytype-calendar/feeds/domain'
+import {
+  EncryptedFileFeedsSubscriptionRepository,
+  FileFeedsCache,
+  HttpFeedsGateway,
+  IcalFeedsCalendarParser,
+  InMemoryFeedsCache,
+  InMemoryFeedsGateway,
+  InMemoryFeedsSubscriptionRepository,
+  LocalFeedsTimeZone
+} from '@anytype-calendar/feeds/infrastructure'
 import {
   LoadSchemaSelection,
   RekeySchemaSelection,
@@ -68,6 +101,7 @@ import { atomicFileAt } from './atomic-file'
 import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 import { defaultEventsSpan } from './events/default-span'
 import { eventsSourcesFor } from './events/event-sources'
+import { cacheDirectoryAt, safeStorageUrlCipher, subscriptionFileAt } from './feeds/feeds-storage'
 import { LoadLanguage } from './language/load-language'
 import { SaveLanguage } from './language/save-language'
 import { LanguageStore } from './language/language-store'
@@ -100,6 +134,9 @@ import { UpdateNoticeStore } from './updates/update-notice-store'
  */
 const ANYTYPE_REQUEST_TIMEOUT_MS = 10_000
 
+/** A feed comes from anywhere on the internet, and a big one takes a while to send. */
+const FEED_REQUEST_TIMEOUT_MS = 30_000
+
 export interface AppServices {
   authSession: AuthSessionStore
   restoreAuthSession: RestoreAuthSession
@@ -121,6 +158,15 @@ export interface AppServices {
   rescheduleEventsObject: RescheduleEventsObject
   createEventsObject: CreateEventsObject
   completeEventsObject: CompleteEventsObject
+  feedsState: FeedsStore
+  loadFeeds: LoadFeeds
+  refreshFeeds: RefreshFeeds
+  addFeedsSubscription: AddFeedsSubscription
+  editFeedsSubscription: EditFeedsSubscription
+  removeFeedsSubscription: RemoveFeedsSubscription
+  reorderFeedsSubscriptions: ReorderFeedsSubscriptions
+  /** Expands the feeds over the span on screen, or before any, the one a launch opens on. */
+  showFeedsForSpan: () => void
   themeState: ThemeStore
   loadTheme: LoadTheme
   saveTheme: SaveTheme
@@ -236,6 +282,8 @@ export function composeServices(): AppServices {
   const rekeySchemaSelection = new RekeySchemaSelection(saveSchemaSelection)
 
   const zone = new LocalEventsTimeZone()
+  const openingSpan = (): EventsSpan =>
+    defaultEventsSpan(calendarViewState.get(), zone.dayOf(Date.now()), weekStartState.get())
   const eventsState = new EventsSpanStore()
   const events = client && v1 && probe ? anytypeEvents(client, v1, probe) : inMemoryEvents(zone)
   const eventSources = { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) }
@@ -246,8 +294,7 @@ export function composeServices(): AppServices {
     zone,
     store: eventsState,
     // A launch opens on the view last chosen, so the first read is the one the window draws.
-    defaultSpan: () =>
-      defaultEventsSpan(calendarViewState.get(), zone.dayOf(Date.now()), weekStartState.get())
+    defaultSpan: openingSpan
   })
   const resetEventsSpan = new ResetEventsSpan(eventsState)
   const editDeps = {
@@ -261,6 +308,49 @@ export function composeServices(): AppServices {
   const rescheduleEventsObject = new RescheduleEventsObject(editDeps)
   const createEventsObject = new CreateEventsObject(editDeps)
   const completeEventsObject = new CompleteEventsObject(editDeps)
+
+  // Feeds need nothing of Anytype: they are read, and kept, whether or not it is connected.
+  // The fake account gets its own files, like the credential, so a sample feed added in fake
+  // mode never shows against the real one.
+  const feedsState = new FeedsStore()
+  const feedsStorage = feedsStorageFor(fakeAnytype ? 'feeds-fake' : 'feeds')
+  const feedsGateway: FeedsGateway = fakeAnytype ? inMemoryFeedsGateway() : httpFeedsGateway()
+  const feedsParser = new IcalFeedsCalendarParser(new LocalFeedsTimeZone())
+  const saveFeedsSubscriptions = new SaveFeedsSubscriptions({
+    repository: feedsStorage.repository,
+    store: feedsState
+  })
+  const loadFeeds = new LoadFeeds({
+    repository: feedsStorage.repository,
+    cache: feedsStorage.cache,
+    parser: feedsParser,
+    store: feedsState
+  })
+  const refreshFeeds = new RefreshFeeds({
+    gateway: feedsGateway,
+    parser: feedsParser,
+    cache: feedsStorage.cache,
+    store: feedsState
+  })
+  const addFeedsSubscription = new AddFeedsSubscription({
+    gateway: feedsGateway,
+    parser: feedsParser,
+    cache: feedsStorage.cache,
+    store: feedsState,
+    save: saveFeedsSubscriptions,
+    newId: () => randomBytes(8).toString('hex')
+  })
+  const editFeedsSubscription = new EditFeedsSubscription(saveFeedsSubscriptions)
+  const removeFeedsSubscription = new RemoveFeedsSubscription({
+    save: saveFeedsSubscriptions,
+    cache: feedsStorage.cache
+  })
+  const reorderFeedsSubscriptions = new ReorderFeedsSubscriptions(saveFeedsSubscriptions)
+  const showFeedsWindow = new ShowFeedsWindow(feedsState)
+  // The feeds follow the span the calendar shows, which events holds. Expanding the copies in
+  // memory is all moving to another span takes: no feed is read again for it.
+  const showFeedsForSpan = (): void =>
+    showFeedsWindow.execute(eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone))
 
   const themeState = new ThemeStore()
   const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
@@ -350,6 +440,7 @@ export function composeServices(): AppServices {
   })
   eventsState.subscribe((state) => {
     if (state.phase === 'failed') handleUnauthorized(state.failure)
+    showFeedsForSpan()
   })
   schemaSelection.subscribe(() => {
     if (connected()) void loadEventsSpan.execute()
@@ -376,6 +467,14 @@ export function composeServices(): AppServices {
     rescheduleEventsObject,
     createEventsObject,
     completeEventsObject,
+    feedsState,
+    loadFeeds,
+    refreshFeeds,
+    addFeedsSubscription,
+    editFeedsSubscription,
+    removeFeedsSubscription,
+    reorderFeedsSubscriptions,
+    showFeedsForSpan,
     themeState,
     loadTheme,
     saveTheme,
@@ -448,6 +547,41 @@ function anytypeEvents(
 function inMemoryEvents(zone: EventsTimeZone): { gateway: EventsGateway; writer: EventsWriter } {
   const fake = new InMemoryEventsGateway({ sleep: (ms) => sleep(ms), zone, now: Date.now })
   return { gateway: fake, writer: fake }
+}
+
+function httpFeedsGateway(): FeedsGateway {
+  return new HttpFeedsGateway((url, init) =>
+    fetch(url, { ...init, signal: AbortSignal.timeout(FEED_REQUEST_TIMEOUT_MS) })
+  )
+}
+
+/** Every `.ics` address answers a sample feed around the current month. */
+function inMemoryFeedsGateway(): FeedsGateway {
+  console.info('[feeds] Fake feeds: add any https address ending in .ics to subscribe to a sample')
+  return new InMemoryFeedsGateway({ sleep: (ms) => sleep(ms), now: Date.now })
+}
+
+/**
+ * `<name>.json` holds the subscriptions, each address sealed as the API key is, and
+ * `<name>-cache/` the last good copy of each feed. Without OS encryption neither is written:
+ * a secret address is a credential, and its copy as private as it.
+ */
+function feedsStorageFor(name: string): { repository: FeedsSubscriptionRepository; cache: FeedsCache } {
+  if (!safeStorage.isEncryptionAvailable()) {
+    console.warn('[feeds] OS encryption is unavailable; subscriptions will not survive a restart')
+    return { repository: new InMemoryFeedsSubscriptionRepository(), cache: new InMemoryFeedsCache() }
+  }
+  if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text') {
+    console.warn('[feeds] No keyring found; feed addresses are stored obfuscated, not encrypted')
+  }
+  const userData = app.getPath('userData')
+  return {
+    repository: new EncryptedFileFeedsSubscriptionRepository({
+      cipher: safeStorageUrlCipher,
+      file: subscriptionFileAt(join(userData, `${name}.json`))
+    }),
+    cache: new FileFeedsCache(cacheDirectoryAt(join(userData, `${name}-cache`)))
+  }
 }
 
 /** Never writes the key in plaintext: without OS encryption it lasts only until quit. */

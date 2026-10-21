@@ -10,4 +10,10 @@ export function registerShellIpc(): void {
     const url = `anytype://object?objectId=${encodeURIComponent(objectId)}&spaceId=${encodeURIComponent(spaceId)}`
     return shell.openExternal(url)
   })
+  ipcMain.handle(IpcChannel.shellOpenLink, (_event, url: unknown) => {
+    // The link comes from a subscribed feed, which anyone may have written: only a web page
+    // is opened, never a file or another app's scheme.
+    if (typeof url !== 'string' || !/^https?:\/\/\S+$/i.test(url)) throw new TypeError('not a web link')
+    return shell.openExternal(url)
+  })
 }
