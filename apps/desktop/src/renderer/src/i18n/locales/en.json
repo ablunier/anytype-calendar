@@ -282,7 +282,8 @@
         "needsV2": "Editing here needs a newer Anytype, one that serves API v2.",
         "checking": "Checking what this key may do in Anytype…"
       },
-      "noTypes": "Choose a type in Settings to create its objects here."
+      "noTypes": "Choose a type in Settings to create its objects here.",
+      "typesHidden": "Show a type in the sidebar to create its objects here."
     },
     "create": {
       "title": "New object",
@@ -291,6 +292,21 @@
       "typeInSpace": "{{type}} · {{space}}",
       "time": "Time",
       "submit": "Create"
+    },
+    "everythingHidden": "Everything is hidden",
+    "everythingHiddenDescription": "Every space, type and query on the calendar is turned off in the sidebar. Nothing was removed from your selection.",
+    "showAll": "Show all",
+    "sidebar": {
+      "label": "Calendar sidebar",
+      "miniMonth": "Month navigator",
+      "sources": "Spaces, types and queries",
+      "show": "Show {{name}}",
+      "hide": "Hide {{name}}",
+      "collapse": "Hide sidebar",
+      "expand": "Show sidebar",
+      "calendars": "Calendars",
+      "collapseSpace": "Collapse {{name}}",
+      "expandSpace": "Expand {{name}}"
     }
   },
   "updates": {

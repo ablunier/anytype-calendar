@@ -120,15 +120,16 @@ export function newEventsObjectDates(
 /**
  * The load as it will be once the writes in flight land: each object in `edits` drawn in place
  * of the one it edits, so a dragged object does not snap back to where it was while Anytype
- * is being asked. A later edit of the same object wins. The same load when none of them is in
- * its result.
+ * is being asked. A later edit of the same object wins. Only the copy read through the same
+ * pick is replaced, since each pick places the object by its own dates. The same load when none
+ * of them is in its result.
  */
 export function withEventsEdits(load: EventsSpanLoad, edits: readonly EventsDatedObject[]): EventsSpanLoad {
   if (load.phase === 'idle' || !load.last || edits.length === 0) return load
-  const byObject = new Map(edits.map((edit) => [objectKey(edit), edit]))
+  const byObject = new Map(edits.map((edit) => [copyKey(edit), edit]))
   let changed = false
   const objects = load.last.objects.map((object) => {
-    const edit = byObject.get(objectKey(object))
+    const edit = byObject.get(copyKey(object))
     if (!edit) return object
     changed = true
     return edit
@@ -142,6 +143,11 @@ export function sameEventsObject(
   b: Pick<EventsDatedObject, 'spaceId' | 'id'>
 ): boolean {
   return a.spaceId === b.spaceId && a.id === b.id
+}
+
+function copyKey(object: Pick<EventsDatedObject, 'spaceId' | 'id' | 'source'>): string {
+  const { source } = object
+  return `${objectKey(object)}\n${source.kind === 'type' ? `type\n${source.typeKey}` : `query\n${source.queryId}`}`
 }
 
 /** Space ids and object ids never contain a newline, so the pair cannot collide. */

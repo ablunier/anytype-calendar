@@ -25,7 +25,8 @@ onboarding and Settings save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
 selected types and queries whose dates fall in it, with their Done, Location and colour-by
 option where v2 serves them, which the calendar screen draws as a month grid or as an hour
-grid. An object a type and a query both bring is drawn once, as the type places it. Where the
+grid. An object a type and a query both bring is read once through each and kept for each, with
+its source's `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour, and ticked done from its panel. No screen
 runs on mock data.
@@ -286,6 +287,21 @@ Standard electron-vite three-process layout:
     `span.kind` is what this window draws. The new span is built around `switchDateFor` —
     today when the span on screen covers it, so switching from this month lands on this week,
     and otherwise the day the span is anchored on, so a reader of another month stays there.
+    The calendar's sidebar (`screens/calendar/CalendarSidebar`) holds a mini month and the sources the
+    calendar holds: the chosen spaces, each with its chosen types and then queries (`SourceTree`),
+    every one with a toggle. Hiding is renderer-only: a hidden source is still read, and
+    `visibleEvents` (`lib/visibility.ts`) drops its events before anything draws, so a toggle needs no
+    request. An object two sources bring arrives as two events (`CalendarEvent.rank`, the source's
+    position in the selection, types first) and only the lowest-ranked visible one is drawn, so a type
+    hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
+    offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
+    (`objectTypeKey` / `querySourceKey`, never spaces) and whether the sidebar is collapsed are saved in
+    the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
+    (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
+    dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
+    not the last one pushed, so two toggles in a row both count. The mini month follows the span on
+    screen (the screen is keyed by it, so it starts over on it), steps through months on its own, and a
+    clicked day asks main for `spanFor(span.kind, date)`; it marks no days that hold objects.
     The theme toggle lives in the
     calendar's top bar only; other screens follow the system theme until it is used.
     The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the

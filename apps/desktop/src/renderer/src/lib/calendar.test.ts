@@ -137,7 +137,7 @@ describe('weekdaysFrom and isWeekendColumn', () => {
 })
 
 describe('eventsOnDay', () => {
-  const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true }
+  const base = { title: '', type: TASK.key, space: 'sp_1', rank: 0, allDay: true }
   const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
   const range: CalendarEvent = {
     ...base,
@@ -320,7 +320,7 @@ describe('offeredMapping', () => {
 })
 
 describe('eventHue', () => {
-  const event: CalendarEvent = { id: 'o', title: '', type: TASK.key, space: 'sp_1', date: '2026-09-01', allDay: true }
+  const event: CalendarEvent = { id: 'o', title: '', type: TASK.key, space: 'sp_1', rank: 0, date: '2026-09-01', allDay: true }
 
   test("is the event's own hue, else its type's, else neutral", () => {
     expect(eventHue({ ...event, category: 'clay' }, TASK)).toBe('clay')

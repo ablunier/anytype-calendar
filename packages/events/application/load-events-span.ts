@@ -94,15 +94,15 @@ export class LoadEventsSpan {
     if (apiKey === null) throw new Unauthorized()
 
     const perSource = await Promise.all(
-      sources.map(async (source) => {
+      sources.map(async (source, rank) => {
         const result = await this.#gateway.listObjects(apiKey, source, window)
         if (!result.ok) throw new Unauthorized()
         return result.value
-          .map((ref) => toEventsDatedObject(ref, source))
+          .map((ref) => toEventsDatedObject(ref, source, rank))
           .filter((object) => overlapsEventsWindow(object, window))
       })
     )
-    return firstOfEach(perSource.flat()).sort(compareEventsDatedObjects)
+    return perSource.flat().sort(compareEventsDatedObjects)
   }
 
   #openingSpan(): EventsSpan {
@@ -110,19 +110,4 @@ export class LoadEventsSpan {
     const { year, month } = this.#zone.dayOf(this.#now())
     return { kind: 'month', year, month }
   }
-}
-
-/**
- * An object both a chosen type and a chosen query over it bring is drawn once, as the first
- * source in the selection's order places it.
- */
-function firstOfEach(objects: readonly EventsDatedObject[]): EventsDatedObject[] {
-  const seen = new Set<string>()
-  return objects.filter(({ spaceId, id }) => {
-    // Space ids and object ids never contain a newline, so the pair cannot collide.
-    const key = `${spaceId}\n${id}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
 }

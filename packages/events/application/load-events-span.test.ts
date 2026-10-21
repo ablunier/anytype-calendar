@@ -115,6 +115,7 @@ test("asks each source for the month's window and keeps the objects that overlap
           id: 'spans in',
           spaceId: 'sp_2',
           source: { kind: 'type', typeKey: 'project' },
+          rank: 1,
           title: 'spans in',
           start: Date.UTC(2026, 7, 28),
           end: Date.UTC(2026, 8, 2),
@@ -124,6 +125,7 @@ test("asks each source for the month's window and keeps the objects that overlap
           id: 'late task',
           spaceId: 'sp_1',
           source: { kind: 'type', typeKey: 'task' },
+          rank: 0,
           title: 'late task',
           start: Date.UTC(2026, 8, 20, 15),
           end: null,
@@ -133,6 +135,7 @@ test("asks each source for the month's window and keeps the objects that overlap
           id: 'runs out',
           spaceId: 'sp_2',
           source: { kind: 'type', typeKey: 'project' },
+          rank: 1,
           title: 'runs out',
           start: Date.UTC(2026, 8, 29),
           end: Date.UTC(2026, 9, 3),
@@ -143,7 +146,7 @@ test("asks each source for the month's window and keeps the objects that overlap
   })
 })
 
-test('draws an object a type and a query over it both bring once, as the type places it', async () => {
+test('keeps an object a type and a query over it both bring once for each, ranked by the selection', async () => {
   const OPEN_TASKS: EventsSource = {
     kind: 'query',
     spaceId: 'sp_1',
@@ -164,9 +167,10 @@ test('draws an object a type and a query over it both bring once, as the type pl
   await loadEventsSpan.execute(SEPTEMBER)
 
   const { last } = store.get() as Extract<EventsSpanLoad, { phase: 'loaded' }>
-  expect(last.objects.map(({ id, source, start }) => [id, source, start])).toEqual([
-    ['query only', { kind: 'query', queryId: 'q_open' }, Date.UTC(2026, 8, 4)],
-    ['shared', { kind: 'type', typeKey: 'task' }, Date.UTC(2026, 8, 20, 15)]
+  expect(last.objects.map(({ id, source, rank, start }) => [id, source, rank, start])).toEqual([
+    ['shared', { kind: 'query', queryId: 'q_open' }, 1, Date.UTC(2026, 8, 3)],
+    ['query only', { kind: 'query', queryId: 'q_open' }, 1, Date.UTC(2026, 8, 4)],
+    ['shared', { kind: 'type', typeKey: 'task' }, 0, Date.UTC(2026, 8, 20, 15)]
   ])
 })
 

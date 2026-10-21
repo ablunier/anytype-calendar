@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import type { CalendarView, Space } from '@renderer/types'
-import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
+import type { CalendarView } from '@renderer/types'
 import { Button, IconButton } from '@renderer/components/ui'
 import { ViewSwitcher } from './ViewSwitcher'
 
 export interface DateNavigatorProps {
   title: string
   view: CalendarView
-  legendSpaces: Space[]
   onView: (view: CalendarView) => void
   onPrev: () => void
   onNext: () => void
@@ -17,7 +15,6 @@ export interface DateNavigatorProps {
 export function DateNavigator({
   title,
   view,
-  legendSpaces,
   onView,
   onPrev,
   onNext,
@@ -31,29 +28,15 @@ export function DateNavigator({
         <IconButton icon="chevron-right" label={t(`calendar.nav.next.${view}`)} onClick={onNext} />
       </div>
 
-      <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
+      <h1 className="min-w-0 truncate type-heading text-h4 text-ink-primary">{title}</h1>
+
+      <div className="flex-1" />
 
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
         {t('calendar.nav.today')}
       </Button>
 
       <ViewSwitcher view={view} onChange={onView} />
-
-      <div className="flex-1" />
-
-      {/* The legend is the one part of this row that may be trimmed: without min-w-0 it
-          refuses to shrink and pushes the whole app into a horizontal scroll. */}
-      <ul className="flex min-w-0 list-none items-center gap-12 overflow-hidden p-0">
-        {legendSpaces.map((space) => (
-          <li
-            key={space.key}
-            className="flex shrink-0 items-center gap-6 type-caption text-tiny text-ink-secondary"
-          >
-            <SpaceMonogram space={space} />
-            {space.name}
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }

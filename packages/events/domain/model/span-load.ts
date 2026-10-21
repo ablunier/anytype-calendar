@@ -9,7 +9,10 @@ export type EventsLoadFailure =
 
 export interface EventsSpanResult {
   span: EventsSpan
-  /** In the order of compareEventsDatedObjects. */
+  /**
+   * In the order of compareEventsDatedObjects. An object that several picks bring (a type and
+   * a query over it) is here once per pick, each as that pick places it.
+   */
   objects: EventsDatedObject[]
   /** Epoch milliseconds. */
   loadedAt: number
