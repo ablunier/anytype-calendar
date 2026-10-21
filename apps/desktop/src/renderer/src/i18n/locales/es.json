@@ -300,11 +300,11 @@
       "label": "Barra lateral del calendario",
       "miniMonth": "Navegador de meses",
       "sources": "Espacios, tipos y consultas",
-      "showOnCalendar": "Mostrar en el calendario",
       "show": "Mostrar {{name}}",
       "hide": "Ocultar {{name}}",
       "collapse": "Ocultar la barra lateral",
-      "expand": "Mostrar la barra lateral"
+      "expand": "Mostrar la barra lateral",
+      "calendars": "Calendarios"
     }
   },
   "updates": {

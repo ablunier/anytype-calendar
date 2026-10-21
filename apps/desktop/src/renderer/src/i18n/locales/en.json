@@ -300,11 +300,11 @@
       "label": "Calendar sidebar",
       "miniMonth": "Month navigator",
       "sources": "Spaces, types and queries",
-      "showOnCalendar": "Show on calendar",
       "show": "Show {{name}}",
       "hide": "Hide {{name}}",
       "collapse": "Hide sidebar",
-      "expand": "Show sidebar"
+      "expand": "Show sidebar",
+      "calendars": "Calendars"
     }
   },
   "updates": {

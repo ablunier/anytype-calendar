@@ -47,8 +47,14 @@ export function CalendarSidebar({
       </div>
       <MiniMonth {...miniMonth} />
       <div className="flex flex-col gap-8">
-        <h2 className="type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.showOnCalendar')}</h2>
-        <SourceTree spaces={spaces} sources={sources} hidden={hidden} onSetShown={onSetShown} />
+        <h2 className="type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.calendars')}</h2>
+        {/* Each source of objects is a group of its own; Anytype's is a product name, left untranslated. */}
+        <section aria-labelledby="sidebar-group-anytype" className="flex flex-col gap-4">
+          <h3 id="sidebar-group-anytype" className="m-0 px-4 type-ui text-small text-ink-secondary">
+            Anytype
+          </h3>
+          <SourceTree spaces={spaces} sources={sources} hidden={hidden} onSetShown={onSetShown} />
+        </section>
       </div>
     </aside>
   )
