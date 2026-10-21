@@ -171,6 +171,14 @@ function App(): React.JSX.Element | null {
         appVersion={update?.current ?? null}
         updateAvailable={update?.available ?? null}
         onOpenRelease={() => void window.api.update.openRelease()}
+        feeds={feedsFor(feeds, now)}
+        feedActions={{
+          onAdd: (url, name) => window.api.feeds.add({ url, name }),
+          onEdit: (request) => window.api.feeds.edit(request),
+          onRemove: (id) => window.api.feeds.remove(id),
+          onReorder: (ids) => window.api.feeds.reorder(ids),
+          onRefresh: () => void window.api.feeds.refresh()
+        }}
       />
     )
   }

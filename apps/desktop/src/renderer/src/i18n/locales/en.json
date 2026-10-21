@@ -320,5 +320,52 @@
   "updates": {
     "available": "Version {{version}} available",
     "dismiss": "Hide until the next version"
+  },
+  "feeds": {
+    "heading": "Subscribed calendars",
+    "description": "From Google, Outlook, iCloud and others, by their iCal address. Read-only.",
+    "readAll": "Read all again",
+    "listLabel": "Subscribed calendars",
+    "none": "No calendars yet. Add one by its iCal address: Google's secret address in iCal format, Outlook's published link, or any .ics or webcal:// link.",
+    "changeFailed": "Your last change could not be saved.",
+    "removeConfirm": "Remove it?",
+    "remove": "Remove",
+    "removeNamed": "Remove {{name}}",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "edit": "Edit {{name}}",
+    "name": "Name",
+    "save": "Save",
+    "addHeading": "Add a calendar",
+    "url": "iCal address",
+    "urlHint": "A link ending in .ics, or starting with webcal://. It is read once before it is added.",
+    "nameOptional": "Name (optional)",
+    "namePlaceholder": "The calendar's own name",
+    "add": "Add calendar",
+    "failure": {
+      "unreachable": "Couldn't reach it. Check the address and your connection.",
+      "http": "The server answered with an error ({{status}}). The address may have changed or been revoked.",
+      "notCalendar": "That address isn't an iCal calendar. Look for the link in iCal (.ics) format.",
+      "invalidUrl": "That isn't a web address. It should start with https:// or webcal://.",
+      "invalidName": "Give it a name of up to 200 characters."
+    },
+    "status": {
+      "read": "read {{elapsed}}",
+      "neverRead": "not read yet",
+      "reading": "reading…",
+      "keptCopy": "Showing the last copy ({{read}})."
+    },
+    "colours": {
+      "grey": "Grey",
+      "yellow": "Yellow",
+      "orange": "Orange",
+      "red": "Red",
+      "pink": "Pink",
+      "purple": "Purple",
+      "blue": "Blue",
+      "ice": "Ice",
+      "teal": "Teal",
+      "lime": "Lime"
+    }
   }
 }

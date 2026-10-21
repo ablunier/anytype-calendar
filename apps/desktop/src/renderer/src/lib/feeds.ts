@@ -88,3 +88,11 @@ function calendarEventFor(
   }
 }
 
+/** `ids` with the one at `from` moved to `to`, the others keeping their order; `to` is clamped. */
+export function movedOrder(ids: readonly string[], from: number, to: number): string[] {
+  const moved = ids[from]
+  if (moved === undefined) return [...ids]
+  const rest = ids.filter((_, index) => index !== from)
+  rest.splice(Math.min(Math.max(to, 0), rest.length), 0, moved)
+  return rest
+}

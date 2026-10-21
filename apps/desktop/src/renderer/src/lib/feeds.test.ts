@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import type { FeedsSnapshot } from '@shared/ipc'
 import type { CalendarEvent } from '@renderer/types'
-import { feedEventsFor, feedsFor, feedSourceKey, mergedEvents } from './feeds'
+import { feedEventsFor, feedsFor, feedSourceKey, mergedEvents, movedOrder } from './feeds'
 
 const at = (date: string, time = '00:00'): number => new Date(`${date}T${time}`).getTime()
 
@@ -139,5 +139,19 @@ describe('mergedEvents', () => {
   test('returns Anytype’s list itself when there are no feeds', () => {
     const anytype = [event('a', '2026-09-14')]
     expect(mergedEvents(anytype, [])).toBe(anytype)
+  })
+})
+
+describe('movedOrder', () => {
+  test('moves one id, the others keeping their order', () => {
+    expect(movedOrder(['a', 'b', 'c', 'd'], 0, 2)).toEqual(['b', 'c', 'a', 'd'])
+    expect(movedOrder(['a', 'b', 'c', 'd'], 3, 0)).toEqual(['d', 'a', 'b', 'c'])
+    expect(movedOrder(['a', 'b', 'c'], 1, 1)).toEqual(['a', 'b', 'c'])
+  })
+
+  test('clamps a move past either end, and ignores an index that is not there', () => {
+    expect(movedOrder(['a', 'b', 'c'], 0, -1)).toEqual(['a', 'b', 'c'])
+    expect(movedOrder(['a', 'b', 'c'], 0, 9)).toEqual(['b', 'c', 'a'])
+    expect(movedOrder(['a', 'b'], 5, 0)).toEqual(['a', 'b'])
   })
 })
