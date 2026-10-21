@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import type { CalendarVisibilitySnapshot } from '@shared/ipc'
 import { usePushedState } from './usePushedState'
 
-const SHOWING_EVERYTHING: CalendarVisibilitySnapshot = { hidden: [], collapsed: false }
+const SHOWING_EVERYTHING: CalendarVisibilitySnapshot = { hidden: [], collapsed: false, collapsedSpaces: [] }
 
 /**
  * Everything shown and the sidebar open until main reports otherwise. Saves go to main, which

@@ -34,24 +34,27 @@ function setup() {
 
 describe('toCalendarVisibility', () => {
   test('reads hidden keys and the collapsed flag', () => {
-    expect(toCalendarVisibility({ hidden: ['a', 'b'], collapsed: true })).toEqual({
+    expect(toCalendarVisibility({ hidden: ['a', 'b'], collapsed: true, collapsedSpaces: ['sp_1'] })).toEqual({
       hidden: ['a', 'b'],
-      collapsed: true
+      collapsed: true,
+      collapsedSpaces: ['sp_1']
     })
   })
 
   test('keeps a repeated key once, and drops what is not a key', () => {
     expect(toCalendarVisibility({ hidden: ['a', 'a', 3, '', null, 'b'], collapsed: false })).toEqual({
       hidden: ['a', 'b'],
-      collapsed: false
+      collapsed: false,
+      collapsedSpaces: []
     })
   })
 
   test('defaults a field that is malformed without discarding the other', () => {
-    expect(toCalendarVisibility({ hidden: 'a', collapsed: true })).toEqual({ hidden: [], collapsed: true })
+    expect(toCalendarVisibility({ hidden: 'a', collapsed: true })).toEqual({ hidden: [], collapsed: true, collapsedSpaces: [] })
     expect(toCalendarVisibility({ hidden: ['a'], collapsed: 'yes' })).toEqual({
       hidden: ['a'],
-      collapsed: false
+      collapsed: false,
+      collapsedSpaces: []
     })
   })
 
@@ -65,8 +68,8 @@ describe('toCalendarVisibility', () => {
 describe('CalendarVisibilityStore', () => {
   test('notifies no one when set to what it holds', () => {
     const { store, listener } = setup()
-    store.set({ hidden: ['a'], collapsed: false })
-    store.set({ hidden: ['a'], collapsed: false })
+    store.set({ hidden: ['a'], collapsed: false, collapsedSpaces: [] })
+    store.set({ hidden: ['a'], collapsed: false, collapsedSpaces: [] })
     expect(listener).toHaveBeenCalledTimes(1)
   })
 })
@@ -75,37 +78,37 @@ describe('LoadCalendarVisibility', () => {
   test('shows everything, expanded, when nothing was ever saved', async () => {
     const { store, load } = setup()
     await load.execute()
-    expect(store.get()).toEqual({ hidden: [], collapsed: false })
+    expect(store.get()).toEqual({ hidden: [], collapsed: false, collapsedSpaces: [] })
   })
 
   test('restores what was saved', async () => {
     const { config, store, load } = setup()
-    await config.writeSection('calendarVisibility', { hidden: ['sp_1\ttask'], collapsed: true })
+    await config.writeSection('calendarVisibility', { hidden: ['sp_1\ttask'], collapsed: true, collapsedSpaces: ['sp_2'] })
     await load.execute()
-    expect(store.get()).toEqual({ hidden: ['sp_1\ttask'], collapsed: true })
+    expect(store.get()).toEqual({ hidden: ['sp_1\ttask'], collapsed: true, collapsedSpaces: ['sp_2'] })
   })
 
   test('shows everything when the saved value is not an object', async () => {
     const { config, store, load } = setup()
     await config.writeSection('calendarVisibility', 'nothing')
     await load.execute()
-    expect(store.get()).toEqual({ hidden: [], collapsed: false })
+    expect(store.get()).toEqual({ hidden: [], collapsed: false, collapsedSpaces: [] })
   })
 })
 
 describe('SaveCalendarVisibility', () => {
   test('writes the visibility, then holds it', async () => {
     const { config, store, listener, save } = setup()
-    await save.execute({ hidden: ['a'], collapsed: true })
-    expect(await config.readSection('calendarVisibility')).toEqual({ hidden: ['a'], collapsed: true })
-    expect(store.get()).toEqual({ hidden: ['a'], collapsed: true })
+    await save.execute({ hidden: ['a'], collapsed: true, collapsedSpaces: ['sp_1'] })
+    expect(await config.readSection('calendarVisibility')).toEqual({ hidden: ['a'], collapsed: true, collapsedSpaces: ['sp_1'] })
+    expect(store.get()).toEqual({ hidden: ['a'], collapsed: true, collapsedSpaces: ['sp_1'] })
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
   test('keeps the other sections untouched', async () => {
     const { config, save } = setup()
     await config.writeSection('weekNumbers', true)
-    await save.execute({ hidden: [], collapsed: true })
+    await save.execute({ hidden: [], collapsed: true, collapsedSpaces: [] })
     expect(await config.readSection('weekNumbers')).toBe(true)
   })
 })

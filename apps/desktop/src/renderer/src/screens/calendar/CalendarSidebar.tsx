@@ -9,6 +9,8 @@ export interface CalendarSidebarProps extends MiniMonthProps {
   spaces: Space[]
   sources: ObjectType[]
   hidden: ReadonlySet<string>
+  collapsedSpaces: ReadonlySet<string>
+  onToggleSpaceCollapsed: (spaceKey: string) => void
   onSetShown: (keys: string[], shown: boolean) => void
   onToggleCollapsed: () => void
 }
@@ -22,6 +24,8 @@ export function CalendarSidebar({
   spaces,
   sources,
   hidden,
+  collapsedSpaces,
+  onToggleSpaceCollapsed,
   onSetShown,
   onToggleCollapsed,
   ...miniMonth
@@ -42,18 +46,25 @@ export function CalendarSidebar({
       aria-label={t('calendar.sidebar.label')}
       className="flex w-240 shrink-0 flex-col gap-16 overflow-y-auto border-r border-line-subtle bg-surface-card p-12"
     >
-      <div className="flex justify-end">
+      <div className="flex shrink-0 justify-end">
         <IconButton size="sm" icon="panel-left-close" label={t('calendar.sidebar.collapse')} onClick={onToggleCollapsed} />
       </div>
       <MiniMonth {...miniMonth} />
-      <div className="flex flex-col gap-8">
+      <div className="flex shrink-0 flex-col gap-8">
         <h2 className="type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.calendars')}</h2>
         {/* Each source of objects is a group of its own; Anytype's is a product name, left untranslated. */}
         <section aria-labelledby="sidebar-group-anytype" className="flex flex-col gap-4">
           <h3 id="sidebar-group-anytype" className="m-0 px-4 type-ui text-small text-ink-secondary">
             Anytype
           </h3>
-          <SourceTree spaces={spaces} sources={sources} hidden={hidden} onSetShown={onSetShown} />
+          <SourceTree
+            spaces={spaces}
+            sources={sources}
+            hidden={hidden}
+            collapsedSpaces={collapsedSpaces}
+            onSetShown={onSetShown}
+            onToggleSpaceCollapsed={onToggleSpaceCollapsed}
+          />
         </section>
       </div>
     </aside>

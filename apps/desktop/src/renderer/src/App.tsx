@@ -70,6 +70,7 @@ function App(): React.JSX.Element | null {
   const [calendarView, setCalendarView] = useCalendarView()
   const [visibility, updateVisibility] = useCalendarVisibility()
   const hiddenSources = useMemo(() => new Set(visibility.hidden), [visibility.hidden])
+  const collapsedSpaces = useMemo(() => new Set(visibility.collapsedSpaces), [visibility.collapsedSpaces])
   const session = useSession()
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
@@ -189,12 +190,19 @@ function App(): React.JSX.Element | null {
   /* Only keys of sources the calendar still holds are saved, so what the selection dropped
    * since stops being remembered. */
   const setSourcesShown = (keys: string[], shown: boolean): void =>
-    updateVisibility(({ hidden, collapsed }) => ({
+    updateVisibility(({ hidden, ...rest }) => ({
+      ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
         sources.map(({ key }) => key)
-      ),
-      collapsed
+      )
+    }))
+  const toggleSpaceCollapsed = (spaceKey: string): void =>
+    updateVisibility((current) => ({
+      ...current,
+      collapsedSpaces: current.collapsedSpaces.includes(spaceKey)
+        ? current.collapsedSpaces.filter((key) => key !== spaceKey)
+        : [...current.collapsedSpaces, spaceKey]
     }))
   return (
     <TimeFormatContext value={timeFormat}>
@@ -209,6 +217,7 @@ function App(): React.JSX.Element | null {
         sources={sources}
         hiddenSources={hiddenSources}
         sidebarCollapsed={visibility.collapsed}
+        collapsedSpaces={collapsedSpaces}
         tracksAnything={tracksAnyType(selection)}
         today={today}
         nowMinute={minutesOf(now)}
@@ -221,6 +230,7 @@ function App(): React.JSX.Element | null {
         onCreate={(request) => window.api.events.create(request)}
         onSetDone={(request) => window.api.events.setDone(request)}
         onSetSourcesShown={setSourcesShown}
+        onToggleSpaceCollapsed={toggleSpaceCollapsed}
         onToggleSidebar={() =>
           updateVisibility((current) => ({ ...current, collapsed: !current.collapsed }))
         }

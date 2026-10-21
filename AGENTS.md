@@ -278,7 +278,8 @@ Standard electron-vite three-process layout:
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
     (`objectTypeKey` / `querySourceKey`, never spaces) and whether the sidebar is collapsed are saved in
-    the `calendarVisibility` section (`main/calendar-visibility/`); keys no longer in the selection are
+    the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
+    (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
     not the last one pushed, so two toggles in a row both count. The mini month follows the span on
     screen (the screen is keyed by it, so it starts over on it), steps through months on its own, and a

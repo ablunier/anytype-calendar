@@ -55,6 +55,7 @@ export interface CalendarScreenProps {
   /** Keys of the sources not drawn. They are read all the same. */
   hiddenSources: ReadonlySet<string>
   sidebarCollapsed: boolean
+  collapsedSpaces: ReadonlySet<string>
   /** False when no chosen type sits in a chosen space, so no span can hold anything. */
   tracksAnything: boolean
   /** `YYYY-MM-DD`. */
@@ -72,6 +73,7 @@ export interface CalendarScreenProps {
   onSetDone: (request: EventsSetDoneRequest) => Promise<EventsEditResult>
   onSetSourcesShown: (keys: string[], shown: boolean) => void
   onToggleSidebar: () => void
+  onToggleSpaceCollapsed: (spaceKey: string) => void
   /** `date` is `YYYY-MM-DD`. */
   onSelectDate: (date: string) => void
   onToggleTheme: () => void
@@ -105,6 +107,7 @@ export function CalendarScreen({
   sources,
   hiddenSources,
   sidebarCollapsed,
+  collapsedSpaces,
   tracksAnything,
   today,
   nowMinute,
@@ -118,6 +121,7 @@ export function CalendarScreen({
   onSetDone,
   onSetSourcesShown,
   onToggleSidebar,
+  onToggleSpaceCollapsed,
   onSelectDate,
   onToggleTheme,
   onOpenSettings,
@@ -263,6 +267,8 @@ export function CalendarScreen({
           hidden={hiddenSources}
           onSelectDate={onSelectDate}
           onSetShown={onSetSourcesShown}
+          collapsedSpaces={collapsedSpaces}
+          onToggleSpaceCollapsed={onToggleSpaceCollapsed}
           onToggleCollapsed={onToggleSidebar}
         />
         <main className="flex min-w-0 flex-1 flex-col">

@@ -304,7 +304,9 @@
       "hide": "Agochar {{name}}",
       "collapse": "Agochar a barra lateral",
       "expand": "Amosar a barra lateral",
-      "calendars": "Calendarios"
+      "calendars": "Calendarios",
+      "collapseSpace": "Contraer {{name}}",
+      "expandSpace": "Expandir {{name}}"
     }
   },
   "updates": {

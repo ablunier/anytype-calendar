@@ -59,7 +59,10 @@ export type WeekNumbersSnapshot = boolean
  */
 export interface CalendarVisibilitySnapshot {
   hidden: string[]
+  /** Whether the whole sidebar is collapsed. */
   collapsed: boolean
+  /** Space keys whose sources the sidebar keeps folded away. */
+  collapsedSpaces: string[]
 }
 
 /** Monday is 0, Sunday 6. */

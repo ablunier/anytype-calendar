@@ -11,7 +11,10 @@ export interface SourceTreeProps {
   /** The chosen types and queries of those spaces. */
   sources: ObjectType[]
   hidden: ReadonlySet<string>
+  /** Spaces whose types and queries are folded away; their toggle still hides them all. */
+  collapsedSpaces: ReadonlySet<string>
   onSetShown: (keys: string[], shown: boolean) => void
+  onToggleSpaceCollapsed: (spaceKey: string) => void
 }
 
 /**
@@ -19,7 +22,14 @@ export interface SourceTreeProps {
  * with a toggle for whether its objects are drawn. Hiding is only that: it never changes what
  * is read, which Settings decides.
  */
-export function SourceTree({ spaces, sources, hidden, onSetShown }: SourceTreeProps): React.JSX.Element {
+export function SourceTree({
+  spaces,
+  sources,
+  hidden,
+  collapsedSpaces,
+  onSetShown,
+  onToggleSpaceCollapsed
+}: SourceTreeProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <ul aria-label={t('calendar.sidebar.sources')} className="m-0 flex list-none flex-col gap-8 p-0">
@@ -28,31 +38,47 @@ export function SourceTree({ spaces, sources, hidden, onSetShown }: SourceTreePr
         if (children.length === 0) return null
         const keys = children.map(({ key }) => key)
         const state = visibilityOf(keys, hidden)
+        const folded = collapsedSpaces.has(space.key)
         return (
           <li key={space.key} className="flex flex-col">
-            <ToggleRow
-              state={state}
-              name={space.name}
-              marker={<SpaceMonogram space={space} />}
-              onToggle={() => onSetShown(keys, state === 'hidden')}
-              strong
-            />
-            <ul className="m-0 flex list-none flex-col p-0 pl-16">
-              {children.map((source) => {
-                const sourceState = visibilityOf([source.key], hidden)
-                return (
-                  <li key={source.key}>
-                    <ToggleRow
-                      state={sourceState}
-                      name={source.label}
-                      marker={<Icon name={source.icon} size={16} className={`shrink-0 ${catText[source.category]}`} />}
-                      hue={source.category}
-                      onToggle={() => onSetShown([source.key], sourceState === 'hidden')}
-                    />
-                  </li>
-                )
-              })}
-            </ul>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-expanded={!folded}
+                aria-label={t(folded ? 'calendar.sidebar.expandSpace' : 'calendar.sidebar.collapseSpace', {
+                  name: space.name
+                })}
+                onClick={() => onToggleSpaceCollapsed(space.key)}
+                className="flex size-20 shrink-0 items-center justify-center rounded-4 border-0 bg-transparent p-0 text-ink-tertiary hover:bg-surface-hover"
+              >
+                <Icon name={folded ? 'chevron-right' : 'chevron-down'} size={14} />
+              </button>
+              <ToggleRow
+                state={state}
+                name={space.name}
+                marker={<SpaceMonogram space={space} />}
+                onToggle={() => onSetShown(keys, state === 'hidden')}
+                strong
+              />
+            </div>
+            {folded ? null : (
+              <ul className="m-0 flex list-none flex-col p-0 pl-24">
+                {children.map((source) => {
+                  const sourceState = visibilityOf([source.key], hidden)
+                  return (
+                    <li key={source.key}>
+                      <ToggleRow
+                        state={sourceState}
+                        name={source.label}
+                        marker={<Icon name={source.icon} size={16} className={`shrink-0 ${catText[source.category]}`} />}
+                        hue={source.category}
+                        onToggle={() => onSetShown([source.key], sourceState === 'hidden')}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </li>
         )
       })}

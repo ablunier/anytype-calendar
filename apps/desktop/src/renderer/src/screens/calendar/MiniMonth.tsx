@@ -47,7 +47,7 @@ export function MiniMonth({
   }
 
   return (
-    <section aria-label={t('calendar.sidebar.miniMonth')} className="flex flex-col gap-8">
+    <section aria-label={t('calendar.sidebar.miniMonth')} className="flex shrink-0 flex-col gap-8">
       <div className="flex items-center justify-between">
         <h2 className="type-ui text-small text-ink-primary">
           {monthLabel(shown.year, shown.month, i18n.language)}
