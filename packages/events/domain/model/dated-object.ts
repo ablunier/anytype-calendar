@@ -9,6 +9,11 @@ export interface EventsDatedObject {
   spaceId: string
   /** The pick it was read through. */
   source: EventsSourceKey
+  /**
+   * Where that pick stands in the selection, types first. An object several picks bring is
+   * read once through each, and of those the lowest rank is the one that places it.
+   */
+  rank: number
   title: string
   /** Epoch milliseconds, from the type's From property. */
   start: number
@@ -37,6 +42,7 @@ export interface EventsDatedObject {
 export function toEventsDatedObject(
   { id, title, start, end, done, location, option, details = [] }: EventsObjectRef,
   source: EventsSource,
+  rank: number,
   linked: (id: string) => EventsLinkedObject | undefined = () => undefined
 ): EventsDatedObject {
   const { spaceId, includesTime, colourBy, panel = [] } = source
@@ -45,6 +51,7 @@ export function toEventsDatedObject(
     id,
     spaceId,
     source: eventsSourceKey(source),
+    rank,
     title,
     start,
     end: kept,
@@ -66,9 +73,10 @@ export function overlapsEventsWindow(
   return start <= window.end && (end ?? start) >= window.start
 }
 
-/** Earliest first; objects starting together by title, then id, so the order is stable. */
+/** Earliest first; objects starting together by title, then id, then rank, so the order is stable. */
 export function compareEventsDatedObjects(a: EventsDatedObject, b: EventsDatedObject): number {
   if (a.start !== b.start) return a.start - b.start
   if (a.title !== b.title) return a.title < b.title ? -1 : 1
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  if (a.id !== b.id) return a.id < b.id ? -1 : 1
+  return a.rank - b.rank
 }

@@ -12,6 +12,7 @@ import {
   type ThemeSnapshot,
   type TimeFormatSnapshot,
   type UpdateSnapshot,
+  type CalendarVisibilitySnapshot,
   type WeekNumbersSnapshot,
   type WeekStartSnapshot
 } from '@shared/ipc'
@@ -106,6 +107,18 @@ const api: CalendarApi = {
       }
     },
     save: (shown) => ipcRenderer.invoke(IpcChannel.weekNumbersSave, shown)
+  },
+  calendarVisibility: {
+    get: () => ipcRenderer.invoke(IpcChannel.calendarVisibilityGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, visibility: CalendarVisibilitySnapshot): void =>
+        listener(visibility)
+      ipcRenderer.on(IpcChannel.calendarVisibilityChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.calendarVisibilityChanged, forward)
+      }
+    },
+    save: (visibility) => ipcRenderer.invoke(IpcChannel.calendarVisibilitySave, visibility)
   },
   weekStart: {
     get: () => ipcRenderer.invoke(IpcChannel.weekStartGet),

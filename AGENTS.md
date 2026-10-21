@@ -27,7 +27,9 @@ save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
 selected types and queries whose dates fall in it, with their Done, Location, colour-by option
 and panel properties where v2 serves them (linked objects named in the same load, one search
-per space), which the calendar screen draws as a month grid or as an hour grid. An object a type and a query both bring is drawn once, as the type places it. Where the
+per space), which the calendar screen draws as a month grid or as an hour grid. An object a
+type and a query both bring is read once through each and kept for each, with its source's
+`rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour, and ticked done from its panel. No screen
 runs on mock data.
@@ -165,6 +167,24 @@ Rules worth knowing before adding an import:
 - No package may import from `apps/**` (dependencies point inward only) or from
   `electron`/`react`/`react-dom` (delivery mechanisms belong solely in `apps/desktop`).
 
+### Wiring by hand: no DI container
+
+The composition root builds every object itself with `new` and passes each one its
+dependencies object. This is deliberate. Don't add a dependency injection library:
+- Decorator containers (tsyringe, InversifyJS) need `@injectable()` on classes in
+  `packages/`, which is an npm dependency the layering rules forbid. They also need
+  `emitDecoratorMetadata`, which esbuild (and so electron-vite) doesn't emit.
+- Containers that wire by name (awilix) can't tell dependencies apart, because the ports
+  use generic names: `gateway` and `store` mean something different in each use case. Every
+  registration would need a manual override, which is the same wiring with a detour.
+  Renaming the ports to suit a container would leak it into the packages.
+- Hand wiring is typechecked: a missing or wrong dependency fails `tsc`, not a launch.
+- Everything is a singleton, so there are no scopes for a container to manage. The hard
+  parts aren't the `new` calls. They are the choice of adapters (fake mode, API major, OS
+  encryption) and the subscriptions that link the contexts, and those stay code either way.
+
+Keep it readable by splitting it into modules, not by adding a container.
+
 Contexts are consumed **from source**, not from their built `dist/`, via one pattern alias
 (`@anytype-calendar/<ctx>/<layer>` → `packages/<ctx>/<layer>/index.ts`) in both
 `apps/desktop/electron.vite.config.ts` and root `vitest.config.ts` — so `npm run dev` and
@@ -270,6 +290,21 @@ Standard electron-vite three-process layout:
     `span.kind` is what this window draws. The new span is built around `switchDateFor` —
     today when the span on screen covers it, so switching from this month lands on this week,
     and otherwise the day the span is anchored on, so a reader of another month stays there.
+    The calendar's sidebar (`screens/calendar/CalendarSidebar`) holds a mini month and the sources the
+    calendar holds: the chosen spaces, each with its chosen types and then queries (`SourceTree`),
+    every one with a toggle. Hiding is renderer-only: a hidden source is still read, and
+    `visibleEvents` (`lib/visibility.ts`) drops its events before anything draws, so a toggle needs no
+    request. An object two sources bring arrives as two events (`CalendarEvent.rank`, the source's
+    position in the selection, types first) and only the lowest-ranked visible one is drawn, so a type
+    hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
+    offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
+    (`objectTypeKey` / `querySourceKey`, never spaces) and whether the sidebar is collapsed are saved in
+    the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
+    (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
+    dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
+    not the last one pushed, so two toggles in a row both count. The mini month follows the span on
+    screen (the screen is keyed by it, so it starts over on it), steps through months on its own, and a
+    clicked day asks main for `spanFor(span.kind, date)`; it marks no days that hold objects.
     The theme toggle lives in the
     calendar's top bar only; other screens follow the system theme until it is used.
     The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the

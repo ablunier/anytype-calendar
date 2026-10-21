@@ -19,6 +19,7 @@ const event = (id: string, date: string, until?: string): CalendarEvent => ({
   title: id,
   type: 'sp_1:task',
   space: 'sp_1',
+  rank: 0,
   date,
   allDay: true,
   details: [],

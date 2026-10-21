@@ -158,6 +158,11 @@ export interface CalendarEvent {
   type: string
   /** Key of the owning Space. */
   space: string
+  /**
+   * Where the source it was read through stands in the selection, types first. An object two
+   * sources bring is two events, and only the one of the lowest-ranked visible source is drawn.
+   */
+  rank: number
   date: string
   /** Absent for an all-day event. */
   time?: string
@@ -321,8 +326,10 @@ export type IconName =
   | 'list'
   | 'loader-circle'
   | 'map-pin'
+  | 'minus'
   | 'moon'
   | 'panel-left-close'
+  | 'panel-left-open'
   | 'pencil'
   | 'plus'
   | 'refresh-cw'

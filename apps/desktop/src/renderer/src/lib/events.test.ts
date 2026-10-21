@@ -12,6 +12,7 @@ import {
   moveRequestFor,
   resizeRequestFor,
   shiftSpan,
+  spanDays,
   shownSpanFor,
   spanFor,
   spanStatusFor,
@@ -30,6 +31,7 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   id: 'obj_1',
   spaceId: 'sp_1',
   source: { kind: 'type', typeKey: 'task' },
+  rank: 0,
   title: 'Ship it',
   start: local(8, 3),
   end: null,
@@ -88,6 +90,25 @@ describe('spanFor and anchorOf', () => {
     // 2026-09-23 is a Wednesday.
     expect(anchorOf(spanFor('week', '2026-09-23', 0))).toBe('2026-09-21')
     expect(anchorOf(spanFor('week', '2026-09-23', 6))).toBe('2026-09-20')
+  })
+})
+
+describe('spanDays', () => {
+  test("is a month's own days, without the padding a grid draws", () => {
+    expect(spanDays(SEPTEMBER)).toEqual({ first: '2026-09-01', last: '2026-09-30' })
+    expect(spanDays({ kind: 'month', year: 2026, month: 11 })).toEqual({ first: '2026-12-01', last: '2026-12-31' })
+    expect(spanDays({ kind: 'month', year: 2028, month: 1 })).toEqual({ first: '2028-02-01', last: '2028-02-29' })
+  })
+
+  test('is seven days for a week and one for a day', () => {
+    expect(spanDays({ kind: 'week', start: { year: 2026, month: 8, day: 28 } })).toEqual({
+      first: '2026-09-28',
+      last: '2026-10-04'
+    })
+    expect(spanDays({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })).toEqual({
+      first: '2026-09-14',
+      last: '2026-09-14'
+    })
   })
 })
 
@@ -159,6 +180,7 @@ describe('eventsFor', () => {
         title: 'Ship it',
         type: 'sp_1:task',
         space: 'sp_1',
+        rank: 0,
         date: '2026-09-03',
         allDay: true,
         details: []
@@ -169,6 +191,11 @@ describe('eventsFor', () => {
   test('keys an object read through a query to the query, as lib/schema keys it', () => {
     const [event] = eventsFor(loaded([object({ source: { kind: 'query', queryId: 'q_open' } })]), SEPTEMBER) ?? []
     expect(event?.type).toBe('sp_1:query:q_open')
+  })
+
+  test('keeps the rank of the source it was read through', () => {
+    const [event] = eventsFor(loaded([object({ rank: 2 })]), SEPTEMBER) ?? []
+    expect(event?.rank).toBe(2)
   })
 
   test('carries whether it is done, its location, and the hue of the option it is coloured by', () => {
@@ -351,6 +378,7 @@ describe('edit requests', () => {
     title: 'Standup',
     type: 'bafy.space:meeting',
     space: 'bafy.space',
+    rank: 0,
     date: '2026-09-14',
     time: '09:00',
     allDay: false,

@@ -151,7 +151,7 @@ describe('weekdaysFrom and isWeekendColumn', () => {
 })
 
 describe('eventsOnDay', () => {
-  const base = { title: '', type: TASK.key, space: 'sp_1', allDay: true, details: [] }
+  const base = { title: '', type: TASK.key, space: 'sp_1', rank: 0, allDay: true, details: [] }
   const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
   const range: CalendarEvent = {
     ...base,
@@ -419,6 +419,7 @@ describe('eventHue', () => {
     title: '',
     type: TASK.key,
     space: 'sp_1',
+    rank: 0,
     date: '2026-09-01',
     allDay: true,
     details: []

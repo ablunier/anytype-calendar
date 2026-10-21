@@ -52,6 +52,19 @@ export type LanguageSnapshot = 'en' | 'es' | 'gl' | null
 
 export type WeekNumbersSnapshot = boolean
 
+/**
+ * What the calendar's sidebar keeps. `hidden` holds source keys (`objectTypeKey`,
+ * `querySourceKey`), never spaces, which follow from their sources; one no longer in the
+ * selection is harmless and dropped by the next save.
+ */
+export interface CalendarVisibilitySnapshot {
+  hidden: string[]
+  /** Whether the whole sidebar is collapsed. */
+  collapsed: boolean
+  /** Space keys whose sources the sidebar keeps folded away. */
+  collapsedSpaces: string[]
+}
+
 /** Monday is 0, Sunday 6. */
 export type WeekStartSnapshot = number
 
@@ -100,6 +113,9 @@ export const IpcChannel = {
   weekNumbersGet: 'weekNumbers:get',
   weekNumbersChanged: 'weekNumbers:changed',
   weekNumbersSave: 'weekNumbers:save',
+  calendarVisibilityGet: 'calendarVisibility:get',
+  calendarVisibilityChanged: 'calendarVisibility:changed',
+  calendarVisibilitySave: 'calendarVisibility:save',
   weekStartGet: 'weekStart:get',
   weekStartChanged: 'weekStart:changed',
   weekStartSave: 'weekStart:save',
@@ -185,6 +201,12 @@ export interface CalendarApi {
     onChange(listener: (shown: WeekNumbersSnapshot) => void): () => void
     /** Rejects when the value is not a boolean. */
     save(shown: boolean): Promise<void>
+  }
+  calendarVisibility: {
+    get(): Promise<CalendarVisibilitySnapshot>
+    onChange(listener: (visibility: CalendarVisibilitySnapshot) => void): () => void
+    /** Rejects when the value is not an object. */
+    save(visibility: CalendarVisibilitySnapshot): Promise<void>
   }
   weekStart: {
     get(): Promise<WeekStartSnapshot>

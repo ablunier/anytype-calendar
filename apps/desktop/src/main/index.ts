@@ -12,6 +12,7 @@ import { registerThemeIpc } from './theme/theme-ipc'
 import { registerTimeFormatIpc } from './time-format/time-format-ipc'
 import { startUpdates } from './updates/auto-update'
 import { registerUpdateIpc } from './updates/update-ipc'
+import { registerCalendarVisibilityIpc } from './calendar-visibility/calendar-visibility-ipc'
 import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
 import { registerCalendarViewIpc } from './calendar-view/calendar-view-ipc'
 import { registerWeekStartIpc } from './week-start/week-start-ipc'
@@ -63,6 +64,7 @@ app.whenReady().then(async () => {
   registerThemeIpc(services)
   registerLanguageIpc(services)
   registerWeekNumbersIpc(services)
+  registerCalendarVisibilityIpc(services)
   registerWeekStartIpc(services)
   registerTimeFormatIpc(services)
   registerCalendarViewIpc(services)
@@ -78,6 +80,7 @@ app.whenReady().then(async () => {
     services.loadTheme.execute(),
     services.loadLanguage.execute(),
     services.loadWeekNumbers.execute(),
+    services.loadCalendarVisibility.execute(),
     services.loadTimeFormat.execute()
   ])
 

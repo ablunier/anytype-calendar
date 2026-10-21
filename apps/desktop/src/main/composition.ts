@@ -84,6 +84,9 @@ import { SaveCalendarView } from './calendar-view/save-calendar-view'
 import { LoadWeekStart } from './week-start/load-week-start'
 import { SaveWeekStart } from './week-start/save-week-start'
 import { WeekStartStore } from './week-start/week-start-store'
+import { CalendarVisibilityStore } from './calendar-visibility/calendar-visibility-store'
+import { LoadCalendarVisibility } from './calendar-visibility/load-calendar-visibility'
+import { SaveCalendarVisibility } from './calendar-visibility/save-calendar-visibility'
 import { LoadWeekNumbers } from './week-numbers/load-week-numbers'
 import { SaveWeekNumbers } from './week-numbers/save-week-numbers'
 import { WeekNumbersStore } from './week-numbers/week-numbers-store'
@@ -124,6 +127,9 @@ export interface AppServices {
   languageState: LanguageStore
   loadLanguage: LoadLanguage
   saveLanguage: SaveLanguage
+  calendarVisibilityState: CalendarVisibilityStore
+  loadCalendarVisibility: LoadCalendarVisibility
+  saveCalendarVisibility: SaveCalendarVisibility
   weekNumbersState: WeekNumbersStore
   loadWeekNumbers: LoadWeekNumbers
   saveWeekNumbers: SaveWeekNumbers
@@ -268,6 +274,16 @@ export function composeServices(): AppServices {
   const loadWeekNumbers = new LoadWeekNumbers({ config: appConfig, store: weekNumbersState })
   const saveWeekNumbers = new SaveWeekNumbers({ config: appConfig, store: weekNumbersState })
 
+  const calendarVisibilityState = new CalendarVisibilityStore()
+  const loadCalendarVisibility = new LoadCalendarVisibility({
+    config: appConfig,
+    store: calendarVisibilityState
+  })
+  const saveCalendarVisibility = new SaveCalendarVisibility({
+    config: appConfig,
+    store: calendarVisibilityState
+  })
+
   const weekStartState = new WeekStartStore()
   const loadWeekStart = new LoadWeekStart({ config: appConfig, store: weekStartState })
   const saveWeekStart = new SaveWeekStart({ config: appConfig, store: weekStartState })
@@ -366,6 +382,9 @@ export function composeServices(): AppServices {
     languageState,
     loadLanguage,
     saveLanguage,
+    calendarVisibilityState,
+    loadCalendarVisibility,
+    saveCalendarVisibility,
     weekNumbersState,
     loadWeekNumbers,
     saveWeekNumbers,

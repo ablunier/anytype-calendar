@@ -24,10 +24,11 @@ describe('toEventsDatedObject', () => {
   test("carries the ref's id, title and dates, and the source's space and type", () => {
     const start = 1_000
     const end = 2_000
-    expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE)).toEqual({
+    expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE, 3)).toEqual({
       id: 'obj_1',
       spaceId: 'sp_1',
       source: { kind: 'type', typeKey: 'project' },
+      rank: 3,
       title: 'Launch',
       start,
       end,
@@ -46,7 +47,7 @@ describe('toEventsDatedObject', () => {
       to: null,
       includesTime: false
     }
-    expect(toEventsDatedObject({ id: 'o', title: '', start: 1, end: null }, source).source).toEqual({
+    expect(toEventsDatedObject({ id: 'o', title: '', start: 1, end: null }, source, 0).source).toEqual({
       kind: 'query',
       queryId: 'bafyquery'
     })
@@ -54,12 +55,12 @@ describe('toEventsDatedObject', () => {
 
   test('carries whether it is done, and its location', () => {
     const ref = { id: 'o', title: '', start: 1, end: null, done: true, location: 'Room 4' }
-    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE)).toMatchObject({ done: true, location: 'Room 4' })
+    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE, 0)).toMatchObject({ done: true, location: 'Room 4' })
   })
 
   test('leaves out an empty location', () => {
     const ref = { id: 'o', title: '', start: 1, end: null, location: '' }
-    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE)).not.toHaveProperty('location')
+    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE, 0)).not.toHaveProperty('location')
   })
 
   test("colours it by its option's colour", () => {
@@ -68,14 +69,14 @@ describe('toEventsDatedObject', () => {
       colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] }
     }
     const ref = (option: string) => ({ id: 'o', title: '', start: 1, end: null, option })
-    expect(toEventsDatedObject(ref('P1'), source).colour).toBe('red')
+    expect(toEventsDatedObject(ref('P1'), source, 0).colour).toBe('red')
     expect(toEventsDatedObject(ref('Gone'), source)).not.toHaveProperty('colour')
-    expect(toEventsDatedObject(ref('P1'), ALL_DAY_SOURCE)).not.toHaveProperty('colour')
+    expect(toEventsDatedObject(ref('P1'), ALL_DAY_SOURCE, 0)).not.toHaveProperty('colour')
   })
 
   test('reads all-day from a source with no time, regardless of the instant', () => {
     const start = Date.parse('2026-09-08T14:20:39Z')
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, ALL_DAY_SOURCE)
+    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, ALL_DAY_SOURCE, 0)
     expect(object.allDay).toBe(true)
   })
 
@@ -134,6 +135,7 @@ describe('compareEventsDatedObjects', () => {
     id,
     spaceId: 'sp_1',
     source: { kind: 'type', typeKey: 'task' },
+    rank: 0,
     title,
     start,
     end: null,
@@ -148,5 +150,10 @@ describe('compareEventsDatedObjects', () => {
       object('a', 'Alpha', 2)
     ].sort(compareEventsDatedObjects)
     expect(sorted.map(({ id }) => id)).toEqual(['z', 'a', 'b', 'c'])
+  })
+
+  test('puts the copy a lower-ranked pick reads first when all else is equal', () => {
+    const query = { ...object('a', 'Alpha', 2), rank: 1 }
+    expect([query, object('a', 'Alpha', 2)].sort(compareEventsDatedObjects).map(({ rank }) => rank)).toEqual([0, 1])
   })
 })
