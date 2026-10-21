@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { CategoryHue, ObjectType, Space } from '@renderer/types'
+import type { CategoryHue, FeedSource, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
@@ -79,6 +79,36 @@ export function SourceTree({
                 })}
               </ul>
             )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+export interface FeedListProps {
+  /** In the user's order, which Settings changes. */
+  feeds: FeedSource[]
+  hidden: ReadonlySet<string>
+  onSetShown: (keys: string[], shown: boolean) => void
+}
+
+/** The subscribed calendars, each with a toggle for whether its events are drawn. */
+export function FeedList({ feeds, hidden, onSetShown }: FeedListProps): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <ul aria-label={t('calendar.sidebar.subscriptions')} className="m-0 flex list-none flex-col p-0">
+      {feeds.map((feed) => {
+        const state = visibilityOf([feed.key], hidden)
+        return (
+          <li key={feed.key}>
+            <ToggleRow
+              state={state}
+              name={feed.name}
+              marker={<Icon name="globe" size={16} className={`shrink-0 ${catText[feed.category]}`} />}
+              hue={feed.category}
+              onToggle={() => onSetShown([feed.key], state === 'hidden')}
+            />
           </li>
         )
       })}

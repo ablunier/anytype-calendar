@@ -5,6 +5,7 @@ import type { AuthView, CalendarView, ConnectedScreen } from './types'
 import { useCalendarVisibility } from './hooks/useCalendarVisibility'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
+import { useFeeds } from './hooks/useFeeds'
 import { useLocale } from './hooks/useLocale'
 import { useNow } from './hooks/useNow'
 import { useSchemaSelection } from './hooks/useSchemaSelection'
@@ -27,6 +28,7 @@ import {
   spanStatusFor,
   switchDateFor
 } from './lib/events'
+import { feedEventsFor, feedsFor, mergedEvents } from './lib/feeds'
 import {
   creatableTypesFor,
   hasNotGrantedSpaces,
@@ -75,6 +77,7 @@ function App(): React.JSX.Element | null {
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
   const events = useEvents()
+  const feeds = useFeeds()
   const update = useUpdate()
   const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
@@ -92,7 +95,7 @@ function App(): React.JSX.Element | null {
     if (session?.phase === 'connected') setScreen(phase === undefined ? 'calendar' : 'success')
   }
 
-  if (!session || !schema || !selection || !events) return null
+  if (!session || !schema || !selection || !events || !feeds) return null
 
   const authView: AuthView | null =
     authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
@@ -187,16 +190,28 @@ function App(): React.JSX.Element | null {
   const typesOnCalendar = withDates(types, picks.dates)
   const today = localDate(now)
   const sources = sourcesOnCalendar(typesOnCalendar, picks)
-  /* Only keys of sources the calendar still holds are saved, so what the selection dropped
-   * since stops being remembered. */
+  const feedSources = feedsFor(feeds, now)
+  /* Only keys of sources the calendar still holds are saved, so what the selection dropped,
+   * or a subscription removed, since stops being remembered. */
   const setSourcesShown = (keys: string[], shown: boolean): void =>
     updateVisibility(({ hidden, ...rest }) => ({
       ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
-        sources.map(({ key }) => key)
+        [...sources, ...feedSources].map(({ key }) => key)
       )
     }))
+  /* The feeds never wait on Anytype: they are drawn while its read of the span is running, and
+   * only a read that failed with nothing to show hides them behind its error. */
+  const status = spanStatusFor(events, span, now)
+  const anytypeEvents = eventsFor(events, span)
+  const feedEvents = feedEventsFor(feeds)
+  const calendarEvents =
+    anytypeEvents !== null
+      ? mergedEvents(anytypeEvents, feedEvents)
+      : status.state !== 'error' && feedEvents.length > 0
+        ? feedEvents
+        : null
   const toggleSpaceCollapsed = (spaceKey: string): void =>
     updateVisibility((current) => ({
       ...current,
@@ -209,16 +224,17 @@ function App(): React.JSX.Element | null {
       <CalendarScreen
         key={`${span.kind}-${anchorOf(span)}`}
         span={span}
-        events={eventsFor(events, span)}
-        status={spanStatusFor(events, span, now)}
+        events={calendarEvents}
+        status={status}
         types={typesOnCalendar}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
         sources={sources}
+        feeds={feedSources}
         hiddenSources={hiddenSources}
         sidebarCollapsed={visibility.collapsed}
         collapsedSpaces={collapsedSpaces}
-        tracksAnything={tracksAnyType(selection)}
+        tracksAnything={tracksAnyType(selection) || feedSources.length > 0}
         today={today}
         nowMinute={minutesOf(now)}
         theme={theme}
@@ -243,6 +259,7 @@ function App(): React.JSX.Element | null {
         onToday={() => showSpan(spanFor(span.kind, localDate(Date.now()), weekStart))}
         onReread={() => {
           void window.api.schema.sync()
+          void window.api.feeds.refresh()
           showSpan(span)
         }}
         updateNotice={update && !update.dismissed ? update.available : null}

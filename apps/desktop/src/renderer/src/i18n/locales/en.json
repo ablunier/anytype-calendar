@@ -306,7 +306,15 @@
       "expand": "Show sidebar",
       "calendars": "Calendars",
       "collapseSpace": "Collapse {{name}}",
-      "expandSpace": "Expand {{name}}"
+      "expandSpace": "Expand {{name}}",
+      "subscriptions": "Subscribed"
+    },
+    "feedDetail": {
+      "starts": "Starts",
+      "ends": "Ends",
+      "description": "Description",
+      "readOnlyNotice": "From {{calendar}}, a subscribed calendar. It's read-only here: change it where it's published, and it updates on the next read.",
+      "openLink": "Open link"
     }
   },
   "updates": {

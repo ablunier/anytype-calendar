@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import type { ObjectType, Space } from '@renderer/types'
+import type { FeedSource, ObjectType, Space } from '@renderer/types'
 import { IconButton } from '@renderer/components/ui'
 import { MiniMonth, type MiniMonthProps } from './MiniMonth'
-import { SourceTree } from './SourceTree'
+import { FeedList, SourceTree } from './SourceTree'
 
 export interface CalendarSidebarProps extends MiniMonthProps {
   collapsed: boolean
   spaces: Space[]
   sources: ObjectType[]
+  /** The subscribed calendars, in the user's order. */
+  feeds: FeedSource[]
   hidden: ReadonlySet<string>
   collapsedSpaces: ReadonlySet<string>
   onToggleSpaceCollapsed: (spaceKey: string) => void
@@ -16,13 +18,14 @@ export interface CalendarSidebarProps extends MiniMonthProps {
 }
 
 /**
- * On the left of the calendar: a mini month, then what the calendar holds, each of which can
- * be hidden. Collapsed, only the button that opens it again remains.
+ * On the left of the calendar: a mini month, then what the calendar holds — Anytype's spaces,
+ * then the subscribed calendars — each of which can be hidden. Collapsed, only the button that opens it again remains.
  */
 export function CalendarSidebar({
   collapsed,
   spaces,
   sources,
+  feeds,
   hidden,
   collapsedSpaces,
   onToggleSpaceCollapsed,
@@ -66,6 +69,14 @@ export function CalendarSidebar({
             onToggleSpaceCollapsed={onToggleSpaceCollapsed}
           />
         </section>
+        {feeds.length > 0 ? (
+          <section aria-labelledby="sidebar-group-feeds" className="flex shrink-0 flex-col gap-4">
+            <h3 id="sidebar-group-feeds" className="m-0 px-4 type-ui text-small text-ink-secondary">
+              {t('calendar.sidebar.subscriptions')}
+            </h3>
+            <FeedList feeds={feeds} hidden={hidden} onSetShown={onSetShown} />
+          </section>
+        ) : null}
       </div>
     </aside>
   )

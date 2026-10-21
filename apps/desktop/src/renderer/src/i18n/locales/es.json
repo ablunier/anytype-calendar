@@ -306,7 +306,15 @@
       "expand": "Mostrar la barra lateral",
       "calendars": "Calendarios",
       "collapseSpace": "Contraer {{name}}",
-      "expandSpace": "Expandir {{name}}"
+      "expandSpace": "Expandir {{name}}",
+      "subscriptions": "Suscritos"
+    },
+    "feedDetail": {
+      "starts": "Empieza",
+      "ends": "Termina",
+      "description": "Descripción",
+      "readOnlyNotice": "De {{calendar}}, un calendario suscrito. Aquí es de solo lectura: cámbialo donde se publica y se actualizará en la próxima lectura.",
+      "openLink": "Abrir enlace"
     }
   },
   "updates": {

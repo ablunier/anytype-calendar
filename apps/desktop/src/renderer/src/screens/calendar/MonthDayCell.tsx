@@ -118,8 +118,9 @@ export function MonthDayCell({
             time={segment.continuesBefore ? undefined : segment.event.time}
             allDay={segment.event.allDay}
             done={segment.event.done}
+            external={segment.event.feed !== undefined}
             lifted={drag?.draggingId === segment.event.id}
-            {...(drag
+            {...(drag && !segment.event.feed
               ? {
                   onDragStart: (event: React.DragEvent) =>
                     drag.start(segment.event, grabbedDate(event, cell.date, segment.span), event),
