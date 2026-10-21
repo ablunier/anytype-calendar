@@ -58,6 +58,7 @@ const standup: EventsObjectRef = {
 const invoice: EventsObjectRef = { id: 'obj_2', title: 'Invoice', start: Date.UTC(2026, 8, 20), end: null, done: false }
 
 const OK: EventsWriteResult = { ok: true, value: null }
+const INVALID = { ok: false, failure: 'invalid' }
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -192,7 +193,44 @@ describe('rescheduling', () => {
 
     await expect(
       reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'resize', end: { day, minute: null } } })
-    ).resolves.toEqual({ ok: false, failure: 'invalid' })
+    ).resolves.toEqual(INVALID)
+    await expect(reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'clear-end' } })).resolves.toEqual(
+      INVALID
+    )
+  })
+
+  test('writes only the To when it is set, and clears it alone, drawing the object so in between', async () => {
+    const pending = deferred<EventsWriteResult>()
+    const { reschedule, writer, store } = await setup()
+    const target = { spaceId: 'sp_1', id: 'obj_1' }
+
+    await reschedule.execute({
+      ...target,
+      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 10 * 60 + 20 } }
+    })
+    expect(writer.reschedule).toHaveBeenLastCalledWith(API_KEY, target, { end_date: Date.UTC(2026, 8, 14, 10, 20) })
+
+    writer.reschedule.mockImplementation(() => pending.promise)
+    const clearing = reschedule.execute({ ...target, change: { kind: 'clear-end' } })
+    expect(objectsIn(store.shown())).toContainEqual(
+      expect.objectContaining({ id: 'obj_1', start: standup.start, end: null })
+    )
+    pending.resolve(OK)
+    await expect(clearing).resolves.toEqual({ ok: true })
+    expect(writer.reschedule).toHaveBeenLastCalledWith(API_KEY, target, { end_date: null })
+  })
+
+  test('refuses to set or clear the To of a source whose To is its From', async () => {
+    const { reschedule, writer } = await setup({ sources: [{ ...MEETINGS, to: 'start_date' }, TASKS] })
+    const target = { spaceId: 'sp_1', id: 'obj_1' }
+    await expect(reschedule.execute({ ...target, change: { kind: 'clear-end' } })).resolves.toEqual(INVALID)
+    await expect(
+      reschedule.execute({
+        ...target,
+        change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 15 }, minute: null } }
+      })
+    ).resolves.toEqual(INVALID)
+    expect(writer.reschedule).not.toHaveBeenCalled()
   })
 
   test('refuses an object that is not on the span, or whose pick is no longer chosen', async () => {

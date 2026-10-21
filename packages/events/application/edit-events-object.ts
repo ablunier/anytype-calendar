@@ -4,8 +4,8 @@ import {
   rescheduleEventsDatedObject,
   sameEventsObject,
   type EventsApiKeySource,
+  type EventsDateChanges,
   type EventsDatedObject,
-  type EventsDateValues,
   type EventsEditOutcome,
   type EventsReschedule,
   type EventsSlot,
@@ -51,7 +51,10 @@ export interface CompleteEventsObjectInput {
 const GONE = { ok: false, failure: 'gone' } as const
 const INVALID = { ok: false, failure: 'invalid' } as const
 
-/** Moves an object on the span, or pulls its To date, keeping it drawn there while Anytype is asked. */
+/**
+ * Moves an object on the span, or sets or clears its To date, keeping it drawn so while Anytype
+ * is asked.
+ */
 export class RescheduleEventsObject {
   readonly #deps: EditEventsObjectDeps
 
@@ -63,13 +66,19 @@ export class RescheduleEventsObject {
     const found = shownObject(this.#deps, spaceId, id)
     if (!found) return GONE
     const { object, source } = found
-    if (change.kind === 'resize' && source.to === null) return INVALID
     const moved = rescheduleEventsDatedObject(object, change, this.#deps.zone)
     if (!moved) return INVALID
 
-    const dates: EventsDateValues = { [source.from]: moved.start }
-    // An object with no To value keeps none: it is moved as the single date it is drawn as.
-    if (source.to !== null && moved.end !== null) dates[source.to] = moved.end
+    const { from, to } = source
+    let dates: EventsDateChanges
+    if (change.kind === 'move') {
+      dates = { [from]: moved.start }
+      // An object with no To value keeps none: it is moved as the single date it is drawn as.
+      if (to !== null && moved.end !== null) dates[to] = moved.end
+    } else if (to === null || to === from) {
+      // Its To is its From, or it has none: it has no end of its own to set or clear.
+      return INVALID
+    } else dates = { [to]: moved.end }
     return writeThenLoad(this.#deps, moved, (apiKey) =>
       this.#deps.writer.reschedule(apiKey, { spaceId, id }, dates)
     )

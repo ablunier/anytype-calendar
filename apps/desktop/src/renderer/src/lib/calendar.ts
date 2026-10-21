@@ -339,3 +339,24 @@ export function formatTime(time: string, format: '24h' | '12h', locale: string):
   })
   return formatter.format(new Date(Date.UTC(1970, 0, 1, hours, minutes)))
 }
+
+/**
+ * A time typed in, as `HH:MM`, or null when it reads as none. Takes either clock whichever
+ * format is set, so what `formatTime` drew can be typed back in any locale: `9`, `0930`,
+ * `9:30`, `21.30`, `9:30 pm`, `9:30 p. m.`.
+ */
+export function parseTime(text: string): string | null {
+  const match = /^(\d{1,2})(?:[:h]?(\d{2}))?(am|pm|a|p)?$/.exec(text.toLowerCase().replace(/[\s.]/g, ''))
+  if (!match) return null
+  const [, hourText = '', minuteText = '0', meridiem] = match
+  let hours = Number(hourText)
+  const minutes = Number(minuteText)
+  if (minutes > 59) return null
+  if (meridiem === undefined) {
+    if (hours > 23) return null
+  } else {
+    if (hours < 1 || hours > 12) return null
+    hours = (hours % 12) + (meridiem.startsWith('p') ? 12 : 0)
+  }
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
