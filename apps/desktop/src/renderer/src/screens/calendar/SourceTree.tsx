@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
-import { TypeTile } from '@renderer/components/app/TypeTile'
-import { catBg, Icon } from '@renderer/components/ui'
+import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { visibilityOf, type SourceVisibility } from '@renderer/lib/visibility'
 
@@ -46,7 +45,7 @@ export function SourceTree({ spaces, sources, hidden, onSetShown }: SourceTreePr
                     <ToggleRow
                       state={sourceState}
                       name={source.label}
-                      marker={<TypeTile type={source} size="sm" />}
+                      marker={<Icon name={source.icon} size={16} className={`shrink-0 ${catText[source.category]}`} />}
                       hue={source.category}
                       onToggle={() => onSetShown([source.key], sourceState === 'hidden')}
                     />
