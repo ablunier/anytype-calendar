@@ -98,7 +98,7 @@ export function MiniMonth({
                     aria-current={isToday ? 'date' : undefined}
                     onClick={() => onSelectDate(date)}
                     className={[
-                      'h-24 rounded-6 border-0 type-numeral text-micro transition duration-fast ease-standard',
+                      'h-24 border-0 type-numeral text-micro transition duration-fast ease-standard',
                       isToday
                         ? 'bg-surface-accent text-ink-inverse'
                         : inSpan

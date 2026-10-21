@@ -28,7 +28,9 @@ export function DateNavigator({
         <IconButton icon="chevron-right" label={t(`calendar.nav.next.${view}`)} onClick={onNext} />
       </div>
 
-      <h1 className="shrink-0 whitespace-nowrap type-heading text-h4 text-ink-primary">{title}</h1>
+      <h1 className="min-w-0 truncate type-heading text-h4 text-ink-primary">{title}</h1>
+
+      <div className="flex-1" />
 
       <Button size="sm" iconLeft="calendar-check" onClick={onToday}>
         {t('calendar.nav.today')}
