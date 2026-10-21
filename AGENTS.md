@@ -163,6 +163,24 @@ Rules worth knowing before adding an import:
 - No package may import from `apps/**` (dependencies point inward only) or from
   `electron`/`react`/`react-dom` (delivery mechanisms belong solely in `apps/desktop`).
 
+### Wiring by hand: no DI container
+
+The composition root builds every object itself with `new` and passes each one its
+dependencies object. This is deliberate. Don't add a dependency injection library:
+- Decorator containers (tsyringe, InversifyJS) need `@injectable()` on classes in
+  `packages/`, which is an npm dependency the layering rules forbid. They also need
+  `emitDecoratorMetadata`, which esbuild (and so electron-vite) doesn't emit.
+- Containers that wire by name (awilix) can't tell dependencies apart, because the ports
+  use generic names: `gateway` and `store` mean something different in each use case. Every
+  registration would need a manual override, which is the same wiring with a detour.
+  Renaming the ports to suit a container would leak it into the packages.
+- Hand wiring is typechecked: a missing or wrong dependency fails `tsc`, not a launch.
+- Everything is a singleton, so there are no scopes for a container to manage. The hard
+  parts aren't the `new` calls. They are the choice of adapters (fake mode, API major, OS
+  encryption) and the subscriptions that link the contexts, and those stay code either way.
+
+Keep it readable by splitting it into modules, not by adding a container.
+
 Contexts are consumed **from source**, not from their built `dist/`, via one pattern alias
 (`@anytype-calendar/<ctx>/<layer>` → `packages/<ctx>/<layer>/index.ts`) in both
 `apps/desktop/electron.vite.config.ts` and root `vitest.config.ts` — so `npm run dev` and
