@@ -84,7 +84,8 @@ async function setup({
       const result = await write()
       return result.ok ? { ok: true, value: { id: 'obj_new' } } : result
     }),
-    setDone: vi.fn<EventsWriter['setDone']>(write)
+    setDone: vi.fn<EventsWriter['setDone']>(write),
+    addToCollection: vi.fn<EventsWriter['addToCollection']>(async () => OK)
   }
   const store = new EventsSpanStore()
   let apiKey: string | null = API_KEY
@@ -273,6 +274,67 @@ describe('creating', () => {
       failure: 'gone'
     })
     expect(writer.create).not.toHaveBeenCalled()
+  })
+
+  const retro = {
+    spaceId: 'sp_1',
+    typeKey: 'meeting',
+    name: 'Retro',
+    at: { day: { year: 2026, month: 8, day: 18 }, minute: 16 * 60 }
+  }
+
+  test('adds the new object to the collection picked, then reads the span again once', async () => {
+    const { create, writer, gateway } = await setup()
+    gateway.listObjects.mockClear()
+    writer.addToCollection.mockImplementation(async () => {
+      expect(gateway.listObjects).not.toHaveBeenCalled()
+      return OK
+    })
+
+    await expect(create.execute({ ...retro, collectionId: 'col_q4' })).resolves.toEqual({ ok: true })
+
+    expect(writer.addToCollection).toHaveBeenCalledWith(API_KEY, { spaceId: 'sp_1', collectionId: 'col_q4' }, 'obj_new')
+    // Once per chosen source: one read of the span.
+    expect(gateway.listObjects).toHaveBeenCalledTimes(2)
+  })
+
+  test('adds to no collection when none is picked', async () => {
+    const { create, writer } = await setup()
+    await create.execute(retro)
+    expect(writer.addToCollection).not.toHaveBeenCalled()
+  })
+
+  test('keeps the object created, and says why, when adding it to the collection is refused', async () => {
+    const { create, writer, store, setRefs } = await setup()
+    writer.addToCollection.mockResolvedValue({ ok: false, failure: 'rejected', message: 'object not found' })
+    const created: EventsObjectRef = { id: 'obj_new', title: 'Retro', start: Date.UTC(2026, 8, 18, 16), end: null }
+    setRefs({ meeting: [standup, created], task: [invoice] })
+
+    await expect(create.execute({ ...retro, collectionId: 'col_gone' })).resolves.toEqual({
+      ok: true,
+      collection: { failure: 'rejected', message: 'object not found' }
+    })
+    expect(objectsIn(store.get()).map(({ id }) => id)).toContain('obj_new')
+  })
+
+  test('reads an add that never answered as Anytype being unreachable', async () => {
+    const { create, writer } = await setup()
+    writer.addToCollection.mockRejectedValue(new TypeError('fetch failed'))
+    await expect(create.execute({ ...retro, collectionId: 'col_q4' })).resolves.toEqual({
+      ok: true,
+      collection: { failure: 'unreachable' }
+    })
+  })
+
+  test('touches no collection when the create is refused', async () => {
+    const { create, writer } = await setup({
+      write: async () => ({ ok: false, failure: 'not-granted' })
+    })
+    await expect(create.execute({ ...retro, collectionId: 'col_q4' })).resolves.toEqual({
+      ok: false,
+      failure: 'not-granted'
+    })
+    expect(writer.addToCollection).not.toHaveBeenCalled()
   })
 })
 

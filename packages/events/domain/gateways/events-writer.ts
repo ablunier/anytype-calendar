@@ -4,6 +4,12 @@ export interface EventsObjectTarget {
   id: string
 }
 
+export interface EventsCollectionTarget {
+  spaceId: string
+  /** Anytype's object id of the collection. */
+  collectionId: string
+}
+
 /** Epoch milliseconds by date property key. */
 export type EventsDateValues = Record<string, number>
 
@@ -36,6 +42,8 @@ export interface EventsWriter {
   /** Sets each date to its instant; dates not named keep theirs. */
   reschedule(apiKey: string, target: EventsObjectTarget, dates: EventsDateValues): Promise<EventsWriteResult>
   create(apiKey: string, object: EventsNewObject): Promise<EventsWriteResult<{ id: string }>>
+  /** `objectId` is in the collection's space. One already in the collection is left as is. */
+  addToCollection(apiKey: string, collection: EventsCollectionTarget, objectId: string): Promise<EventsWriteResult>
   /** `key` is the object's Done checkbox. */
   setDone(apiKey: string, target: EventsObjectTarget, key: string, done: boolean): Promise<EventsWriteResult>
 }
