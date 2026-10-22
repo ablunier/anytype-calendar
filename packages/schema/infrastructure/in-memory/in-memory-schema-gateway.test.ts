@@ -13,7 +13,8 @@ const SPACE: InMemorySchemaSpace = {
     }
   ],
   options: { priority: [{ name: 'High', color: 'red' }] },
-  queries: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }]
+  queries: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }],
+  collections: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }]
 }
 
 function setup() {
@@ -61,6 +62,17 @@ test("answers with a space's queries, and none for a space without", async () =>
   const { queries: _, ...withoutQueries } = SPACE
   const bare = new InMemorySchemaGateway({ sleep: async () => {}, spaces: [withoutQueries] })
   await expect(bare.listQueries('ak_any', 'sp_1')).resolves.toEqual({ ok: true, value: [] })
+})
+
+test("answers with a space's collections, and none for a space without", async () => {
+  const { gateway } = setup()
+  await expect(gateway.listCollections('ak_any', 'sp_1')).resolves.toEqual({
+    ok: true,
+    value: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }]
+  })
+  const { collections: _, ...withoutCollections } = SPACE
+  const bare = new InMemorySchemaGateway({ sleep: async () => {}, spaces: [withoutCollections] })
+  await expect(bare.listCollections('ak_any', 'sp_1')).resolves.toEqual({ ok: true, value: [] })
 })
 
 test('rejects for a space it does not know', async () => {

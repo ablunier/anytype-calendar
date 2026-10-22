@@ -55,7 +55,8 @@ const SPACE: SchemaSpace = {
   id: 'sp_1',
   name: 'Personal',
   types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE],
-  queries: []
+  queries: [],
+  collections: []
 }
 
 const SYNCED_AT = 100_000

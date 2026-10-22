@@ -1,3 +1,4 @@
+import type { SchemaCollection } from '../model/collection'
 import type { SchemaProperty } from '../model/date-property'
 import type { SchemaQueryView } from '../model/query'
 import type { SchemaSelectOption } from '../model/select-property'
@@ -75,4 +76,10 @@ export interface SchemaGateway {
    * longer granted.
    */
   listQueries(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>>
+
+  /**
+   * Leaves out archived collections. Empty where the API serves none (v1), and for a space no
+   * longer granted.
+   */
+  listCollections(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaCollection[]>>
 }

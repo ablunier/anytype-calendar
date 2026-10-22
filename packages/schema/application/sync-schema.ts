@@ -75,11 +75,12 @@ export class SyncSchema {
     const listed: SchemaSpaceList = accepted(await this.#gateway.listSpaces(apiKey))
     const spaces = await Promise.all(
       listed.spaces.map(async ({ id, name, icon }) => {
-        const [types, queries] = await Promise.all([
+        const [types, queries, collections] = await Promise.all([
           this.#fetchDatedTypes(apiKey, id),
-          this.#gateway.listQueries(apiKey, id).then(accepted)
+          this.#gateway.listQueries(apiKey, id).then(accepted),
+          this.#gateway.listCollections(apiKey, id).then(accepted)
         ])
-        const space = { id, name, types, queries: datedQueries(queries, types) }
+        const space = { id, name, types, queries: datedQueries(queries, types), collections }
         return icon === undefined ? space : { ...space, icon }
       })
     )
