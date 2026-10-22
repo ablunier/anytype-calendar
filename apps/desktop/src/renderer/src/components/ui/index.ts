@@ -3,6 +3,7 @@ export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from '.
 export { Card, type CardPadding, type CardProps } from './Card'
 export { catBg, catBgSoft, catBorder, catText } from './category'
 export { Checkbox, type CheckboxProps } from './Checkbox'
+export { Combobox, type ComboboxOption, type ComboboxProps } from './Combobox'
 export { Dialog, type DialogProps, type DialogWidth } from './Dialog'
 export { EmptyState, type EmptyStateProps } from './EmptyState'
 export { Icon, type IconProps, type IconSize } from './Icon'

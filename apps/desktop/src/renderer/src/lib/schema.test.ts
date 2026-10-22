@@ -1,9 +1,12 @@
 import { describe, expect, test } from 'vitest'
 import type { SchemaQueryChoice, SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
-import type { ObjectType, TypePicks } from '@renderer/types'
+import type { Collection, ObjectType, TypePicks } from '@renderer/types'
 import {
   anytypeTypeKeyOf,
+  collectionChoices,
+  collectionPicksFor,
+  collectionsBySpaceFor,
   creatableTypesFor,
   elapsedSince,
   hasNotGrantedSpaces,
@@ -530,5 +533,101 @@ describe('queries', () => {
     const unseen = { ...OPEN_TASKS, queryId: 'q_ghost' }
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [], dates: {} }
     expect(schemaSelectionFor(WITH_QUERY, picks, saved(OPEN_TASKS, unseen)).queries).toEqual([unseen])
+  })
+})
+
+describe('collections', () => {
+  const collection = (key: string, name: string, lastModified: number | null, backlinks: string[] = []): Collection => ({
+    key,
+    name,
+    lastModified,
+    backlinks
+  })
+
+  test('maps each synced space to its collections, by space key', () => {
+    const snapshot: SchemaSnapshot = {
+      phase: 'synced',
+      last: {
+        syncedAt: 0,
+        hasNotGrantedSpaces: false,
+        spaces: [
+          { ...SPACE, collections: [{ id: 'col_1', name: 'Trip', lastModified: 5, backlinks: [] }] },
+          { ...SPACE, id: 'sp_2' }
+        ]
+      }
+    }
+    expect(collectionsBySpaceFor(snapshot)).toEqual(
+      new Map([
+        ['sp_1', [collection('col_1', 'Trip', 5)]],
+        ['sp_2', []]
+      ])
+    )
+    expect(collectionsBySpaceFor({ phase: 'idle' })).toEqual(new Map())
+  })
+
+  test('sorts by name, and those of one name most recently modified first', () => {
+    const choices = collectionChoices([
+      collection('c_trip', 'Trip', 1),
+      collection('c_old', 'Notes', 1, ['Home']),
+      collection('c_new', 'Notes', 9, ['Work']),
+      collection('c_undated', 'Notes', null, ['Desk']),
+      collection('c_books', 'Books', 1)
+    ])
+    expect(choices.map(({ collection }) => collection.key)).toEqual(['c_books', 'c_new', 'c_old', 'c_undated', 'c_trip'])
+  })
+
+  test('tells copies of a name apart by the backlinks they do not all share, at most two then a count', () => {
+    const choices = collectionChoices([
+      collection('c_home', 'Notes', 2, ['Home', 'Weekly review']),
+      collection('c_work', 'Notes', 1, ['Work', 'Weekly review', 'Q4', 'Desk', 'Work']),
+      collection('c_trip', 'Trip', 1, ['Ignored'])
+    ])
+    expect(choices.map(({ hint }) => hint)).toEqual([
+      { kind: 'backlinks', names: ['Home'], more: 0 },
+      { kind: 'backlinks', names: ['Work', 'Q4'], more: 1 },
+      null
+    ])
+  })
+
+  test('falls back on when it was last modified for a copy with nothing of its own to show', () => {
+    const choices = collectionChoices([
+      collection('c_shared', 'Notes', 7, ['Home']),
+      collection('c_never', 'Notes', null, ['Home']),
+      collection('c_other', 'Notes', 1, ['Home', 'Work']),
+      collection('c_bare', 'Inbox', 3),
+      collection('c_bare_too', 'Inbox', 2)
+    ])
+    expect(Object.fromEntries(choices.map(({ collection, hint }) => [collection.key, hint]))).toEqual({
+      c_shared: { kind: 'modified', at: 7 },
+      c_never: null,
+      c_other: { kind: 'backlinks', names: ['Work'], more: 0 },
+      c_bare: { kind: 'modified', at: 3 },
+      c_bare_too: { kind: 'modified', at: 2 }
+    })
+  })
+
+  describe('collectionPicksFor', () => {
+    const choices = collectionChoices([
+      collection('c_cafe', 'Café talks', 1),
+      collection('c_launch', 'Q4 launch', 1, ['Cafe']),
+      collection('c_launch2', 'Q4 launch', 2, ['Home'])
+    ])
+    const keysFor = (query: string) =>
+      collectionPicksFor(choices, query).map((pick) => (pick.kind === 'none' ? 'none' : pick.collection.key))
+
+    test('offers None first, then every collection, when nothing is typed', () => {
+      expect(keysFor('')).toEqual(['none', 'c_cafe', 'c_launch2', 'c_launch'])
+      expect(keysFor('  ')).toEqual(['none', 'c_cafe', 'c_launch2', 'c_launch'])
+    })
+
+    test('matches the name ignoring case and accents, keeping None first', () => {
+      expect(keysFor('cafe')).toEqual(['none', 'c_cafe'])
+      expect(keysFor('CAFÉ')).toEqual(['none', 'c_cafe'])
+      expect(keysFor('Launch')).toEqual(['none', 'c_launch2', 'c_launch'])
+    })
+
+    test('does not search backlinks, and keeps None when nothing matches', () => {
+      expect(keysFor('home')).toEqual(['none'])
+    })
   })
 })

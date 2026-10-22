@@ -15,12 +15,16 @@ export function toRescheduleRequest(value: unknown): EventsRescheduleRequest | n
   return isId(spaceId) && isId(id) && change ? { spaceId, id, change } : null
 }
 
+/** `collectionId` is not checked against the sync: Anytype answers an unknown one with 404. */
 export function toCreateRequest(value: unknown): EventsCreateRequest | null {
   const fields = fieldsOf(value)
   const at = toEventsSlot(fields['at'])
-  const { spaceId, typeKey, name } = fields
+  const { spaceId, typeKey, name, collectionId } = fields
   const named = typeof name === 'string' && name.length <= MAX_NAME_LENGTH
-  return isId(spaceId) && isId(typeKey) && named && at ? { spaceId, typeKey, name, at } : null
+  if (!isId(spaceId) || !isId(typeKey) || !named || !at) return null
+  const request = { spaceId, typeKey, name, at }
+  if (collectionId === undefined) return request
+  return isId(collectionId) ? { ...request, collectionId } : null
 }
 
 export function toSetDoneRequest(value: unknown): EventsSetDoneRequest | null {
