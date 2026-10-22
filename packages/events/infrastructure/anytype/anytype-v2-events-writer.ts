@@ -1,5 +1,6 @@
 import type { AnytypeClient, AnytypeFailure } from '@ablunier/anytype-client'
 import type {
+  EventsCollectionTarget,
   EventsDateValues,
   EventsNewObject,
   EventsObjectTarget,
@@ -16,7 +17,9 @@ const REFUSED_STATUSES = new Set([400, 404, 409, 422])
 
 /**
  * Writes through v2 alone: v1 has no writes. An object's properties are set with one
- * `set_properties` op; dates go as RFC 3339 in UTC, the spelling Anytype reads them back in.
+ * `set_properties` op; dates go as RFC 3339 in UTC, the spelling Anytype reads them back in. An
+ * object goes in a collection with an `add_items` op on the collection, which ignores ids
+ * already in it.
  *
  * The client sends each write with an `Idempotency-Key`, and once more if it got no answer. No
  * `If-Match`: search rows carry no etag, and sync moves an object's etag often enough that the
@@ -48,6 +51,17 @@ export class AnytypeV2EventsWriter implements EventsWriter {
     const id = response.body?.id
     if (typeof id !== 'string' || id === '') throw new Error('Anytype created an object without an id')
     return { ok: true, value: { id } }
+  }
+
+  async addToCollection(
+    apiKey: string,
+    { spaceId, collectionId }: EventsCollectionTarget,
+    objectId: string
+  ): Promise<EventsWriteResult> {
+    const response = await this.#client
+      .withApiKey(apiKey)
+      .objects.update(spaceId, collectionId, [{ op: 'add_items', items: [objectId] }])
+    return response.ok ? { ok: true, value: null } : refusal(response)
   }
 
   async #setProperties(

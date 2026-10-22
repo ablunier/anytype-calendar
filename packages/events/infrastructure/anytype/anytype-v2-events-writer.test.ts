@@ -168,3 +168,31 @@ describe('creating', () => {
     ).rejects.toThrow('without an id')
   })
 })
+
+describe('adding to a collection', () => {
+  const COLLECTION = { spaceId: SPACE_ID, collectionId: 'bafycol' }
+
+  test("patches the collection with one add_items op naming the object, under an Idempotency-Key", async () => {
+    const { writer, calls } = setup(edited)
+
+    await expect(writer.addToCollection(API_KEY, COLLECTION, 'bafynew')).resolves.toEqual({ ok: true, value: null })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.url).toBe(`${BASE}/v2/spaces/bafy.space/objects/bafycol`)
+    expect(calls[0]?.init.method).toBe('PATCH')
+    expect(calls[0]?.init.headers).toMatchObject({
+      Authorization: `Bearer ${API_KEY}`,
+      'Idempotency-Key': 'idem-1'
+    })
+    expect(bodyOf(calls[0])).toEqual({ ops: [{ op: 'add_items', items: ['bafynew'] }] })
+  })
+
+  test("says why Anytype refused the add, in its first issue's words", async () => {
+    const { writer } = setup(v2Error(404, 'not_found', [{ path: 'id', message: 'object not found' }]))
+    await expect(writer.addToCollection(API_KEY, COLLECTION, 'bafynew')).resolves.toEqual({
+      ok: false,
+      failure: 'rejected',
+      message: 'object not found'
+    })
+  })
+})

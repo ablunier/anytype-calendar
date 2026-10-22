@@ -290,6 +290,12 @@
       "name": "Name",
       "type": "Type",
       "typeInSpace": "{{type}} · {{space}}",
+      "collection": "Collection",
+      "noCollection": "None",
+      "noCollectionMatch": "No collection matches",
+      "collectionModified": "modified {{date}}",
+      "collectionBacklinksMore": "{{names}} +{{more}}",
+      "notAdded": "Created, but not added to the collection. {{reason}}",
       "time": "Time",
       "submit": "Create"
     },

@@ -13,6 +13,10 @@ import {
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type {
   CategoryHue,
+  Collection,
+  CollectionChoice,
+  CollectionHint,
+  CollectionPick,
   DateMapping,
   Elapsed,
   IconName,
@@ -94,6 +98,69 @@ export function spacesFor(snapshot: SchemaSnapshot): Space[] {
       ? { key: space.id, name: space.name }
       : { key: space.id, name: space.name, icon: space.icon }
   )
+}
+
+/** By space key, the collections of the last successful sync; empty where there are none (v1). */
+export function collectionsBySpaceFor(snapshot: SchemaSnapshot): Map<string, Collection[]> {
+  return new Map(
+    syncedSpaces(snapshot).map((space) => [
+      space.id,
+      space.collections.map(({ id, name, lastModified, backlinks }) => ({ key: id, name, lastModified, backlinks }))
+    ])
+  )
+}
+
+/** The most backlinks a collection's hint names before it counts the rest. */
+const MAX_HINT_BACKLINKS = 2
+
+/**
+ * Sorted by name, those of one name most recently modified first, each with what tells it
+ * apart from the others of its name: the objects linking to it that do not link to all of
+ * them, or else when it was last modified.
+ */
+export function collectionChoices(collections: Collection[]): CollectionChoice[] {
+  const byName = new Map<string, Collection[]>()
+  for (const collection of collections) {
+    byName.set(collection.name, [...(byName.get(collection.name) ?? []), collection])
+  }
+  return [...collections]
+    .sort((a, b) => a.name.localeCompare(b.name) || (b.lastModified ?? -Infinity) - (a.lastModified ?? -Infinity))
+    .map((collection) => ({ collection, hint: hintFor(collection, byName.get(collection.name) ?? []) }))
+}
+
+function hintFor(collection: Collection, namesakes: Collection[]): CollectionHint {
+  if (namesakes.length < 2) return null
+  const others = namesakes.filter((namesake) => namesake !== collection)
+  const telling = [...new Set(collection.backlinks)].filter(
+    (name) => !others.every((other) => other.backlinks.includes(name))
+  )
+  if (telling.length > 0) {
+    return {
+      kind: 'backlinks',
+      names: telling.slice(0, MAX_HINT_BACKLINKS),
+      more: Math.max(telling.length - MAX_HINT_BACKLINKS, 0)
+    }
+  }
+  return collection.lastModified === null ? null : { kind: 'modified', at: collection.lastModified }
+}
+
+/**
+ * None first, whatever is typed, then the collections whose name holds `query`, ignoring case
+ * and accents. Backlinks are not searched: they only tell names apart.
+ */
+export function collectionPicksFor(choices: CollectionChoice[], query: string): CollectionPick[] {
+  const wanted = foldForSearch(query.trim())
+  return [
+    { kind: 'none' },
+    ...choices
+      .filter(({ collection }) => foldForSearch(collection.name).includes(wanted))
+      .map((choice): CollectionPick => ({ kind: 'collection', ...choice }))
+  ]
+}
+
+/** So that `cafe` finds `Café`: decomposed, its combining marks dropped, lower-cased. */
+export function foldForSearch(text: string): string {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }
 
 /** Whether the last successful sync found spaces the key was not granted; false until there is one. */

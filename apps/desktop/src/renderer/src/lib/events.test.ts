@@ -321,4 +321,11 @@ describe('edit requests', () => {
       at: { day: { year: 2026, month: 8, day: 18 }, minute: null }
     })
   })
+
+  test('carry the collection picked, and none when None is', () => {
+    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as ObjectType
+    const slot = { date: '2026-09-18', minute: null }
+    expect(createRequestFor(type, 'Retro', slot, 'bafycol')).toMatchObject({ collectionId: 'bafycol' })
+    expect(createRequestFor(type, 'Retro', slot, null)).not.toHaveProperty('collectionId')
+  })
 })

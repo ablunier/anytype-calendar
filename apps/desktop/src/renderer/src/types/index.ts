@@ -25,6 +25,32 @@ export interface Space {
   icon?: string
 }
 
+/** A collection a new object can be added to. Only v2 of the local API serves them. */
+export interface Collection {
+  /** Anytype's object id. */
+  key: string
+  name: string
+  /** Epoch milliseconds; null where Anytype keeps none. */
+  lastModified: number | null
+  /** The names of the objects linking to it, read only where another in its space has its name. */
+  backlinks: string[]
+}
+
+/** What tells a collection apart from the others of its name; null where its name is its own. */
+export type CollectionHint =
+  | { kind: 'backlinks'; names: string[]; more: number }
+  /** Epoch milliseconds. */
+  | { kind: 'modified'; at: number }
+  | null
+
+export interface CollectionChoice {
+  collection: Collection
+  hint: CollectionHint
+}
+
+/** A row of the create dialog's Collection field: none, or a collection to add to. */
+export type CollectionPick = { kind: 'none' } | ({ kind: 'collection' } & CollectionChoice)
+
 export interface DateProperty {
   key: string
   label: string

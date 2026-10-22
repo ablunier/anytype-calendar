@@ -37,6 +37,14 @@ describe('a creation', () => {
     expect(toCreateRequest({ spaceId: 'sp_1', typeKey: 'meeting', name: 'x' })).toBeNull()
     expect(toCreateRequest({ spaceId: 'sp_1', name: 'x', at: { day, minute: null } })).toBeNull()
   })
+
+  test('takes a collection to add the object to, as a non-empty id', () => {
+    const request = { spaceId: 'sp_1', typeKey: 'meeting', name: 'Retro', at: { day, minute: null } }
+    expect(toCreateRequest({ ...request, collectionId: 'col_q4' })).toEqual({ ...request, collectionId: 'col_q4' })
+    expect(toCreateRequest({ ...request, collectionId: '' })).toBeNull()
+    expect(toCreateRequest({ ...request, collectionId: 42 })).toBeNull()
+    expect(toCreateRequest({ ...request, collectionId: null })).toBeNull()
+  })
 })
 
 describe('setting Done', () => {

@@ -230,4 +230,18 @@ test('refuses to write an object it does not have', async () => {
     ok: false,
     failure: 'rejected'
   })
+  await expect(
+    gateway.addToCollection('k', { spaceId: 'sp_2', collectionId: 'col_1' }, 'o1')
+  ).resolves.toMatchObject({ ok: false, failure: 'rejected' })
+  expect(gateway.collectionItems('sp_2', 'col_1')).toEqual([])
+})
+
+test('records what was added to a collection, each object once', async () => {
+  const { gateway } = setup(OBJECTS)
+  const collection = { spaceId: 'sp_1', collectionId: 'col_1' }
+  await expect(gateway.addToCollection('k', collection, 'o4')).resolves.toEqual({ ok: true, value: null })
+  await gateway.addToCollection('k', collection, 'o5')
+  await gateway.addToCollection('k', collection, 'o4')
+  expect(gateway.collectionItems('sp_1', 'col_1')).toEqual(['o4', 'o5'])
+  expect(gateway.collectionItems('sp_1', 'col_2')).toEqual([])
 })

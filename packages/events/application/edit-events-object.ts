@@ -4,8 +4,10 @@ import {
   rescheduleEventsDatedObject,
   sameEventsObject,
   type EventsApiKeySource,
+  type EventsCollectionTarget,
   type EventsDatedObject,
   type EventsDateValues,
+  type EventsEditFailure,
   type EventsEditOutcome,
   type EventsReschedule,
   type EventsSlot,
@@ -40,6 +42,8 @@ export interface CreateEventsObjectInput {
   typeKey: string
   name: string
   at: EventsSlot
+  /** A collection in the same space to add the new object to. */
+  collectionId?: string
 }
 
 export interface CompleteEventsObjectInput {
@@ -76,7 +80,11 @@ export class RescheduleEventsObject {
   }
 }
 
-/** Only as one of the chosen types: that is what says which dates place it. */
+/**
+ * Only as one of the chosen types: that is what says which dates place it. v2 cannot create
+ * into a collection, so the object is created, then added; an add that fails leaves it created,
+ * since it is still wanted, and says so in the outcome.
+ */
 export class CreateEventsObject {
   readonly #deps: EditEventsObjectDeps
 
@@ -84,14 +92,20 @@ export class CreateEventsObject {
     this.#deps = deps
   }
 
-  async execute({ spaceId, typeKey, name, at }: CreateEventsObjectInput): Promise<EventsEditOutcome> {
-    const source = this.#deps.sources
+  async execute({ spaceId, typeKey, name, at, collectionId }: CreateEventsObjectInput): Promise<EventsEditOutcome> {
+    const { writer, sources, zone } = this.#deps
+    const source = sources
       .current()
       .find((candidate) => candidate.kind === 'type' && candidate.spaceId === spaceId && candidate.typeKey === typeKey)
     if (source?.kind !== 'type') return GONE
-    const dates = newEventsObjectDates(source, at, this.#deps.zone)
-    return writeThenLoad(this.#deps, null, (apiKey) =>
-      this.#deps.writer.create(apiKey, { spaceId, typeKey, name, dates })
+    const dates = newEventsObjectDates(source, at, zone)
+    return writeThenLoad(
+      this.#deps,
+      null,
+      (apiKey) => writer.create(apiKey, { spaceId, typeKey, name, dates }),
+      collectionId === undefined
+        ? undefined
+        : (apiKey, { id }) => addToCollection(writer, apiKey, { spaceId, collectionId }, id)
     )
   }
 }
@@ -114,6 +128,23 @@ export class CompleteEventsObject {
       this.#deps.writer.setDone(apiKey, { spaceId, id }, key, done)
     )
   }
+}
+
+async function addToCollection(
+  writer: EventsWriter,
+  apiKey: string,
+  collection: EventsCollectionTarget,
+  objectId: string
+): Promise<EventsEditFailure | null> {
+  let added: EventsWriteResult
+  try {
+    added = await writer.addToCollection(apiKey, collection, objectId)
+  } catch {
+    return { failure: 'unreachable' }
+  }
+  if (added.ok) return null
+  const { ok: _, ...failure } = added
+  return failure
 }
 
 /**
@@ -144,26 +175,29 @@ function sameSourceKey(a: EventsSourceKey, b: EventsSourceKey): boolean {
 
 /**
  * `edit` is drawn from before the write until the span has been read again after it, so the
- * object never shows where it was in between; a refused write drops it at once.
+ * object never shows where it was in between; a refused write drops it at once. `then` follows
+ * a write that landed, before the span is read again, and says why it failed, if it did.
  */
-async function writeThenLoad(
+async function writeThenLoad<T>(
   { apiKeys, store, load }: EditEventsObjectDeps,
   edit: EventsDatedObject | null,
-  write: (apiKey: string) => Promise<EventsWriteResult<unknown>>
+  write: (apiKey: string) => Promise<EventsWriteResult<T>>,
+  then?: (apiKey: string, written: T) => Promise<EventsEditFailure | null>
 ): Promise<EventsEditOutcome> {
   const release = edit ? store.hold(edit) : () => {}
   try {
     const apiKey = await apiKeys.current()
     if (apiKey === null) return { ok: false, failure: 'unauthorized' }
-    let result: EventsWriteResult<unknown>
+    let result: EventsWriteResult<T>
     try {
       result = await write(apiKey)
     } catch {
       return { ok: false, failure: 'unreachable' }
     }
     if (!result.ok) return result
+    const failed = then ? await then(apiKey, result.value) : null
     await load.execute()
-    return { ok: true }
+    return failed ? { ok: true, collection: failed } : { ok: true }
   } finally {
     release()
   }
