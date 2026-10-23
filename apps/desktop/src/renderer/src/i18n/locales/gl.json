@@ -210,7 +210,8 @@
       "phone": "Teléfono",
       "objects": "Obxectos"
     },
-    "editType": "Editar",
+    "customizeType": "Personalizar",
+    "customizeTypeFor": "Personalizar {{label}}",
     "typeSettingsClose": "Feito",
     "datesSection": "Datas",
     "appearanceSection": "Aparencia",

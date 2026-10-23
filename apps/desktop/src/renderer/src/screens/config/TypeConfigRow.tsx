@@ -75,9 +75,10 @@ export function TypeConfigRow({
         size="sm"
         iconLeft="sliders-horizontal"
         disabled={!checked}
+        ariaLabel={t('config.customizeTypeFor', { label: type.label })}
         onClick={() => setOpen(true)}
       >
-        {t('config.editType')}
+        {t('config.customizeType')}
       </Button>
       <TypeSettingsDialog
         type={type}

@@ -210,7 +210,8 @@
       "phone": "Phone",
       "objects": "Objects"
     },
-    "editType": "Edit",
+    "customizeType": "Customize",
+    "customizeTypeFor": "Customize {{label}}",
     "typeSettingsClose": "Done",
     "datesSection": "Dates",
     "appearanceSection": "Appearance",
