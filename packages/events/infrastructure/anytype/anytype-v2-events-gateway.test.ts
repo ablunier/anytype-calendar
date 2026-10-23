@@ -198,6 +198,178 @@ describe('Done, Location and colour', () => {
   })
 })
 
+describe('panel properties', () => {
+  const JOBS: EventsSource = {
+    ...APPOINTMENTS,
+    typeKey: 'job',
+    from: 'applied',
+    colourBy: { key: 'status', options: [{ name: 'Applied', color: 'red' }] },
+    panel: [
+      { key: 'salary', format: 'text' },
+      { key: 'openings', format: 'number' },
+      { key: 'status', format: 'select', options: [{ name: 'Applied', color: 'red' }] },
+      { key: 'tags', format: 'multi_select', options: [] },
+      { key: 'site', format: 'url' },
+      { key: 'mail', format: 'email' },
+      { key: 'phone', format: 'phone' },
+      { key: 'contacts', format: 'objects' }
+    ]
+  }
+  const detailsOf = async (properties: Record<string, unknown>) => {
+    const { gateway } = setup(page([row('obj_1', 'Acme', { applied: '2026-09-10T10:00:00Z', ...properties })]))
+    const result = await gateway.listObjects(API_KEY, JOBS, WINDOW)
+    return result.ok ? result.value[0]?.details : result
+  }
+
+  test('asks for them after the rest, each key once', async () => {
+    const { gateway, calls } = setup(page([]))
+    await gateway.listObjects(API_KEY, JOBS, WINDOW)
+    expect(JSON.parse(calls[0]?.init.body ?? '').fields).toEqual([
+      'applied',
+      'status',
+      'salary',
+      'openings',
+      'tags',
+      'site',
+      'mail',
+      'phone',
+      'contacts'
+    ])
+  })
+
+  test('asks a query for them too', async () => {
+    const { gateway, calls } = setup(page([]))
+    await gateway.listObjects(API_KEY, { ...JOBS, kind: 'query', queryId: 'q1', viewId: null }, WINDOW)
+    expect(calls[0]?.url).toContain('fields=applied,status,salary,openings,tags,site,mail,phone,contacts')
+  })
+
+  test('reads each by its format, options by name and linked objects by id', async () => {
+    await expect(
+      detailsOf({
+        salary: '40–50k',
+        openings: 2,
+        status: ['Applied'],
+        tags: ['Remote', 'bafyreideletedoption'],
+        site: 'https://acme.example',
+        mail: 'jobs@acme.example',
+        phone: '+34 600 000 000',
+        contacts: ['obj_2', 'participant-A8x']
+      })
+    ).resolves.toEqual([
+      { key: 'salary', format: 'text', value: '40–50k' },
+      { key: 'openings', format: 'number', value: 2 },
+      { key: 'status', format: 'select', names: ['Applied'] },
+      { key: 'tags', format: 'multi_select', names: ['Remote', 'bafyreideletedoption'] },
+      { key: 'site', format: 'url', value: 'https://acme.example' },
+      { key: 'mail', format: 'email', value: 'jobs@acme.example' },
+      { key: 'phone', format: 'phone', value: '+34 600 000 000' },
+      { key: 'contacts', format: 'objects', ids: ['obj_2', 'participant-A8x'] }
+    ])
+  })
+
+  test('reads a value left out, null, empty or an empty list as none', async () => {
+    await expect(
+      detailsOf({ salary: '', openings: null, status: [], tags: null, site: null, contacts: [] })
+    ).resolves.toBeUndefined()
+  })
+
+  test('drops a value of another shape than its format', async () => {
+    await expect(
+      detailsOf({ salary: 40, openings: '2', status: [3], site: ['https://acme.example'], contacts: { id: 'x' } })
+    ).resolves.toBeUndefined()
+  })
+
+  test('reads a bare option name or id as a list of one', async () => {
+    await expect(detailsOf({ status: 'Applied', contacts: 'obj_2' })).resolves.toEqual([
+      { key: 'status', format: 'select', names: ['Applied'] },
+      { key: 'contacts', format: 'objects', ids: ['obj_2'] }
+    ])
+  })
+})
+
+describe('listLinkedObjects', () => {
+  const SEARCH = `${BASE}/v2/spaces/${SPACE_ID}/search?offset=0&limit=1000`
+  const MEMBERS = `${BASE}/v2/spaces/${SPACE_ID}/members?offset=0&limit=1000`
+  const member = (identity: string, name: string) => ({
+    id: `participant-${identity}`,
+    name,
+    role: 'editor',
+    identity
+  })
+
+  test('searches the space for the objects by id, and names them', async () => {
+    const { gateway, calls } = setup(page([{ id: 'obj_1', name: 'Acme' }, { id: 'obj_2', name: '' }]))
+
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['obj_1', 'obj_2', 'obj_gone'])).resolves.toEqual({
+      ok: true,
+      value: [
+        { id: 'obj_1', name: 'Acme', member: false },
+        { id: 'obj_2', name: '', member: false }
+      ]
+    })
+    expect(calls.map(({ url }) => url)).toEqual([SEARCH])
+    expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
+      filters: [{ property: 'id', condition: 'in', value: ['obj_1', 'obj_2', 'obj_gone'] }]
+    })
+  })
+
+  test('searches a thousand ids at a time', async () => {
+    const ids = Array.from({ length: 1001 }, (_, index) => `obj_${index}`)
+    const { gateway, calls } = setup(page([]))
+    await gateway.listLinkedObjects(API_KEY, SPACE_ID, ids)
+    expect(calls.map(({ init }) => JSON.parse(init.body ?? '').filters[0].value.length)).toEqual([1000, 1])
+  })
+
+  test("matches members, which no search finds, on the space's members' identity", async () => {
+    const { gateway, calls } = setup(page([member('A8x', 'Mara'), member('A8y', 'Sofia')]))
+
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x', 'participant-A8z'])).resolves.toEqual({
+      ok: true,
+      value: [{ id: 'participant-A8x', name: 'Mara', member: true }]
+    })
+    expect(calls.map(({ url }) => url)).toEqual([MEMBERS])
+  })
+
+  test('reads both when both are linked', async () => {
+    const { gateway, calls } = setup(page([{ id: 'obj_1', name: 'Acme' }]), page([member('A8x', 'Mara')]))
+
+    const result = await gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x', 'obj_1'])
+
+    expect(result).toEqual({
+      ok: true,
+      value: [
+        { id: 'obj_1', name: 'Acme', member: false },
+        { id: 'participant-A8x', name: 'Mara', member: true }
+      ]
+    })
+    expect(calls.map(({ url }) => url)).toEqual([SEARCH, MEMBERS])
+  })
+
+  test.each([
+    ['a space that is gone or not granted', v2Error(403, 'space_not_granted')],
+    ['a build without the route', { status: 404, text: '404 page not found' }]
+  ])('names nothing in %s', async (_, reply) => {
+    const { gateway } = setup(reply)
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x'])).resolves.toEqual({
+      ok: true,
+      value: []
+    })
+  })
+
+  test('resolves a refused key as unauthorized', async () => {
+    const { gateway } = setup(v2Error(401, 'unauthorized'))
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['obj_1'])).resolves.toEqual({
+      ok: false,
+      failure: 'unauthorized'
+    })
+  })
+
+  test('rejects on any other error status', async () => {
+    const { gateway } = setup(v2Error(500, 'internal'))
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['obj_1'])).rejects.toThrow('500')
+  })
+})
+
 test('follows the pages until Anytype has no more', async () => {
   const { gateway, calls } = setup(
     page([row('obj_1', 'One', { data: '2026-09-01T08:00:00Z' })], true),

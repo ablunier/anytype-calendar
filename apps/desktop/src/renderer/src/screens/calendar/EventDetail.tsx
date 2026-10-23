@@ -4,16 +4,17 @@ import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
+import { EventDetails } from './EventDetails'
 
 interface DetailDateProps {
   date: string
-  /** Absent for an all-day event, so the date sits alone at the top of the column. */
+  /** Absent for an all-day event, so the date sits alone under the caption. */
   time?: string
   caption: string
 }
 
 /**
- * Time, date and caption stack in one column so a From/To pair lines up: two side-by-side
+ * Caption, time and date stack in one column so a From/To pair lines up: two side-by-side
  * flex rows (a time row above a date row) don't share column widths on their own, since
  * each row's cells size to that row's own content.
  */
@@ -22,13 +23,13 @@ function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element
   const timeFormat = useTimeFormatValue()
   return (
     <div className="flex flex-col gap-2">
+      <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
       {time ? (
         <span className="type-numeral text-small text-ink-body">
           {formatTime(time, timeFormat, i18n.language)}
         </span>
       ) : null}
       <span className="type-numeral text-small text-ink-body">{shortDate(date, i18n.language)}</span>
-      <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
     </div>
   )
 }
@@ -149,6 +150,8 @@ export function EventDetail({
             <span className="type-body text-small text-pretty text-ink-body">{event.location}</span>
           </div>
         ) : null}
+
+        <EventDetails event={event} type={type} />
 
         {/* How a type is drawn is the user's choice in Settings, not the object's. */}
         <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />

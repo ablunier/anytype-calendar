@@ -1,3 +1,4 @@
+import type { EventsDetailRef, EventsLinkedObject } from '../model/detail'
 import type { EventsWindow } from '../model/window'
 import type { EventsSource } from '../model/source'
 
@@ -13,6 +14,8 @@ export interface EventsObjectRef {
   location?: string
   /** The name of the option picked in the source's `colourBy` property. */
   option?: string
+  /** The source's `panel` properties the object has a value for, in no particular order. */
+  details?: EventsDetailRef[]
 }
 
 /**
@@ -33,4 +36,14 @@ export interface EventsGateway {
     source: EventsSource,
     window: EventsWindow
   ): Promise<EventsGatewayResult<EventsObjectRef[]>>
+
+  /**
+   * The objects and space members of the space with these ids, for their names. One that is
+   * gone, or cannot be read, is left out; so is every one where the API cannot read them (v1).
+   */
+  listLinkedObjects(
+    apiKey: string,
+    spaceId: string,
+    ids: readonly string[]
+  ): Promise<EventsGatewayResult<EventsLinkedObject[]>>
 }

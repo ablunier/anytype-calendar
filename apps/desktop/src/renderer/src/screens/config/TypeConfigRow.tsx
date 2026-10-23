@@ -1,66 +1,46 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ObjectType } from '@renderer/types'
+import type { TFunction } from 'i18next'
+import type { DateMapping, ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
-import { Checkbox, Select, Tooltip } from '@renderer/components/ui'
-import { colourOptions, dateOptions, viewOptions } from '@renderer/lib/calendar'
+import { Button, Checkbox } from '@renderer/components/ui'
+import { dateLabel } from '@renderer/lib/calendar'
+import { TypeSettingsDialog, type TypeSettingsDialogProps } from './TypeSettingsDialog'
 
-export interface TypeConfigRowProps {
+export type TypeSettingsHandlers = Omit<
+  TypeSettingsDialogProps,
+  'type' | 'open' | 'mapping' | 'details' | 'onClose'
+>
+
+export interface TypeConfigRowProps extends TypeSettingsHandlers {
   type: ObjectType
   checked: boolean
-  from: string
-  to: string | null
-  includesTime: boolean
-  colourBy: string | null
-  /** A query's view; null for its first. Unused for a type. */
-  view: string | null
+  mapping: DateMapping
+  /** Whether it can pick its Done, Location and panel properties: only under v2. */
+  details: boolean
   last: boolean
   onToggle: () => void
-  onFromChange: (value: string) => void
-  onToChange: (value: string | null) => void
-  onIncludesTimeChange: (value: boolean) => void
-  onColourByChange: (value: string | null) => void
-  onViewChange: (value: string) => void
 }
 
+/**
+ * One line per type or query: what it is, and a summary of how it is drawn. The settings
+ * themselves are in a dialog, since there are too many to line up in columns.
+ */
 export function TypeConfigRow({
   type,
   checked,
-  from,
-  to,
-  includesTime,
-  colourBy,
-  view,
+  mapping,
+  details,
   last,
   onToggle,
-  onFromChange,
-  onToChange,
-  onIncludesTimeChange,
-  onColourByChange,
-  onViewChange
+  ...handlers
 }: TypeConfigRowProps): React.JSX.Element {
   const { t } = useTranslation()
-  /** An empty value can never be a property key. */
-  const none = { value: '', label: t('common.none') }
-  const typeColour = { value: '', label: t('config.typeColour') }
-  const selects = colourOptions(type)
-  const colourSelect = (
-    <Select
-      size="sm"
-      className="w-116"
-      ariaLabel={t('config.colourFor', { label: type.label })}
-      options={[typeColour, ...selects]}
-      value={colourBy ?? typeColour.value}
-      disabled={!checked || selects.length === 0}
-      onChange={(value) => onColourByChange(value === typeColour.value ? null : value)}
-    />
-  )
-  /* The columns of SpaceTypesCard's header, so every row's controls line up under it. A query's
-   * name takes a line of its own, and its view the name's column on the next, so all its
-   * controls share one line: the name column is too narrow to hold a select beside the name. */
+  const [open, setOpen] = useState(false)
   return (
     <div
       className={[
-        'grid grid-cols-[auto_auto_minmax(0,1fr)_var(--spacing-152)_var(--spacing-152)_var(--spacing-56)_var(--spacing-116)] items-center gap-x-12 gap-y-8 py-10',
+        'flex items-center gap-12 py-10',
         last ? '' : 'border-b border-line-hairline'
       ].join(' ')}
     >
@@ -71,60 +51,62 @@ export function TypeConfigRow({
         ariaLabel={t('common.showTypeObjects', { label: type.label })}
       />
       <TypeTile type={type} size="sm" />
-      <div className={['flex min-w-0 items-baseline gap-8', type.query ? 'col-span-5' : ''].join(' ')}>
-        <span className="type-ui text-small text-ink-primary">{type.label}</span>
-        {type.query ? (
-          <span className="truncate type-caption text-tiny text-ink-tertiary">
-            {t('common.queryOf', { type: type.query.typeLabel })}
-          </span>
-        ) : null}
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <div className="flex min-w-0 items-baseline gap-8">
+          <span className="truncate type-ui text-small text-ink-primary">{type.label}</span>
+          {type.query ? (
+            <span className="truncate type-caption text-tiny text-ink-tertiary">
+              {t('common.queryOf', { type: type.query.typeLabel })}
+            </span>
+          ) : null}
+        </div>
+        <span
+          className={[
+            'truncate type-caption text-tiny',
+            checked ? 'text-ink-secondary' : 'text-ink-tertiary'
+          ].join(' ')}
+        >
+          {summaryOf(type, mapping, details, t)}
+        </span>
       </div>
-      {type.query ? (
-        // Until one is picked, Anytype reads the first.
-        <Select
-          size="sm"
-          className="col-start-3"
-          ariaLabel={t('config.viewFor', { label: type.label })}
-          options={viewOptions(type)}
-          value={view ?? type.query.views[0]?.key ?? ''}
-          disabled={!checked}
-          onChange={onViewChange}
-        />
-      ) : null}
-      <Select
+      {/* Only a ticked type is saved, so there is nothing to set for one that is not. */}
+      <Button
+        variant="ghost"
         size="sm"
-        className="w-152"
-        ariaLabel={t('config.fromDateFor', { label: type.label })}
-        options={dateOptions(type)}
-        value={from}
+        iconLeft="sliders-horizontal"
         disabled={!checked}
-        onChange={onFromChange}
+        ariaLabel={t('config.customizeTypeFor', { label: type.label })}
+        onClick={() => setOpen(true)}
+      >
+        {t('config.customizeType')}
+      </Button>
+      <TypeSettingsDialog
+        type={type}
+        open={open}
+        mapping={mapping}
+        details={details}
+        onClose={() => setOpen(false)}
+        {...handlers}
       />
-      <Select
-        size="sm"
-        className="w-152"
-        ariaLabel={t('config.toDateFor', { label: type.label })}
-        options={[none, ...dateOptions(type).filter((option) => option.value !== from)]}
-        value={to ?? none.value}
-        disabled={!checked}
-        onChange={(value) => onToChange(value === none.value ? null : value)}
-      />
-      <div className="flex justify-center">
-        <Checkbox
-          checked={includesTime}
-          onChange={onIncludesTimeChange}
-          disabled={!checked}
-          ariaLabel={t('config.typeIncludesTime', { label: type.label })}
-        />
-      </div>
-      {/* Only v2 says what a select's options look like, so under v1 there is nothing to pick. */}
-      {selects.length === 0 ? (
-        <Tooltip label={t('config.noColourProperty')} align="end">
-          {colourSelect}
-        </Tooltip>
-      ) : (
-        colourSelect
-      )}
     </div>
   )
+}
+
+/** e.g. `Start date → End date · With time · Coloured by Priority · 2 properties in the panel`. */
+function summaryOf(type: ObjectType, mapping: DateMapping, details: boolean, t: TFunction): string {
+  const { from, to, includesTime, colourBy, view, panel } = mapping
+  const parts = [
+    to === null
+      ? dateLabel(type, from)
+      : t('config.summaryRange', { from: dateLabel(type, from), to: dateLabel(type, to) }),
+    includesTime ? t('config.summaryTimed') : t('config.summaryAllDay')
+  ]
+  if (type.query) {
+    const viewLabel = type.query.views.find(({ key }) => key === view)?.label ?? type.query.views[0]?.label
+    if (viewLabel) parts.push(t('config.summaryView', { view: viewLabel }))
+  }
+  const colour = type.selects.find(({ key }) => key === colourBy)?.label
+  if (colour) parts.push(t('config.summaryColour', { property: colour }))
+  if (details && panel.length > 0) parts.push(t('config.summaryPanel', { count: panel.length }))
+  return parts.join(' · ')
 }

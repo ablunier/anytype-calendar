@@ -8,6 +8,8 @@ export interface SchemaProperty {
    * under v1 names the property this way. See rekeySchemaSelection.
    */
   formerKey?: string
+  /** In the type's `hidden` section, which Anytype's app does not show; only v2 says. */
+  hidden?: boolean
 }
 
 /**

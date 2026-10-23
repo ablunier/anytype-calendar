@@ -38,6 +38,8 @@ export interface ButtonProps {
   /** The id of a form it submits from outside, e.g. from a dialog's footer. */
   form?: string
   className?: string
+  /** Names the button more fully than its text, e.g. which of several alike it acts on. */
+  ariaLabel?: string
   onClick?: () => void
 }
 
@@ -53,12 +55,14 @@ export function Button({
   type = 'button',
   form,
   className,
+  ariaLabel,
   onClick
 }: ButtonProps): React.JSX.Element {
   return (
     <button
       type={type}
       form={form}
+      aria-label={ariaLabel}
       disabled={disabled || loading}
       onClick={onClick}
       className={[

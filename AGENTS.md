@@ -20,13 +20,16 @@ Anytype's own Done and Location, its select properties' option colours, and its 
 a single dated type, with their views. It also persists
 the user's selection — which spaces, types and queries go on the calendar, each one's From/To
 date property (a query's are its type's), whether those dates carry a time of day, which
-select property, if any, colours its objects (`colourBy`), and a query's view — which
-onboarding and Settings save.
+select property, if any, colours its objects (`colourBy`), which checkbox ticks it done and
+which text places it (`done`, `location`: Anytype's own until picked), which further properties
+its detail panel shows, in order (`panel`), and a query's view — which onboarding and Settings
+save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
-selected types and queries whose dates fall in it, with their Done, Location and colour-by
-option where v2 serves them, which the calendar screen draws as a month grid or as an hour
-grid. An object a type and a query both bring is read once through each and kept for each, with
-its source's `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
+selected types and queries whose dates fall in it, with their Done, Location, colour-by option
+and panel properties where v2 serves them (linked objects named in the same load, one search
+per space), which the calendar screen draws as a month grid or as an hour grid. An object a
+type and a query both bring is read once through each and kept for each, with its source's
+`rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour, and ticked done from its panel. No screen
 runs on mock data.
@@ -207,9 +210,9 @@ Standard electron-vite three-process layout:
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
-  first; Done, Location and the colour-by property only where the last schema sync saw the
-  type — for a query, the type it runs over — with them, since v2 refuses a search `field` the
-  space lacks), and places a
+  first; Done, Location, the colour-by property and the panel's only where the last schema
+  sync saw the type — for a query, the type it runs over — with them, since v2 refuses a search
+  `field` the space lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
@@ -466,6 +469,18 @@ the wire belongs there too:
   placeholder in a view's filters is a warning too, not an error. `fields` is checked against
   the space's properties, not the type's; an unknown view answers 404. v1 has no query routes,
   so queries are offered only under v2, and a v1 read matches a chosen one with nothing.
+- The type document's `property_definitions` carry a `section` (`featured`, `hidden` or none):
+  a hidden one (last modified by …) is never offered to the detail panel, nor are `name` and
+  `type`, which it draws anyway. The panel draws `text`, `number`, `select`, `multi_select`,
+  `url`, `email`, `phone` and `objects`; v1 reads none of them, and Settings hides the panel,
+  Done and Location fields under v1. A multi-select's options come from the same route as a
+  select's.
+- A row's value for a property with none is left out, or comes as `null`, `""` or `[]`. A
+  deleted select option is served by its object id, not a name. `objects` is a list of ids:
+  their names come from one search per space (`{ property: 'id', condition: 'in', value }`,
+  at most 1000 ids each), which never finds a space member (`participant-<identity>`); members
+  are matched on `identity` in `GET …/members`, read only when one is linked. Links open
+  through main's `shell.openLink`, which takes only `http(s)`, `mailto:` and `tel:`.
 - A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
   the image's bytes (PNG seen). `files.content` reads it through the same injected
   `fetch`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the

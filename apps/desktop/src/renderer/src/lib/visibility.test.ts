@@ -16,7 +16,8 @@ const event = (id: string, type: string, rank: number, date = '2026-09-03'): Cal
   space: 'sp_1',
   rank,
   date,
-  allDay: true
+  allDay: true,
+  details: []
 })
 
 const TASK = 'sp_1:task'

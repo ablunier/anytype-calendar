@@ -11,11 +11,13 @@ import {
   dateOptions,
   eventHue,
   eventsOnDay,
+  formatNumber,
   indexBy,
   isoDate,
   isoWeekNumber,
   isWeekendColumn,
   longDate,
+  mappingIn,
   monthLabel,
   offeredMapping,
   offersDates,
@@ -40,11 +42,23 @@ const TASK: ObjectType = {
     { key: 'start_date', label: 'Start date' }
   ],
   selects: [{ key: 'priority', label: 'Priority' }],
+  checkboxes: [{ key: 'done', label: 'Done' }],
+  texts: [{ key: 'location', label: 'Location' }],
+  panelProps: [
+    { key: 'location', label: 'Location', format: 'text' },
+    { key: 'project', label: 'Project', format: 'objects' }
+  ],
   from: 'due_date',
   to: null,
   includesTime: false,
-  colourBy: null
+  colourBy: null,
+  panel: [],
+  done: 'done',
+  location: null
 }
+
+/** A mapping's fields beyond its dates and colour, as a type starts with them. */
+const NO_DETAILS = { panel: [], done: null, location: null }
 
 describe('buildMonthGrid', () => {
   test('pads a month that starts after Monday with the previous month', () => {
@@ -137,7 +151,7 @@ describe('weekdaysFrom and isWeekendColumn', () => {
 })
 
 describe('eventsOnDay', () => {
-  const base = { title: '', type: TASK.key, space: 'sp_1', rank: 0, allDay: true }
+  const base = { title: '', type: TASK.key, space: 'sp_1', rank: 0, allDay: true, details: [] }
   const single: CalendarEvent = { ...base, id: '1', date: '2026-09-05' }
   const range: CalendarEvent = {
     ...base,
@@ -240,7 +254,7 @@ describe('typesInSpace and queriesInSpace', () => {
   const query: ObjectType = {
     ...TASK,
     key: 'sp_1:query:q',
-    query: { typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
+    query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
   }
 
   test("split the given space's types from its queries", () => {
@@ -261,7 +275,7 @@ describe('dateLabel', () => {
 
 describe('offersDates', () => {
   test('true for a from-only mapping the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null, view: null })).toBe(true)
+    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null, view: null, ...NO_DETAILS })).toBe(true)
   })
 
   test('true for a range whose both ends the type still has', () => {
@@ -271,14 +285,14 @@ describe('offersDates', () => {
         to: 'start_date',
         includesTime: false,
         colourBy: null,
-        view: null
+        view: null, ...NO_DETAILS
       })
     ).toBe(true)
   })
 
   test('false when the from property is gone', () => {
     expect(
-      offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null, view: null })
+      offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null, view: null, ...NO_DETAILS })
     ).toBe(false)
   })
 
@@ -289,14 +303,14 @@ describe('offersDates', () => {
         to: 'gone_date',
         includesTime: false,
         colourBy: null,
-        view: null
+        view: null, ...NO_DETAILS
       })
     ).toBe(false)
   })
 })
 
 describe('offeredMapping', () => {
-  const mapping = { from: 'due_date', to: null, includesTime: true, colourBy: 'priority', view: null }
+  const mapping = { from: 'due_date', to: null, includesTime: true, colourBy: 'priority', view: null, ...NO_DETAILS }
 
   test('is the mapping itself when the type offers all of it', () => {
     expect(offeredMapping(TASK, mapping)).toBe(mapping)
@@ -311,16 +325,105 @@ describe('offeredMapping', () => {
   })
 
   test("keeps a view the query has, and reads the query's first once it is gone", () => {
-    const query: ObjectType = { ...TASK, query: { typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] } }
-    const viewed = { ...mapping, view: 'v_all' }
+    const query: ObjectType = { ...TASK, query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] } }
+    const viewed = { ...mapping, view: 'v_all', ...NO_DETAILS }
     expect(offeredMapping(query, viewed)).toBe(viewed)
-    expect(offeredMapping(query, { ...viewed, view: 'v_gone' })).toEqual(mapping)
+    expect(offeredMapping(query, { ...viewed, view: 'v_gone', ...NO_DETAILS })).toEqual(mapping)
     expect(offeredMapping(TASK, viewed)).toEqual(mapping)
   })
 })
 
+describe('offeredMapping of Done, Location and the panel', () => {
+  const mapping = {
+    from: 'due_date',
+    to: null,
+    includesTime: false,
+    colourBy: null,
+    view: null,
+    panel: ['project', 'location'],
+    done: 'done',
+    location: 'location'
+  }
+
+  test('is the mapping itself when the type has them all', () => {
+    expect(offeredMapping(TASK, mapping)).toBe(mapping)
+  })
+
+  test('picks no Done or Location once the property picked is gone, keeping the dates', () => {
+    expect(offeredMapping(TASK, { ...mapping, done: 'gone', location: 'gone' })).toEqual({
+      ...mapping,
+      done: null,
+      location: null
+    })
+  })
+
+  test('leaves out of the panel the properties that are gone, keeping the order of the rest', () => {
+    expect(offeredMapping(TASK, { ...mapping, panel: ['gone', 'project', 'location'] })?.panel).toEqual([
+      'project',
+      'location'
+    ])
+  })
+})
+
+describe('mappingIn', () => {
+  const query: ObjectType = {
+    ...TASK,
+    key: 'sp_1:query:q',
+    query: { typeKey: TASK.key, typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
+  }
+  const picked = {
+    from: 'start_date',
+    to: null,
+    includesTime: true,
+    colourBy: 'priority',
+    view: null,
+    panel: ['project'],
+    done: null,
+    location: 'location'
+  }
+
+  test("is the type's entry, or its own mapping", () => {
+    expect(mappingIn({ [TASK.key]: picked }, TASK)).toBe(picked)
+    expect(mappingIn({}, TASK)).toEqual({
+      from: 'due_date',
+      to: null,
+      includesTime: false,
+      colourBy: null,
+      view: null,
+      panel: [],
+      done: 'done',
+      location: null
+    })
+  })
+
+  test("starts a query on its type's panel, Done and Location, and on its own dates", () => {
+    expect(mappingIn({ [TASK.key]: picked }, query)).toEqual({
+      ...mappingIn({}, query),
+      panel: ['project'],
+      done: null,
+      location: 'location'
+    })
+  })
+})
+
+describe('formatNumber', () => {
+  test("writes a number the locale's way", () => {
+    expect(formatNumber(1234.5, 'en')).toBe('1,234.5')
+    expect(formatNumber(1234.5, 'es')).toBe(new Intl.NumberFormat('es').format(1234.5))
+  })
+})
+
 describe('eventHue', () => {
-  const event: CalendarEvent = { id: 'o', title: '', type: TASK.key, space: 'sp_1', rank: 0, date: '2026-09-01', allDay: true }
+  const event: CalendarEvent = {
+    id: 'o',
+    title: '',
+    type: TASK.key,
+    space: 'sp_1',
+    rank: 0,
+    date: '2026-09-01',
+    allDay: true,
+    details: []
+  }
 
   test("is the event's own hue, else its type's, else neutral", () => {
     expect(eventHue({ ...event, category: 'clay' }, TASK)).toBe('clay')
@@ -334,7 +437,7 @@ describe('withDates', () => {
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {
-      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority', view: null }
+      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority', view: null, ...NO_DETAILS }
     })
     expect(task).toEqual({
       ...TASK,
