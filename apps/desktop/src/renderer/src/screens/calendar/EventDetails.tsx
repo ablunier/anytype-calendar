@@ -20,7 +20,7 @@ export interface EventDetailsProps {
   type: ObjectType | undefined
 }
 
-/** One row per property, in the order its type's panel shows them, each named below its value. */
+/** One row per property, in the order its type's panel shows them, each named above its value. */
 export function EventDetails({ event, type }: EventDetailsProps): React.JSX.Element | null {
   if (event.details.length === 0) return null
   return (
@@ -29,10 +29,10 @@ export function EventDetails({ event, type }: EventDetailsProps): React.JSX.Elem
         <div key={detail.key} className="flex items-start gap-10">
           <Icon name={ICONS[detail.kind]} size={16} className="mt-2 shrink-0 text-ink-tertiary" />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <DetailValue detail={detail} space={event.space} />
             <span className="type-caption text-tiny text-ink-tertiary">
               {type ? panelLabel(type, detail.key) : detail.key}
             </span>
+            <DetailValue detail={detail} space={event.space} />
           </div>
         </div>
       ))}
