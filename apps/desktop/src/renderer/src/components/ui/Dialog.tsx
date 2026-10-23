@@ -91,12 +91,12 @@ export function Dialog({
         aria-describedby={description ? `${id}-description` : undefined}
         onClick={(event) => event.stopPropagation()}
         className={[
-          'animate-sheet max-w-full overflow-hidden rounded-sheet border border-line-subtle',
+          'animate-sheet flex max-h-full max-w-full flex-col overflow-hidden rounded-sheet border border-line-subtle',
           'bg-surface-raised shadow-3',
           widthClass[width]
         ].join(' ')}
       >
-        <div className="flex items-start gap-12 px-20 pt-20 pb-12">
+        <div className="flex shrink-0 items-start gap-12 px-20 pt-20 pb-12">
           <div className="flex flex-1 flex-col gap-4">
             <h2 id={`${id}-title`} className="type-heading text-h4 text-ink-primary">
               {title}
@@ -109,13 +109,14 @@ export function Dialog({
           </div>
           <IconButton icon="x" label="Close" onClick={onClose} />
         </div>
-        {children ? <div className="px-20 pb-16">{children}</div> : null}
+        {/* Only the body scrolls, so a tall one keeps its title and footer in view. */}
+        {children ? <div className="min-h-0 overflow-y-auto px-20 pb-16">{children}</div> : null}
         {footer ? (
           /* The system's own Dialog fills this footer with the --stone-025 primitive, which
              the dark theme never re-points — it would stay near-white on a dark sheet. The
              --surface-rail alias resolves to exactly stone-025 in light and to #1f1e1c in
              dark, so this matches the design and survives the theme switch. */
-          <div className="flex justify-end gap-8 border-t border-line-subtle bg-surface-rail px-20 py-12">
+          <div className="flex shrink-0 justify-end gap-8 border-t border-line-subtle bg-surface-rail px-20 py-12">
             {footer}
           </div>
         ) : null}

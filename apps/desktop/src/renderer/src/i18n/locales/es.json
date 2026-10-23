@@ -166,12 +166,7 @@
     "changesApply": "Los cambios se aplican al calendario de inmediato. Un tipo con fecha de fin se dibuja como un rango.",
     "hiddenTypesCount_one": "oculto · {{count}} tipo",
     "hiddenTypesCount_other": "oculto · {{count}} tipos",
-    "time": "Hora",
-    "fromDateFor": "Fecha de inicio de {{label}}",
-    "toDateFor": "Fecha de fin de {{label}}",
-    "typeIncludesTime": "Las fechas de {{label}} incluyen una hora",
     "colour": "Color",
-    "colourFor": "Color de {{label}}",
     "typeColour": "Color del tipo",
     "noColourProperty": "Añade una propiedad de selección a este tipo en Anytype para colorear por ella",
     "session": {
@@ -194,7 +189,6 @@
       "revokeTitle": "Revocar clave de API",
       "revokeInstructions": "Para revocarla en todos los espacios de la cuenta, abre la aplicación de Anytype, ve a {{breadcrumb}} y revoca Calendar for Anytype. Luego cierra sesión aquí. Reconectar implica repetir el proceso del código de 4 dígitos."
     },
-    "viewFor": "Vista de {{label}}",
     "queriesNeedV2": "Las consultas aparecen aquí cuando Anytype sirve la versión 2 de su API, como hacen las versiones más recientes de la aplicación.",
     "about": {
       "heading": "Acerca de",
@@ -202,17 +196,8 @@
     },
     "done": "Hecho",
     "location": "Ubicación",
-    "panel": "Panel",
-    "doneFor": "Propiedad de hecho para {{label}}",
-    "locationFor": "Propiedad de ubicación para {{label}}",
-    "panelFor": "Propiedades que muestra el panel de detalle para {{label}}:",
-    "panelNothing": "Nada más",
-    "panelCount_one": "{{count}} propiedad",
-    "panelCount_other": "{{count}} propiedades",
-    "panelTitle": "Panel de detalle de {{label}}",
-    "panelDescription": "Elige qué muestra el panel debajo de las fechas, en este orden. Arrastra para reordenar o usa las flechas.",
+    "panelDescription": "Marca lo que muestra el panel debajo de las fechas, en este orden. Arrastra para reordenar o usa las flechas.",
     "panelEmpty": "Este tipo no tiene otra propiedad que el panel pueda mostrar.",
-    "panelClose": "Hecho",
     "moveUp": "Subir {{label}}",
     "moveDown": "Bajar {{label}}",
     "panelFormat": {
@@ -224,7 +209,22 @@
       "email": "Correo",
       "phone": "Teléfono",
       "objects": "Objetos"
-    }
+    },
+    "editType": "Editar",
+    "typeSettingsClose": "Hecho",
+    "datesSection": "Fechas",
+    "appearanceSection": "Apariencia",
+    "panelSection": "Panel de detalle",
+    "includesTime": "Las fechas incluyen hora",
+    "includesTimeDescription": "Desactivado, cada objeto se dibuja como un evento de todo el día.",
+    "panelShown": "También se muestra",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "con hora",
+    "summaryAllDay": "todo el día",
+    "summaryView": "vista {{view}}",
+    "summaryColour": "coloreado por {{property}}",
+    "summaryPanel_one": "{{count}} propiedad en el panel",
+    "summaryPanel_other": "{{count}} propiedades en el panel"
   },
   "calendar": {
     "couldntRead": "No se pudo leer {{span}}",

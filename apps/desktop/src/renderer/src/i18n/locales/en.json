@@ -166,12 +166,7 @@
     "changesApply": "Changes apply to the grid immediately. A type with a to date is drawn as a range.",
     "hiddenTypesCount_one": "hidden · {{count}} type",
     "hiddenTypesCount_other": "hidden · {{count}} types",
-    "time": "Time",
-    "fromDateFor": "From date for {{label}}",
-    "toDateFor": "To date for {{label}}",
-    "typeIncludesTime": "{{label}} dates include a time",
     "colour": "Colour",
-    "colourFor": "Colour for {{label}}",
     "typeColour": "Type colour",
     "noColourProperty": "Add a select property to this type in Anytype to colour by it",
     "session": {
@@ -194,7 +189,6 @@
       "revokeTitle": "Revoke API key",
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     },
-    "viewFor": "View of {{label}}",
     "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do.",
     "about": {
       "heading": "About",
@@ -202,17 +196,8 @@
     },
     "done": "Done",
     "location": "Location",
-    "panel": "Panel",
-    "doneFor": "Done property for {{label}}",
-    "locationFor": "Location property for {{label}}",
-    "panelFor": "Properties the detail panel shows for {{label}}:",
-    "panelNothing": "Nothing more",
-    "panelCount_one": "{{count}} property",
-    "panelCount_other": "{{count}} properties",
-    "panelTitle": "Detail panel for {{label}}",
-    "panelDescription": "Pick what the panel shows below the dates, in this order. Drag to reorder, or use the arrows.",
+    "panelDescription": "Tick what the panel shows below the dates, in this order. Drag to reorder, or use the arrows.",
     "panelEmpty": "This type has no other property the panel can show.",
-    "panelClose": "Done",
     "moveUp": "Move {{label}} up",
     "moveDown": "Move {{label}} down",
     "panelFormat": {
@@ -224,7 +209,22 @@
       "email": "Email",
       "phone": "Phone",
       "objects": "Objects"
-    }
+    },
+    "editType": "Edit",
+    "typeSettingsClose": "Done",
+    "datesSection": "Dates",
+    "appearanceSection": "Appearance",
+    "panelSection": "Detail panel",
+    "includesTime": "Dates include a time",
+    "includesTimeDescription": "Off draws each object as an all-day event.",
+    "panelShown": "Also shown",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "with time",
+    "summaryAllDay": "all day",
+    "summaryView": "view {{view}}",
+    "summaryColour": "coloured by {{property}}",
+    "summaryPanel_one": "{{count}} property in the panel",
+    "summaryPanel_other": "{{count}} properties in the panel"
   },
   "calendar": {
     "couldntRead": "Couldn't read {{span}}",

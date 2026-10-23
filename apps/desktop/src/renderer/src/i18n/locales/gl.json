@@ -166,12 +166,7 @@
     "changesApply": "Os cambios aplícanse ao calendario de inmediato. Un tipo con data de fin debúxase como un intervalo.",
     "hiddenTypesCount_one": "oculto · {{count}} tipo",
     "hiddenTypesCount_other": "oculto · {{count}} tipos",
-    "time": "Hora",
-    "fromDateFor": "Data de inicio de {{label}}",
-    "toDateFor": "Data de fin de {{label}}",
-    "typeIncludesTime": "As datas de {{label}} inclúen unha hora",
     "colour": "Cor",
-    "colourFor": "Cor de {{label}}",
     "typeColour": "Cor do tipo",
     "noColourProperty": "Engade unha propiedade de selección a este tipo en Anytype para colorear por ela",
     "session": {
@@ -194,7 +189,6 @@
       "revokeTitle": "Revogar clave de API",
       "revokeInstructions": "Para revogala en todos os espazos da conta, abre a aplicación de Anytype, vai a {{breadcrumb}} e revoga Calendar for Anytype. Despois pecha sesión aquí. Reconectar implica repetir o proceso do código de 4 díxitos."
     },
-    "viewFor": "Vista de {{label}}",
     "queriesNeedV2": "As consultas aparecen aquí cando Anytype serve a versión 2 da súa API, como fan as versións máis recentes da aplicación.",
     "about": {
       "heading": "Acerca de",
@@ -202,17 +196,8 @@
     },
     "done": "Feito",
     "location": "Localización",
-    "panel": "Panel",
-    "doneFor": "Propiedade de feito para {{label}}",
-    "locationFor": "Propiedade de localización para {{label}}",
-    "panelFor": "Propiedades que amosa o panel de detalle para {{label}}:",
-    "panelNothing": "Nada máis",
-    "panelCount_one": "{{count}} propiedade",
-    "panelCount_other": "{{count}} propiedades",
-    "panelTitle": "Panel de detalle de {{label}}",
-    "panelDescription": "Escolle que amosa o panel debaixo das datas, nesta orde. Arrastra para reordenar ou usa as frechas.",
+    "panelDescription": "Marca o que amosa o panel debaixo das datas, nesta orde. Arrastra para reordenar ou usa as frechas.",
     "panelEmpty": "Este tipo non ten outra propiedade que o panel poida amosar.",
-    "panelClose": "Feito",
     "moveUp": "Subir {{label}}",
     "moveDown": "Baixar {{label}}",
     "panelFormat": {
@@ -224,7 +209,22 @@
       "email": "Correo",
       "phone": "Teléfono",
       "objects": "Obxectos"
-    }
+    },
+    "editType": "Editar",
+    "typeSettingsClose": "Feito",
+    "datesSection": "Datas",
+    "appearanceSection": "Aparencia",
+    "panelSection": "Panel de detalle",
+    "includesTime": "As datas inclúen hora",
+    "includesTimeDescription": "Desactivado, cada obxecto debúxase como un evento de todo o día.",
+    "panelShown": "Tamén se amosa",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "con hora",
+    "summaryAllDay": "todo o día",
+    "summaryView": "vista {{view}}",
+    "summaryColour": "coloreado por {{property}}",
+    "summaryPanel_one": "{{count}} propiedade no panel",
+    "summaryPanel_other": "{{count}} propiedades no panel"
   },
   "calendar": {
     "couldntRead": "Non se puido ler {{span}}",

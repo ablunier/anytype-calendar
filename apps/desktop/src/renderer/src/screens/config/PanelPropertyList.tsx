@@ -1,22 +1,20 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ObjectType, PanelProperty } from '@renderer/types'
-import { Button, Checkbox, Dialog, IconButton } from '@renderer/components/ui'
+import { Checkbox, IconButton } from '@renderer/components/ui'
 
-export interface PanelDialogProps {
+export interface PanelPropertyListProps {
   type: ObjectType
-  open: boolean
   /** Keys, in the order the panel shows them. */
   panel: string[]
   onChange: (panel: string[]) => void
-  onClose: () => void
 }
 
 /**
  * The properties shown come first, in their order, then the rest in the type's. Only the shown
  * ones move: by dragging, or with their arrow buttons from the keyboard.
  */
-export function PanelDialog({ type, open, panel, onChange, onClose }: PanelDialogProps): React.JSX.Element {
+export function PanelPropertyList({ type, panel, onChange }: PanelPropertyListProps): React.JSX.Element {
   const { t } = useTranslation()
   const [dragged, setDragged] = useState<number | null>(null)
   const shown = panel.flatMap((key) => type.panelProps.filter((prop) => prop.key === key))
@@ -85,26 +83,12 @@ export function PanelDialog({ type, open, panel, onChange, onClose }: PanelDialo
     </li>
   )
 
-  return (
-    <Dialog
-      open={open}
-      title={t('config.panelTitle', { label: type.label })}
-      description={t('config.panelDescription')}
-      onClose={onClose}
-      footer={
-        <Button variant="primary" size="md" onClick={onClose}>
-          {t('config.panelClose')}
-        </Button>
-      }
-    >
-      {type.panelProps.length === 0 ? (
-        <p className="type-body text-small text-ink-tertiary">{t('config.panelEmpty')}</p>
-      ) : (
-        <ul className="flex max-h-[50vh] flex-col overflow-auto">
-          {shown.map((prop, index) => row(prop, index))}
-          {rest.map((prop) => row(prop, null))}
-        </ul>
-      )}
-    </Dialog>
+  return type.panelProps.length === 0 ? (
+    <p className="type-body text-small text-ink-tertiary">{t('config.panelEmpty')}</p>
+  ) : (
+    <ul className="flex flex-col">
+      {shown.map((prop, index) => row(prop, index))}
+      {rest.map((prop) => row(prop, null))}
+    </ul>
   )
 }
