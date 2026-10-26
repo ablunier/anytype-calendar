@@ -12,6 +12,11 @@ export type FeedsAddFailure = FeedsReadFailure | { failure: 'invalid-url' } | { 
 
 export type FeedsAddOutcome = { ok: true; id: string } | ({ ok: false } & FeedsAddFailure)
 
+/** Why an edit was refused: nothing of it is saved. */
+export type FeedsEditFailure = FeedsReadFailure | { failure: 'invalid-url' }
+
+export type FeedsEditOutcome = { ok: true } | ({ ok: false } & FeedsEditFailure)
+
 export interface FeedsReadStatus {
   /**
    * Epoch milliseconds of the last good read, the one whose events are drawn; at launch, the

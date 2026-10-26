@@ -340,7 +340,13 @@ export function composeServices(): AppServices {
     save: saveFeedsSubscriptions,
     newId: () => randomBytes(8).toString('hex')
   })
-  const editFeedsSubscription = new EditFeedsSubscription(saveFeedsSubscriptions)
+  const editFeedsSubscription = new EditFeedsSubscription({
+    gateway: feedsGateway,
+    parser: feedsParser,
+    cache: feedsStorage.cache,
+    store: feedsState,
+    save: saveFeedsSubscriptions
+  })
   const removeFeedsSubscription = new RemoveFeedsSubscription({
     save: saveFeedsSubscriptions,
     cache: feedsStorage.cache

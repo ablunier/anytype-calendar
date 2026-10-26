@@ -96,7 +96,7 @@ function setup({
     load: new LoadFeeds({ repository, cache, parser, store }),
     refresh: new RefreshFeeds({ gateway, parser, cache, store, now }),
     add: new AddFeedsSubscription({ gateway, parser, cache, store, save, newId: () => `new${++ids}`, now }),
-    edit: new EditFeedsSubscription(save),
+    edit: new EditFeedsSubscription({ gateway, parser, cache, store, save, now }),
     remove: new RemoveFeedsSubscription({ save, cache }),
     reorder: new ReorderFeedsSubscriptions(save),
     show: new ShowFeedsWindow(store)
@@ -317,6 +317,62 @@ describe('editing the subscriptions', () => {
     await edit.execute({ id: 'b', name: 'Family', colour: 'pink' })
     expect(stored()).toEqual([subscription('a'), subscription('b', { name: 'Family', colour: 'pink' })])
     expect(store.get().subscriptions[1]).toMatchObject({ name: 'Family', colour: 'pink' })
+  })
+
+  test('points one at another address, read first, and draws and caches what it holds', async () => {
+    const { stored, load, edit, store, show, cached } = setup({
+      saved: [subscription('a')],
+      copies: { a: { text: feed([{ title: 'Old' }]), readAt: 1 } },
+      answers: { 'https://example.com/moved.ics': { ok: true, text: feed([{ title: 'Moved' }]) } }
+    })
+    show.execute(WINDOW)
+    await load.execute()
+    await expect(edit.execute({ id: 'a', url: 'webcal://example.com/moved.ics' })).resolves.toEqual({ ok: true })
+    expect(stored()).toEqual([subscription('a', { url: 'https://example.com/moved.ics' })])
+    expect(store.get().events.map(({ title }) => title)).toEqual(['Moved'])
+    expect(store.get().subscriptions[0]?.status).toEqual({ readAt: 9_000, reading: false, error: null })
+    expect(cached.get('a')).toEqual({ text: feed([{ title: 'Moved' }]), readAt: 9_000 })
+  })
+
+  test.each([
+    ['an address that is not one', 'example.com/x.ics', { ok: false, failure: 'invalid-url' }],
+    ['one that does not answer', 'https://example.com/down.ics', { ok: false, failure: 'unreachable' }],
+    ['one that is not a calendar', 'https://example.com/page', { ok: false, failure: 'not-calendar' }]
+  ])('refuses %s, keeping the address and the rest of the edit unsaved', async (_, url, outcome) => {
+    const { stored, load, edit, repository } = setup({
+      saved: [subscription('a')],
+      answers: { 'https://example.com/page': { ok: true, text: '<!doctype html>' } }
+    })
+    await load.execute()
+    await expect(edit.execute({ id: 'a', name: 'Renamed', url })).resolves.toEqual(outcome)
+    expect(stored()).toEqual([subscription('a')])
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  test('does not read the address again when it is the one it has', async () => {
+    const { load, edit, gateway } = setup({ saved: [subscription('a')] })
+    await load.execute()
+    await expect(edit.execute({ id: 'a', url: ' https://example.com/a.ics ' })).resolves.toEqual({ ok: true })
+    expect(gateway.fetch).not.toHaveBeenCalled()
+  })
+
+  test('drops what a refresh read from the address it had before', async () => {
+    let answerOld: (result: FeedsFetchResult) => void = () => undefined
+    const { store, load, refresh, edit, show } = setup({
+      saved: [subscription('a')],
+      answers: {
+        'https://example.com/a.ics': new Promise((resolve) => (answerOld = resolve)),
+        'https://example.com/new.ics': { ok: true, text: feed([{ title: 'New' }]) }
+      }
+    })
+    show.execute(WINDOW)
+    await load.execute()
+    const refreshing = refresh.execute()
+    await edit.execute({ id: 'a', url: 'https://example.com/new.ics' })
+    answerOld({ ok: true, text: feed([{ title: 'Old' }]) })
+    await refreshing
+    expect(store.get().events.map(({ title }) => title)).toEqual(['New'])
+    expect(store.get().subscriptions[0]?.status.reading).toBe(false)
   })
 
   test('removes one along with its cached copy', async () => {

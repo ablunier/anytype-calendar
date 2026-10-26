@@ -51,6 +51,8 @@ export class RefreshFeeds {
     this.#store.update(id, { status: { ...this.#store.status(id), reading: true } })
     try {
       const result = await this.#gateway.fetch(url)
+      // Pointed at another address meanwhile: that one was read when it was set.
+      if (this.#store.subscription(id)?.url !== url) return this.#settle(id)
       if (!result.ok) return this.#fail(id, feedsFetchFailureOf(result))
       const calendar = this.#parser.parse(result.text)
       if (!calendar) return this.#fail(id, { failure: 'not-calendar' })
@@ -63,6 +65,10 @@ export class RefreshFeeds {
     } finally {
       this.#reading.delete(id)
     }
+  }
+
+  #settle(id: string): void {
+    this.#store.update(id, { status: { ...this.#store.status(id), reading: false } })
   }
 
   #fail(id: string, failure: FeedsReadFailure): void {
