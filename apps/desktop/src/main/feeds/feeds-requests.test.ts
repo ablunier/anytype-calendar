@@ -9,6 +9,15 @@ describe('adding', () => {
     })
   })
 
+  test('keeps a colour, and refuses one that is not of the ten', () => {
+    expect(toFeedsAddRequest({ url: 'https://example.com/a.ics', name: '', colour: 'lime' })).toEqual({
+      url: 'https://example.com/a.ics',
+      name: '',
+      colour: 'lime'
+    })
+    expect(toFeedsAddRequest({ url: 'https://example.com/a.ics', name: '', colour: 'chartreuse' })).toBeNull()
+  })
+
   test('refuses what is not text, or an address far too long', () => {
     expect(toFeedsAddRequest({ url: 'https://example.com/a.ics' })).toBeNull()
     expect(toFeedsAddRequest({ url: 42, name: 'X' })).toBeNull()

@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FEEDS_COLOURS, isFeedsColour, type FeedsColour } from '@anytype-calendar/feeds/domain'
+import { FEEDS_COLOURS, isFeedsColour, nextFeedsColour, type FeedsColour } from '@anytype-calendar/feeds/domain'
 import type { FeedsAddResult, FeedsEditRequest } from '@shared/ipc'
 import type { FeedSource } from '@renderer/types'
 import { Button, Card, catBg, Icon, IconButton, Input } from '@renderer/components/ui'
@@ -12,7 +12,7 @@ export interface CalendarsSectionProps {
   /** In the user's order: the sidebar's, and the order events sharing a slot are drawn in. */
   feeds: FeedSource[]
   /** Resolves why the feed was refused, or rejects when it could not be saved. */
-  onAdd: (url: string, name: string) => Promise<FeedsAddResult>
+  onAdd: (url: string, name: string, colour: FeedsColour) => Promise<FeedsAddResult>
   onEdit: (request: FeedsEditRequest) => Promise<void>
   onRemove: (id: string) => Promise<void>
   onReorder: (ids: string[]) => Promise<void>
@@ -112,7 +112,10 @@ export function CalendarsSection({
             {t('feeds.changeFailed')}
           </span>
         ) : null}
-        <AddFeedForm onAdd={onAdd} />
+        <AddFeedForm
+          onAdd={onAdd}
+          taken={feeds.flatMap(({ colour }) => (isFeedsColour(colour) ? [colour] : []))}
+        />
       </Card>
     </section>
   )
@@ -257,27 +260,7 @@ function FeedEditor({ feed, onCancel, onSave }: FeedEditorProps): React.JSX.Elem
         onChange={setName}
         {...(named ? {} : { error: t('feeds.failure.invalidName') })}
       />
-      <fieldset className="m-0 flex flex-col gap-6 border-0 p-0">
-        <legend className="mb-6 type-ui text-small text-ink-secondary">{t('config.colour')}</legend>
-        <div className="flex flex-wrap gap-6">
-          {FEEDS_COLOURS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="radio"
-              aria-checked={option === colour}
-              aria-label={t(`feeds.colours.${option}`)}
-              onClick={() => setColour(option)}
-              className={[
-                'flex size-24 items-center justify-center rounded-pill border-2',
-                option === colour ? 'border-line-accent' : 'border-transparent'
-              ].join(' ')}
-            >
-              <span className={['size-16 rounded-pill', catBg[hueOf(option)]].join(' ')} />
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <ColourPicker colour={colour} onChange={setColour} />
       <div className="flex justify-end gap-8">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('common.cancel')}
@@ -290,10 +273,51 @@ function FeedEditor({ feed, onCancel, onSave }: FeedEditorProps): React.JSX.Elem
   )
 }
 
-function AddFeedForm({ onAdd }: Pick<CalendarsSectionProps, 'onAdd'>): React.JSX.Element {
+interface ColourPickerProps {
+  colour: FeedsColour
+  onChange: (colour: FeedsColour) => void
+}
+
+/** The ten hues types are drawn in, one of which a subscription takes. */
+function ColourPicker({ colour, onChange }: ColourPickerProps): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <fieldset className="m-0 flex flex-col gap-6 border-0 p-0">
+      <legend className="mb-6 type-ui text-small text-ink-secondary">{t('config.colour')}</legend>
+      <div role="radiogroup" className="flex flex-wrap gap-6">
+        {FEEDS_COLOURS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={option === colour}
+            aria-label={t(`feeds.colours.${option}`)}
+            onClick={() => onChange(option)}
+            className={[
+              'flex size-24 items-center justify-center rounded-pill border-2',
+              option === colour ? 'border-line-accent' : 'border-transparent'
+            ].join(' ')}
+          >
+            <span className={['size-16 rounded-pill', catBg[hueOf(option)]].join(' ')} />
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+interface AddFeedFormProps extends Pick<CalendarsSectionProps, 'onAdd'> {
+  /** The colours the subscriptions already have, so the form offers one none has yet. */
+  taken: FeedsColour[]
+}
+
+function AddFeedForm({ onAdd, taken }: AddFeedFormProps): React.JSX.Element {
   const { t } = useTranslation()
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
+  // Null until one is picked: the colour no subscription has yet, which changes as they do.
+  const [picked, setPicked] = useState<FeedsColour | null>(null)
+  const colour = picked ?? nextFeedsColour(taken)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -301,10 +325,11 @@ function AddFeedForm({ onAdd }: Pick<CalendarsSectionProps, 'onAdd'>): React.JSX
     setAdding(true)
     setError(null)
     try {
-      const result = await onAdd(url, name)
+      const result = await onAdd(url, name, colour)
       if (result.ok) {
         setUrl('')
         setName('')
+        setPicked(null)
       } else {
         setError(feedFailureText(t, result))
       }
@@ -335,6 +360,7 @@ function AddFeedForm({ onAdd }: Pick<CalendarsSectionProps, 'onAdd'>): React.JSX
         {...(error === null ? {} : { error })}
       />
       <Input label={t('feeds.nameOptional')} value={name} onChange={setName} placeholder={t('feeds.namePlaceholder')} />
+      <ColourPicker colour={colour} onChange={setPicked} />
       <div className="flex justify-end">
         <Button variant="secondary" size="sm" type="submit" iconLeft="plus" loading={adding} disabled={url.trim() === ''}>
           {t('feeds.add')}

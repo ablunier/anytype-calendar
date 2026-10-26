@@ -7,11 +7,12 @@ const MAX_URL_LENGTH = 8192
 /* Renderer input is untrusted: these are written to disk, and an address is fetched. Each is
  * null unless `value` is well formed, and nothing but its fields is passed on. */
 
+/** A colour, if given, must be one of the ten. */
 export function toFeedsAddRequest(value: unknown): FeedsAddRequest | null {
-  const { url, name } = fieldsOf(value)
-  return typeof url === 'string' && url.length <= MAX_URL_LENGTH && typeof name === 'string'
-    ? { url, name }
-    : null
+  const { url, name, colour } = fieldsOf(value)
+  if (typeof url !== 'string' || url.length > MAX_URL_LENGTH || typeof name !== 'string') return null
+  if (colour === undefined) return { url, name }
+  return isFeedsColour(colour) ? { url, name, colour } : null
 }
 
 /** A name, if given, must be one; a colour, one of the ten. */
