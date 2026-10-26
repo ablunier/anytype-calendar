@@ -260,7 +260,9 @@ Standard electron-vite three-process layout:
   `<userData>/feeds.json`, in order, each URL sealed with `safeStorage` (a secret ICS address
   is a credential), and the last good copy of each in `<userData>/feeds-cache/<id>.json`, both
   owner-only; without OS encryption both stay in memory, like the key. A `FeedsSnapshot` names
-  a subscription only by host, never its URL. The renderer merges the feeds' events into the
+  a subscription only by host, never its URL, so Settings edits an address with an empty field
+  that sends one only to replace it; a new address, like an added one, is read before it is
+  saved, and a refresh still reading the old one drops what it reads. The renderer merges the feeds' events into the
   span's (`lib/feeds.ts`, keyed by `feedSourceKey`), and they are never dragged, created or
   ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
   `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
