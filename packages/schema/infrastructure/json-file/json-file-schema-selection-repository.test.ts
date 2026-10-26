@@ -1,9 +1,12 @@
 import { expect, test } from 'vitest'
-import type { SchemaSelection, SchemaTypeChoice } from '../../domain'
+import type { SchemaQueryChoice, SchemaSelection, SchemaTypeChoice } from '../../domain'
 import {
   JsonFileSchemaSelectionRepository,
   type SchemaSelectionFile
 } from './json-file-schema-selection-repository'
+
+/** How a choice saved before `panel`, `done` and `location` existed reads. */
+const DRAWN_BEFORE = { panel: [], done: 'done', location: 'location' }
 
 const SELECTION: SchemaSelection = {
   spaceIds: ['sp_1'],
@@ -14,7 +17,10 @@ const SELECTION: SchemaSelection = {
       from: 'start_date',
       to: 'finish_date',
       includesTime: false,
-      colourBy: 'status'
+      colourBy: 'status',
+      panel: ['priority', 'linked_projects'],
+      done: null,
+      location: 'venue'
     }
   ],
   queries: [
@@ -25,7 +31,10 @@ const SELECTION: SchemaSelection = {
       from: 'due_date',
       to: null,
       includesTime: true,
-      colourBy: null
+      colourBy: null,
+      panel: [],
+      done: 'done',
+      location: null
     }
   ]
 }
@@ -50,26 +59,48 @@ test('loads what it saved', async () => {
 test('writes the selection under a format version', async () => {
   const { repository, contents } = setup()
   await repository.save(SELECTION)
-  expect(JSON.parse(contents() ?? '')).toEqual({ version: 4, selection: SELECTION })
+  expect(JSON.parse(contents() ?? '')).toEqual({ version: 5, selection: SELECTION })
 })
 
+const [{ colourBy: _, panel: _panel, done: _done, location: _location, ...V2_CHOICE }] =
+  SELECTION.types as [SchemaTypeChoice]
+const V3_CHOICE = { ...V2_CHOICE, colourBy: 'status' }
+
 test('loads a version-2 file as colouring by nothing, and choosing no query', async () => {
-  const [{ colourBy: _, ...choice }] = SELECTION.types as [SchemaTypeChoice]
   const { repository } = setup(
-    JSON.stringify({ version: 2, selection: { spaceIds: SELECTION.spaceIds, types: [choice] } })
+    JSON.stringify({ version: 2, selection: { spaceIds: SELECTION.spaceIds, types: [V2_CHOICE] } })
   )
   await expect(repository.load()).resolves.toEqual({
     ...SELECTION,
-    types: [{ ...choice, colourBy: null }],
+    types: [{ ...V2_CHOICE, colourBy: null, ...DRAWN_BEFORE }],
     queries: []
   })
 })
 
 test('loads a version-3 file as choosing no query', async () => {
   const { repository } = setup(
-    JSON.stringify({ version: 3, selection: { spaceIds: SELECTION.spaceIds, types: SELECTION.types } })
+    JSON.stringify({ version: 3, selection: { spaceIds: SELECTION.spaceIds, types: [V3_CHOICE] } })
   )
-  await expect(repository.load()).resolves.toEqual({ ...SELECTION, queries: [] })
+  await expect(repository.load()).resolves.toEqual({
+    ...SELECTION,
+    types: [{ ...V3_CHOICE, ...DRAWN_BEFORE }],
+    queries: []
+  })
+})
+
+test("loads a version-4 file as showing nothing more, with Anytype's own Done and Location", async () => {
+  const { panel: _p, done: _d, location: _l, ...query } = SELECTION.queries[0] as SchemaQueryChoice
+  const { repository } = setup(
+    JSON.stringify({
+      version: 4,
+      selection: { spaceIds: SELECTION.spaceIds, types: [V3_CHOICE], queries: [query] }
+    })
+  )
+  await expect(repository.load()).resolves.toEqual({
+    ...SELECTION,
+    types: [{ ...V3_CHOICE, ...DRAWN_BEFORE }],
+    queries: [{ ...query, ...DRAWN_BEFORE }]
+  })
 })
 
 test('loads no selection when there is no file', async () => {
@@ -81,7 +112,7 @@ test.each([
   ['not an object', '"selection"'],
   ['another version', JSON.stringify({ version: 1, selection: SELECTION })],
   ['no version', JSON.stringify({ selection: SELECTION })],
-  ['not a selection', JSON.stringify({ version: 4, selection: { spaceIds: 'sp_1' } })]
+  ['not a selection', JSON.stringify({ version: 5, selection: { spaceIds: 'sp_1' } })]
 ])('loads no selection from a file that is %s', async (_, text) => {
   await expect(setup(text).repository.load()).resolves.toBeNull()
 })

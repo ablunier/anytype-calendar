@@ -280,7 +280,7 @@ export interface CalendarApi {
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */
     openObject(objectId: string, spaceId: string): Promise<void>
-    /** Opens a web page in the browser; rejects for anything but `http` and `https`. */
-    openLink(url: string): Promise<void>
+    /** Opens a web page in the browser, or a `mailto:` or `tel:` link in its app. Rejects any other link. */
+    openLink(link: string): Promise<void>
   }
 }

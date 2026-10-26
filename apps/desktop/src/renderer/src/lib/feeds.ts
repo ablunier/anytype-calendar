@@ -80,6 +80,8 @@ function calendarEventFor(
     ...(end === null ? {} : { until: localDate(end), ...(allDay ? {} : { end: localTime(end) }) }),
     ...(location === undefined ? {} : { location }),
     category: hueOf(colour),
+    // Its panel draws the feed's own fields: a feed has no properties for a type to pick.
+    details: [],
     feed: {
       calendar: name,
       ...(description === undefined ? {} : { description }),

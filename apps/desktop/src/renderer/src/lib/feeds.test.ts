@@ -89,6 +89,7 @@ describe('feedEventsFor', () => {
         date: '2026-09-11',
         allDay: true,
         category: 'teal',
+        details: [],
         feed: { calendar: 'Holidays' }
       },
       {
@@ -104,6 +105,7 @@ describe('feedEventsFor', () => {
         allDay: false,
         location: 'Room 2',
         category: 'plum',
+        details: [],
         feed: { calendar: 'Team', description: 'Notes', url: 'https://example.com/sync' }
       }
     ])
@@ -119,6 +121,7 @@ describe('mergedEvents', () => {
     rank: 0,
     date,
     allDay: time === undefined,
+    details: [],
     ...(time === undefined ? {} : { time })
   })
 

@@ -2,6 +2,7 @@ import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-v1/infrastru
 import type {
   EventsGateway,
   EventsGatewayResult,
+  EventsLinkedObject,
   EventsObjectRef,
   EventsSource,
   EventsWindow
@@ -24,9 +25,22 @@ export class AnytypeEventsGateway implements EventsGateway {
     source: EventsSource,
     window: EventsWindow
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
+    const gateway = await this.#pick(apiKey)
+    return gateway ? gateway.listObjects(apiKey, source, window) : { ok: false, failure: 'unauthorized' }
+  }
+
+  async listLinkedObjects(
+    apiKey: string,
+    spaceId: string,
+    ids: readonly string[]
+  ): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
+    const gateway = await this.#pick(apiKey)
+    return gateway ? gateway.listLinkedObjects(apiKey, spaceId, ids) : { ok: false, failure: 'unauthorized' }
+  }
+
+  async #pick(apiKey: string): Promise<EventsGateway | null> {
     const probed = await this.#probe.probe(apiKey)
-    if (!probed.ok) return { ok: false, failure: 'unauthorized' }
-    const gateway = probed.dialect === 'v2' ? this.#v2 : this.#v1
-    return gateway.listObjects(apiKey, source, window)
+    if (!probed.ok) return null
+    return probed.dialect === 'v2' ? this.#v2 : this.#v1
   }
 }

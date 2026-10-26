@@ -185,7 +185,7 @@ const api: CalendarApi = {
   shell: {
     openObject: (objectId, spaceId) =>
       ipcRenderer.invoke(IpcChannel.shellOpenObject, objectId, spaceId),
-    openLink: (url) => ipcRenderer.invoke(IpcChannel.shellOpenLink, url)
+    openLink: (link) => ipcRenderer.invoke(IpcChannel.shellOpenLink, link)
   }
 }
 

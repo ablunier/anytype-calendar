@@ -1,4 +1,5 @@
 import type { EventsObjectRef } from '../gateways/events-gateway'
+import { toEventsDetails, type EventsDetail, type EventsLinkedObject } from './detail'
 import type { EventsWindow } from './window'
 import { eventsSourceKey, type EventsSource, type EventsSourceKey } from './source'
 
@@ -23,9 +24,13 @@ export interface EventsDatedObject {
   location?: string
   /** Anytype's colour name of the option the source colours by; left off to draw the type's. */
   colour?: string
+  /** The source's panel properties the object has a value for, in the panel's order. */
+  details: EventsDetail[]
 }
 
 /**
+ * `linked` names the objects and members the object's details link to, by id.
+ *
  * Anytype's local API does not say whether a date property includes a time — a date set with
  * no time is stored the same way as one set to midnight — so `allDay` follows the source's
  * `includesTime`, which the user states when choosing the type, rather than the instant
@@ -35,11 +40,12 @@ export interface EventsDatedObject {
  * range running backwards: the object shows on its From date alone.
  */
 export function toEventsDatedObject(
-  { id, title, start, end, done, location, option }: EventsObjectRef,
+  { id, title, start, end, done, location, option, details = [] }: EventsObjectRef,
   source: EventsSource,
-  rank: number
+  rank: number,
+  linked: (id: string) => EventsLinkedObject | undefined = () => undefined
 ): EventsDatedObject {
-  const { spaceId, includesTime, colourBy } = source
+  const { spaceId, includesTime, colourBy, panel = [] } = source
   const kept = end !== null && end >= start ? end : null
   const object: EventsDatedObject = {
     id,
@@ -49,7 +55,8 @@ export function toEventsDatedObject(
     title,
     start,
     end: kept,
-    allDay: !includesTime
+    allDay: !includesTime,
+    details: toEventsDetails(details, panel, linked)
   }
   if (done !== undefined) object.done = done
   if (location !== undefined && location !== '') object.location = location

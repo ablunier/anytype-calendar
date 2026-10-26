@@ -166,12 +166,7 @@
     "changesApply": "Changes apply to the grid immediately. A type with a to date is drawn as a range.",
     "hiddenTypesCount_one": "hidden · {{count}} type",
     "hiddenTypesCount_other": "hidden · {{count}} types",
-    "time": "Time",
-    "fromDateFor": "From date for {{label}}",
-    "toDateFor": "To date for {{label}}",
-    "typeIncludesTime": "{{label}} dates include a time",
     "colour": "Colour",
-    "colourFor": "Colour for {{label}}",
     "typeColour": "Type colour",
     "noColourProperty": "Add a select property to this type in Anytype to colour by it",
     "session": {
@@ -194,12 +189,43 @@
       "revokeTitle": "Revoke API key",
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     },
-    "viewFor": "View of {{label}}",
     "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do.",
     "about": {
       "heading": "About",
       "version": "Version"
-    }
+    },
+    "done": "Done",
+    "location": "Location",
+    "panelDescription": "Tick what the panel shows below the dates, in this order. Drag to reorder, or use the arrows.",
+    "panelEmpty": "This type has no other property the panel can show.",
+    "moveUp": "Move {{label}} up",
+    "moveDown": "Move {{label}} down",
+    "panelFormat": {
+      "text": "Text",
+      "number": "Number",
+      "select": "Select",
+      "multi_select": "Multi-select",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Phone",
+      "objects": "Objects"
+    },
+    "customizeType": "Customize",
+    "customizeTypeFor": "Customize {{label}}",
+    "typeSettingsClose": "Done",
+    "datesSection": "Dates",
+    "appearanceSection": "Appearance",
+    "panelSection": "Detail panel",
+    "includesTime": "Dates include a time",
+    "includesTimeDescription": "Off draws each object as an all-day event.",
+    "panelShown": "Also shown",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "with time",
+    "summaryAllDay": "all day",
+    "summaryView": "view {{view}}",
+    "summaryColour": "coloured by {{property}}",
+    "summaryPanel_one": "{{count}} property in the panel",
+    "summaryPanel_other": "{{count}} properties in the panel"
   },
   "calendar": {
     "couldntRead": "Couldn't read {{span}}",
@@ -247,7 +273,9 @@
       "done": "Done",
       "readOnlyNotice": "Edit the object in Anytype and it updates here on the next read.",
       "editNotice": "Drag it on the calendar to change its dates. Edit anything else in Anytype, and it updates here on the next read.",
-      "openInAnytype": "Open in Anytype"
+      "openInAnytype": "Open in Anytype",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "detailPanel": {
       "eventDetailLabel": "Event detail",

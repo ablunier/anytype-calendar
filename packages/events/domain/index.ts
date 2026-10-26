@@ -2,6 +2,7 @@
 // deps, no Node core modules.
 
 export * from './model/dated-object'
+export * from './model/detail'
 export * from './model/edit'
 export * from './model/month'
 export * from './model/source'
