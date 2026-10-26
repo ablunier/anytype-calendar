@@ -559,11 +559,11 @@ the wire belongs there too:
   only `out/`, `resources/` and `package.json`. npm workspaces hoist `node_modules` out of
   `apps/desktop`, so Forge could not assemble them anyway. A dependency that cannot be
   bundled (a native module) would need that revisited.
-- The root `overrides` replace two of Forge 7's transitive dependencies: `@electron/rebuild`
-  goes to `^4`, since 3.x pulls `@electron/node-gyp` from git, which npm 12 refuses to fetch;
-  `yauzl` goes to `^3.4`, since on the 2.x that `@electron/packager` 18's `extract-zip` asks
-  for, unzipping Electron stops partway on Node 26 and `package` exits 0 having produced
-  nothing. Re-check both when upgrading Forge.
+- Forge 8 is ESM-only; `forge.config.js` stays CommonJS and `require()`s its plugins through
+  Node's `require(esm)`. `make` also writes `dist/make-results/` beside `dist/make/`, which the
+  release workflow does not upload. `npm audit` still reports `image-size` through
+  `maker-dmg` → `appdmg` (macOS only, and only fed our own icon); its fix is a major `appdmg`
+  cannot take.
 - `vite` is pinned to `^7` and `@vitejs/plugin-react` to `^5.2.0` — newer majors of either
   break the electron-vite/vite peer chain.
 - The root `postinstall` explicitly runs `node node_modules/electron/install.js` — Electron

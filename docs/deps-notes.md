@@ -22,32 +22,25 @@ Pinned versions in use:
 Everything else (`@electron-forge/*`, `electron-vite`, `typescript`, `@types/*`)
 installs fine at `@latest`.
 
-## Electron Forge 7 on npm 12 and Node 26
+## Electron Forge 8
 
-Two of Forge 7.11's transitive dependencies are replaced through the root `overrides`:
+Forge 7.11 needed two root `overrides` on npm 12 and Node 26: `@electron/rebuild` ^4 (3.x
+pulls `@electron/node-gyp` from git, which npm 12 refuses) and `yauzl` ^3.4 (under the 2.x
+that `@electron/packager` 18's `extract-zip` asked for, `package` exited 0 having written
+nothing). Forge 8 depends on `@electron/rebuild` ^4.2 and `@electron/packager` ^20, which
+no longer uses `extract-zip`, so both overrides are gone.
 
-- `@electron/rebuild` → `^4.2.0`. Forge asks for `^3.7.0`, and 3.x depends on
-  `@electron/node-gyp` straight from a GitHub commit. npm 12 refuses git dependencies by
-  default (`EALLOWGIT`), so the install fails outright. 4.x depends on `node-gyp` from the
-  registry instead. It is ESM-only, which Forge's `require()` handles on Node ≥22.12.
-- `yauzl` → `^3.4.0`. `@electron/packager` 18 unzips the Electron binary with
-  `extract-zip` 2.0.1 (unmaintained since 2023), which asks for `yauzl@^2.10.0`. On that
-  combination under Node 26 the extraction stops partway with nothing left to keep the
-  event loop alive, so `electron-forge package` exits 0 during "Finalizing package" having
-  written nothing. With `yauzl` 3 the same `extract-zip` unpacks the whole archive.
-  `extract-zip` is its only consumer here.
+Forge 8 is ESM-only. `forge.config.js` stays CommonJS: Node's `require(esm)` loads
+`@electron-forge/plugin-fuses` and `@electron/fuses` 2.x, whose API is unchanged. `make`
+now also saves its results to `dist/make-results/`, beside `dist/make/`, so the release
+workflow's upload of `dist/make` picks up only installers.
 
-  Swapping `extract-zip` itself for `@electron-internal/extract-zip` (what
-  `@electron/packager` 20 uses) through an `npm:` alias override does not work on npm 12:
-  it drops the dependency without installing the alias.
-
-An override only applies when npm resolves the package afresh. A copy already recorded
-in `package-lock.json` keeps its locked version, so after changing `overrides`, check the
-lockfile actually moved.
-
-Nothing here reaches the packaged app, which bundles its dependencies and ships no
-`node_modules`. Re-check both when upgrading Forge: once it depends on
-`@electron/packager` ≥20 and `@electron/rebuild` ≥4, the overrides can go.
+`npm audit` still reports `image-size` (GHSA-w3rx-r6r6-pgpr, an infinite loop on a crafted
+ICNS) through `maker-dmg` → `electron-installer-dmg` → `appdmg`. `appdmg` asks for
+`image-size@^0.7.4` and the fix is 2.0.3, whose API differs, so an override would break the
+DMG build. It is installed only on macOS, runs only at build time, and reads only our own
+icon. Nothing here reaches the packaged app, which bundles its dependencies and ships no
+`node_modules`.
 
 Re-check these pins when bumping `electron-vite` or `@vitejs/plugin-react` — once
 `electron-vite` adds vite 8 support, the plugin-react pin can likely move to `^6` too.
