@@ -395,6 +395,8 @@
       "ice": "Ice",
       "teal": "Teal",
       "lime": "Lime"
-    }
+    },
+    "urlKeep": "Unchanged ({{host}})",
+    "urlEditHint": "Paste a new address to replace it. It is read once before it is saved."
   }
 }

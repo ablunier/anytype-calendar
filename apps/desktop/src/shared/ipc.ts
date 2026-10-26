@@ -14,7 +14,7 @@ import type {
   AddFeedsSubscriptionInput,
   EditFeedsSubscriptionInput
 } from '@anytype-calendar/feeds/application'
-import type { FeedsAddOutcome, FeedsState } from '@anytype-calendar/feeds/domain'
+import type { FeedsAddOutcome, FeedsEditOutcome, FeedsState } from '@anytype-calendar/feeds/domain'
 import type {
   SchemaSelection,
   SchemaSelectionState,
@@ -55,8 +55,15 @@ export type FeedsAddRequest = AddFeedsSubscriptionInput
 /** Added, or why not; nothing is saved for a failure. */
 export type FeedsAddResult = FeedsAddOutcome
 
-/** Renames or recolours a subscription; the fields left out stay as they are. */
+/**
+ * Renames or recolours a subscription, or points it at another address; the fields left out
+ * stay as they are. The renderer never holds the current address, so it sends one only to
+ * change it.
+ */
 export type FeedsEditRequest = EditFeedsSubscriptionInput
+
+/** Edited, or why not; nothing is saved for a failure. */
+export type FeedsEditResult = FeedsEditOutcome
 
 /**
  * Which of the three views a launch opens on. What is on screen now is the shown span's own
@@ -220,8 +227,11 @@ export interface CalendarApi {
      * subscription could not be written.
      */
     add(request: FeedsAddRequest): Promise<FeedsAddResult>
-    /** Rejects when the request is malformed, or could not be written. */
-    edit(request: FeedsEditRequest): Promise<void>
+    /**
+     * A new address is read before anything is saved, as when adding one. Rejects when the
+     * request is malformed, or could not be written.
+     */
+    edit(request: FeedsEditRequest): Promise<FeedsEditResult>
     remove(id: string): Promise<void>
     /** `ids` names every subscription once, in the new order; any other list changes nothing. */
     reorder(ids: string[]): Promise<void>

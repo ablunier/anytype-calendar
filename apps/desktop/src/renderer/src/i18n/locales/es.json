@@ -395,6 +395,8 @@
       "ice": "Hielo",
       "teal": "Verde azulado",
       "lime": "Lima"
-    }
+    },
+    "urlKeep": "Sin cambios ({{host}})",
+    "urlEditHint": "Pega una dirección nueva para sustituirla. Se lee una vez antes de guardarla."
   }
 }

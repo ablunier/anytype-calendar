@@ -36,6 +36,14 @@ describe('editing', () => {
     expect(toFeedsEditRequest({ id: 'a1', colour: 'teal' })).toEqual({ id: 'a1', colour: 'teal' })
   })
 
+  test('keeps an address to move it to', () => {
+    expect(toFeedsEditRequest({ id: 'a1', url: 'webcal://example.com/b.ics' })).toEqual({
+      id: 'a1',
+      url: 'webcal://example.com/b.ics'
+    })
+    expect(toFeedsEditRequest({ id: 'a1', url: 42 })).toBeNull()
+  })
+
   test('refuses an empty name, an unknown colour, or a malformed id', () => {
     expect(toFeedsEditRequest({ id: 'a1', name: '  ' })).toBeNull()
     expect(toFeedsEditRequest({ id: 'a1', colour: 'chartreuse' })).toBeNull()

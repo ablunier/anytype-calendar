@@ -15,9 +15,9 @@ export function toFeedsAddRequest(value: unknown): FeedsAddRequest | null {
   return isFeedsColour(colour) ? { url, name, colour } : null
 }
 
-/** A name, if given, must be one; a colour, one of the ten. */
+/** A name, if given, must be one; a colour, one of the ten. An address is checked when it is read. */
 export function toFeedsEditRequest(value: unknown): FeedsEditRequest | null {
-  const { id, name, colour } = fieldsOf(value)
+  const { id, name, colour, url } = fieldsOf(value)
   if (!isFeedsId(id)) return null
   const request: FeedsEditRequest = { id }
   if (name !== undefined) {
@@ -28,6 +28,10 @@ export function toFeedsEditRequest(value: unknown): FeedsEditRequest | null {
   if (colour !== undefined) {
     if (!isFeedsColour(colour)) return null
     request.colour = colour
+  }
+  if (url !== undefined) {
+    if (typeof url !== 'string' || url.length > MAX_URL_LENGTH) return null
+    request.url = url
   }
   return request
 }

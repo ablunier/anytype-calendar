@@ -395,6 +395,8 @@
       "ice": "Xeo",
       "teal": "Verde azulado",
       "lime": "Lima"
-    }
+    },
+    "urlKeep": "Sen cambios ({{host}})",
+    "urlEditHint": "Pega un enderezo novo para substituílo. Lese unha vez antes de gardalo."
   }
 }

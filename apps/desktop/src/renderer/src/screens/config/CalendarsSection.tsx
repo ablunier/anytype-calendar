@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEEDS_COLOURS, isFeedsColour, nextFeedsColour, type FeedsColour } from '@anytype-calendar/feeds/domain'
-import type { FeedsAddResult, FeedsEditRequest } from '@shared/ipc'
+import type { FeedsAddResult, FeedsEditRequest, FeedsEditResult } from '@shared/ipc'
 import type { FeedSource } from '@renderer/types'
 import { Button, Card, catBg, Icon, IconButton, Input } from '@renderer/components/ui'
 import { feedFailureText, feedStatusText } from '@renderer/lib/feed-text'
@@ -13,7 +13,8 @@ export interface CalendarsSectionProps {
   feeds: FeedSource[]
   /** Resolves why the feed was refused, or rejects when it could not be saved. */
   onAdd: (url: string, name: string, colour: FeedsColour) => Promise<FeedsAddResult>
-  onEdit: (request: FeedsEditRequest) => Promise<void>
+  /** Resolves why a new address was refused, or rejects when the edit could not be saved. */
+  onEdit: (request: FeedsEditRequest) => Promise<FeedsEditResult>
   onRemove: (id: string) => Promise<void>
   onReorder: (ids: string[]) => Promise<void>
   onRefresh: () => void
@@ -101,7 +102,7 @@ export function CalendarsSection({
                 onDragEnd={() => endDrag(false)}
                 onMoveUp={() => move(index, -1)}
                 onMoveDown={() => move(index, 1)}
-                onEdit={(request) => run(onEdit(request))}
+                onEdit={onEdit}
                 onRemove={() => run(onRemove(feed.id))}
               />
             ))}
@@ -136,7 +137,7 @@ interface FeedRowProps {
   onDragEnd: () => void
   onMoveUp: () => void
   onMoveDown: () => void
-  onEdit: (request: FeedsEditRequest) => void
+  onEdit: (request: FeedsEditRequest) => Promise<FeedsEditResult>
   onRemove: () => void
 }
 
@@ -165,9 +166,10 @@ function FeedRow({
         <FeedEditor
           feed={feed}
           onCancel={() => setEditing(false)}
-          onSave={(request) => {
-            onEdit(request)
-            setEditing(false)
+          onSave={async (request) => {
+            const result = await onEdit(request)
+            if (result.ok) setEditing(false)
+            return result
           }}
         />
       </li>
@@ -241,21 +243,44 @@ function FeedRow({
 interface FeedEditorProps {
   feed: FeedSource
   onCancel: () => void
-  onSave: (request: FeedsEditRequest) => void
+  /** Resolves why it was refused, or rejects when it could not be saved; the editor stays open for either. */
+  onSave: (request: FeedsEditRequest) => Promise<FeedsEditResult>
 }
 
 function FeedEditor({ feed, onCancel, onSave }: FeedEditorProps): React.JSX.Element {
   const { t } = useTranslation()
   const [name, setName] = useState(feed.name)
   const [colour, setColour] = useState<FeedsColour>(isFeedsColour(feed.colour) ? feed.colour : 'blue')
+  // Empty keeps the address it has, which the renderer is never told: only its host.
+  const [url, setUrl] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const named = name.trim() !== ''
+
+  const save = async (): Promise<void> => {
+    setSaving(true)
+    setError(null)
+    try {
+      const result = await onSave({
+        id: feed.id,
+        name: name.trim(),
+        ...(colour === feed.colour ? {} : { colour }),
+        ...(url.trim() === '' ? {} : { url })
+      })
+      if (!result.ok) setError(feedFailureText(t, result))
+    } catch {
+      setError(t('feeds.changeFailed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <form
       className="flex flex-col gap-12"
       onSubmit={(event) => {
         event.preventDefault()
-        if (!named) return
-        onSave({ id: feed.id, name: name.trim(), ...(colour === feed.colour ? {} : { colour }) })
+        if (named && !saving) void save()
       }}
     >
       <Input
@@ -264,12 +289,22 @@ function FeedEditor({ feed, onCancel, onSave }: FeedEditorProps): React.JSX.Elem
         onChange={setName}
         {...(named ? {} : { error: t('feeds.failure.invalidName') })}
       />
+      <Input
+        label={t('feeds.url')}
+        value={url}
+        onChange={setUrl}
+        placeholder={t('feeds.urlKeep', { host: feed.host })}
+        icon="link"
+        mono
+        hint={t('feeds.urlEditHint')}
+        {...(error === null ? {} : { error })}
+      />
       <ColourPicker colour={colour} onChange={setColour} />
       <div className="flex justify-end gap-8">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('common.cancel')}
         </Button>
-        <Button variant="primary" size="sm" type="submit" disabled={!named}>
+        <Button variant="primary" size="sm" type="submit" loading={saving} disabled={!named}>
           {t('feeds.save')}
         </Button>
       </div>
