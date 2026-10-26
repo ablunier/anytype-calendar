@@ -17,7 +17,7 @@ Pinned versions in use:
 
 - `vite@^7.3.6`
 - `@vitejs/plugin-react@^5.2.0`
-- `electron@44.3.0` (exact)
+- `electron@44.9.3` (exact)
 
 Everything else (`@electron-forge/*`, `electron-vite`, `typescript`, `@types/*`)
 installs fine at `@latest`.
