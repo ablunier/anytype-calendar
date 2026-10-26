@@ -84,6 +84,8 @@ export interface CalendarScreenProps {
   onSelectDate: (date: string) => void
   onToggleTheme: () => void
   onOpenSettings: () => void
+  /** Opens Settings at the subscribed calendars, to add one. */
+  onAddCalendar: () => void
   onView: (view: CalendarView) => void
   onPrev: () => void
   onNext: () => void
@@ -135,6 +137,7 @@ export function CalendarScreen({
   onSelectDate,
   onToggleTheme,
   onOpenSettings,
+  onAddCalendar,
   onView,
   onPrev,
   onNext,
@@ -282,6 +285,7 @@ export function CalendarScreen({
           collapsedSpaces={collapsedSpaces}
           onToggleSpaceCollapsed={onToggleSpaceCollapsed}
           onToggleCollapsed={onToggleSidebar}
+          onAddCalendar={onAddCalendar}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           {!tracksAnything ? (

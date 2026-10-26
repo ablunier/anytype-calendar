@@ -81,6 +81,8 @@ function App(): React.JSX.Element | null {
   const update = useUpdate()
   const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
+  // Whether Settings was opened to add a calendar, so it opens at that form.
+  const [addingFeed, setAddingFeed] = useState(false)
 
   /* Entering the connected phase picks the first screen. A window that has drawn any other
    * phase watched the sign-in, so it shows the success card; one whose very first snapshot
@@ -179,6 +181,7 @@ function App(): React.JSX.Element | null {
           onReorder: (ids) => window.api.feeds.reorder(ids),
           onRefresh: () => void window.api.feeds.refresh()
         }}
+        focusAddFeed={addingFeed}
       />
     )
   }
@@ -260,7 +263,14 @@ function App(): React.JSX.Element | null {
         }
         onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart))}
         onToggleTheme={toggleTheme}
-        onOpenSettings={() => setScreen('config')}
+        onOpenSettings={() => {
+          setAddingFeed(false)
+          setScreen('config')
+        }}
+        onAddCalendar={() => {
+          setAddingFeed(true)
+          setScreen('config')
+        }}
         onView={showView}
         onPrev={() => showSpan(shiftSpan(span, -1))}
         onNext={() => showSpan(shiftSpan(span, 1))}

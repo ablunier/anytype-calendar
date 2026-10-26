@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEEDS_COLOURS, isFeedsColour, nextFeedsColour, type FeedsColour } from '@anytype-calendar/feeds/domain'
 import type { FeedsAddResult, FeedsEditRequest } from '@shared/ipc'
@@ -17,6 +17,8 @@ export interface CalendarsSectionProps {
   onRemove: (id: string) => Promise<void>
   onReorder: (ids: string[]) => Promise<void>
   onRefresh: () => void
+  /** Scrolls to the section and focuses the address to add, e.g. when the sidebar's plus opened Settings. */
+  focusAdd?: boolean
 }
 
 /**
@@ -31,7 +33,8 @@ export function CalendarsSection({
   onEdit,
   onRemove,
   onReorder,
-  onRefresh
+  onRefresh,
+  focusAdd = false
 }: CalendarsSectionProps): React.JSX.Element {
   const { t } = useTranslation()
   const [failed, setFailed] = useState(false)
@@ -115,6 +118,7 @@ export function CalendarsSection({
         <AddFeedForm
           onAdd={onAdd}
           taken={feeds.flatMap(({ colour }) => (isFeedsColour(colour) ? [colour] : []))}
+          focus={focusAdd}
         />
       </Card>
     </section>
@@ -309,9 +313,10 @@ function ColourPicker({ colour, onChange }: ColourPickerProps): React.JSX.Elemen
 interface AddFeedFormProps extends Pick<CalendarsSectionProps, 'onAdd'> {
   /** The colours the subscriptions already have, so the form offers one none has yet. */
   taken: FeedsColour[]
+  focus: boolean
 }
 
-function AddFeedForm({ onAdd, taken }: AddFeedFormProps): React.JSX.Element {
+function AddFeedForm({ onAdd, taken, focus }: AddFeedFormProps): React.JSX.Element {
   const { t } = useTranslation()
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
@@ -320,6 +325,13 @@ function AddFeedForm({ onAdd, taken }: AddFeedFormProps): React.JSX.Element {
   const colour = picked ?? nextFeedsColour(taken)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const form = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    if (!focus) return
+    form.current?.scrollIntoView({ block: 'center' })
+    form.current?.querySelector('input')?.focus()
+  }, [focus])
 
   const add = async (): Promise<void> => {
     setAdding(true)
@@ -342,6 +354,7 @@ function AddFeedForm({ onAdd, taken }: AddFeedFormProps): React.JSX.Element {
 
   return (
     <form
+      ref={form}
       className="flex flex-col gap-12 border-t border-line-hairline pt-16"
       onSubmit={(event) => {
         event.preventDefault()

@@ -59,7 +59,9 @@ export interface ConfigScreenProps {
   onOpenRelease: () => void
   /** The subscribed calendars, in the user's order. */
   feeds: FeedSource[]
-  feedActions: Omit<CalendarsSectionProps, 'feeds'>
+  feedActions: Omit<CalendarsSectionProps, 'feeds' | 'focusAdd'>
+  /** Opened to add a calendar: the subscribed calendars' form is scrolled to and focused. */
+  focusAddFeed?: boolean
 }
 
 /**
@@ -98,7 +100,8 @@ function Settings({
   updateAvailable,
   onOpenRelease,
   feeds,
-  feedActions
+  feedActions,
+  focusAddFeed = false
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const selection = useTypeSelection(types, initial)
@@ -226,7 +229,7 @@ function Settings({
             )}
           </section>
 
-          <CalendarsSection feeds={feeds} {...feedActions} />
+          <CalendarsSection feeds={feeds} {...feedActions} focusAdd={focusAddFeed} />
 
           <section>
             <h2 className="mb-10 type-heading text-h4 text-ink-primary">{t('config.calendar')}</h2>

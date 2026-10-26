@@ -335,7 +335,8 @@
       "calendars": "Calendarios",
       "collapseSpace": "Contraer {{name}}",
       "expandSpace": "Expandir {{name}}",
-      "subscriptions": "Subscritos"
+      "subscriptions": "Subscritos",
+      "addCalendar": "Engadir un calendario"
     },
     "feedDetail": {
       "starts": "Comeza",
