@@ -262,7 +262,8 @@ Standard electron-vite three-process layout:
   owner-only; without OS encryption both stay in memory, like the key. A `FeedsSnapshot` names
   a subscription only by host, never its URL. The renderer merges the feeds' events into the
   span's (`lib/feeds.ts`, keyed by `feedSourceKey`), and they are never dragged, created or
-  ticked; their panel opens a `URL` through `shell.openLink`, which takes only `http(s)`.
+  ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
+  `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
   Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
   from the saved view and week start — which is why `main/index.ts` awaits those two
   preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
