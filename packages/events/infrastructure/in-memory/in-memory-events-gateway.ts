@@ -1,12 +1,15 @@
 import {
   shiftEventsMonth,
   type EventsDateChanges,
+  type EventsDetailRef,
   type EventsGateway,
   type EventsGatewayResult,
+  type EventsLinkedObject,
   type EventsMonth,
   type EventsNewObject,
   type EventsObjectRef,
   type EventsObjectTarget,
+  type EventsPanelProperty,
   type EventsSource,
   type EventsTimeZone,
   type EventsWriteResult,
@@ -24,6 +27,19 @@ export interface InMemoryEventsObject {
   location?: string
   /** Option names by select property key. */
   options?: Record<string, string>
+  /**
+   * Every other property's value by key, as a v2 search row gives it: option names and linked
+   * ids in lists. A checkbox or text other than Anytype's own Done and Location is read from
+   * here.
+   */
+  values?: Record<string, unknown>
+}
+
+export interface InMemoryEventsMember {
+  spaceId: string
+  /** Linked from an object as `participant-<identity>`. */
+  identity: string
+  name: string
 }
 
 /** A query over one type, whose views can each leave out the objects ticked done. */
@@ -43,6 +59,8 @@ export interface InMemoryEventsGatewayOptions {
   objects?: InMemoryEventsObject[]
   /** Defaults to IN_MEMORY_EVENTS_QUERIES. */
   queries?: InMemoryEventsQuery[]
+  /** Defaults to IN_MEMORY_EVENTS_MEMBERS. */
+  members?: InMemoryEventsMember[]
   requestLatencyMs?: number
 }
 
@@ -59,6 +77,17 @@ export const IN_MEMORY_EVENTS_QUERIES: InMemoryEventsQuery[] = [
   }
 ]
 
+export const IN_MEMORY_EVENTS_MEMBERS: InMemoryEventsMember[] = [
+  { spaceId: 'sp_personal', identity: 'A8mara', name: 'Mara' },
+  { spaceId: 'sp_personal', identity: 'A8sofia', name: 'Sofia' }
+]
+
+/** Anytype's own Done and Location, which the sample keeps as fields of their own. */
+const DONE_KEY = 'done'
+const LOCATION_KEY = 'location'
+
+const MEMBER_ID_PREFIX = 'participant-'
+
 /** A date `month` months from the seeded month, and `time` as `HH:MM` for a timed one. */
 interface SeedDate {
   month: number
@@ -66,7 +95,8 @@ interface SeedDate {
   time?: string
 }
 
-type SeedDetails = Pick<InMemoryEventsObject, 'done' | 'location' | 'options'>
+/** `id` stands in for the one made up from the seed's place, for objects others link to. */
+type SeedDetails = Partial<Pick<InMemoryEventsObject, 'id' | 'done' | 'location' | 'options' | 'values'>>
 
 type Seed = [
   title: string,
@@ -85,44 +115,83 @@ const meeting = (
   start: string,
   end: string,
   month = 0,
-  location?: string
+  details: SeedDetails = {}
 ): Seed => [
   title,
   'sp_personal',
   'meeting',
   { start_date: at(month, day, start), end_date: at(month, day, end) },
-  location === undefined ? {} : { location }
+  details
 ]
 
-const priority = (name: string): SeedDetails => ({ options: { priority: name } })
+const priority = (name: string, values?: Record<string, unknown>): SeedDetails =>
+  values === undefined ? { options: { priority: name } } : { options: { priority: name }, values }
 
 /**
  * The design's sample month, keyed to IN_MEMORY_SCHEMA_SPACES' account. Days stay within 28 so
  * every month has them.
  */
 const SEEDS: Seed[] = [
-  meeting('Weekly planning', 2, '10:00', '11:00', 0, 'Studio, room 2'),
+  meeting('Weekly planning', 2, '10:00', '11:00', 0, {
+    location: 'Studio, room 2',
+    values: {
+      attendees: ['participant-A8mara', 'obj_iris'],
+      url: 'https://meet.example.com/weekly',
+      description: 'Walk through the board, then pick the three things that matter this week.',
+      tag: ['Work']
+    }
+  }),
   ['Draft API notes', 'sp_personal', 'task', { due_date: at(0, 3, '14:30') }, { done: true }],
-  ['Docs sprint', 'sp_studio', 'project', { start_date: at(0, 4), due_date: at(0, 6) }],
+  ['Docs sprint', 'sp_studio', 'project', { start_date: at(0, 4), due_date: at(0, 6) }, { id: 'obj_docs_sprint' }],
   meeting('Standup', 5, '09:00', '09:30'),
   ['Ship weekly digest', 'sp_studio', 'task', { due_date: at(0, 6, '16:00') }, { done: true }],
   meeting('Design review', 9, '09:30', '10:15'),
-  ['Rewrite empty states', 'sp_studio', 'task', { due_date: at(0, 9, '13:00') }, priority('High')],
-  meeting('Sync with Mara', 10, '11:00', '11:45', 0, 'Café Central'),
+  [
+    'Rewrite empty states',
+    'sp_studio',
+    'task',
+    { due_date: at(0, 9, '13:00') },
+    // A deleted option is served by its object id.
+    priority('High', { linked_projects: ['obj_launch_week'], tag: ['Urgent', 'bafyreideletedoption'] })
+  ],
+  meeting('Sync with Mara', 10, '11:00', '11:45', 0, {
+    location: 'Café Central',
+    values: { venue: 'Café Central, upstairs', attendees: ['participant-A8mara'] }
+  }),
   ['Field notes: local-first', 'sp_personal', 'task', { due_date: at(0, 10) }],
   ['Ship changelog', 'sp_studio', 'task', { due_date: at(0, 11, '15:00') }, priority('Medium')],
-  ['Launch week', 'sp_studio', 'project', { start_date: at(0, 12), due_date: at(0, 16) }],
+  ['Launch week', 'sp_studio', 'project', { start_date: at(0, 12), due_date: at(0, 16) }, { id: 'obj_launch_week' }],
   meeting('Design review', 12, '09:30', '10:15'),
   ['Write release notes', 'sp_studio', 'task', { due_date: at(0, 12, '11:00') }],
   ['Reply to Iris', 'sp_personal', 'task', { due_date: at(0, 12, '14:00') }, priority('Low')],
   ['Close the week', 'sp_personal', 'task', { due_date: at(0, 13, '17:00') }],
-  ['Seeing Like a State', 'sp_reading', 'book', { start_date: at(0, 14), finish_date: at(0, 21) }],
+  [
+    'Seeing Like a State',
+    'sp_reading',
+    'book',
+    { start_date: at(0, 14), finish_date: at(0, 21) },
+    { values: { finished: true, pages: 445, tag: ['Home'] } }
+  ],
   meeting('Weekly planning', 16, '10:00', '10:30'),
-  ['Iris', 'sp_personal', 'contact', { birthday: at(0, 17) }],
-  ['Sync API contract', 'sp_studio', 'task', { due_date: at(0, 18, '09:00') }, priority('High')],
+  [
+    'Iris',
+    'sp_personal',
+    'contact',
+    { birthday: at(0, 17) },
+    { id: 'obj_iris', values: { email: 'iris@example.com', phone: '+34 600 000 000' } }
+  ],
+  [
+    'Sync API contract',
+    'sp_studio',
+    'task',
+    { due_date: at(0, 18, '09:00') },
+    priority('High', { linked_projects: ['obj_docs_sprint', 'obj_launch_week'] })
+  ],
   ['File taxes', 'sp_archive', 'task', { due_date: at(0, 19) }],
   ['Quarter close', 'sp_studio', 'project', { start_date: at(0, 20), due_date: at(0, 21) }],
-  meeting('Interview: Sofia', 23, '11:30', '12:15'),
+  meeting('Interview: Sofia', 23, '11:30', '12:15', 0, {
+    values: { attendees: ['participant-A8sofia', 'participant-A8mara'], venue: '' }
+  }),
   ['Prune stale objects', 'sp_studio', 'task', { due_date: at(0, 24, '15:00') }],
   ['Weekly digest draft', 'sp_personal', 'task', { due_date: at(0, 26, '09:30') }],
   ['Roadmap pass', 'sp_studio', 'project', { start_date: at(0, 27) }],
@@ -145,7 +214,8 @@ const SEEDS: Seed[] = [
       'Studio invoice',
       'sp_studio',
       'invoice',
-      { issued_on: at(month, 1), due_date: at(month, 25, '09:00') }
+      { issued_on: at(month, 1), due_date: at(month, 25, '09:00') },
+      { values: { amount: 1250.5, email: 'billing@example.com' } }
     ]
   )
 ]
@@ -153,14 +223,14 @@ const SEEDS: Seed[] = [
 /** Seeded around `month`, so the fake account always has something to show wherever it runs. */
 export function inMemoryEventsSample(month: EventsMonth, zone: EventsTimeZone): InMemoryEventsObject[] {
   return SEEDS.map(([title, spaceId, typeKey, dates, details = {}], index) => ({
-    id: `obj_${index + 1}`,
     spaceId,
     typeKey,
     title,
     dates: Object.fromEntries(
       Object.entries(dates).map(([key, seed]) => [key, instantOf(seed, month, zone)])
     ),
-    ...details
+    ...details,
+    id: details.id ?? `obj_${index + 1}`
   }))
 }
 
@@ -172,6 +242,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   readonly #sleep: (ms: number) => Promise<void>
   readonly #objects: InMemoryEventsObject[]
   readonly #queries: InMemoryEventsQuery[]
+  readonly #members: InMemoryEventsMember[]
   readonly #requestLatencyMs: number
   #created = 0
 
@@ -181,12 +252,14 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     now,
     objects,
     queries = IN_MEMORY_EVENTS_QUERIES,
+    members = IN_MEMORY_EVENTS_MEMBERS,
     requestLatencyMs = 300
   }: InMemoryEventsGatewayOptions) {
     this.#sleep = sleep
     // Copied, since writes change them.
     this.#objects = (objects ?? inMemoryEventsSample(zone.dayOf(now()), zone)).map((object) => ({ ...object }))
     this.#queries = queries
+    this.#members = members
     this.#requestLatencyMs = requestLatencyMs
   }
 
@@ -199,26 +272,46 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     source: EventsSource
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     await this.#sleep(this.#requestLatencyMs)
-    const { spaceId, from, to, done, location, colourBy } = source
+    const { spaceId, from, to, done, location, colourBy, panel = [] } = source
     const read = this.#read(source)
     if (!read) return { ok: true, value: [] }
     const refs = this.#objects.flatMap((object) => {
       const start = object.dates[from]
       if (object.spaceId !== spaceId || object.typeKey !== read.typeKey || start === undefined) return []
-      if (read.openOnly && object.done === true) return []
+      if (read.openOnly && isDone(object, done ?? DONE_KEY)) return []
       const ref: EventsObjectRef = {
         id: object.id,
         title: object.title,
         start,
         end: to === null ? null : (object.dates[to] ?? null)
       }
-      if (done !== undefined) ref.done = object.done === true
-      if (location !== undefined && object.location !== undefined) ref.location = object.location
+      if (done !== undefined) ref.done = isDone(object, done)
+      const place = location === undefined ? undefined : locationOf(object, location)
+      if (place) ref.location = place
       const option = colourBy && object.options?.[colourBy.key]
       if (option) ref.option = option
+      const details = panel.flatMap((property) => detailOf(object, property))
+      if (details.length > 0) ref.details = details
       return [ref]
     })
     return { ok: true, value: refs }
+  }
+
+  /** The space's objects, and its members, among `ids`. */
+  async listLinkedObjects(
+    _apiKey: string,
+    spaceId: string,
+    ids: readonly string[]
+  ): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
+    await this.#sleep(this.#requestLatencyMs)
+    const wanted = new Set(ids)
+    const objects = this.#objects
+      .filter((object) => object.spaceId === spaceId && wanted.has(object.id))
+      .map(({ id, title }) => ({ id, name: title, member: false }))
+    const members = this.#members
+      .filter((member) => member.spaceId === spaceId && wanted.has(`${MEMBER_ID_PREFIX}${member.identity}`))
+      .map(({ identity, name }) => ({ id: `${MEMBER_ID_PREFIX}${identity}`, name, member: true }))
+    return { ok: true, value: [...objects, ...members] }
   }
 
   async reschedule(
@@ -248,17 +341,17 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     return { ok: true, value: { id } }
   }
 
-  /** `key` goes unread: the fake keeps Done as a field of its own. */
   async setDone(
     _apiKey: string,
     target: EventsObjectTarget,
-    _key: string,
+    key: string,
     done: boolean
   ): Promise<EventsWriteResult> {
     await this.#sleep(this.#requestLatencyMs)
     const object = this.#find(target)
     if (!object) return GONE
-    object.done = done
+    if (key === DONE_KEY) object.done = done
+    else object.values = { ...object.values, [key]: done }
     return { ok: true, value: null }
   }
 
@@ -278,6 +371,33 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
 }
 
 const GONE = { ok: false, failure: 'rejected', message: 'object not found' } as const
+
+function isDone(object: InMemoryEventsObject, key: string): boolean {
+  return (key === DONE_KEY ? object.done : object.values?.[key]) === true
+}
+
+function locationOf(object: InMemoryEventsObject, key: string): string | undefined {
+  const value = key === LOCATION_KEY ? object.location : object.values?.[key]
+  return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+/** As AnytypeV2EventsGateway reads a row: nothing for no value, or one of another shape. */
+function detailOf(object: InMemoryEventsObject, { key, format }: EventsPanelProperty): EventsDetailRef[] {
+  const value = object.values?.[key]
+  switch (format) {
+    case 'number':
+      return typeof value === 'number' ? [{ key, format, value }] : []
+    case 'select':
+    case 'multi_select':
+    case 'objects': {
+      const items = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+      if (items.length === 0) return []
+      return format === 'objects' ? [{ key, format, ids: items }] : [{ key, format, names: items }]
+    }
+    default:
+      return typeof value === 'string' && value !== '' ? [{ key, format, value }] : []
+  }
+}
 
 function instantOf({ month, day, time }: SeedDate, seeded: EventsMonth, zone: EventsTimeZone): number {
   const date = { ...shiftEventsMonth(seeded, month), day }

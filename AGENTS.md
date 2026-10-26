@@ -20,17 +20,22 @@ Anytype's own Done and Location, its select properties' option colours, and its 
 a single dated type, with their views. It also persists
 the user's selection — which spaces, types and queries go on the calendar, each one's From/To
 date property (a query's are its type's), whether those dates carry a time of day, which
-select property, if any, colours its objects (`colourBy`), and a query's view — which
-onboarding and Settings save.
+select property, if any, colours its objects (`colourBy`), which checkbox ticks it done and
+which text places it (`done`, `location`: Anytype's own until picked), which further properties
+its detail panel shows, in order (`panel`), and a query's view — which onboarding and Settings
+save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
-selected types and queries whose dates fall in it, with their Done, Location and colour-by
-option where v2 serves them, which the calendar screen draws as a month grid or as an hour
-grid. An object a type and a query both bring is read once through each and kept for each, with
-its source's `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
+selected types and queries whose dates fall in it, with their Done, Location, colour-by option
+and panel properties where v2 serves them (linked objects named in the same load, one search
+per space), which the calendar screen draws as a month grid or as an hour grid. An object a
+type and a query both bring is read once through each and kept for each, with its source's
+`rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour, and ticked done, given exact dates and times,
-or given or cleared a To date from its panel. No screen
-runs on mock data.
+or given or cleared a To date from its panel. `feeds` holds external
+calendars subscribed to by their iCalendar address (Settings → Subscribed calendars): it reads
+each with ical.js, keeps it in memory and expands it over the span on screen, and the renderer
+draws its events read-only beside Anytype's objects. No screen runs on mock data.
 
 ## Commands
 
@@ -75,7 +80,7 @@ Run from the repo root unless noted.
 
 ### Layout: bounded context → layer → role
 
-Each package under `packages/` is one bounded context (currently `auth`, `schema` and `events`), and its
+Each package under `packages/` is one bounded context (currently `auth`, `schema`, `events` and `feeds`), and its
 layers are folders inside it — except `anytype-v1` and `kernel` (see below):
 
 ```
@@ -84,7 +89,7 @@ packages/<context>/
   tsconfig.json       ONE tsconfig project for the whole context, `types: []`
   domain/             grouped by role: model/, gateways/, repositories/ (services/ when needed)
   application/        use cases, flat
-  infrastructure/     driven adapters, grouped by technology: in-memory/, anytype/, encrypted-file/, local-time/
+  infrastructure/     driven adapters, grouped by technology: in-memory/, anytype/, encrypted-file/, local-time/, ical/, http/, file/
   dist/<layer>/       tsc -b output (gitignored)
 ```
 
@@ -144,6 +149,7 @@ context's `application` layer without adding a dependency edge of its own
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
 packages/<ctx>/application     -> its own context's domain, plus kernel (use cases / orchestration)
 packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client and anytype-v1 (driven adapters implementing domain ports)
+packages/feeds/infrastructure  -> its own domain, plus ical.js (feeds talks to no Anytype)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
 
@@ -159,6 +165,8 @@ Rules worth knowing before adding an import:
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
   reach into its own `domain`, `packages/anytype-v1/infrastructure` and the Anytype client
   (`node_modules/@ablunier/anytype-client`). The same rule keeps `anytype-v1` itself a leaf that imports no context.
+  `feeds` is the exception, by a rule of its own: its infrastructure may import its own domain
+  and `ical.js`, nothing else, and ical.js stays behind the domain port `FeedsCalendarParser`.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires
   them together. The rules capture the context name and refer back to it (`$1`), so this
   holds for every context without a rule per package.
@@ -208,9 +216,9 @@ Standard electron-vite three-process layout:
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
-  first; Done, Location and the colour-by property only where the last schema sync saw the
-  type — for a query, the type it runs over — with them, since v2 refuses a search `field` the
-  space lacks), and places a
+  first; Done, Location, the colour-by property and the panel's only where the last schema
+  sync saw the type — for a query, the type it runs over — with them, since v2 refuses a search
+  `field` the space lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
@@ -244,14 +252,38 @@ Standard electron-vite three-process layout:
   (`parseTime`), and a `DateField`, which opens the sidebar's `MiniMonth` as a picker rather
   than `<input type="date">`, which draws in Chromium's locale and has no `gl`. Each writes as
   it is set, through the same reschedule as a drag. The panel keeps the object as last seen, so
-  one an edit took out of the span still shows its new dates, with a "Go to date" link. Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
+  one an edit took out of the span still shows its new dates, with a "Go to date" link.
+  Feeds need nothing of Anytype: they are loaded from their cached copies at launch and read
+  again right after the window opens, every 30 minutes and on focus (at most once per 30 s,
+  `feeds/feeds-ipc.ts`), whether or not the session is connected, and leaving `connected`
+  resets nothing of theirs. They follow the span events holds (`showFeedsForSpan`, on every
+  `EventsSpanStore` change, and before any load the span a launch opens on): `FeedsStore`
+  expands each feed's last good read over that span's window in memory, so moving between spans
+  reads no feed again, and a failed read keeps the last good copy drawn, with why on its
+  status. `IcalFeedsCalendarParser` expands recurrences (`RRULE`, `EXDATE`, `RECURRENCE-ID`
+  overrides) with ical.js, reads a `TZID` by the feed's own `VTIMEZONE`, or by the IANA zone of
+  that name through `Intl` where the feed leaves it undefined, and a date or a floating time on
+  the machine's clock; a `DATE` end is exclusive. It remembers each rule's instances, so a
+  second window only walks past the furthest one asked for. The subscriptions are kept in
+  `<userData>/feeds.json`, in order, each URL sealed with `safeStorage` (a secret ICS address
+  is a credential), and the last good copy of each in `<userData>/feeds-cache/<id>.json`, both
+  owner-only; without OS encryption both stay in memory, like the key. A `FeedsSnapshot` names
+  a subscription only by host, never its URL, so Settings edits an address with an empty field
+  that sends one only to replace it; a new address, like an added one, is read before it is
+  saved, and a refresh still reading the old one drops what it reads. The renderer merges the feeds' events into the
+  span's (`lib/feeds.ts`, keyed by `feedSourceKey`), and they are never dragged, created or
+  ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
+  `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
+  Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
   from the saved view and week start — which is why `main/index.ts` awaits those two
   preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
   separate `credential-fake.bin`,
   `InMemorySchemaGateway` (the design's four sample spaces) and `InMemoryEventsGateway`
   (the design's sample month, seeded around the current month; it ignores the window and
-  returns every object of a source, as the port allows). The schema selection is plain
+  returns every object of a source, as the port allows), and `InMemoryFeedsGateway`, which
+  answers any `.ics` address with a sample feed (a weekly meeting with one week moved and one
+  skipped, an all-day holiday and a call in New York's time), kept in `feeds-fake.json`. The schema selection is plain
   JSON in `<userData>/schema-selection.json` (`schema-selection-fake.json` in fake mode,
   since the fake space ids are not real ones), loaded alongside the key before the first
   window opens. A missing or unreadable file means onboarding was never done. The local API cannot revoke
@@ -297,13 +329,13 @@ Standard electron-vite three-process layout:
     and otherwise the day the span is anchored on, so a reader of another month stays there.
     The calendar's sidebar (`screens/calendar/CalendarSidebar`) holds a mini month and the sources the
     calendar holds: the chosen spaces, each with its chosen types and then queries (`SourceTree`),
-    every one with a toggle. Hiding is renderer-only: a hidden source is still read, and
+    then the subscribed calendars in their saved order (`FeedList`), every one with a toggle. Hiding is renderer-only: a hidden source is still read, and
     `visibleEvents` (`lib/visibility.ts`) drops its events before anything draws, so a toggle needs no
     request. An object two sources bring arrives as two events (`CalendarEvent.rank`, the source's
     position in the selection, types first) and only the lowest-ranked visible one is drawn, so a type
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
-    (`objectTypeKey` / `querySourceKey`, never spaces) and whether the sidebar is collapsed are saved in
+    (`objectTypeKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
     the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
@@ -474,6 +506,18 @@ the wire belongs there too:
   placeholder in a view's filters is a warning too, not an error. `fields` is checked against
   the space's properties, not the type's; an unknown view answers 404. v1 has no query routes,
   so queries are offered only under v2, and a v1 read matches a chosen one with nothing.
+- The type document's `property_definitions` carry a `section` (`featured`, `hidden` or none):
+  a hidden one (last modified by …) is never offered to the detail panel, nor are `name` and
+  `type`, which it draws anyway. The panel draws `text`, `number`, `select`, `multi_select`,
+  `url`, `email`, `phone` and `objects`; v1 reads none of them, and Settings hides the panel,
+  Done and Location fields under v1. A multi-select's options come from the same route as a
+  select's.
+- A row's value for a property with none is left out, or comes as `null`, `""` or `[]`. A
+  deleted select option is served by its object id, not a name. `objects` is a list of ids:
+  their names come from one search per space (`{ property: 'id', condition: 'in', value }`,
+  at most 1000 ids each), which never finds a space member (`participant-<identity>`); members
+  are matched on `identity` in `GET …/members`, read only when one is linked. Links open
+  through main's `shell.openLink`, which takes only `http(s)`, `mailto:` and `tel:`.
 - A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
   the image's bytes (PNG seen). `files.content` reads it through the same injected
   `fetch`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
@@ -524,11 +568,11 @@ the wire belongs there too:
   only `out/`, `resources/` and `package.json`. npm workspaces hoist `node_modules` out of
   `apps/desktop`, so Forge could not assemble them anyway. A dependency that cannot be
   bundled (a native module) would need that revisited.
-- The root `overrides` replace two of Forge 7's transitive dependencies: `@electron/rebuild`
-  goes to `^4`, since 3.x pulls `@electron/node-gyp` from git, which npm 12 refuses to fetch;
-  `yauzl` goes to `^3.4`, since on the 2.x that `@electron/packager` 18's `extract-zip` asks
-  for, unzipping Electron stops partway on Node 26 and `package` exits 0 having produced
-  nothing. Re-check both when upgrading Forge.
+- Forge 8 is ESM-only; `forge.config.js` stays CommonJS and `require()`s its plugins through
+  Node's `require(esm)`. `make` also writes `dist/make-results/` beside `dist/make/`, which the
+  release workflow does not upload. `npm audit` still reports `image-size` through
+  `maker-dmg` → `appdmg` (macOS only, and only fed our own icon); its fix is a major `appdmg`
+  cannot take.
 - `vite` is pinned to `^7` and `@vitejs/plugin-react` to `^5.2.0` — newer majors of either
   break the electron-vite/vite peer chain.
 - The root `postinstall` explicitly runs `node node_modules/electron/install.js` — Electron

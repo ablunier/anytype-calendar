@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
  */
 describe('Galician calendar fallback', () => {
   const realSupportedLocalesOf = Intl.DateTimeFormat.supportedLocalesOf
+  const realNumberSupportedLocalesOf = Intl.NumberFormat.supportedLocalesOf
 
   beforeEach(() => {
     vi.resetModules()
@@ -16,10 +17,15 @@ describe('Galician calendar fallback', () => {
       const requested = Array.isArray(locales) ? locales : [locales]
       return requested.includes('gl') ? [] : realSupportedLocalesOf(locales)
     }) as typeof Intl.DateTimeFormat.supportedLocalesOf
+    Intl.NumberFormat.supportedLocalesOf = ((locales: string | string[]) => {
+      const requested = Array.isArray(locales) ? locales : [locales]
+      return requested.includes('gl') ? [] : realNumberSupportedLocalesOf(locales)
+    }) as typeof Intl.NumberFormat.supportedLocalesOf
   })
 
   afterEach(() => {
     Intl.DateTimeFormat.supportedLocalesOf = realSupportedLocalesOf
+    Intl.NumberFormat.supportedLocalesOf = realNumberSupportedLocalesOf
   })
 
   test('weekdayNames falls back to the hardcoded Galician names', async () => {
@@ -66,6 +72,13 @@ describe('Galician calendar fallback', () => {
     expect(formatTime('13:05', '12h', 'gl')).toBe('1:05 p.m.')
     expect(formatTime('00:30', '12h', 'gl')).toBe('12:30 a.m.')
     expect(formatTime('09:00', '24h', 'gl')).toBe('09:00')
+  })
+
+  test('formatNumber matches real Intl Galician separators', async () => {
+    const { formatNumber } = await import('./calendar')
+    for (const value of [1234567.891, 1234.5, 999, -0.25]) {
+      expect(formatNumber(value, 'gl')).toBe(new Intl.NumberFormat('gl').format(value))
+    }
   })
 
   test("does not affect Spanish, which Electron's ICU does carry", async () => {

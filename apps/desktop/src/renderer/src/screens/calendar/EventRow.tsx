@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
-import { catBg } from '@renderer/components/ui'
+import { catBg, Icon } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
 
@@ -9,6 +9,8 @@ export interface EventRowProps {
   category: CategoryHue
   time?: string
   done?: boolean
+  /** An event of a subscribed calendar, marked apart from Anytype's objects. */
+  external?: boolean
   selected?: boolean
   onClick: () => void
 }
@@ -18,6 +20,7 @@ export function EventRow({
   category,
   time,
   done = false,
+  external = false,
   selected = false,
   onClick
 }: EventRowProps): React.JSX.Element {
@@ -50,6 +53,7 @@ export function EventRow({
       >
         {title}
       </span>
+      {external ? <Icon name="rss" size={12} className="shrink-0 text-ink-tertiary" /> : null}
     </button>
   )
 }

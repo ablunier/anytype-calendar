@@ -11,6 +11,11 @@ import type {
   EventsSpanLoad
 } from '@anytype-calendar/events/domain'
 import type {
+  AddFeedsSubscriptionInput,
+  EditFeedsSubscriptionInput
+} from '@anytype-calendar/feeds/application'
+import type { FeedsAddOutcome, FeedsEditOutcome, FeedsState } from '@anytype-calendar/feeds/domain'
+import type {
   SchemaSelection,
   SchemaSelectionState,
   SchemaSync
@@ -37,6 +42,28 @@ export type EventsSetDoneRequest = CompleteEventsObjectInput
 
 /** How an edit went; a failure the renderer shows, since nothing else will. */
 export type EventsEditResult = EventsEditOutcome
+
+/**
+ * Safe to hand to the renderer: a subscription's address is a credential, held in main, and
+ * a FeedsState names each only by host.
+ */
+export type FeedsSnapshot = FeedsState
+
+/** A URL, `webcal://` included, and a name, which may be empty to take the feed's own. */
+export type FeedsAddRequest = AddFeedsSubscriptionInput
+
+/** Added, or why not; nothing is saved for a failure. */
+export type FeedsAddResult = FeedsAddOutcome
+
+/**
+ * Renames or recolours a subscription, or points it at another address; the fields left out
+ * stay as they are. The renderer never holds the current address, so it sends one only to
+ * change it.
+ */
+export type FeedsEditRequest = EditFeedsSubscriptionInput
+
+/** Edited, or why not; nothing is saved for a failure. */
+export type FeedsEditResult = FeedsEditOutcome
 
 /**
  * Which of the three views a launch opens on. What is on screen now is the shown span's own
@@ -125,7 +152,15 @@ export const IpcChannel = {
   calendarViewGet: 'calendarView:get',
   calendarViewChanged: 'calendarView:changed',
   calendarViewSave: 'calendarView:save',
+  feedsGet: 'feeds:get',
+  feedsChanged: 'feeds:changed',
+  feedsAdd: 'feeds:add',
+  feedsEdit: 'feeds:edit',
+  feedsRemove: 'feeds:remove',
+  feedsReorder: 'feeds:reorder',
+  feedsRefresh: 'feeds:refresh',
   shellOpenObject: 'shell:open-object',
+  shellOpenLink: 'shell:open-link',
   updateGet: 'update:get',
   updateChanged: 'update:changed',
   updateDismiss: 'update:dismiss',
@@ -183,6 +218,26 @@ export interface CalendarApi {
     create(request: EventsCreateRequest): Promise<EventsEditResult>
     setDone(request: EventsSetDoneRequest): Promise<EventsEditResult>
   }
+  feeds: {
+    get(): Promise<FeedsSnapshot>
+    onChange(listener: (state: FeedsSnapshot) => void): () => void
+    /**
+     * Reads the feed before saving anything, so an address that is not one, or not a calendar,
+     * resolves why and leaves nothing behind. Rejects when the request is malformed, or the
+     * subscription could not be written.
+     */
+    add(request: FeedsAddRequest): Promise<FeedsAddResult>
+    /**
+     * A new address is read before anything is saved, as when adding one. Rejects when the
+     * request is malformed, or could not be written.
+     */
+    edit(request: FeedsEditRequest): Promise<FeedsEditResult>
+    remove(id: string): Promise<void>
+    /** `ids` names every subscription once, in the new order; any other list changes nothing. */
+    reorder(ids: string[]): Promise<void>
+    /** Main already reads every feed at launch, every half hour, and on focus; this asks now. */
+    refresh(): Promise<void>
+  }
   theme: {
     get(): Promise<ThemeSnapshot>
     onChange(listener: (state: ThemeSnapshot) => void): () => void
@@ -235,5 +290,7 @@ export interface CalendarApi {
   shell: {
     /** Opens the object in the Anytype desktop app via its `anytype://object` deep link. */
     openObject(objectId: string, spaceId: string): Promise<void>
+    /** Opens a web page in the browser, or a `mailto:` or `tel:` link in its app. Rejects any other link. */
+    openLink(link: string): Promise<void>
   }
 }

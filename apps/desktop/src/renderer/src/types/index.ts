@@ -36,6 +36,30 @@ export interface SelectProperty {
   label: string
 }
 
+/** A property offered by name, e.g. as the Done checkbox or the Location text. */
+export interface NamedProperty {
+  key: string
+  label: string
+}
+
+/** How the detail panel draws a property's value. */
+export type PanelFormat =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'multi_select'
+  | 'url'
+  | 'email'
+  | 'phone'
+  | 'objects'
+
+/** A property the detail panel can show of a type's objects. */
+export interface PanelProperty {
+  key: string
+  label: string
+  format: PanelFormat
+}
+
 /** One of a query's views, which narrow its objects each in its own way. */
 export interface QueryView {
   key: string
@@ -47,6 +71,8 @@ export interface QueryView {
  * through one of its views, and drawn by that type's dates.
  */
 export interface QuerySource {
+  /** The `ObjectType.key` of the type it runs over. */
+  typeKey: string
   /** The label of the type it runs over. */
   typeLabel: string
   /** Never empty; the first is read until another is chosen. */
@@ -70,6 +96,9 @@ export interface ObjectType {
   props: DateProperty[]
   /** Empty where the API cannot say what the options' colours are (v1). */
   selects: SelectProperty[]
+  checkboxes: NamedProperty[]
+  texts: NamedProperty[]
+  panelProps: PanelProperty[]
   /** Key of the mandatory start-date property the type starts with. */
   from: string
   /** Key of the optional end-date property; a type with one is drawn as a range. */
@@ -78,6 +107,12 @@ export interface ObjectType {
   includesTime: boolean
   /** Key of the select property whose options colour its objects; starts null (the type's own hue). */
   colourBy: string | null
+  /** Keys of the properties the detail panel shows, in order; starts empty. */
+  panel: string[]
+  /** Key of the checkbox its objects are ticked done by; starts on Anytype's own, where it has it. */
+  done: string | null
+  /** Key of the text that says where its objects take place; starts on Anytype's own, where it has it. */
+  location: string | null
 }
 
 /**
@@ -89,6 +124,9 @@ export interface DateMapping {
   to: string | null
   includesTime: boolean
   colourBy: string | null
+  panel: string[]
+  done: string | null
+  location: string | null
   /**
    * A query's view (`QueryView.key`) to read through; null for a type, and for a query until
    * one is picked, which reads its first.
@@ -135,9 +173,70 @@ export interface CalendarEvent {
   allDay: boolean
   done?: boolean
   location?: string
-  /** The hue of its option in the property its type is coloured by, drawn instead of the type's. */
+  /**
+   * The hue of its option in the property its type is coloured by, drawn instead of the
+   * type's; for a feed's event, its subscription's.
+   */
   category?: CategoryHue
+  /** In the order its type's panel shows them. */
+  details: EventDetail[]
+  /** Set for an event of a subscribed calendar, which is read-only. */
+  feed?: FeedEventDetails
 }
+
+/** What a subscribed calendar's event carries besides its dates. */
+export interface FeedEventDetails {
+  /** The subscription's name. */
+  calendar: string
+  /** Plain text. */
+  description?: string
+  /** A web page the feed links the event to. */
+  url?: string
+}
+
+/** An external calendar subscribed to by its iCalendar address. */
+export interface FeedSource {
+  /** `feedSourceKey`, what its events carry as `CalendarEvent.type`. */
+  key: string
+  /** The subscription's own id, which main is asked by. */
+  id: string
+  name: string
+  category: CategoryHue
+  /** Anytype's name of `category`, which main stores. */
+  colour: string
+  /** Its address is a credential main keeps; only the host is shown. */
+  host: string
+  status: FeedStatus
+}
+
+/** Why a feed could not be read, or added. */
+export type FeedFailure =
+  | { failure: 'unreachable' }
+  | { failure: 'http'; status: number }
+  | { failure: 'not-calendar' }
+  | { failure: 'invalid-url' }
+  | { failure: 'invalid-name' }
+
+/** How the last read of a feed went. Its events are those of the last good read, whatever the latest. */
+export interface FeedStatus {
+  state: SyncState
+  /** Since the last good read; absent before any. */
+  elapsed?: Elapsed
+  /** Why the latest read failed. */
+  failure?: FeedFailure
+}
+
+/**
+ * One property the detail panel shows, keyed by the property, whose label its type says. Never
+ * empty. A link's `href` is one main opens: `http(s)`, `mailto:` or `tel:`.
+ */
+export type EventDetail =
+  | { key: string; kind: 'text'; text: string }
+  | { key: string; kind: 'number'; value: number }
+  | { key: string; kind: 'link'; text: string; href: string }
+  | { key: string; kind: 'options'; options: { name: string; category: CategoryHue }[] }
+  /** A member is shown by name, not opened: Anytype has no object to open for one. */
+  | { key: string; kind: 'objects'; objects: { id: string; name: string; member: boolean }[] }
 
 /** One calendar day of whatever the view draws: a cell of the month grid, a day column. */
 export interface DayColumn {
@@ -282,6 +381,7 @@ export type IconName =
   | 'plus'
   | 'refresh-cw'
   | 'repeat'
+  | 'rss'
   | 'search'
   | 'settings'
   | 'shield-check'

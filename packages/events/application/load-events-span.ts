@@ -2,6 +2,7 @@ import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   compareEventsDatedObjects,
   eventsSpanWindow,
+  linkedEventsIds,
   nextEventsSpanLoad,
   overlapsEventsWindow,
   shownEventsSpan,
@@ -9,6 +10,9 @@ import {
   type EventsApiKeySource,
   type EventsDatedObject,
   type EventsGateway,
+  type EventsLinkedObject,
+  type EventsObjectRef,
+  type EventsSource,
   type EventsSourceSelection,
   type EventsSpan,
   type EventsSpanLoad,
@@ -97,12 +101,40 @@ export class LoadEventsSpan {
       sources.map(async (source, rank) => {
         const result = await this.#gateway.listObjects(apiKey, source, window)
         if (!result.ok) throw new Unauthorized()
-        return result.value
-          .map((ref) => toEventsDatedObject(ref, source, rank))
-          .filter((object) => overlapsEventsWindow(object, window))
+        return { source, rank, refs: result.value }
       })
     )
-    return perSource.flat().sort(compareEventsDatedObjects)
+    const linked = await this.#fetchLinked(apiKey, perSource)
+    const objects = perSource.flatMap(({ source, rank, refs }) =>
+      refs
+        .map((ref) => toEventsDatedObject(ref, source, rank, (id) => linked.get(`${source.spaceId}\n${id}`)))
+        .filter((object) => overlapsEventsWindow(object, window))
+    )
+    return objects.sort(compareEventsDatedObjects)
+  }
+
+  /**
+   * By space id and object id, what the span's objects link to: read once per space, for every
+   * id linked from it, rather than once per object.
+   */
+  async #fetchLinked(
+    apiKey: string,
+    perSource: readonly { source: EventsSource; refs: readonly EventsObjectRef[] }[]
+  ): Promise<Map<string, EventsLinkedObject>> {
+    const idsBySpace = new Map<string, Set<string>>()
+    for (const { source, refs } of perSource) {
+      const ids = idsBySpace.get(source.spaceId) ?? new Set<string>()
+      for (const ref of refs) for (const id of linkedEventsIds(ref.details ?? [])) ids.add(id)
+      if (ids.size > 0) idsBySpace.set(source.spaceId, ids)
+    }
+    const perSpace = await Promise.all(
+      [...idsBySpace].map(async ([spaceId, ids]) => {
+        const result = await this.#gateway.listLinkedObjects(apiKey, spaceId, [...ids])
+        if (!result.ok) throw new Unauthorized()
+        return result.value.map((object): [string, EventsLinkedObject] => [`${spaceId}\n${object.id}`, object])
+      })
+    )
+    return new Map(perSpace.flat())
   }
 
   #openingSpan(): EventsSpan {

@@ -3,6 +3,8 @@
 
 import {
   EMPTY_SCHEMA_SELECTION,
+  SCHEMA_DONE_KEY,
+  SCHEMA_LOCATION_KEY,
   type SchemaQuery,
   type SchemaQueryChoice,
   type SchemaSelection,
@@ -21,7 +23,7 @@ import type {
   SyncView,
   TypePicks
 } from '@renderer/types'
-import { offeredMapping } from './calendar'
+import { mappingIn, offeredMapping } from './calendar'
 
 /**
  * Anytype's ten colours — of type icons and select options alike — one hue each, so what
@@ -206,25 +208,23 @@ export function schemaSelectionFor(
   const drawn = (key: string): DateMapping | null => {
     const type = offered.get(key)
     if (!type || !picks.typeKeys.includes(key)) return null
-    const mapping = picks.dates[key]
-    const { from, to, includesTime, colourBy } = type
-    return (mapping && offeredMapping(type, mapping)) ?? { from, to, includesTime, colourBy, view: null }
+    return offeredMapping(type, mappingIn(picks.dates, type)) ?? mappingIn({}, type)
   }
 
   const types = spaces.flatMap((space) =>
     space.types.flatMap((type): SchemaTypeChoice[] => {
       const mapping = drawn(objectTypeKey(space.id, type.key))
       if (!mapping) return []
-      const { from, to, includesTime, colourBy } = mapping
-      return [{ spaceId: space.id, typeKey: type.key, from, to, includesTime, colourBy }]
+      const { view: _, ...choice } = mapping
+      return [{ spaceId: space.id, typeKey: type.key, ...choice }]
     })
   )
   const queries = spaces.flatMap((space) =>
     space.queries.flatMap((query): SchemaQueryChoice[] => {
       const mapping = drawn(querySourceKey(space.id, query.id))
       if (!mapping) return []
-      const { from, to, includesTime, colourBy, view } = mapping
-      return [{ spaceId: space.id, queryId: query.id, viewId: view, from, to, includesTime, colourBy }]
+      const { view, ...choice } = mapping
+      return [{ spaceId: space.id, queryId: query.id, viewId: view, ...choice }]
     })
   )
 
@@ -286,6 +286,9 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
     icon: (type.icon && TYPE_ICONS[type.icon.name]) ?? 'calendar',
     props: type.dateProperties.map(({ key, name }) => ({ key, label: name })),
     selects: type.selectProperties.map(({ key, name }) => ({ key, label: name })),
+    checkboxes: type.checkboxProperties.map(({ key, name }) => ({ key, label: name })),
+    texts: type.textProperties.map(({ key, name }) => ({ key, label: name })),
+    panelProps: type.panelProperties.map(({ key, name, format }) => ({ key, label: name, format })),
     ...defaultMapping(type)
   }
 }
@@ -298,15 +301,29 @@ function queryTypeFor(space: SchemaSpace, query: SchemaQuery, type: SchemaType):
     label: query.name,
     icon: 'funnel',
     query: {
+      typeKey: objectTypeKey(space.id, type.key),
       typeLabel: type.name,
       views: query.views.map(({ id, name }) => ({ key: id, label: name }))
     }
   }
 }
 
-/** A newly ticked type starts on its first date, as a single all-day date in its own hue. */
+/**
+ * A newly ticked type starts on its first date, as a single all-day date in its own hue, ticked
+ * done and placed by Anytype's own Done and Location where it has them, and showing nothing more.
+ */
 function defaultMapping(type: SchemaType): Omit<DateMapping, 'view'> {
-  return { from: type.dateProperties[0]?.key ?? '', to: null, includesTime: false, colourBy: null }
+  const has = (properties: readonly { key: string }[], key: string): boolean =>
+    properties.some((property) => property.key === key)
+  return {
+    from: type.dateProperties[0]?.key ?? '',
+    to: null,
+    includesTime: false,
+    colourBy: null,
+    panel: [],
+    done: has(type.checkboxProperties, SCHEMA_DONE_KEY) ? SCHEMA_DONE_KEY : null,
+    location: has(type.textProperties, SCHEMA_LOCATION_KEY) ? SCHEMA_LOCATION_KEY : null
+  }
 }
 
 /** Both epoch milliseconds. Untranslated: resolved to text by `syncDetailText` (`lib/sync-text.ts`). */

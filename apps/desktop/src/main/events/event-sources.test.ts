@@ -8,7 +8,10 @@ const TASK: SchemaTypeChoice = {
   from: 'due_date',
   to: null,
   includesTime: true,
-  colourBy: 'priority'
+  colourBy: 'priority',
+  panel: [],
+  done: 'done',
+  location: 'location'
 }
 
 const OPEN_TASKS: SchemaQueryChoice = {
@@ -18,7 +21,10 @@ const OPEN_TASKS: SchemaQueryChoice = {
   from: 'due_date',
   to: null,
   includesTime: false,
-  colourBy: 'priority'
+  colourBy: 'priority',
+  panel: [],
+  done: 'done',
+  location: 'location'
 }
 
 const SYNCED: SchemaSync = {
@@ -36,8 +42,19 @@ const SYNCED: SchemaSync = {
             name: 'Task',
             icon: null,
             dateProperties: [{ key: 'due_date', name: 'Due date' }],
-            hasDone: true,
-            hasLocation: true,
+            checkboxProperties: [
+              { key: 'done', name: 'Done' },
+              { key: 'finished', name: 'Finished' }
+            ],
+            textProperties: [
+              { key: 'location', name: 'Location' },
+              { key: 'venue', name: 'Venue' }
+            ],
+            panelProperties: [
+              { key: 'venue', name: 'Venue', format: 'text' },
+              { key: 'stage', name: 'Stage', format: 'select', options: [{ name: 'Draft', color: 'grey' }] },
+              { key: 'project', name: 'Project', format: 'objects' }
+            ],
             selectProperties: [
               { key: 'priority', name: 'Priority', options: [{ name: 'P1', color: 'red' }] },
               { key: 'stage', name: 'Stage', options: [{ name: 'Draft', color: 'grey' }] }
@@ -154,4 +171,58 @@ test('reads a query by its dates alone before a sync has seen it', () => {
       includesTime: false
     }
   ])
+})
+
+test('reads the Done and Location the user picked, where the synced type has them', () => {
+  const [picked, gone, none] = eventsSourcesFor(
+    {
+      phase: 'saved',
+      selection: {
+        spaceIds: ['sp_1'],
+        types: [{ ...TASK, done: 'finished', location: 'venue' }],
+        queries: [
+          { ...OPEN_TASKS, done: 'gone', location: 'gone' },
+          { ...OPEN_TASKS, queryId: 'q_open_2', done: null, location: null }
+        ]
+      }
+    },
+    {
+      ...SYNCED,
+      last: {
+        ...SYNCED.last,
+        spaces: SYNCED.last.spaces.map((space) => ({
+          ...space,
+          queries: [...space.queries, { id: 'q_open_2', name: 'Also open', typeKey: 'task', views: [] }]
+        }))
+      }
+    } as SchemaSync
+  )
+  expect(picked).toMatchObject({ done: 'finished', location: 'venue' })
+  expect(gone).not.toHaveProperty('done')
+  expect(gone).not.toHaveProperty('location')
+  expect(none).not.toHaveProperty('done')
+  expect(none).not.toHaveProperty('location')
+})
+
+test("reads the panel's properties in the chosen order, leaving out ones the synced type lacks", () => {
+  const [source] = eventsSourcesFor(
+    {
+      phase: 'saved',
+      selection: { spaceIds: ['sp_1'], types: [{ ...TASK, panel: ['project', 'gone', 'stage', 'venue'] }], queries: [] }
+    },
+    SYNCED
+  )
+  expect(source?.panel).toEqual([
+    { key: 'project', format: 'objects' },
+    { key: 'stage', format: 'select', options: [{ name: 'Draft', color: 'grey' }] },
+    { key: 'venue', format: 'text' }
+  ])
+})
+
+test('shows nothing more for a panel with nothing the synced type has', () => {
+  const [source] = eventsSourcesFor(
+    { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, panel: ['gone'] }], queries: [] } },
+    SYNCED
+  )
+  expect(source).not.toHaveProperty('panel')
 })

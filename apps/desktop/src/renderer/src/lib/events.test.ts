@@ -41,6 +41,7 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   start: local(8, 3),
   end: null,
   allDay: true,
+  details: [],
   ...overrides
 })
 
@@ -179,7 +180,16 @@ describe('eventsFor', () => {
 
   test('draws an all-day object on its local date, keyed to its type as lib/schema keys it', () => {
     expect(eventsFor(loaded([object({})]), SEPTEMBER)).toEqual([
-      { id: 'obj_1', title: 'Ship it', type: 'sp_1:task', space: 'sp_1', rank: 0, date: '2026-09-03', allDay: true }
+      {
+        id: 'obj_1',
+        title: 'Ship it',
+        type: 'sp_1:task',
+        space: 'sp_1',
+        rank: 0,
+        date: '2026-09-03',
+        allDay: true,
+        details: []
+      }
     ])
   })
 
@@ -220,6 +230,81 @@ describe('eventsFor', () => {
         SEPTEMBER
       ) ?? []
     expect(event).toMatchObject({ date: '2026-09-09', time: '09:30', until: '2026-09-09', end: '10:15' })
+  })
+
+  test('carries its details in order, options in their hues', () => {
+    const [event] =
+      eventsFor(
+        loaded([
+          object({
+            details: [
+              { key: 'salary', format: 'text', value: '40–50k' },
+              { key: 'openings', format: 'number', value: 2 },
+              { key: 'status', format: 'select', options: [{ name: 'Applied', color: 'red' }] },
+              {
+                key: 'tags',
+                format: 'multi_select',
+                options: [
+                  { name: 'Remote', color: 'blue' },
+                  { name: 'Odd', color: 'unknown' }
+                ]
+              },
+              {
+                key: 'contacts',
+                format: 'objects',
+                objects: [
+                  { id: 'obj_2', name: 'Acme', member: false },
+                  { id: 'participant-A8x', name: 'Mara', member: true }
+                ]
+              }
+            ]
+          })
+        ]),
+        SEPTEMBER
+      ) ?? []
+    expect(event?.details).toEqual([
+      { key: 'salary', kind: 'text', text: '40–50k' },
+      { key: 'openings', kind: 'number', value: 2 },
+      { key: 'status', kind: 'options', options: [{ name: 'Applied', category: 'clay' }] },
+      {
+        key: 'tags',
+        kind: 'options',
+        options: [
+          { name: 'Remote', category: 'denim' },
+          { name: 'Odd', category: 'graphite' }
+        ]
+      },
+      {
+        key: 'contacts',
+        kind: 'objects',
+        objects: [
+          { id: 'obj_2', name: 'Acme', member: false },
+          { id: 'participant-A8x', name: 'Mara', member: true }
+        ]
+      }
+    ])
+  })
+
+  test.each([
+    ['url', 'https://acme.example/jobs?id=1', 'https://acme.example/jobs?id=1'],
+    ['url', 'acme.example/jobs', 'https://acme.example/jobs'],
+    ['url', 'http://acme.example', 'http://acme.example/'],
+    ['email', 'jobs@acme.example', 'mailto:jobs@acme.example'],
+    ['phone', '+34 600 (00) 00-00', 'tel:+34600000000']
+  ] as const)('links a %s detail %s as %s', (format, value, href) => {
+    const [event] = eventsFor(loaded([object({ details: [{ key: 'k', format, value }] })]), SEPTEMBER) ?? []
+    expect(event?.details).toEqual([{ key: 'k', kind: 'link', text: value, href }])
+  })
+
+  test.each([
+    ['url', 'javascript:alert(1)'],
+    ['url', 'file:///etc/passwd'],
+    ['url', 'see the board'],
+    ['email', 'ask Mara'],
+    ['phone', 'ask at the desk']
+  ] as const)('draws a %s detail it cannot open, %s, as text', (format, value) => {
+    const [event] = eventsFor(loaded([object({ details: [{ key: 'k', format, value }] })]), SEPTEMBER) ?? []
+    expect(event?.details).toEqual([{ key: 'k', kind: 'text', text: value }])
   })
 
   test('keeps an empty title as-is; the render sites fall back to a translated "Untitled"', () => {
@@ -301,7 +386,8 @@ describe('edit requests', () => {
     rank: 0,
     date: '2026-09-14',
     time: '09:00',
-    allDay: false
+    allDay: false,
+    details: []
   }
 
   test('name the object and the slot as a day of the calendar, its month zero-based', () => {

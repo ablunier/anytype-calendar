@@ -61,6 +61,7 @@ const GALICIAN_CALENDAR = {
 }
 
 const localeSupport = new Map<string, boolean>()
+const numberLocaleSupport = new Map<string, boolean>()
 
 function supportsLocale(locale: string): boolean {
   let supported = localeSupport.get(locale)
@@ -277,22 +278,44 @@ export function offersDates(type: ObjectType, { from, to }: DateMapping): boolea
 
 /**
  * The mapping as the type can still draw it: null when it names a date the type does not have,
- * colouring by nothing when the property it colours by is gone, and a query's first view when
- * the one it names is gone — neither alone is reason to forget the dates. The mapping itself
- * when the type offers all of it.
+ * colouring by nothing when the property it colours by is gone, a query's first view when the
+ * one it names is gone, no Done or Location when the property picked is gone, and a panel
+ * without the properties that are — none alone is reason to forget the dates. The mapping
+ * itself when the type offers all of it.
  */
 export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapping | null {
   if (!offersDates(type, mapping)) return null
-  const { colourBy, view } = mapping
-  const offersColour = colourBy === null || type.selects.some((select) => select.key === colourBy)
+  const { colourBy, view, panel, done, location } = mapping
+  const has = (properties: readonly { key: string }[], key: string | null): boolean =>
+    key === null || properties.some((property) => property.key === key)
+  const offersColour = has(type.selects, colourBy)
   // A type has no views, so the one a query names is kept only while the query has it.
   const offersView = view === null || type.query?.views.some((option) => option.key === view) === true
-  if (offersColour && offersView) return mapping
+  const offersDone = has(type.checkboxes, done)
+  const offersLocation = has(type.texts, location)
+  const offersPanel = panel.every((key) => has(type.panelProps, key))
+  if (offersColour && offersView && offersDone && offersLocation && offersPanel) return mapping
   return {
     ...mapping,
     ...(offersColour ? {} : { colourBy: null }),
-    ...(offersView ? {} : { view: null })
+    ...(offersView ? {} : { view: null }),
+    ...(offersDone ? {} : { done: null }),
+    ...(offersLocation ? {} : { location: null }),
+    ...(offersPanel ? {} : { panel: panel.filter((key) => has(type.panelProps, key)) })
   }
+}
+
+/**
+ * How `type` is drawn: its entry in `dates`, or its own mapping. A query with no entry shows in
+ * its panel what its type's entry does, and is ticked done and placed by the same properties.
+ */
+export function mappingIn(dates: Record<string, DateMapping>, type: ObjectType): DateMapping {
+  const own = dates[type.key]
+  if (own) return own
+  const { from, to, includesTime, colourBy, panel, done, location } = type
+  const mapping: DateMapping = { from, to, includesTime, colourBy, panel, done, location, view: null }
+  const ofType = type.query && dates[type.query.typeKey]
+  return ofType ? { ...mapping, panel: ofType.panel, done: ofType.done, location: ofType.location } : mapping
 }
 
 /** Each type with the dates in `dates` where it has an entry, and its own where it has none. */
@@ -319,8 +342,40 @@ export function colourOptions(type: ObjectType): { value: string; label: string 
   return type.selects.map(({ key, label }) => ({ value: key, label }))
 }
 
+export function doneOptions(type: ObjectType): { value: string; label: string }[] {
+  return type.checkboxes.map(({ key, label }) => ({ value: key, label }))
+}
+
+export function locationOptions(type: ObjectType): { value: string; label: string }[] {
+  return type.texts.map(({ key, label }) => ({ value: key, label }))
+}
+
+/** Falls back to the key for a property the type no longer has. */
+export function panelLabel(type: ObjectType, key: string): string {
+  return type.panelProps.find((prop) => prop.key === key)?.label ?? key
+}
+
 export function spacesByKeys(spaces: Space[], keys: string[]): Space[] {
   return spaces.filter((space) => keys.includes(space.key))
+}
+
+/**
+ * As Galician writes it: `.` between thousands, from four digits up, and `,` before decimals.
+ * Chromium carries no Galician number data either, so it is spelled out from English's.
+ */
+export function formatNumber(value: number, locale: string): string {
+  if (!usesGalicianNumberFallback(locale)) return new Intl.NumberFormat(locale).format(value)
+  return new Intl.NumberFormat('en').format(value).replace(/[,.]/g, (mark) => (mark === ',' ? '.' : ','))
+}
+
+function usesGalicianNumberFallback(locale: string): boolean {
+  if (locale !== 'gl') return false
+  let supported = numberLocaleSupport.get(locale)
+  if (supported === undefined) {
+    supported = Intl.NumberFormat.supportedLocalesOf([locale]).length > 0
+    numberLocaleSupport.set(locale, supported)
+  }
+  return !supported
 }
 
 /** `HH:MM` in local time, drawn the way the user chose to read the clock. */

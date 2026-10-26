@@ -4,7 +4,7 @@ import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/t
 import { IconButton } from '@renderer/components/ui'
 import { eventsOnDay } from '@renderer/lib/calendar'
 import { DayDetail } from './DayDetail'
-import { EventDetail, type DatePickerSettings } from './EventDetail'
+import { EventDetail, FeedEventDetail, type DatePickerSettings } from './EventDetail'
 
 export interface DetailPanelProps {
   detail: DetailTarget
@@ -56,7 +56,9 @@ export function DetailPanel({
         <IconButton icon="x" label={t('calendar.detailPanel.close')} onClick={onClose} />
       </div>
 
-      {event ? (
+      {event?.feed ? (
+        <FeedEventDetail event={event} feed={event.feed} />
+      ) : event ? (
         <EventDetail
           event={event}
           type={typesByKey.get(event.type)}

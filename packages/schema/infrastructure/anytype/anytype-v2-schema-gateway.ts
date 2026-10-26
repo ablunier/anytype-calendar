@@ -415,7 +415,8 @@ function toProperty(item: AnytypePropertyDefinition | null): SchemaProperty {
   const key = nonEmpty(item?.property)
   const format = nonEmpty(item?.format)
   if (key === undefined || format === undefined) throw malformed('types')
-  return { key: SYSTEM_KEY_SPELLINGS[key] ?? key, name: nonEmpty(item?.name) ?? '', format }
+  const property = { key: SYSTEM_KEY_SPELLINGS[key] ?? key, name: nonEmpty(item?.name) ?? '', format }
+  return item?.section === 'hidden' ? { ...property, hidden: true } : property
 }
 
 /** Anytype also draws types with an emoji or an image; only a named icon is carried. */

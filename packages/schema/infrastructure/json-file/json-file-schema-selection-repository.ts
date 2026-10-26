@@ -9,16 +9,18 @@ export interface SchemaSelectionFile {
 
 /**
  * Bumped when the stored shape changes. Bumped to 2 when `SchemaTypeChoice` gained
- * `includesTime`, to 3 when it gained `colourBy`, and to 4 when the selection gained `queries`.
+ * `includesTime`, to 3 when it gained `colourBy`, to 4 when the selection gained `queries`, and
+ * to 5 when a choice gained `panel`, `done` and `location`.
  */
-const FORMAT_VERSION = 4
+const FORMAT_VERSION = 5
 
 /**
- * Versions still read, besides the current one: a version-2 choice lacks only `colourBy`, and
- * a version-3 selection only `queries`, which toSchemaSelection reads as none. A file of any
- * other version loads as none.
+ * Versions still read, besides the current one: a version-2 choice lacks `colourBy`, a
+ * version-3 selection `queries` too, and a version-4 choice `panel`, `done` and `location`,
+ * which toSchemaSelection reads as drawn before they existed. A file of any other version
+ * loads as none.
  */
-const READABLE_VERSIONS: ReadonlySet<unknown> = new Set([2, 3, FORMAT_VERSION])
+const READABLE_VERSIONS: ReadonlySet<unknown> = new Set([2, 3, 4, FORMAT_VERSION])
 
 /**
  * A file that cannot be read back — unreadable, not JSON, an unreadable version, or not a
