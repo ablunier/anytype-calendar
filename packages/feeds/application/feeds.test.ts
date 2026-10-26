@@ -272,6 +272,12 @@ describe('adding a subscription', () => {
     expect(cached.has('new1')).toBe(true)
   })
 
+  test('takes the colour asked for', async () => {
+    const { stored, add } = setup({ answers: { 'https://example.com/new.ics': { ok: true, text: feed([]) } } })
+    await add.execute({ url: 'https://example.com/new.ics', name: 'New', colour: 'red' })
+    expect(stored()[0]?.colour).toBe('red')
+  })
+
   test('takes the name the feed gives itself, or else its host, when given none', async () => {
     const { stored, add } = setup({
       answers: {

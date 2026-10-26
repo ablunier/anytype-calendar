@@ -7,6 +7,7 @@ import {
   type FeedsAddOutcome,
   type FeedsCache,
   type FeedsCalendarParser,
+  type FeedsColour,
   type FeedsGateway
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
@@ -17,6 +18,8 @@ export interface AddFeedsSubscriptionInput {
   url: string
   /** Empty takes the name the feed gives itself, or else its host. */
   name: string
+  /** Left out, it takes one no other subscription has yet. */
+  colour?: FeedsColour
 }
 
 export interface AddFeedsSubscriptionDeps {
@@ -32,8 +35,7 @@ export interface AddFeedsSubscriptionDeps {
 
 /**
  * The feed is read before anything is saved, so a mistyped address, or one that is not a
- * calendar, is refused with why, and leaves nothing behind. It goes last in the order, in a
- * colour no other subscription has yet.
+ * calendar, is refused with why, and leaves nothing behind. It goes last in the order.
  */
 export class AddFeedsSubscription {
   readonly #gateway: FeedsGateway
@@ -55,7 +57,7 @@ export class AddFeedsSubscription {
   }
 
   /** Rejects only when the subscription could not be written. */
-  async execute({ url, name }: AddFeedsSubscriptionInput): Promise<FeedsAddOutcome> {
+  async execute({ url, name, colour }: AddFeedsSubscriptionInput): Promise<FeedsAddOutcome> {
     const address = toFeedsUrl(url)
     if (address === null) return { ok: false, failure: 'invalid-url' }
     const given = name.trim() === '' ? null : toFeedsName(name)
@@ -74,7 +76,7 @@ export class AddFeedsSubscription {
         id,
         name: given ?? toFeedsName(calendar.name) ?? feedsUrlHost(address),
         url: address,
-        colour: nextFeedsColour(current.map(({ colour }) => colour))
+        colour: colour ?? nextFeedsColour(current.map((subscription) => subscription.colour))
       }
     ])
     this.#store.update(id, { calendar, status: { readAt, reading: false, error: null } })
