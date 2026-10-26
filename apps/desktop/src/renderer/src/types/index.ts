@@ -173,10 +173,57 @@ export interface CalendarEvent {
   allDay: boolean
   done?: boolean
   location?: string
-  /** The hue of its option in the property its type is coloured by, drawn instead of the type's. */
+  /**
+   * The hue of its option in the property its type is coloured by, drawn instead of the
+   * type's; for a feed's event, its subscription's.
+   */
   category?: CategoryHue
   /** In the order its type's panel shows them. */
   details: EventDetail[]
+  /** Set for an event of a subscribed calendar, which is read-only. */
+  feed?: FeedEventDetails
+}
+
+/** What a subscribed calendar's event carries besides its dates. */
+export interface FeedEventDetails {
+  /** The subscription's name. */
+  calendar: string
+  /** Plain text. */
+  description?: string
+  /** A web page the feed links the event to. */
+  url?: string
+}
+
+/** An external calendar subscribed to by its iCalendar address. */
+export interface FeedSource {
+  /** `feedSourceKey`, what its events carry as `CalendarEvent.type`. */
+  key: string
+  /** The subscription's own id, which main is asked by. */
+  id: string
+  name: string
+  category: CategoryHue
+  /** Anytype's name of `category`, which main stores. */
+  colour: string
+  /** Its address is a credential main keeps; only the host is shown. */
+  host: string
+  status: FeedStatus
+}
+
+/** Why a feed could not be read, or added. */
+export type FeedFailure =
+  | { failure: 'unreachable' }
+  | { failure: 'http'; status: number }
+  | { failure: 'not-calendar' }
+  | { failure: 'invalid-url' }
+  | { failure: 'invalid-name' }
+
+/** How the last read of a feed went. Its events are those of the last good read, whatever the latest. */
+export interface FeedStatus {
+  state: SyncState
+  /** Since the last good read; absent before any. */
+  elapsed?: Elapsed
+  /** Why the latest read failed. */
+  failure?: FeedFailure
 }
 
 /**
@@ -334,6 +381,7 @@ export type IconName =
   | 'plus'
   | 'refresh-cw'
   | 'repeat'
+  | 'rss'
   | 'search'
   | 'settings'
   | 'shield-check'

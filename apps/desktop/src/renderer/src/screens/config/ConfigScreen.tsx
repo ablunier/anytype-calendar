@@ -4,6 +4,7 @@ import type {
   ApiAccessView,
   ApiKeyView,
   CalendarView,
+  FeedSource,
   ObjectType,
   Space,
   SyncView,
@@ -17,6 +18,7 @@ import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calend
 import { syncDetailText } from '@renderer/lib/sync-text'
 import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { AboutSection } from './AboutSection'
+import { CalendarsSection, type CalendarsSectionProps } from './CalendarsSection'
 import { SessionSection } from './SessionSection'
 import { SpaceTypesCard } from './SpaceTypesCard'
 
@@ -55,6 +57,11 @@ export interface ConfigScreenProps {
   /** A newer release's version, shown even after its notice was closed. */
   updateAvailable: string | null
   onOpenRelease: () => void
+  /** The subscribed calendars, in the user's order. */
+  feeds: FeedSource[]
+  feedActions: Omit<CalendarsSectionProps, 'feeds' | 'focusAdd'>
+  /** Opened to add a calendar: the subscribed calendars' form is scrolled to and focused. */
+  focusAddFeed?: boolean
 }
 
 /**
@@ -91,7 +98,10 @@ function Settings({
   onSignOut,
   appVersion,
   updateAvailable,
-  onOpenRelease
+  onOpenRelease,
+  feeds,
+  feedActions,
+  focusAddFeed = false
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const selection = useTypeSelection(types, initial)
@@ -218,6 +228,8 @@ function Settings({
               </Card>
             )}
           </section>
+
+          <CalendarsSection feeds={feeds} {...feedActions} focusAdd={focusAddFeed} />
 
           <section>
             <h2 className="mb-10 type-heading text-h4 text-ink-primary">{t('config.calendar')}</h2>

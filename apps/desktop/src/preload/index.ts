@@ -5,6 +5,7 @@ import {
   type CalendarApi,
   type CalendarViewSnapshot,
   type EventsSnapshot,
+  type FeedsSnapshot,
   type LanguageSnapshot,
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
@@ -73,6 +74,21 @@ const api: CalendarApi = {
     reschedule: (request) => ipcRenderer.invoke(IpcChannel.eventsReschedule, request),
     create: (request) => ipcRenderer.invoke(IpcChannel.eventsCreate, request),
     setDone: (request) => ipcRenderer.invoke(IpcChannel.eventsSetDone, request)
+  },
+  feeds: {
+    get: () => ipcRenderer.invoke(IpcChannel.feedsGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, state: FeedsSnapshot): void => listener(state)
+      ipcRenderer.on(IpcChannel.feedsChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.feedsChanged, forward)
+      }
+    },
+    add: (request) => ipcRenderer.invoke(IpcChannel.feedsAdd, request),
+    edit: (request) => ipcRenderer.invoke(IpcChannel.feedsEdit, request),
+    remove: (id) => ipcRenderer.invoke(IpcChannel.feedsRemove, id),
+    reorder: (ids) => ipcRenderer.invoke(IpcChannel.feedsReorder, ids),
+    refresh: () => ipcRenderer.invoke(IpcChannel.feedsRefresh)
   },
   theme: {
     get: () => ipcRenderer.invoke(IpcChannel.themeGet),

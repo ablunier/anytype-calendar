@@ -13,6 +13,7 @@ import type {
   CalendarView,
   DetailTarget,
   EditAccess,
+  FeedSource,
   ObjectType,
   Space,
   SyncView
@@ -52,11 +53,16 @@ export interface CalendarScreenProps {
   trackedSpaceKeys: string[]
   /** The chosen types and queries of the tracked spaces: what the sidebar can hide. */
   sources: ObjectType[]
+  /** The subscribed calendars, which the sidebar can hide too. Their events are read-only. */
+  feeds: FeedSource[]
   /** Keys of the sources not drawn. They are read all the same. */
   hiddenSources: ReadonlySet<string>
   sidebarCollapsed: boolean
   collapsedSpaces: ReadonlySet<string>
-  /** False when no chosen type sits in a chosen space, so no span can hold anything. */
+  /**
+   * False when no chosen type sits in a chosen space and no calendar is subscribed to, so no
+   * span can hold anything.
+   */
   tracksAnything: boolean
   /** `YYYY-MM-DD`. */
   today: string
@@ -78,6 +84,8 @@ export interface CalendarScreenProps {
   onSelectDate: (date: string) => void
   onToggleTheme: () => void
   onOpenSettings: () => void
+  /** Opens Settings at the subscribed calendars, to add one. */
+  onAddCalendar: () => void
   onView: (view: CalendarView) => void
   onPrev: () => void
   onNext: () => void
@@ -92,6 +100,9 @@ export interface CalendarScreenProps {
 /**
  * Draws one span. Keyed by it, so another span starts with no day selected and no panel.
  *
+ * The subscribed calendars' events are drawn among Anytype's objects, in their colours, and are
+ * never moved, ticked or created here: they belong to whoever publishes them.
+ *
  * Where the session can write, objects are moved by dragging them, created by double-clicking
  * an empty day or hour, and ticked done from their panel; an edit that fails says why in a
  * toast, since the object has already gone back to where it was. Where it cannot, dragging is
@@ -105,6 +116,7 @@ export function CalendarScreen({
   spaces,
   trackedSpaceKeys,
   sources,
+  feeds,
   hiddenSources,
   sidebarCollapsed,
   collapsedSpaces,
@@ -125,6 +137,7 @@ export function CalendarScreen({
   onSelectDate,
   onToggleTheme,
   onOpenSettings,
+  onAddCalendar,
   onView,
   onPrev,
   onNext,
@@ -146,7 +159,8 @@ export function CalendarScreen({
     () => creatableTypes.filter(({ key }) => !hiddenSources.has(key)),
     [creatableTypes, hiddenSources]
   )
-  const everythingHidden = allHidden(sources, hiddenSources)
+  const toggleable = useMemo(() => [...sources, ...feeds], [sources, feeds])
+  const everythingHidden = allHidden(toggleable, hiddenSources)
 
   const cells = useMemo(
     () => (span.kind === 'month' ? buildMonthGrid(span.year, span.month, weekStart) : []),
@@ -264,12 +278,14 @@ export function CalendarScreen({
           showWeekNumbers={showWeekNumbers}
           spaces={trackedSpaces}
           sources={sources}
+          feeds={feeds}
           hidden={hiddenSources}
           onSelectDate={onSelectDate}
           onSetShown={onSetSourcesShown}
           collapsedSpaces={collapsedSpaces}
           onToggleSpaceCollapsed={onToggleSpaceCollapsed}
           onToggleCollapsed={onToggleSidebar}
+          onAddCalendar={onAddCalendar}
         />
         <main className="flex min-w-0 flex-1 flex-col">
           {!tracksAnything ? (
@@ -296,7 +312,7 @@ export function CalendarScreen({
                     variant="secondary"
                     size="sm"
                     iconLeft="eye"
-                    onClick={() => onSetSourcesShown(sources.map(({ key }) => key), true)}
+                    onClick={() => onSetSourcesShown(toggleable.map(({ key }) => key), true)}
                   >
                     {t('calendar.showAll')}
                   </Button>
