@@ -118,7 +118,6 @@ export function MonthDayCell({
             time={segment.continuesBefore ? undefined : segment.event.time}
             allDay={segment.event.allDay}
             done={segment.event.done}
-            external={segment.event.feed !== undefined}
             lifted={drag?.draggingId === segment.event.id}
             {...(drag && !segment.event.feed
               ? {

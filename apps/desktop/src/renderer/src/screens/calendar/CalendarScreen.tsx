@@ -98,7 +98,7 @@ export interface CalendarScreenProps {
 /**
  * Draws one span. Keyed by it, so another span starts with no day selected and no panel.
  *
- * The subscribed calendars' events are drawn among Anytype's objects, marked apart, and are
+ * The subscribed calendars' events are drawn among Anytype's objects, in their colours, and are
  * never moved, ticked or created here: they belong to whoever publishes them.
  *
  * Where the session can write, objects are moved by dragging them, created by double-clicking

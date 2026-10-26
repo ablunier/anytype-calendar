@@ -2,7 +2,7 @@ import type { CSSProperties, DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import type { EventSegment } from '@renderer/lib/month-layout'
-import { catBg, catBgSoft, catText, Icon } from '@renderer/components/ui'
+import { catBg, catBgSoft, catText } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
 
@@ -13,8 +13,6 @@ export interface EventChipProps {
   time?: string
   allDay?: boolean
   done?: boolean
-  /** An event of a subscribed calendar, marked apart from Anytype's objects. */
-  external?: boolean
   /** Given where it can be dragged to another day; left off where it cannot. */
   onDragStart?: (drag: DragEvent) => void
   onDragEnd?: () => void
@@ -38,7 +36,6 @@ export function EventChip({
   time,
   allDay = false,
   done = false,
-  external = false,
   onDragStart,
   onDragEnd,
   lifted = false,
@@ -87,7 +84,6 @@ export function EventChip({
       >
         {title}
       </span>
-      {external ? <Icon name="globe" size={10} className="shrink-0 opacity-70" /> : null}
     </button>
   )
 }

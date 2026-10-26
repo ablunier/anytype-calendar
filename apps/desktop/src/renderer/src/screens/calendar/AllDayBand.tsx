@@ -74,7 +74,6 @@ export function AllDayBand({
               allDay={segment.event.allDay}
               time={segment.continuesBefore ? undefined : segment.event.time}
               {...(segment.event.done === undefined ? {} : { done: segment.event.done })}
-              external={segment.event.feed !== undefined}
               lifted={drag.draggingId === segment.event.id}
               {...(onMoveEvent && !segment.event.feed
                 ? {

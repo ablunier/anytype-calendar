@@ -53,7 +53,7 @@ export function EventRow({
       >
         {title}
       </span>
-      {external ? <Icon name="globe" size={12} className="shrink-0 text-ink-tertiary" /> : null}
+      {external ? <Icon name="rss" size={12} className="shrink-0 text-ink-tertiary" /> : null}
     </button>
   )
 }

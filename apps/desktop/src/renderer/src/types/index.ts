@@ -381,6 +381,7 @@ export type IconName =
   | 'plus'
   | 'refresh-cw'
   | 'repeat'
+  | 'rss'
   | 'search'
   | 'settings'
   | 'shield-check'

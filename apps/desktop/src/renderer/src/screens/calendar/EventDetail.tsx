@@ -206,7 +206,7 @@ export function FeedEventDetail({ event, feed }: FeedEventDetailProps): React.JS
           {event.title || t('common.untitled')}
         </h2>
         <div className="flex items-center gap-8">
-          <Tag category={category} icon="globe">
+          <Tag category={category} icon="rss">
             {feed.calendar}
           </Tag>
         </div>

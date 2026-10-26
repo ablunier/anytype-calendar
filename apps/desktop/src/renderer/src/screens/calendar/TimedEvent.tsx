@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import type { TimedSegment } from '@renderer/lib/time-grid'
-import { catBgSoft, catBorder, catText, Icon } from '@renderer/components/ui'
+import { catBgSoft, catBorder, catText } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
 
@@ -16,8 +16,6 @@ export interface TimedEventProps {
   /** `HH:MM`; defaults to the event's own. */
   time?: string
   done?: boolean
-  /** An event of a subscribed calendar, marked apart from Anytype's objects. */
-  external?: boolean
   /**
    * Given where it can be dragged: by its body to move it, and by its bottom edge to resize
    * it, which `resizable` offers. Left off where it cannot.
@@ -42,7 +40,6 @@ export function TimedEvent({
   category,
   time,
   done = false,
-  external = false,
   onDragStart,
   resizable = false,
   lifted = false,
@@ -94,7 +91,6 @@ export function TimedEvent({
         {shownTime ? formatTime(shownTime, timeFormat, i18n.language) : null}
       </span>
       <span className={['min-w-0 truncate type-ui text-tiny', done ? 'line-through' : ''].join(' ')}>
-        {external ? <Icon name="globe" size={10} className="mr-4 inline-block align-[-1px] opacity-70" /> : null}
         {title}
       </span>
       {onDragStart && resizable ? (

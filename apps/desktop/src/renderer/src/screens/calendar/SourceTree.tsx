@@ -105,7 +105,7 @@ export function FeedList({ feeds, hidden, onSetShown }: FeedListProps): React.JS
             <ToggleRow
               state={state}
               name={feed.name}
-              marker={<Icon name="globe" size={16} className={`shrink-0 ${catText[feed.category]}`} />}
+              marker={<Icon name="rss" size={16} className={`shrink-0 ${catText[feed.category]}`} />}
               hue={feed.category}
               onToggle={() => onSetShown([feed.key], state === 'hidden')}
             />

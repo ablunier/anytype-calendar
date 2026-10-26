@@ -301,7 +301,6 @@ export function TimeGrid({
                       title={event.title || t('common.untitled')}
                       category={eventHue(event, type)}
                       {...(event.done === undefined ? {} : { done: event.done })}
-                      external={event.feed !== undefined}
                       {...(onMoveEvent && !event.feed ? { onDragStart: beginPress(segment, index) } : {})}
                       // Only a type with a To date has an end to pull; a feed's event has no type.
                       resizable={onResizeEvent !== undefined && Boolean(type?.to)}
