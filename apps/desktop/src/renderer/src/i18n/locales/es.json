@@ -38,7 +38,8 @@
     },
     "failure": {
       "unauthorized": "Clave no aceptada",
-      "unreachable": "¿Está Anytype abierto?"
+      "unreachable": "¿Está Anytype abierto?",
+      "outdated": "Anytype necesita actualizarse"
     }
   },
   "auth": {

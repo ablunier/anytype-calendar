@@ -16,7 +16,7 @@ export interface CreateEventDialogProps {
   /** Never empty: the calendar only offers creating when there is a type to create. */
   types: ObjectType[]
   spacesByKey: Map<string, Space>
-  /** By space key; a space with none, as every space under v1, offers no Collection field. */
+  /** By space key; a space with none offers no Collection field. */
   collectionsBySpace: Map<string, Collection[]>
   onClose: () => void
   /**

@@ -25,7 +25,7 @@ export interface Space {
   icon?: string
 }
 
-/** A collection a new object can be added to. Only v2 of the local API serves them. */
+/** A collection a new object can be added to. */
 export interface Collection {
   /** Anytype's object id. */
   key: string
@@ -120,7 +120,6 @@ export interface ObjectType {
   query?: QuerySource
   /** Date properties only. */
   props: DateProperty[]
-  /** Empty where the API cannot say what the options' colours are (v1). */
   selects: SelectProperty[]
   checkboxes: NamedProperty[]
   texts: NamedProperty[]
@@ -318,6 +317,7 @@ export type SyncDetail =
   | { kind: 'elapsed'; elapsed: Elapsed }
   | { kind: 'unauthorized' }
   | { kind: 'unreachable' }
+  | { kind: 'outdated' }
 
 /** How the last read of the account went, ready for SyncStatus. */
 export interface SyncView {

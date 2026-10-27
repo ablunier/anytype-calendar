@@ -12,7 +12,7 @@ export interface SchemaTypeIcon {
 export interface SchemaType {
   /** Anytype's type key, e.g. `task`; unique within the space. */
   key: string
-  /** How v1 of the local API spelled the key, where v2 spells it otherwise. */
+  /** How v1 of the local API spelled the key, where v2 spells it otherwise. See rekeySchemaSelection. */
   formerKey?: string
   name: string
   /** Null for a type drawn with an emoji or an image. */
@@ -23,8 +23,8 @@ export interface SchemaType {
   checkboxProperties: SchemaNamedProperty[]
   /** What can say where its objects take place. */
   textProperties: SchemaNamedProperty[]
-  /** What the detail panel can show of its objects; select options only where the API lists them (v2). */
+  /** What the detail panel can show of its objects. */
   panelProperties: SchemaPanelProperty[]
-  /** Only the ones with options; empty where the API cannot list options (v1). */
+  /** Only the ones with options. */
   selectProperties: SchemaSelectProperty[]
 }

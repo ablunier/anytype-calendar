@@ -151,14 +151,16 @@ function isId(value: unknown): value is string {
 }
 
 /**
- * A selection saved while Anytype served only v1 of its API names a type or date property the
- * way v1 spelled it. v2 spells some differently — a user's type or property whose v1 key
- * collides with one Anytype bundles is served by its internal key (`6a67…`), and refused by
- * the old one as ambiguous — so each such choice is rewritten to the key the account now
- * serves. Returns `selection` itself when nothing needed rewriting.
+ * A selection saved while the app read through v1 of Anytype's API names a type the way v1
+ * spelled it. v2 spells some differently — a user's type whose v1 key collides with one Anytype
+ * bundles is served by its internal key (`6a67…`), and refused by the old one as ambiguous — so
+ * each such choice is rewritten to the key the account now serves. Returns `selection` itself
+ * when nothing needed rewriting.
  *
  * A choice whose type is already chosen under its current key is dropped: it is the same type.
- * Query choices are left alone: only v2 serves queries, so they were chosen by v2's keys.
+ * Its properties are left alone: their v1 keys were known only to v1, so one that no longer
+ * resolves falls back as any stale property does. Query choices are left alone too: only v2
+ * serves queries, so they were chosen by v2's keys.
  */
 export function rekeySchemaSelection(
   selection: SchemaSelection,
@@ -170,46 +172,11 @@ export function rekeySchemaSelection(
   let changed = false
   const types = selection.types.flatMap((choice) => {
     const candidates = typesBySpace.get(choice.spaceId) ?? []
-    const type =
-      candidates.find(({ key }) => key === choice.typeKey) ??
-      candidates.find(({ formerKey }) => formerKey === choice.typeKey)
+    if (candidates.some(({ key }) => key === choice.typeKey)) return [choice]
+    const type = candidates.find(({ formerKey }) => formerKey === choice.typeKey)
     if (!type) return [choice]
-
-    const rekeyed: SchemaTypeChoice = {
-      ...choice,
-      typeKey: type.key,
-      from: currentKey(type.dateProperties, choice.from),
-      to: choice.to === null ? null : currentKey(type.dateProperties, choice.to),
-      colourBy: choice.colourBy === null ? null : currentKey(type.selectProperties, choice.colourBy),
-      panel: choice.panel.map((key) => currentKey(type.panelProperties, key)),
-      done: choice.done === null ? null : currentKey(type.checkboxProperties, choice.done),
-      location: choice.location === null ? null : currentKey(type.textProperties, choice.location)
-    }
-    if (rekeyed.typeKey !== choice.typeKey && chosen.has(`${choice.spaceId}\n${rekeyed.typeKey}`)) {
-      changed = true
-      return []
-    }
-    if (
-      rekeyed.typeKey === choice.typeKey &&
-      rekeyed.from === choice.from &&
-      rekeyed.to === choice.to &&
-      rekeyed.colourBy === choice.colourBy &&
-      rekeyed.panel.every((key, index) => key === choice.panel[index]) &&
-      rekeyed.done === choice.done &&
-      rekeyed.location === choice.location
-    ) {
-      return [choice]
-    }
     changed = true
-    return [rekeyed]
+    return chosen.has(`${choice.spaceId}\n${type.key}`) ? [] : [{ ...choice, typeKey: type.key }]
   })
   return changed ? { ...selection, types } : selection
-}
-
-function currentKey(
-  properties: readonly { key: string; formerKey?: string }[],
-  key: string
-): string {
-  if (properties.some((property) => property.key === key)) return key
-  return properties.find(({ formerKey }) => formerKey === key)?.key ?? key
 }

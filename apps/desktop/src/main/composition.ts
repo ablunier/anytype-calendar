@@ -89,8 +89,6 @@ import {
 import type { SchemaGateway } from '@anytype-calendar/schema/domain'
 import {
   AnytypeSchemaGateway,
-  AnytypeV1SchemaGateway,
-  AnytypeV2SchemaGateway,
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository
 } from '@anytype-calendar/schema/infrastructure'
@@ -233,18 +231,9 @@ export function composeServices(): AppServices {
 
   const schemaState = new SchemaSyncStore()
   const schemaSync = new SyncSchema({
-    gateway:
-      client && v1 && probe
-        ? new AnytypeSchemaGateway({
-            probe,
-            v1: new AnytypeV1SchemaGateway(v1),
-            v2: new AnytypeV2SchemaGateway({
-              client,
-              v1,
-              encodeBase64: (bytes) => Buffer.from(bytes).toString('base64')
-            })
-          })
-        : inMemorySchemaGateway(),
+    gateway: client
+      ? new AnytypeSchemaGateway({ client, encodeBase64: (bytes) => Buffer.from(bytes).toString('base64') })
+      : inMemorySchemaGateway(),
     apiKeys,
     store: schemaState
   })
@@ -419,12 +408,13 @@ export function composeServices(): AppServices {
   // flips the session away from `connected`, which the line above already resets both stores
   // for, and which the renderer already reads as "show sign-in" — so a rejected key sends the
   // user back there instead of leaving them stuck on a screen that can never read anything.
-  const handleUnauthorized = (failure: 'unreachable' | 'unauthorized'): void => {
+  // An outdated Anytype keeps the key: it is still valid, and works once Anytype is updated.
+  const handleUnauthorized = (failure: 'unreachable' | 'unauthorized' | 'outdated'): void => {
     if (failure === 'unauthorized' && connected()) void signOutOfAuth.execute()
   }
   // A fresh read of the account, or a changed selection, may change what the month holds. A
   // reload replaces a load still running, so a burst of Settings changes draws only the last.
-  // A selection saved under v1 of the API may name types and properties by keys v2 spells
+  // A selection saved while the app read through v1 may name types by keys v2 spells
   // otherwise; rewriting it saves it, and a saved selection reloads the span on its own.
   schemaState.subscribe((state) => {
     if (state.phase === 'synced') {

@@ -1,34 +1,100 @@
-import type { AnytypeDialectProbe } from '@anytype-calendar/anytype-v1/infrastructure'
+import {
+  listAll,
+  type AnytypeApi,
+  type AnytypeClient,
+  type AnytypeFailure,
+  type AnytypeIcon,
+  type AnytypeObjectDocument,
+  type AnytypePage,
+  type AnytypePaging,
+  type AnytypePropertyDefinition,
+  type AnytypeResult,
+  type AnytypeTypeDocument
+} from '@ablunier/anytype-client'
 import type {
   SchemaCollection,
   SchemaGateway,
   SchemaGatewayResult,
+  SchemaProperty,
   SchemaQueryRef,
   SchemaSelectOption,
   SchemaSpaceList,
+  SchemaTypeIcon,
   SchemaTypeRef
 } from '../../domain'
 
-/** Reads through v2 where Anytype serves it, and through v1 where it does not. */
-export class AnytypeSchemaGateway implements SchemaGateway {
-  readonly #probe: AnytypeDialectProbe
-  readonly #v1: SchemaGateway
-  readonly #v2: SchemaGateway
+/** A type list row carries no properties, so each type is read on its own, this many at once. */
+const TYPE_READS_AT_ONCE = 4
 
-  constructor({ probe, v1, v2 }: { probe: AnytypeDialectProbe; v1: SchemaGateway; v2: SchemaGateway }) {
-    this.#probe = probe
-    this.#v1 = v1
-    this.#v2 = v2
+/** Anytype's own type of queries, which it still calls `set` internally. */
+const QUERY_TYPE_KEY = 'query'
+
+/** Anytype's bundled Collection type; user types with a collection layout are not offered. */
+const COLLECTION_TYPE_KEY = 'collection'
+
+/** Pixels. A space's image is drawn at 16, so this covers a 4x display. */
+const SPACE_ICON_WIDTH = 64
+
+/**
+ * The type document spells some of Anytype's own property keys the way the app stores them
+ * internally, not as the snake_case keys every other v2 route serves.
+ */
+const SYSTEM_KEY_SPELLINGS: Readonly<Record<string, string>> = {
+  lastOpenedDate: 'last_opened_date',
+  lastModifiedDate: 'last_modified_date',
+  createdDate: 'created_date',
+  addedDate: 'added_date',
+  lastMessageDate: 'last_message_date'
+}
+
+const BAD_REQUEST = 400
+const UNAUTHORIZED = 401
+/** `space_not_granted`: the user took the space out of the key's grant since it was listed. */
+const FORBIDDEN = 403
+const NOT_FOUND = 404
+
+type Listing<Page extends AnytypePage<unknown>> = { items: Page['data']; pages: Page[] }
+
+/**
+ * Anytype lists only the spaces the key was granted, and never its tech space, but says
+ * whether the grant leaves others out. It does not say what kind of space each is, so it
+ * cannot leave out one-to-one chats; those hold no dated types, so they show as spaces with
+ * nothing to put on the calendar.
+ *
+ * An Anytype that answers a route as if it did not exist (the client's `unsupported`) does not
+ * serve v2 of its API, and reads as outdated.
+ */
+export class AnytypeSchemaGateway implements SchemaGateway {
+  readonly #client: AnytypeClient
+  readonly #encodeBase64: (bytes: Uint8Array) => string
+  /**
+   * `data:` URLs by file id. A space's image is stored under a new id when it changes, so an
+   * id's image never goes stale, and every sync need not download it again.
+   */
+  readonly #icons = new Map<string, string>()
+
+  constructor({ client, encodeBase64 }: { client: AnytypeClient; encodeBase64: (bytes: Uint8Array) => string }) {
+    this.#client = client
+    this.#encodeBase64 = encodeBase64
   }
 
   async listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>> {
-    const gateway = await this.#pick(apiKey)
-    return gateway ? gateway.listSpaces(apiKey) : { ok: false, failure: 'unauthorized' }
-  }
-
-  async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
-    const gateway = await this.#pick(apiKey)
-    return gateway ? gateway.listTypes(apiKey, spaceId) : { ok: false, failure: 'unauthorized' }
+    // The client asks for full ids, which is what the saved selection stores.
+    const api = this.#client.withApiKey(apiKey)
+    const result = await this.#listAll((paging) => api.spaces.list(paging), 'spaces')
+    if (!result.ok) return result
+    const spaces = await Promise.all(
+      result.value.items.map(async (item) => {
+        const id = nonEmpty(item.id)
+        if (id === undefined) throw malformed('spaces')
+        const space = { id, name: nonEmpty(item.name) ?? '' }
+        const fileId = nonEmpty(item.icon_image)
+        const icon = fileId === undefined ? undefined : await this.#spaceIcon(api, id, fileId)
+        return icon === undefined ? space : { ...space, icon }
+      })
+    )
+    const hasNotGrantedSpaces = result.value.pages.some((page) => page.has_not_granted_spaces === true)
+    return { ok: true, value: { spaces, hasNotGrantedSpaces } }
   }
 
   async listSelectOptions(
@@ -36,25 +102,348 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     spaceId: string,
     propertyKey: string
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
-    const gateway = await this.#pick(apiKey)
-    return gateway
-      ? gateway.listSelectOptions(apiKey, spaceId, propertyKey)
-      : { ok: false, failure: 'unauthorized' }
+    const api = this.#client.withApiKey(apiKey)
+    const result = await this.#listAll((paging) => api.properties.listOptions(spaceId, propertyKey, paging), 'options')
+    if (!result.ok) return result
+    return {
+      ok: true,
+      value: result.value.items.flatMap((item) => {
+        const name = nonEmpty(item.name)
+        const color = nonEmpty(item.color)
+        return name !== undefined && color !== undefined ? [{ name, color }] : []
+      })
+    }
   }
 
+  /** Decoration only: an image that cannot be read leaves the space drawn by its initial. */
+  async #spaceIcon(api: AnytypeApi, spaceId: string, fileId: string): Promise<string | undefined> {
+    const cached = this.#icons.get(fileId)
+    if (cached !== undefined) return cached
+    try {
+      const response = await api.files.content(spaceId, fileId, { width: SPACE_ICON_WIDTH })
+      const mediaType = response.ok ? response.body.contentType?.split(';')[0]?.trim() : undefined
+      if (!response.ok || !mediaType?.startsWith('image/')) return undefined
+      const icon = `data:${mediaType};base64,${this.#encodeBase64(response.body.bytes)}`
+      this.#icons.set(fileId, icon)
+      return icon
+    } catch {
+      return undefined
+    }
+  }
+
+  async listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>> {
+    const api = this.#client.withApiKey(apiKey)
+    const listed = await this.#listAll((paging) => api.types.list(spaceId, paging), 'types')
+    if (!listed.ok) return listed
+    const keys = listed.value.items.map((item) => {
+      const key = nonEmpty(item.key)
+      if (key === undefined) throw malformed('types')
+      return key
+    })
+
+    const types: (SchemaTypeRef | null)[] = []
+    let refused: Refusal | null = null
+    await eachAtMost(TYPE_READS_AT_ONCE, keys, async (key, index) => {
+      const response = await api.types.get(spaceId, key)
+      if (response.ok) {
+        types[index] = toType(key, response.body)
+        return
+      }
+      refused = refusalOf(response) ?? refused
+      if (refused) return
+      if (isGone(response)) {
+        types[index] = null
+        return
+      }
+      throw unexpected(response, 'a type')
+    })
+    if (refused) return refused
+    const own = types.filter((type) => type != null)
+    const fromTemplates = await this.#templateProperties(api, spaceId, own)
+    if (!fromTemplates.ok) return fromTemplates
+    return {
+      ok: true,
+      value: own.map((type) => {
+        const more = fromTemplates.value.get(type.key)
+        return more ? { ...type, properties: [...type.properties, ...more] } : type
+      })
+    }
+  }
+
+  /**
+   * By type key, the properties its templates show in their content (a `property` block)
+   * without the type listing them: an object started from such a template carries them all the
+   * same. A block names only the key, so the space's properties are read for the rest, and
+   * only when some template has one.
+   */
+  async #templateProperties(
+    api: AnytypeApi,
+    spaceId: string,
+    types: readonly SchemaTypeRef[]
+  ): Promise<SchemaGatewayResult<Map<string, SchemaProperty[]>>> {
+    const listed = await this.#listAll((paging) => api.templates.list(spaceId, {}, paging), 'templates')
+    if (!listed.ok) return listed
+    const ownKeys = new Map(types.map(({ key, properties }) => [key, new Set(properties.map((property) => property.key))]))
+    const templates = listed.value.items.flatMap((item) => {
+      const id = nonEmpty(item.id)
+      const typeKey = nonEmpty(item.template_for)
+      return id !== undefined && typeKey !== undefined && ownKeys.has(typeKey) ? [{ id, typeKey }] : []
+    })
+
+    const blockKeys: string[][] = []
+    let refused: Refusal | null = null
+    await eachAtMost(TYPE_READS_AT_ONCE, templates, async ({ id }, index) => {
+      const document = await api.objects.get(spaceId, id, { include: 'blocks' })
+      if (document.ok) {
+        blockKeys[index] = toPropertyBlockKeys(document.body)
+        return
+      }
+      refused = refusalOf(document) ?? refused
+      if (!refused && !isGone(document)) throw unexpected(document, 'a template')
+    })
+    if (refused) return refused
+
+    const added = new Map<string, Set<string>>()
+    templates.forEach(({ typeKey }, index) => {
+      for (const key of blockKeys[index] ?? []) {
+        if (ownKeys.get(typeKey)?.has(key)) continue
+        added.set(typeKey, (added.get(typeKey) ?? new Set()).add(key))
+      }
+    })
+    if (added.size === 0) return { ok: true, value: new Map() }
+
+    const properties = await this.#listAll((paging) => api.properties.list(spaceId, paging), 'properties')
+    if (!properties.ok) return properties
+    const byKey = new Map(
+      properties.value.items.flatMap((item): [string, SchemaProperty][] => {
+        const key = nonEmpty(item.key)
+        const format = nonEmpty(item.format)
+        return key !== undefined && format !== undefined ? [[key, { key, name: nonEmpty(item.name) ?? '', format }]] : []
+      })
+    )
+    return {
+      ok: true,
+      value: new Map(
+        // A block may name a property the space no longer has.
+        [...added].map(([typeKey, keys]) => [typeKey, [...keys].flatMap((key) => byKey.get(key) ?? [])])
+      )
+    }
+  }
+
+  /**
+   * A search row names no query's type, so each query's document is read for it, along with
+   * its views, a few queries at a time.
+   */
   async listQueries(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>> {
-    const gateway = await this.#pick(apiKey)
-    return gateway ? gateway.listQueries(apiKey, spaceId) : { ok: false, failure: 'unauthorized' }
+    const api = this.#client.withApiKey(apiKey)
+    const search = { type: QUERY_TYPE_KEY }
+    const listed = await this.#listAll((paging) => api.search.inSpace(spaceId, search, paging), 'queries')
+    if (!listed.ok) return listed
+    const rows = listed.value.items.map((item) => {
+      const id = nonEmpty(item.id)
+      if (id === undefined) throw malformed('queries')
+      return { id, name: nonEmpty(item.name) ?? '' }
+    })
+
+    const queries: (SchemaQueryRef | null)[] = []
+    let refused: Refusal | null = null
+    await eachAtMost(TYPE_READS_AT_ONCE, rows, async ({ id, name }, index) => {
+      const document = await api.objects.get(spaceId, id, { include: 'properties' })
+      if (!document.ok) {
+        refused = refusalOf(document) ?? refused
+        if (!refused && !isGone(document)) throw unexpected(document, 'a query')
+        queries[index] = null
+        return
+      }
+      const listed = await this.#listAll((paging) => api.queries.listViews(spaceId, id, paging), 'views')
+      if (!listed.ok) {
+        refused = listed
+        return
+      }
+      const views = listed.value.items.flatMap((item) => {
+        const viewId = nonEmpty(item.id)
+        return viewId === undefined ? [] : [{ id: viewId, name: nonEmpty(item.name) ?? '' }]
+      })
+      // Anytype refuses to delete a query's last view, so a query with none is itself gone.
+      queries[index] = views.length === 0 ? null : { id, name, typeKeys: toQueryTypeKeys(document.body), views }
+    })
+    if (refused) return refused
+    return { ok: true, value: queries.filter((query) => query != null) }
   }
 
+  /**
+   * A search row names a collection's backlinks by object id only, so where two collections in
+   * the space share a name, the objects linking to them are read for their names, each once.
+   */
   async listCollections(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaCollection[]>> {
-    const gateway = await this.#pick(apiKey)
-    return gateway ? gateway.listCollections(apiKey, spaceId) : { ok: false, failure: 'unauthorized' }
+    const api = this.#client.withApiKey(apiKey)
+    const search = { type: COLLECTION_TYPE_KEY, fields: ['last_modified_date', 'backlinks'] }
+    const listed = await this.#listAll((paging) => api.search.inSpace(spaceId, search, paging), 'collections')
+    if (!listed.ok) return listed
+    const rows = listed.value.items.map((item) => {
+      const id = nonEmpty(item.id)
+      if (id === undefined) throw malformed('collections')
+      const lastModified = Date.parse(nonEmpty(item.properties?.['last_modified_date']) ?? '')
+      return {
+        id,
+        name: nonEmpty(item.name) ?? '',
+        lastModified: Number.isNaN(lastModified) ? null : lastModified,
+        backlinks: toIds(item.properties?.['backlinks'])
+      }
+    })
+
+    const counts = new Map<string, number>()
+    for (const { name } of rows) counts.set(name, (counts.get(name) ?? 0) + 1)
+    const repeated = (name: string): boolean => (counts.get(name) ?? 0) > 1
+    const linking = [...new Set(rows.flatMap(({ name, backlinks }) => (repeated(name) ? backlinks : [])))]
+
+    const names = new Map<string, string>()
+    let refused: Refusal | null = null
+    await eachAtMost(TYPE_READS_AT_ONCE, linking, async (id) => {
+      const document = await api.objects.get(spaceId, id, { include: 'properties' })
+      if (document.ok) {
+        const name = nonEmpty(document.body?.properties?.['name'])
+        if (name !== undefined) names.set(id, name)
+        return
+      }
+      refused = refusalOf(document) ?? refused
+      if (!refused && !isGone(document)) throw unexpected(document, 'a backlink')
+    })
+    if (refused) return refused
+    return {
+      ok: true,
+      value: rows.map(({ backlinks, ...collection }) => ({
+        ...collection,
+        backlinks: repeated(collection.name) ? backlinks.flatMap((id) => names.get(id) ?? []) : []
+      }))
+    }
   }
 
-  async #pick(apiKey: string): Promise<SchemaGateway | null> {
-    const probed = await this.#probe.probe(apiKey)
-    if (!probed.ok) return null
-    return probed.dialect === 'v2' ? this.#v2 : this.#v1
+  async #listAll<Page extends AnytypePage<unknown>>(
+    page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<Page>>,
+    what: string
+  ): Promise<SchemaGatewayResult<Listing<Page>>> {
+    const response = await listAll(page)
+    if (response.ok) return { ok: true, value: { items: response.body.data, pages: response.body.pages } }
+    if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
+    // Templates only add to what the types say, so a build that does not serve them, or the
+    // space's properties, reads as having none rather than as outdated.
+    if ((what === 'templates' || what === 'properties') && response.status === NOT_FOUND) {
+      return { ok: true, value: { items: [], pages: [] } }
+    }
+    if (response.unsupported) return { ok: false, failure: 'outdated' }
+    // A space taken out of the grant holds nothing; so does a property deleted since its type
+    // was read, for which the options route answers 404 or 400, a query deleted since it was
+    // listed, whose views route answers 404, and a space not open, whose collection search
+    // answers 404.
+    if (
+      response.status === FORBIDDEN ||
+      (what === 'options' && response.status === BAD_REQUEST) ||
+      ((what === 'options' || what === 'views' || what === 'collections') && isGone(response))
+    ) {
+      return { ok: true, value: { items: [], pages: [] } }
+    }
+    throw unexpected(response, what)
   }
+}
+
+type Refusal = { ok: false; failure: 'unauthorized' | 'outdated' }
+
+/** A refused key, or an Anytype that does not serve the route; null for any other failure. */
+function refusalOf(response: AnytypeFailure): Refusal | null {
+  if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
+  if (response.unsupported) return { ok: false, failure: 'outdated' }
+  return null
+}
+
+function unexpected(response: AnytypeFailure, what: string): Error {
+  return new Error(`Anytype answered ${response.status} when asked for ${what}`)
+}
+
+/**
+ * Deleted, or its space taken out of the grant, between being listed and being read: it is
+ * simply not there any more. A bare 404 is not that but a build without the route.
+ */
+function isGone(response: AnytypeFailure): boolean {
+  return response.status === FORBIDDEN || (response.status === NOT_FOUND && !response.unsupported)
+}
+
+/**
+ * A query's document names what it runs over in `query_source`, e.g. `{ types: ["task"] }`.
+ * Anytype's app can also build a query over a property rather than a type; that is read as
+ * running over no type.
+ */
+function toQueryTypeKeys(document: { query_source?: { types?: unknown } } | null): string[] {
+  const types = document?.query_source?.types
+  return Array.isArray(types) ? types.filter((key): key is string => typeof key === 'string' && key !== '') : []
+}
+
+/**
+ * A type document (`kind: object_type`): its icon at the top, its properties in its settings.
+ * `api_key` keeps the key v1 served the type by, for a selection saved under v1.
+ */
+function toType(key: string, document: AnytypeTypeDocument | null): SchemaTypeRef {
+  const settings = document?.type_settings
+  const definitions = settings?.property_definitions
+  if (!Array.isArray(definitions)) throw malformed('types')
+  const formerKey = nonEmpty(settings?.api_key) ?? key
+  const type: SchemaTypeRef = {
+    key,
+    name: nonEmpty(document?.properties?.name) ?? '',
+    icon: toIcon(document?.icon),
+    properties: definitions.map(toProperty)
+  }
+  return formerKey === key ? type : { ...type, formerKey }
+}
+
+function toPropertyBlockKeys(document: AnytypeObjectDocument | null): string[] {
+  const blocks = document?.blocks
+  return (Array.isArray(blocks) ? blocks : []).flatMap((block) => {
+    const key = block?.type === 'property' ? nonEmpty(block.property) : undefined
+    return key === undefined ? [] : [SYSTEM_KEY_SPELLINGS[key] ?? key]
+  })
+}
+
+function toProperty(item: AnytypePropertyDefinition | null): SchemaProperty {
+  const key = nonEmpty(item?.property)
+  const format = nonEmpty(item?.format)
+  if (key === undefined || format === undefined) throw malformed('types')
+  const property = { key: SYSTEM_KEY_SPELLINGS[key] ?? key, name: nonEmpty(item?.name) ?? '', format }
+  return item?.section === 'hidden' ? { ...property, hidden: true } : property
+}
+
+/** Anytype also draws types with an emoji or an image; only a named icon is carried. */
+function toIcon(icon: AnytypeIcon | null | undefined): SchemaTypeIcon | null {
+  if (icon?.format !== 'icon') return null
+  const name = nonEmpty(icon.name)
+  const color = nonEmpty(icon.color)
+  return name !== undefined && color !== undefined ? { name, color } : null
+}
+
+/** Runs `work` over `items` with at most `limit` in flight, keeping each result's index. */
+async function eachAtMost<T>(
+  limit: number,
+  items: readonly T[],
+  work: (item: T, index: number) => Promise<void>
+): Promise<void> {
+  let next = 0
+  const worker = async (): Promise<void> => {
+    while (next < items.length) {
+      const index = next++
+      await work(items[index] as T, index)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+}
+
+function toIds(value: unknown): string[] {
+  return Array.isArray(value) ? value.flatMap((id) => nonEmpty(id) ?? []) : []
+}
+
+function nonEmpty(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+function malformed(what: string): Error {
+  return new Error(`Anytype answered without usable ${what}`)
 }

@@ -1,7 +1,4 @@
-/**
- * An object of Anytype's bundled Collection type, which a new object can be added to. Only v2
- * of the local API serves them.
- */
+/** An object of Anytype's bundled Collection type, which a new object can be added to. */
 export interface SchemaCollection {
   /** Anytype's object id. */
   id: string

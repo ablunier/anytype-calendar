@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
-import { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
-import { AnytypeV2SchemaGateway } from './anytype-v2-schema-gateway'
+import { AnytypeSchemaGateway } from './anytype-schema-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 type Reply = { status: number; body: unknown }
@@ -43,7 +42,7 @@ function setup(routes: Record<string, Reply | Reply[]>, files: Record<string, Fi
   })
   const encodeBase64 = (bytes: Uint8Array): string => [...bytes].join(',')
   return {
-    gateway: new AnytypeV2SchemaGateway({ client, v1: new AnytypeV1Client(client), encodeBase64 }),
+    gateway: new AnytypeSchemaGateway({ client, encodeBase64 }),
     calls,
     downloads
   }
@@ -142,6 +141,11 @@ describe('listSpaces', () => {
   test('resolves a refused key as unauthorized', async () => {
     const { gateway } = setup({ '/v2/spaces': unauthorized })
     await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({ ok: false, failure: 'unauthorized' })
+  })
+
+  test('resolves an Anytype without the v2 route as outdated', async () => {
+    const { gateway } = setup({})
+    await expect(gateway.listSpaces(API_KEY)).resolves.toEqual({ ok: false, failure: 'outdated' })
   })
 
   test('rejects when the body is not a page', async () => {
@@ -374,62 +378,23 @@ describe('listTypes', () => {
     expect(calls.some(({ url }) => url.includes('/v1/'))).toBe(false)
   })
 
-  test("asks v1 for the key of a date property v2 serves by its internal key, matched by name", async () => {
+  test('carries no former key for a date property v2 serves by its internal key', async () => {
     const document = {
       ...typeDocument('Book', []),
       type_settings: {
         api_key: 'book',
-        property_definitions: [
-          { property: 'start_date', internal_key: '6a6733dc', name: 'Start date', format: 'date' },
-          { property: '6a67263559c0', internal_key: '6a67263559c0', name: 'Finished', format: 'date' },
-          { property: '6a65038f59c0', internal_key: '6a65038f59c0', name: 'Status', format: 'select' }
-        ]
-      }
-    }
-    const v1Types = {
-      data: [
-        {
-          key: 'book',
-          properties: [
-            { key: 'start_date', name: 'Start date', format: 'date' },
-            { key: 'finished', name: 'Finished', format: 'date' },
-            { key: 'status', name: 'Status', format: 'select' }
-          ]
-        }
-      ],
-      pagination: { has_more: false }
-    }
-    const { gateway, calls } = setup({
-      [TYPES]: page([{ key: '6a67272659c0' }]),
-      [`${TYPES}/6a67272659c0`]: { status: 200, body: document },
-      [`/v1/spaces/${SPACE_ID}/types`]: { status: 200, body: v1Types }
-    })
-
-    const result = await gateway.listTypes(API_KEY, SPACE_ID)
-
-    expect(result.ok && result.value[0]?.properties).toEqual([
-      { key: 'start_date', name: 'Start date', format: 'date' },
-      { key: '6a67263559c0', formerKey: 'finished', name: 'Finished', format: 'date' },
-      { key: '6a65038f59c0', name: 'Status', format: 'select' }
-    ])
-    expect(calls.filter(({ url }) => url.includes('/v1/'))).toHaveLength(1)
-  })
-
-  test('knows no former property key when v1 does not answer', async () => {
-    const document = {
-      ...typeDocument('Book', []),
-      type_settings: {
         property_definitions: [{ property: '6a67', internal_key: '6a67', name: 'Finished', format: 'date' }]
       }
     }
-    const { gateway } = setup({
-      [TYPES]: page([{ key: 'book' }]),
-      [`${TYPES}/book`]: { status: 200, body: document }
+    const { gateway, calls } = setup({
+      [TYPES]: page([{ key: '6a6727' }]),
+      [`${TYPES}/6a6727`]: { status: 200, body: document }
     })
 
     const result = await gateway.listTypes(API_KEY, SPACE_ID)
 
     expect(result.ok && result.value[0]?.properties).toEqual([{ key: '6a67', name: 'Finished', format: 'date' }])
+    expect(calls.some(({ url }) => url.includes('/v1/'))).toBe(false)
   })
 
   test('carries no icon for a type drawn with an emoji', async () => {
@@ -480,6 +445,11 @@ describe('listTypes', () => {
     })
   })
 
+  test('resolves a type route that stops being served mid-read as outdated', async () => {
+    const { gateway } = setup({ [TYPES]: page([{ key: 'task' }]) })
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({ ok: false, failure: 'outdated' })
+  })
+
   test('rejects when a type document has no property definitions', async () => {
     const { gateway } = setup({
       [TYPES]: page([{ key: 'task' }]),
@@ -493,9 +463,9 @@ describe('listTypes', () => {
     await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('types')
   })
 
-  test('rejects when Anytype no longer has the v2 route', async () => {
+  test('resolves an Anytype without the v2 route as outdated', async () => {
     const { gateway } = setup({})
-    await expect(gateway.listTypes(API_KEY, SPACE_ID)).rejects.toThrow('404')
+    await expect(gateway.listTypes(API_KEY, SPACE_ID)).resolves.toEqual({ ok: false, failure: 'outdated' })
   })
 })
 
@@ -540,9 +510,9 @@ describe('listSelectOptions', () => {
     })
   })
 
-  test('rejects when Anytype no longer has the v2 route', async () => {
+  test('resolves an Anytype without the v2 route as outdated', async () => {
     const { gateway } = setup({})
-    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).rejects.toThrow('404')
+    await expect(gateway.listSelectOptions(API_KEY, SPACE_ID, '6aaa4502')).resolves.toEqual({ ok: false, failure: 'outdated' })
   })
 })
 
@@ -628,9 +598,9 @@ describe('listQueries', () => {
     })
   })
 
-  test('rejects when Anytype no longer has the v2 route', async () => {
+  test('resolves an Anytype without the v2 route as outdated', async () => {
     const { gateway } = setup({})
-    await expect(gateway.listQueries(API_KEY, SPACE_ID)).rejects.toThrow('404')
+    await expect(gateway.listQueries(API_KEY, SPACE_ID)).resolves.toEqual({ ok: false, failure: 'outdated' })
   })
 })
 
@@ -743,8 +713,8 @@ describe('listCollections', () => {
     })
   })
 
-  test('rejects when Anytype no longer has the v2 route', async () => {
+  test('resolves an Anytype without the v2 route as outdated', async () => {
     const { gateway } = setup({})
-    await expect(gateway.listCollections(API_KEY, SPACE_ID)).rejects.toThrow('404')
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).resolves.toEqual({ ok: false, failure: 'outdated' })
   })
 })

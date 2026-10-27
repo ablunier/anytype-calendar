@@ -5,12 +5,11 @@ import type { SchemaType } from './type'
 export interface SchemaSpace {
   id: string
   name: string
-  /** A `data:` URL of the space's own image, where it has one and the API serves it (v2). */
+  /** A `data:` URL of the space's own image, where it has one. */
   icon?: string
   /** Only the types with a user date property, so only what could go on the calendar. */
   types: SchemaType[]
-  /** Only the ones over a type in `types`; empty where the API serves none (v1). */
+  /** Only the ones over a type in `types`. */
   queries: SchemaQuery[]
-  /** Empty where the API serves none (v1). */
   collections: SchemaCollection[]
 }
