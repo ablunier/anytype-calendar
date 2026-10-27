@@ -17,22 +17,22 @@ picked in a select property of your choice.
 > mock data anywhere.
 >
 > - **Sign-in** through Anytype's 4-digit challenge/code flow, or by pasting a key you
->   already hold. The key is kept, encrypted, across restarts. Where Anytype serves the
->   (pre-release) API v2 the app uses it — you then choose in Anytype which spaces the key
->   reaches and whether it may write — and falls back to v1 where not. Settings shows the
->   API major in use and what the key was granted, and onboarding and Settings say when the
->   key leaves some of your spaces out.
-> - **Schema**: the app reads each space's dated types (and, under v2, its queries over a
->   single dated type, its image, and its select properties' option colours). Onboarding
+>   already hold. The key is kept, encrypted, across restarts. The app reads through
+>   Anytype's (pre-release) API v2 — you choose in Anytype which spaces the key reaches and
+>   whether it may write — and asks you to update an Anytype too old to serve it. Settings
+>   shows what the key was granted, and onboarding and Settings say when the key leaves some
+>   of your spaces out.
+> - **Schema**: the app reads each space's dated types, its queries over a single dated
+>   type, its image, and its select properties' option colours. Onboarding
 >   and Settings save which spaces, types and queries go on the calendar, each one's From/To
 >   date property, whether those dates carry a time of day, which select property colours
 >   its objects, and which view a query reads through.
 > - **Calendar**: month, week and day views. A range is one continuous bar across the days
 >   it spans, timed objects are placed by the hour in the week and day views, and the detail
->   panel shows an object's Done and Location (v2) and opens it in Anytype. An object that
+>   panel shows an object's Done and Location and opens it in Anytype. An object that
 >   both a type and a query bring is drawn once. What is on screen is read again when you
 >   come back to the window.
-> - **Editing** (v2, with a read/write key): drag an object to move it, double-click a day
+> - **Editing** (with a read/write key): drag an object to move it, double-click a day
 >   or an hour to create one, and tick it done from its panel.
 > - **Preferences**: light/dark theme, the view to open on, first day of the week, ISO week
 >   numbers, 12/24-hour time, and the language — English, Spanish or Galician, following
@@ -42,8 +42,8 @@ picked in a select property of your choice.
 >   release is out. Settings → About shows the running version.
 >
 > Recurrence is not built yet. The backend is organised as one package per bounded
-> context — `auth`, `schema` and `events` — plus two shared packages, `anytype-v1` (what the
-> app still reads through v1) and `kernel` (shared use-case plumbing). Anytype is reached
+> context — `auth`, `schema`, `events` and `feeds` — plus a shared package, `kernel` (shared
+> use-case plumbing). Anytype is reached
 > through [`@ablunier/anytype-client`](https://github.com/ablunier/anytype-client), a typed
 > client for the local API v2 that is published on npm as its own project.
 
@@ -51,7 +51,8 @@ picked in a select property of your choice.
 
 - Node.js ≥ 26.8.1 and npm ≥ 12.0.2 (both pinned via [Volta](https://volta.sh) in
   `package.json`; Volta will pick them up automatically if installed)
-- Anytype desktop, running, to sign in (or use the simulated one, below)
+- Anytype desktop, recent enough to serve version 2 of its local API, running, to sign in
+  (or use the simulated one, below)
 
 ## Getting started
 
@@ -86,10 +87,6 @@ another day or hour, created by double-clicking, and ticked done from their pane
 calendar's top bar also has a light/dark theme toggle, remembered across restarts. Signing
 out deletes the credential file. The local API cannot revoke a key, so to revoke one,
 delete it in the Anytype app under Settings → API Keys.
-
-Against an Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback
-(and `v2` forbids it). Use it only with a legacy key: v1 refuses a key paired through v2,
-and a refused key is signed out, which deletes it.
 
 To work without Anytype, sign in against a simulated one:
 
@@ -151,8 +148,7 @@ Settings → About, and links to the release page to download it by hand.
 
 ```
 apps/desktop             Electron app — main (the composition root), preload, and the React renderer
-packages/<context>       One bounded context per package (currently: auth, schema, events), layered inside
-packages/anytype-v1      The v1 routes the app still reads, and the probe that picks v1 or v2 per key
+packages/<context>       One bounded context per package (currently: auth, schema, events, feeds), layered inside
 packages/kernel          Shared use-case plumbing (DispatchGuard) any context's application layer can import
 tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
 docs/deps-notes.md       Why several dependencies are pinned where they are
@@ -177,7 +173,7 @@ point inward only, within a context:
 ```
 domain          -> nothing
 application     -> its own domain, plus kernel
-infrastructure  -> its own domain, plus @ablunier/anytype-client and anytype-v1
+infrastructure  -> its own domain, plus @ablunier/anytype-client
 apps/desktop    -> any context's layers, plus Electron and React
 ```
 
@@ -185,22 +181,20 @@ A context's domain has no npm dependencies and no Node core imports, and the who
 compiles with no ambient types (`types: []`), so platform globals like `process` or
 `setTimeout` are out of reach too — infrastructure receives such capabilities from the
 composition root instead. Adapters are reached through ports the domain declares, never
-imported directly by the use cases. `packages/anytype-v1` and `packages/kernel` are the two
-shared packages — not contexts, each with only one layer, so the same aliasing, test
-projects and lint rules apply to them unedited. `anytype-v1` has only an `infrastructure/`
-layer and imports only the Anytype client; `kernel` has only an
-`application/` layer (the `DispatchGuard` dispatch/staleness-guard pattern used by use cases
+imported directly by the use cases. `packages/kernel` is a shared package — not a context,
+with only one layer, so the same aliasing, test projects and lint rules apply to it
+unedited. It has only an `application/` layer (the `DispatchGuard` dispatch/staleness-guard pattern used by use cases
 that race an async gateway call against a later reset) and, uniquely, imports nothing at
 all — not even Node core or npm — so it stays safely importable from any context's
 application layer without adding a dependency edge of its own. Contexts never import each
 other; `apps/desktop`'s main process wires them together. No package imports from
 `apps/**`, and `electron`/`react` belong solely to `apps/desktop`.
 
-Each context's `infrastructure/anytype/` holds a v1 gateway, a v2 gateway and one that picks
-between them per call, through the probe in `anytype-v1` that asks Anytype which major of
-the API it serves. Both talk to Anytype through `@ablunier/anytype-client`'s methods rather
-than building requests themselves; a route the client lacks is added there and released,
-not patched here. Dropping v1 later means deleting `anytype-v1` and one gateway per context.
+Each context's `infrastructure/anytype/` holds one gateway, which talks to Anytype through
+`@ablunier/anytype-client`'s methods rather than building requests itself; a route the
+client lacks is added there and released, not patched here. An Anytype that answers v2's
+routes as if they did not exist reads as `outdated`: too old, to be updated, with the key
+kept.
 
 All of that is enforced by `.dependency-cruiser.cjs` via `npm run lint:arch`, which reads
 the rules alongside the reasoning for each one. Run it before opening a PR that adds

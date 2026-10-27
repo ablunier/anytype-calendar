@@ -9,13 +9,14 @@ calendar. It talks to the Anytype local API. npm workspaces monorepo, currently 
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
 the real Anytype local API, either through the challenge/code exchange or by pasting a key
-the user already holds, and keeps the key across restarts. The connected session also says
-which major of the API the app reads through and what the key was granted (its spaces, and
-read or read/write), which Settings shows. `schema` — how the user
+the user already holds, and keeps the key across restarts. It reads through v2 of the API
+alone: an Anytype too old to serve it fails as `outdated`, which says to update Anytype and,
+for a key already held, keeps it. The connected session also says what the key was granted
+(its spaces, and read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property, their own or one their templates show in their content) and tracks
 the last sync, which feeds the post-sign-in success
-card and onboarding. Under v2 a sync also reads each space's image, whether each type has
+card and onboarding. A sync also reads each space's image, whether each type has
 Anytype's own Done and Location, its select properties' option colours, its queries over
 a single dated type, with their views, and its collections, which a new object can be added
 to. It also persists
@@ -27,11 +28,11 @@ its detail panel shows, in order (`panel`), and a query's view — which onboard
 save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
 selected types and queries whose dates fall in it, with their Done, Location, colour-by option
-and panel properties where v2 serves them (linked objects named in the same load, one search
+and panel properties (linked objects named in the same load, one search
 per space), which the calendar screen draws as a month grid or as an hour grid. An object a
 type and a query both bring is read once through each and kept for each, with its source's
 `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
-key reads through v2 and may write, the calendar also edits: an object is moved by dragging
+key may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour (and, if a collection is picked, added to
 it), and ticked done, given exact dates and times, or given or cleared a To date from its
 panel. `feeds` holds external
@@ -48,10 +49,7 @@ Run from the repo root unless noted.
   `env -u ELECTRON_RUN_AS_NODE npm run dev` — otherwise Electron launches in Node mode and
   fails with a misleading `isPackaged` TypeError. Sign-in needs the Anytype desktop app
   running; add `ANYTYPE_CALENDAR_FAKE_AUTH=1` to run against a simulated Anytype instead —
-  sign-in, the schema reads and the span's objects alike (see `composition.ts`). Against a
-  real Anytype that serves API v2, `ANYTYPE_CALENDAR_API=v1` forces the v1 fallback (and
-  `v2` forbids it). Only with a legacy key: v1 refuses a key paired through v2, and a refused
-  key is signed out, which deletes it. There is deliberately no such setting in the UI.
+  sign-in, the schema reads and the span's objects alike (see `composition.ts`).
 - `npm run build` — `tsc -b` (typecheck + build all package project references) then build
   the desktop app.
 - `npm run typecheck` — `tsc -b --force` across the whole monorepo (all project references).
@@ -83,7 +81,7 @@ Run from the repo root unless noted.
 ### Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently `auth`, `schema`, `events` and `feeds`), and its
-layers are folders inside it — except `anytype-v1` and `kernel` (see below):
+layers are folders inside it — except `kernel` (see below):
 
 ```
 packages/<context>/
@@ -103,19 +101,14 @@ goes there and is released as a new version, not patched here. Adapters call one
 statuses resolve as values (`{ ok: false, status, error, unsupported }`), and only transport
 failure rejects (`AnytypeTransportError`). The composition root injects `fetch`, with a
 timeout. Writes carry an `Idempotency-Key` and are retried once when they got no answer.
+Each context's `infrastructure/anytype/` has one `Anytype*Gateway`. `unsupported` — a bare
+plain-text 404 — means an Anytype build without v2: every gateway reads it as `outdated`
+(`AuthFailure`, `SchemaSyncFailure`, `EventsLoadFailure`), beside `unreachable` and
+`unauthorized`. Unlike `unauthorized`, it never signs out: the key is still valid, and works
+once Anytype is updated.
 
-`packages/anytype-v1` and `packages/kernel` are not contexts but shared packages, each
-with only one layer, so the pattern-based aliases, vitest projects and lint rules apply to
-them unedited. `anytype-v1` holds what the app still needs of v1, which the client does not
-serve: `AnytypeV1Client` (the few v1 routes read, through the same `AnytypeClient`, with v1's
-`Anytype-Version` header; `listAllV1` pages them) and `AnytypeDialectProbe`, which asks
-Anytype once per key which major of the API it serves (`whoami`: an answer means v2, an
-`unsupported` one — a bare plain-text 404 — means a build without v2). Each context's
-`infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
-`Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
-means deleting `anytype-v1` and one file per context. The client's `onUnsupported` calls
-`probe.forgetV2()`, so any v2 route meeting the bare 404 drops a v2 answer, and leaving the
-`connected` session calls `probe.forget()`. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+`packages/kernel` is not a context but a shared package with only one layer, so the
+pattern-based aliases, vitest projects and lint rules apply to it unedited. It holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -139,9 +132,8 @@ context's `application` layer without adding a dependency edge of its own
   root `tsconfig.json` and both `apps/desktop` tsconfigs, plus a dependency in
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
   pattern-based and need no edits. A context whose adapters talk to Anytype also lists
-  `@ablunier/anytype-client` and `@anytype-calendar/anytype-v1` as dependencies and
-  references `../anytype-v1` from its tsconfig, as `auth` does;
-  likewise for `kernel` in a context's `application` layer (`auth`, `schema` and
+  `@ablunier/anytype-client` as a dependency, as `auth` does; likewise for `kernel` (and a
+  reference to `../kernel` from its tsconfig) in a context's `application` layer (`auth`, `schema` and
   `events` all do). Either way, run `npm install` afterward so npm workspaces symlinks the new package
   into `node_modules` — without it, `tsc -b` fails with `TS2307: Cannot find module`.
 
@@ -150,7 +142,7 @@ context's `application` layer without adding a dependency edge of its own
 ```
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
 packages/<ctx>/application     -> its own context's domain, plus kernel (use cases / orchestration)
-packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client and anytype-v1 (driven adapters implementing domain ports)
+packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client (driven adapters implementing domain ports)
 packages/feeds/infrastructure  -> its own domain, plus ical.js (feeds talks to no Anytype)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
@@ -165,8 +157,7 @@ Rules worth knowing before adding an import:
   leaf that imports no context, and a separate `kernel-is-pure` rule additionally forbids
   it from importing anything at all, context or otherwise.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
-  reach into its own `domain`, `packages/anytype-v1/infrastructure` and the Anytype client
-  (`node_modules/@ablunier/anytype-client`). The same rule keeps `anytype-v1` itself a leaf that imports no context.
+  reach into its own `domain` and the Anytype client (`node_modules/@ablunier/anytype-client`).
   `feeds` is the exception, by a rule of its own: its infrastructure may import its own domain
   and `ical.js`, nothing else, and ical.js stays behind the domain port `FeedsCalendarParser`.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires
@@ -208,18 +199,17 @@ Standard electron-vite three-process layout:
 - `src/main` — Electron main process and the **composition root**. `composition.ts` is
   the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
   needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
-  through v2 where served (the user then picks the spaces and read/write access in Anytype)
-  and v1 where not, exchanging a code with the major that issued its challenge — and keeps
+  through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
-  warning. Every context's Anytype gateway shares one `AnytypeClient` and one `AnytypeV1Client`. Schema and events
+  warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location, the colour-by property and the panel's only where the last schema
-  sync saw the type — for a query, the type it runs over — with them, since v2 refuses a search
+  sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
   `field` the space lacks), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
@@ -227,20 +217,20 @@ Standard electron-vite three-process layout:
   replacing its access — reads nothing again); a successful schema sync and every saved
   selection reload that span; and a window gaining focus re-runs both, at most once per 30 s
   (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
-  connected key reaches (`verifyApiKey`, which always re-asks the probe, so a grant changed in
-  Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
-  and refreshes it on focus. The connected session's `access` is `{ apiVersion, grant }`; a
-  null `grant` is a legacy key, or v1, which cannot say, and reaches every space with write
-  access. `LoadEventsSpan` lets the
+  connected key reaches (`verifyApiKey`, which always asks `whoami` afresh, so a grant changed
+  in Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
+  and refreshes it on focus; an outdated or unreachable Anytype leaves it as it is. The
+  connected session's `access` is `{ grant }`; a null `grant` is a legacy key, paired before
+  grants existed, which reaches every space with write access. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
   result. Edits (`RescheduleEventsObject`, `CreateEventsObject`, `CompleteEventsObject`) write
-  through `EventsWriter` — `AnytypeV2EventsWriter`, or in fake mode the same
+  through `EventsWriter` — `AnytypeEventsWriter`, or in fake mode the same
   `InMemoryEventsGateway` that reads, so an edit shows on the next read — and then re-run
   `LoadEventsSpan`. Meanwhile the moved or ticked object is held in `EventsSpanStore` as an
   edit in flight: `get()` is the load the use cases dispatch to, `shown()` draws the edits over
   it and is what IPC pushes, so a drag never snaps back while Anytype is asked, and a refused
   write drops it. `events-ipc.ts` validates each request (`events/edit-requests.ts`) and
-  answers `not-granted` without writing unless `authAccessCanWrite(session.access)`: v2 and a
+  answers `not-granted` without writing unless `authAccessCanWrite(session.access)`: a
   read/write grant, or no grant of its own. The renderer reads the same rule as an
   `EditAccess` (`editAccessFor`, `lib/session.ts`), which turns dragging off and has a
   double-click say why; every failed edit is a toast (`lib/edit-text.ts`). A move is
@@ -457,30 +447,14 @@ Standard electron-vite three-process layout:
 
 ### Anytype local API facts the adapters rely on
 
-v1 facts, checked against a real account on API version `2025-11-08`:
-- A date property's value is `{ key, format: 'date', date: '2026-09-13T22:00:00Z' }`:
-  RFC 3339, always UTC, no zone of its own. A property the object has no value for is left
-  out of `properties` altogether.
+v2 (pre-release: it may change without a new version; spec at
+`https://developers.anytype.io/openapi-v2.yaml`), checked against a real account in September
+2026. A legacy key, paired through v1 before grants, works with it. The client's types spell
+these out, and its `README.md` repeats the ones its users need; a new fact about the wire
+belongs there too:
 - Nothing marks a date as date-only. One set without a time is stored as the first instant
   of that day where it was set (22:00 UTC for a day in UTC+2), so `toEventsDatedObject`
   reads a date on the first instant of a local day as all-day.
-- Search filter conditions are the short names — `eq`, `ne`, `gt`, `gte`, `lt`, `lte`,
-  `empty`, `nempty` … — not the long ones the OpenAPI enum lists, which answer 400. A
-  date condition takes `date` as RFC 3339 or `YYYY-MM-DD`, and compares by whole local
-  days: `gte` rounds to the start of its day, `lte` to the end. So date filters only
-  narrow a search; the exact overlap is checked in the domain. `lte` also matches an empty
-  date, hence `nempty` beside it. `{ operator, conditions, filters }` nests `and`/`or`
-  groups.
-- A filter on a property key the space does not have answers 400 (`failed to build
-  expression filters`); an unknown type key or space id answers an empty page.
-- Paging is `?offset=&limit=` (at most 1000) with `pagination.has_more`.
-
-v2 (pre-release: it may change without a new version; spec at
-`https://developers.anytype.io/openapi-v2.yaml`), checked against a real account in September
-2026. The same process and port serve both majors, so a v2 build still serves v1, and a legacy
-key works with both; a key paired through v2 (scoped) does not work with v1. The client's
-types spell these out, and its `README.md` repeats the ones its users need; a new fact about
-the wire belongs there too:
 - Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
   client always asks, since the saved selection stores full ids. Both spellings are accepted
   back. The list holds only the key's granted spaces, never the tech space, and says nothing
@@ -499,8 +473,8 @@ the wire belongs there too:
   route says `last_opened_date`. Done is the bundled `done` (checkbox) and Location the
   bundled `location` (text); a user property of the same name is not them.
 - A select's options are `GET …/properties/{key}/options` → `{ name, color }`, space-wide and
-  with no id: a search row names the picked option by its name, as a list (`["P4"]`). v1 has
-  no such route, so `colourBy` is offered only under v2. `color` is one of the same ten names
+  with no id: a search row names the picked option by its name, as a list (`["P4"]`). `color`
+  is one of the same ten names
   type icons use, drawn with the same hues (`hueOf`, `lib/schema.ts`).
 - A query (Anytype's "set": its type key is `query`) is found by searching `{ type: 'query' }`,
   which, like every search, leaves archived objects out. Its row names no type: the document
@@ -511,14 +485,12 @@ the wire belongs there too:
   the view's own filters and no others, so it cannot be narrowed by date. Without `view` the
   first applies, with a `warnings` entry (`path: 'view'`) naming it; an unresolvable
   placeholder in a view's filters is a warning too, not an error. `fields` is checked against
-  the space's properties, not the type's; an unknown view answers 404. v1 has no query routes,
-  so queries are offered only under v2, and a v1 read matches a chosen one with nothing.
+  the space's properties, not the type's; an unknown view answers 404.
 - The type document's `property_definitions` carry a `section` (`featured`, `hidden` or none):
   a hidden one (last modified by …) is never offered to the detail panel, nor are `name` and
   `type`, which it draws anyway. The panel draws `text`, `number`, `select`, `multi_select`,
-  `url`, `email`, `phone` and `objects`; v1 reads none of them, and Settings hides the panel,
-  Done and Location fields under v1. A multi-select's options come from the same route as a
-  select's.
+  `url`, `email`, `phone` and `objects`. A multi-select's options come from the same route as
+  a select's.
 - A row's value for a property with none is left out, or comes as `null`, `""` or `[]`. A
   deleted select option is served by its object id, not a name. `objects` is a list of ids:
   their names come from one search per space (`{ property: 'id', condition: 'in', value }`,
@@ -527,16 +499,16 @@ the wire belongs there too:
   through main's `shell.openLink`, which takes only `http(s)`, `mailto:` and `tel:`.
 - A space row may carry `icon_image`, a file id: `GET …/files/{id}/content?width=64` answers
   the image's bytes (PNG seen). `files.content` reads it through the same injected
-  `fetch`; the v2 schema gateway turns it into a `data:` URL (Base64 injected by the
+  `fetch`; the schema gateway turns it into a `data:` URL (Base64 injected by the
   composition root), cached by file id since a changed image gets a new id. The renderer's
   CSP allows `img-src data:` for it.
-- **Keys differ from v1's where a user's type or property collides with one Anytype bundles**
-  (a user "Book" type, a "Status" property): v1 serves the slug (`book`), v2 the internal key
-  (`6a67272659c08021576f3127`), and v2 refuses the slug as `ambiguous_input`. Both majors
-  accept the internal key as input, but each serves its own spelling in rows. The type
-  document keeps v1's type key as `type_settings.api_key`; a property's v1 key is known only
-  to v1, matched by name. `rekeySchemaSelection` rewrites a v1-saved selection after each
-  sync (`formerKey` on types and date properties).
+- **A user's type or property that collides with one Anytype bundles** (a user "Book" type, a
+  "Status" property) is served by its internal key (`6a67272659c08021576f3127`), and its slug
+  (`book`) is refused as `ambiguous_input`. v1 served the slug, so a selection saved while the
+  app read through v1 may name a type by it: the type document keeps that key as
+  `type_settings.api_key`, and `rekeySchemaSelection` rewrites such a choice after each sync
+  (`formerKey` on types). A property's v1 key was known only to v1, so properties are not
+  rekeyed: one that no longer resolves falls back as any stale property does.
 - Search takes `{ type, filters, fields }`. Structured `filters` use the long condition names
   (`greater_or_equal`, `not_empty` …) and dates as **unix seconds**, and still round date
   comparisons out to whole local days; `less_or_equal` still matches an empty date. The
@@ -557,10 +529,11 @@ the wire belongs there too:
 - An unknown type key or a `fields`/filter key the space lacks answers 400, a space not open
   404, a space outside the key's grant 403 `space_not_granted`: all read as "no objects". A
   403 on a space's types, or on one type, reads as no types: the grant changed since the list.
-- Paging puts `has_more`, `total` and a `message` hint at the top level. v2's own errors are
-  `{ status, code, message, issues[] }`; pairing, key and rate-limit refusals keep v1's shape.
+- Paging is `?offset=&limit=` (at most 1000), with `has_more`, `total` and a `message` hint at
+  the top level. v2's own errors are `{ status, code, message, issues[] }`; pairing, key and
+  rate-limit refusals keep v1's shape.
   `AnytypeApiError` carries the issues, and a refused write is shown in its first one's words.
-- Writes (v1 has none): `PATCH …/objects/{id}` with `{ ops: [{ op: 'set_properties', set:
+- Writes: `PATCH …/objects/{id}` with `{ ops: [{ op: 'set_properties', set:
   { [key]: value } }] }`, atomic; `POST …/objects` with the shortcut `{ type, name, properties }`
   answers `201 { id, etag }`. A date is written as RFC 3339, like it is read, and cleared as
   `null` (not yet checked against a real Anytype). Every write carries
