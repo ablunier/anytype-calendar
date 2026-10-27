@@ -59,9 +59,9 @@ export function TimeField({ value, label, onCommit }: TimeFieldProps): React.JSX
         }
       }}
       className={[
-        'w-auto rounded-4 border border-line-subtle bg-transparent px-6 py-2 outline-none',
+        'w-auto rounded-4 border border-transparent bg-transparent px-6 py-2 outline-none',
         'type-numeral text-small text-ink-body',
-        'transition duration-fast ease-standard hover:bg-surface-hover focus:border-line-accent focus:shadow-focus'
+        'transition duration-fast ease-standard hover:border-line-subtle hover:bg-surface-hover focus:border-line-accent focus:shadow-focus'
       ].join(' ')}
     />
   )

@@ -97,9 +97,9 @@ export function DateField({
         aria-label={`${label}: ${longDate(value, i18n.language)}`}
         onClick={toggle}
         className={[
-          'rounded-4 border border-line-subtle px-6 py-2 text-left type-numeral text-small text-ink-body',
-          'transition duration-fast ease-standard hover:bg-surface-hover focus-visible:shadow-focus',
-          open ? 'bg-surface-hover' : 'bg-transparent'
+          'rounded-4 border px-6 py-2 text-left type-numeral text-small text-ink-body',
+          'transition duration-fast ease-standard hover:border-line-subtle hover:bg-surface-hover focus-visible:shadow-focus',
+          open ? 'border-line-subtle bg-surface-hover' : 'border-transparent bg-transparent'
         ].join(' ')}
       >
         {shortDate(value, i18n.language)}
