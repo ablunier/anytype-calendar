@@ -1,3 +1,5 @@
+import type { EventsOption, EventsPanelProperty } from './detail'
+
 /** Which pick a source is: a type, or a query over one. */
 export type EventsSourceKey = { kind: 'type'; typeKey: string } | { kind: 'query'; queryId: string }
 
@@ -26,18 +28,19 @@ interface EventsSourceFields {
   to: string | null
   /** Whether From/To carry a time of day, as the user stated when choosing the source. */
   includesTime: boolean
-  /** Its Done checkbox, where it has one. */
+  /** The checkbox its objects are ticked done by, where it has one. */
   done?: string
-  /** Its Location text, where it has one. */
+  /** The text that says where its objects take place, where it has one. */
   location?: string
   /** A select property whose options colour its objects, as the user chose. */
   colourBy?: EventsColourBy
+  /** What the detail panel shows of its objects, in order; left off for nothing. */
+  panel?: EventsPanelProperty[]
 }
 
 export interface EventsColourBy {
   key: string
-  /** `color` is Anytype's own colour name. */
-  options: { name: string; color: string }[]
+  options: EventsOption[]
 }
 
 export function eventsSourceKey(source: EventsSource): EventsSourceKey {

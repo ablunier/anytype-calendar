@@ -1,4 +1,5 @@
 import {
+  ANYTYPE_PAGE_LIMIT,
   listAll,
   type AnytypeClient,
   type AnytypeFilter,
@@ -9,9 +10,12 @@ import {
   type AnytypeResult
 } from '@ablunier/anytype-client'
 import type {
+  EventsDetailRef,
   EventsGateway,
   EventsGatewayResult,
+  EventsLinkedObject,
   EventsObjectRef,
+  EventsPanelProperty,
   EventsSource,
   EventsWindow
 } from '../../domain'
@@ -20,6 +24,11 @@ const UNAUTHORIZED = 401
 
 /** Filtered on by a type's key, not its object id. */
 const TYPE_PROPERTY_KEY = 'type'
+
+const ID_PROPERTY_KEY = 'id'
+
+/** How an object row links a space member: neither a search nor an object read finds one. */
+const MEMBER_ID_PREFIX = 'participant-'
 
 /**
  * A saved selection keeps a choice whose type, property or space is gone, or whose space this
@@ -32,7 +41,7 @@ const GONE_STATUSES = new Set([400, 403, 404])
 
 /**
  * Searches each type with date filters, asking only for the From and To values back, and the
- * Done, Location and colour-by values where the source names them. The
+ * Done, Location, colour-by and panel values where the source names them. The
  * structured `filters` are used rather than the compact filter string, whose grammar has no
  * spelling for the keys Anytype mints for user properties (`6a650e02…`: they may start with a
  * digit). Like v1, a date filter rounds out to whole days (`greater_or_equal` to the start of
@@ -77,6 +86,46 @@ export class AnytypeV2EventsGateway implements EventsGateway {
     )
   }
 
+  /**
+   * Objects in one search per thousand ids, the most a filter was seen to take; members, which
+   * no search finds, from the space's member list, read only when one is asked for. Ids the
+   * search does not know it ignores.
+   */
+  async listLinkedObjects(
+    apiKey: string,
+    spaceId: string,
+    ids: readonly string[]
+  ): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
+    const api = this.#client.withApiKey(apiKey)
+    const memberIds = ids.filter((id) => id.startsWith(MEMBER_ID_PREFIX))
+    const objectIds = ids.filter((id) => !id.startsWith(MEMBER_ID_PREFIX))
+    const batches = Array.from({ length: Math.ceil(objectIds.length / ANYTYPE_PAGE_LIMIT) }, (_, index) =>
+      objectIds.slice(index * ANYTYPE_PAGE_LIMIT, (index + 1) * ANYTYPE_PAGE_LIMIT)
+    )
+    const reads = await Promise.all([
+      ...batches.map(async (batch) => {
+        const search = { filters: [{ property: ID_PROPERTY_KEY, condition: 'in', value: batch } satisfies AnytypeFilter] }
+        const rows = linkedRows(await listAll((paging) => api.search.inSpace(spaceId, search, paging)))
+        return rows && rows.flatMap((row) => toLinked(row.id, row.name, false))
+      }),
+      memberIds.length === 0
+        ? []
+        : (async () => {
+            const wanted = new Set(memberIds)
+            const rows = linkedRows(await listAll((paging) => api.members.list(spaceId, paging)))
+            return (
+              rows &&
+              rows.flatMap((row) => {
+                const id = typeof row.identity === 'string' ? `${MEMBER_ID_PREFIX}${row.identity}` : undefined
+                return id !== undefined && wanted.has(id) ? toLinked(id, row.name, true) : []
+              })
+            )
+          })()
+    ])
+    if (reads.some((read) => read === null)) return { ok: false, failure: 'unauthorized' }
+    return { ok: true, value: reads.flatMap((read) => read ?? []) }
+  }
+
   async #readAll(
     source: EventsSource,
     page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<AnytypePage<AnytypeObjectRow>>>
@@ -106,8 +155,25 @@ export class AnytypeV2EventsGateway implements EventsGateway {
 }
 
 /** Only keys the space has: v2 refuses a field it lacks as a bad request. */
-function fieldsOf({ from, to, done, location, colourBy }: EventsSource): string[] {
-  return [from, to, done, location, colourBy?.key].filter((key) => key != null)
+function fieldsOf({ from, to, done, location, colourBy, panel = [] }: EventsSource): string[] {
+  const keys = [from, to, done, location, colourBy?.key, ...panel.map(({ key }) => key)]
+  return [...new Set(keys.filter((key) => key != null))]
+}
+
+/**
+ * The rows of a read of linked objects or members; none for a space that is gone or no longer
+ * granted, or a build without the route, and null for a refused key.
+ */
+function linkedRows<Row>(response: AnytypeResult<{ data: Row[] }>): Row[] | null {
+  if (response.ok) return response.body.data
+  if (response.status === UNAUTHORIZED) return null
+  if (response.unsupported || GONE_STATUSES.has(response.status)) return []
+  throw new Error(`Anytype answered ${response.status} when asked for linked objects`)
+}
+
+function toLinked(id: unknown, name: unknown, member: boolean): EventsLinkedObject[] {
+  if (typeof id !== 'string' || id === '') return []
+  return [{ id, name: typeof name === 'string' ? name : '', member }]
 }
 
 /**
@@ -139,7 +205,10 @@ function windowFilters({ from, to }: EventsSource, window: EventsWindow): Anytyp
  * A row carries only the fields asked for, and leaves out any the object has no value for: an
  * unticked Done among them.
  */
-function toRef(row: AnytypeObjectRow, { from, to, done, location, colourBy }: EventsSource): EventsObjectRef[] {
+function toRef(
+  row: AnytypeObjectRow,
+  { from, to, done, location, colourBy, panel = [] }: EventsSource
+): EventsObjectRef[] {
   const { id, name, properties } = row
   if (typeof id !== 'string' || id === '') throw malformed()
   const start = dateIn(properties, from)
@@ -155,7 +224,38 @@ function toRef(row: AnytypeObjectRow, { from, to, done, location, colourBy }: Ev
   if (place !== undefined) ref.location = place
   const option = colourBy === undefined ? undefined : optionIn(properties, colourBy.key)
   if (option !== undefined) ref.option = option
+  const details = panel.flatMap((property) => detailIn(properties, property))
+  if (details.length > 0) ref.details = details
   return [ref]
+}
+
+/**
+ * None for a value of another shape than the property's format, and for no value: left out,
+ * `null`, `""` or `[]`.
+ */
+function detailIn(properties: unknown, { key, format }: EventsPanelProperty): EventsDetailRef[] {
+  const value = field(properties, key)
+  switch (format) {
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value) ? [{ key, format, value }] : []
+    case 'select':
+    case 'multi_select': {
+      const names = strings(value)
+      return names.length === 0 ? [] : [{ key, format, names }]
+    }
+    case 'objects': {
+      const ids = strings(value)
+      return ids.length === 0 ? [] : [{ key, format, ids }]
+    }
+    default:
+      return typeof value === 'string' && value !== '' ? [{ key, format, value }] : []
+  }
+}
+
+/** A list of option names or object ids; a bare one is read as a list of one. */
+function strings(value: unknown): string[] {
+  const items: unknown[] = Array.isArray(value) ? value : [value]
+  return items.filter((item): item is string => typeof item === 'string' && item !== '')
 }
 
 /** A select's value is the list of its picked options' names, e.g. `["P4"]`. */

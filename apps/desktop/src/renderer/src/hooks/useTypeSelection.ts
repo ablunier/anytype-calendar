@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
-import { indexBy, offeredMapping } from '@renderer/lib/calendar'
+import { indexBy, mappingIn, offeredMapping } from '@renderer/lib/calendar'
 
 export interface TypeSelection {
   spaceKeys: string[]
@@ -17,6 +17,9 @@ export interface TypeSelection {
   setIncludesTime: (key: string, value: boolean) => void
   setColourBy: (key: string, value: string | null) => void
   setView: (key: string, value: string) => void
+  setPanel: (key: string, value: string[]) => void
+  setDone: (key: string, value: string | null) => void
+  setLocation: (key: string, value: string | null) => void
 }
 
 const toggle = (keys: string[], key: string): string[] =>
@@ -73,20 +76,11 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     setTo: (key, value) => update(key, (mapping) => ({ ...mapping, to: value })),
     setIncludesTime: (key, value) => update(key, (mapping) => ({ ...mapping, includesTime: value })),
     setColourBy: (key, value) => update(key, (mapping) => ({ ...mapping, colourBy: value })),
-    setView: (key, value) => update(key, (mapping) => ({ ...mapping, view: value }))
+    setView: (key, value) => update(key, (mapping) => ({ ...mapping, view: value })),
+    setPanel: (key, value) => update(key, (mapping) => ({ ...mapping, panel: value })),
+    setDone: (key, value) => update(key, (mapping) => ({ ...mapping, done: value })),
+    setLocation: (key, value) => update(key, (mapping) => ({ ...mapping, location: value }))
   }
-}
-
-function mappingIn(dates: TypePicks['dates'], type: ObjectType): DateMapping {
-  return (
-    dates[type.key] ?? {
-      from: type.from,
-      to: type.to,
-      includesTime: type.includesTime,
-      colourBy: type.colourBy,
-      view: null
-    }
-  )
 }
 
 /**

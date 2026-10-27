@@ -311,6 +311,28 @@ describe('listTypes', () => {
     })
   })
 
+  test('marks a property in the hidden section, which Anytype itself does not show', async () => {
+    const { gateway } = setup({
+      [TYPES]: page([{ key: 'page' }]),
+      [`${TYPES}/page`]: {
+        status: 200,
+        body: typeDocument('Page', [
+          { ...definition('creator', 'Created by', 'objects'), section: 'hidden' },
+          { ...definition('tag', 'Tag', 'multi_select'), section: 'featured' },
+          definition('due_date', 'Due date')
+        ])
+      }
+    })
+
+    const result = await gateway.listTypes(API_KEY, SPACE_ID)
+
+    expect(result.ok && result.value[0]?.properties).toEqual([
+      { key: 'creator', name: 'Created by', format: 'objects', hidden: true },
+      { key: 'tag', name: 'Tag', format: 'multi_select' },
+      { key: 'due_date', name: 'Due date', format: 'date' }
+    ])
+  })
+
   test("spells Anytype's own keys the way the rest of the API does", async () => {
     const { gateway } = setup({
       [TYPES]: page([{ key: 'page' }]),

@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
+import { registerFeedsIpc } from './feeds/feeds-ipc'
 import { registerLanguageIpc } from './language/language-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
@@ -61,6 +62,7 @@ app.whenReady().then(async () => {
   registerAuthIpc(services)
   registerSchemaIpc(services)
   registerEventsIpc(services)
+  registerFeedsIpc(services)
   registerThemeIpc(services)
   registerLanguageIpc(services)
   registerWeekNumbersIpc(services)
@@ -71,8 +73,10 @@ app.whenReady().then(async () => {
   registerShellIpc()
   registerUpdateIpc(services)
   // The span a launch opens on is read from these two, and restoring the session is what
-  // starts that first load, so they have to be in place before it runs.
+  // starts that first load, so they have to be in place before it runs. The feeds are drawn
+  // over that span too, before Anytype has been asked anything.
   await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
+  services.showFeedsForSpan()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),
@@ -81,7 +85,9 @@ app.whenReady().then(async () => {
     services.loadLanguage.execute(),
     services.loadWeekNumbers.execute(),
     services.loadCalendarVisibility.execute(),
-    services.loadTimeFormat.execute()
+    services.loadTimeFormat.execute(),
+    // Only the copies cached at the last read: the network is asked once a window is open.
+    services.loadFeeds.execute()
   ])
 
   app.on('browser-window-created', (_, window) => {
@@ -90,6 +96,7 @@ app.whenReady().then(async () => {
 
   createWindow()
   startUpdates(services.checkForUpdate)
+  void services.refreshFeeds.execute()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

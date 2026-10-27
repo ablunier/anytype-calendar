@@ -1,19 +1,20 @@
 import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, FeedEventDetails, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
+import { EventDetails } from './EventDetails'
 
 interface DetailDateProps {
   date: string
-  /** Absent for an all-day event, so the date sits alone at the top of the column. */
+  /** Absent for an all-day event, so the date sits alone under the caption. */
   time?: string
   caption: string
 }
 
 /**
- * Time, date and caption stack in one column so a From/To pair lines up: two side-by-side
+ * Caption, time and date stack in one column so a From/To pair lines up: two side-by-side
  * flex rows (a time row above a date row) don't share column widths on their own, since
  * each row's cells size to that row's own content.
  */
@@ -22,13 +23,13 @@ function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element
   const timeFormat = useTimeFormatValue()
   return (
     <div className="flex flex-col gap-2">
+      <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
       {time ? (
         <span className="type-numeral text-small text-ink-body">
           {formatTime(time, timeFormat, i18n.language)}
         </span>
       ) : null}
       <span className="type-numeral text-small text-ink-body">{shortDate(date, i18n.language)}</span>
-      <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
     </div>
   )
 }
@@ -150,6 +151,8 @@ export function EventDetail({
           </div>
         ) : null}
 
+        <EventDetails event={event} type={type} />
+
         {/* How a type is drawn is the user's choice in Settings, not the object's. */}
         <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
         {/* A read-only Done needs no tooltip of its own: the notice below says why. */}
@@ -180,6 +183,94 @@ export function EventDetail({
       >
         {t('calendar.eventDetail.openInAnytype')}
       </Button>
+    </div>
+  )
+}
+
+export interface FeedEventDetailProps {
+  event: CalendarEvent
+  feed: FeedEventDetails
+}
+
+/**
+ * An event of a subscribed calendar: what the feed says of it, and which subscription it came
+ * from. It is read-only, so nothing here edits it.
+ */
+export function FeedEventDetail({ event, feed }: FeedEventDetailProps): React.JSX.Element {
+  const { t } = useTranslation()
+  const category = event.category ?? 'graphite'
+  return (
+    <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
+      <div className="flex flex-col gap-8">
+        <h2 className="type-heading text-h4 text-pretty text-ink-primary">
+          {event.title || t('common.untitled')}
+        </h2>
+        <div className="flex items-center gap-8">
+          <Tag category={category} icon="rss">
+            {feed.calendar}
+          </Tag>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-16 border-t border-line-hairline pt-16">
+        <div className="flex items-start gap-10">
+          <Icon name="clock" size={16} className="mt-2 text-ink-tertiary" />
+          <div className="flex items-start gap-16">
+            <DetailDate
+              date={event.date}
+              time={!event.allDay ? event.time : undefined}
+              caption={t(event.allDay ? 'calendar.eventDetail.allDay' : 'calendar.feedDetail.starts')}
+            />
+            {event.until ? (
+              <>
+                <Icon name="chevron-right" size={12} className="mt-4 shrink-0 text-ink-tertiary" />
+                <DetailDate
+                  date={event.until}
+                  time={!event.allDay ? (event.end ?? event.time) : undefined}
+                  caption={t('calendar.feedDetail.ends')}
+                />
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        {event.location ? (
+          <div className="flex items-start gap-10">
+            <Icon name="map-pin" size={16} className="mt-2 text-ink-tertiary" />
+            <span className="sr-only">{t('calendar.eventDetail.location')}</span>
+            <span className="type-body text-small text-pretty text-ink-body">{event.location}</span>
+          </div>
+        ) : null}
+
+        {feed.description ? (
+          <div className="flex items-start gap-10">
+            <Icon name="file-text" size={16} className="mt-2 text-ink-tertiary" />
+            <span className="sr-only">{t('calendar.feedDetail.description')}</span>
+            <p className="m-0 min-w-0 type-body text-small whitespace-pre-line break-words text-ink-body">
+              {feed.description}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <p className="flex items-start gap-8 rounded-8 bg-surface-sunken px-12 py-10">
+        <Icon name="info" size={14} className="mt-2 text-ink-tertiary" />
+        <span className="type-caption text-tiny text-ink-secondary">
+          {t('calendar.feedDetail.readOnlyNotice', { calendar: feed.calendar })}
+        </span>
+      </p>
+
+      {feed.url ? (
+        <Button
+          variant="secondary"
+          size="md"
+          fullWidth
+          iconRight="external-link"
+          onClick={() => void window.api.shell.openLink(feed.url ?? '')}
+        >
+          {t('calendar.feedDetail.openLink')}
+        </Button>
+      ) : null}
     </div>
   )
 }

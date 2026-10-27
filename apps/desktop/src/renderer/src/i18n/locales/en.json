@@ -166,12 +166,7 @@
     "changesApply": "Changes apply to the grid immediately. A type with a to date is drawn as a range.",
     "hiddenTypesCount_one": "hidden · {{count}} type",
     "hiddenTypesCount_other": "hidden · {{count}} types",
-    "time": "Time",
-    "fromDateFor": "From date for {{label}}",
-    "toDateFor": "To date for {{label}}",
-    "typeIncludesTime": "{{label}} dates include a time",
     "colour": "Colour",
-    "colourFor": "Colour for {{label}}",
     "typeColour": "Type colour",
     "noColourProperty": "Add a select property to this type in Anytype to colour by it",
     "session": {
@@ -194,12 +189,43 @@
       "revokeTitle": "Revoke API key",
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     },
-    "viewFor": "View of {{label}}",
     "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do.",
     "about": {
       "heading": "About",
       "version": "Version"
-    }
+    },
+    "done": "Done",
+    "location": "Location",
+    "panelDescription": "Tick what the panel shows below the dates, in this order. Drag to reorder, or use the arrows.",
+    "panelEmpty": "This type has no other property the panel can show.",
+    "moveUp": "Move {{label}} up",
+    "moveDown": "Move {{label}} down",
+    "panelFormat": {
+      "text": "Text",
+      "number": "Number",
+      "select": "Select",
+      "multi_select": "Multi-select",
+      "url": "URL",
+      "email": "Email",
+      "phone": "Phone",
+      "objects": "Objects"
+    },
+    "customizeType": "Customize",
+    "customizeTypeFor": "Customize {{label}}",
+    "typeSettingsClose": "Done",
+    "datesSection": "Dates",
+    "appearanceSection": "Appearance",
+    "panelSection": "Detail panel",
+    "includesTime": "Dates include a time",
+    "includesTimeDescription": "Off draws each object as an all-day event.",
+    "panelShown": "Also shown",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "with time",
+    "summaryAllDay": "all day",
+    "summaryView": "view {{view}}",
+    "summaryColour": "coloured by {{property}}",
+    "summaryPanel_one": "{{count}} property in the panel",
+    "summaryPanel_other": "{{count}} properties in the panel"
   },
   "calendar": {
     "couldntRead": "Couldn't read {{span}}",
@@ -247,7 +273,9 @@
       "done": "Done",
       "readOnlyNotice": "Edit the object in Anytype and it updates here on the next read.",
       "editNotice": "Drag it on the calendar to change its dates. Edit anything else in Anytype, and it updates here on the next read.",
-      "openInAnytype": "Open in Anytype"
+      "openInAnytype": "Open in Anytype",
+      "showMore": "Show more",
+      "showLess": "Show less"
     },
     "detailPanel": {
       "eventDetailLabel": "Event detail",
@@ -312,11 +340,69 @@
       "expand": "Show sidebar",
       "calendars": "Calendars",
       "collapseSpace": "Collapse {{name}}",
-      "expandSpace": "Expand {{name}}"
+      "expandSpace": "Expand {{name}}",
+      "subscriptions": "Subscribed",
+      "addCalendar": "Add a calendar"
+    },
+    "feedDetail": {
+      "starts": "Starts",
+      "ends": "Ends",
+      "description": "Description",
+      "readOnlyNotice": "From {{calendar}}, a subscribed calendar. It's read-only here: change it where it's published, and it updates on the next read.",
+      "openLink": "Open link"
     }
   },
   "updates": {
     "available": "Version {{version}} available",
     "dismiss": "Hide until the next version"
+  },
+  "feeds": {
+    "heading": "Subscribed calendars",
+    "description": "From Google, Outlook, iCloud and others, by their iCal address. Read-only.",
+    "readAll": "Read all again",
+    "listLabel": "Subscribed calendars",
+    "none": "No calendars yet. Add one by its iCal address: Google's secret address in iCal format, Outlook's published link, or any .ics or webcal:// link.",
+    "changeFailed": "Your last change could not be saved.",
+    "removeConfirm": "Remove it?",
+    "remove": "Remove",
+    "removeNamed": "Remove {{name}}",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down",
+    "edit": "Edit {{name}}",
+    "name": "Name",
+    "save": "Save",
+    "addHeading": "Add a calendar",
+    "url": "iCal address",
+    "urlHint": "A link ending in .ics, or starting with webcal://. It is read once before it is added.",
+    "nameOptional": "Name (optional)",
+    "namePlaceholder": "The calendar's own name",
+    "add": "Add calendar",
+    "failure": {
+      "unreachable": "Couldn't reach it. Check the address and your connection.",
+      "http": "The server answered with an error ({{status}}). The address may have changed or been revoked.",
+      "notCalendar": "That address isn't an iCal calendar. Look for the link in iCal (.ics) format.",
+      "invalidUrl": "That isn't a web address. It should start with https:// or webcal://.",
+      "invalidName": "Give it a name of up to 200 characters."
+    },
+    "status": {
+      "read": "read {{elapsed}}",
+      "neverRead": "not read yet",
+      "reading": "reading…",
+      "keptCopy": "Showing the last copy ({{read}})."
+    },
+    "colours": {
+      "grey": "Grey",
+      "yellow": "Yellow",
+      "orange": "Orange",
+      "red": "Red",
+      "pink": "Pink",
+      "purple": "Purple",
+      "blue": "Blue",
+      "ice": "Ice",
+      "teal": "Teal",
+      "lime": "Lime"
+    },
+    "urlKeep": "Unchanged ({{host}})",
+    "urlEditHint": "Paste a new address to replace it. It is read once before it is saved."
   }
 }

@@ -4,6 +4,7 @@
     { "path": "./packages/anytype-v1" },
     { "path": "./packages/auth" },
     { "path": "./packages/events" },
+    { "path": "./packages/feeds" },
     { "path": "./packages/kernel" },
     { "path": "./packages/schema" },
     { "path": "./apps/desktop/tsconfig.node.json" },

@@ -10,28 +10,26 @@ export interface SpaceTypesCardProps {
   types: ObjectType[]
   queries: ObjectType[]
   selection: TypeSelection
+  /** Whether types can pick their Done, Location and panel properties: only under v2. */
+  details: boolean
 }
 
 export function SpaceTypesCard({
   space,
   types,
   queries,
-  selection
+  selection,
+  details
 }: SpaceTypesCardProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = selection.spaceKeys.includes(space.key)
-  const row = (type: ObjectType, last: boolean): React.JSX.Element => {
-    const mapping = selection.mappingFor(type)
-    return (
+  const row = (type: ObjectType, last: boolean): React.JSX.Element => (
       <TypeConfigRow
         key={type.key}
         type={type}
         checked={selection.typeKeys.includes(type.key)}
-        from={mapping.from}
-        to={mapping.to}
-        includesTime={mapping.includesTime}
-        colourBy={mapping.colourBy}
-        view={mapping.view}
+        mapping={selection.mappingFor(type)}
+        details={details}
         last={last}
         onToggle={() => selection.toggleType(type.key)}
         onFromChange={(value) => selection.setFrom(type.key, value)}
@@ -39,9 +37,11 @@ export function SpaceTypesCard({
         onIncludesTimeChange={(value) => selection.setIncludesTime(type.key, value)}
         onColourByChange={(value) => selection.setColourBy(type.key, value)}
         onViewChange={(value) => selection.setView(type.key, value)}
+        onPanelChange={(value) => selection.setPanel(type.key, value)}
+        onDoneChange={(value) => selection.setDone(type.key, value)}
+        onLocationChange={(value) => selection.setLocation(type.key, value)}
       />
-    )
-  }
+  )
   return (
     <Card className={on ? '' : 'opacity-72'}>
       <div
@@ -62,21 +62,6 @@ export function SpaceTypesCard({
           <span className="type-numeral text-tiny text-ink-tertiary">
             {t('config.hiddenTypesCount', { count: types.length })}
           </span>
-        ) : types.length > 0 ? (
-          <>
-            <span className="w-152 type-caption text-tiny text-ink-tertiary">
-              {t('common.fromDate')}
-            </span>
-            <span className="w-152 type-caption text-tiny text-ink-tertiary">
-              {t('common.toDateOptional')}
-            </span>
-            <span className="w-56 shrink-0 text-center type-caption text-tiny text-ink-tertiary">
-              {t('config.time')}
-            </span>
-            <span className="w-116 type-caption text-tiny text-ink-tertiary">
-              {t('config.colour')}
-            </span>
-          </>
         ) : null}
       </div>
       {on && types.length === 0 ? (

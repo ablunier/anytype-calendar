@@ -18,6 +18,7 @@
     { "path": "../../packages/anytype-v1" },
     { "path": "../../packages/auth" },
     { "path": "../../packages/events" },
+    { "path": "../../packages/feeds" },
     { "path": "../../packages/schema" }
   ]
 }

@@ -38,6 +38,7 @@ export function DayDetail({
               time={event.date === date ? event.time : undefined}
               category={eventHue(event, type)}
               done={event.done}
+              external={event.feed !== undefined}
               onClick={() => onOpenEvent(event)}
             />
           )

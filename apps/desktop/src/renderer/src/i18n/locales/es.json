@@ -166,12 +166,7 @@
     "changesApply": "Los cambios se aplican al calendario de inmediato. Un tipo con fecha de fin se dibuja como un rango.",
     "hiddenTypesCount_one": "oculto · {{count}} tipo",
     "hiddenTypesCount_other": "oculto · {{count}} tipos",
-    "time": "Hora",
-    "fromDateFor": "Fecha de inicio de {{label}}",
-    "toDateFor": "Fecha de fin de {{label}}",
-    "typeIncludesTime": "Las fechas de {{label}} incluyen una hora",
     "colour": "Color",
-    "colourFor": "Color de {{label}}",
     "typeColour": "Color del tipo",
     "noColourProperty": "Añade una propiedad de selección a este tipo en Anytype para colorear por ella",
     "session": {
@@ -194,12 +189,43 @@
       "revokeTitle": "Revocar clave de API",
       "revokeInstructions": "Para revocarla en todos los espacios de la cuenta, abre la aplicación de Anytype, ve a {{breadcrumb}} y revoca Calendar for Anytype. Luego cierra sesión aquí. Reconectar implica repetir el proceso del código de 4 dígitos."
     },
-    "viewFor": "Vista de {{label}}",
     "queriesNeedV2": "Las consultas aparecen aquí cuando Anytype sirve la versión 2 de su API, como hacen las versiones más recientes de la aplicación.",
     "about": {
       "heading": "Acerca de",
       "version": "Versión"
-    }
+    },
+    "done": "Hecho",
+    "location": "Ubicación",
+    "panelDescription": "Marca lo que muestra el panel debajo de las fechas, en este orden. Arrastra para reordenar o usa las flechas.",
+    "panelEmpty": "Este tipo no tiene otra propiedad que el panel pueda mostrar.",
+    "moveUp": "Subir {{label}}",
+    "moveDown": "Bajar {{label}}",
+    "panelFormat": {
+      "text": "Texto",
+      "number": "Número",
+      "select": "Selección",
+      "multi_select": "Selección múltiple",
+      "url": "URL",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "objects": "Objetos"
+    },
+    "customizeType": "Personalizar",
+    "customizeTypeFor": "Personalizar {{label}}",
+    "typeSettingsClose": "Hecho",
+    "datesSection": "Fechas",
+    "appearanceSection": "Apariencia",
+    "panelSection": "Panel de detalle",
+    "includesTime": "Las fechas incluyen hora",
+    "includesTimeDescription": "Desactivado, cada objeto se dibuja como un evento de todo el día.",
+    "panelShown": "También se muestra",
+    "summaryRange": "{{from}} → {{to}}",
+    "summaryTimed": "con hora",
+    "summaryAllDay": "todo el día",
+    "summaryView": "vista {{view}}",
+    "summaryColour": "coloreado por {{property}}",
+    "summaryPanel_one": "{{count}} propiedad en el panel",
+    "summaryPanel_other": "{{count}} propiedades en el panel"
   },
   "calendar": {
     "couldntRead": "No se pudo leer {{span}}",
@@ -247,7 +273,9 @@
       "done": "Hecho",
       "readOnlyNotice": "Edita el objeto en Anytype y se actualizará aquí en la próxima lectura.",
       "editNotice": "Arrástralo en el calendario para cambiar sus fechas. Edita todo lo demás en Anytype y se actualizará aquí en la próxima lectura.",
-      "openInAnytype": "Abrir en Anytype"
+      "openInAnytype": "Abrir en Anytype",
+      "showMore": "Ver más",
+      "showLess": "Ver menos"
     },
     "detailPanel": {
       "eventDetailLabel": "Detalle del evento",
@@ -312,11 +340,69 @@
       "expand": "Mostrar la barra lateral",
       "calendars": "Calendarios",
       "collapseSpace": "Contraer {{name}}",
-      "expandSpace": "Expandir {{name}}"
+      "expandSpace": "Expandir {{name}}",
+      "subscriptions": "Suscritos",
+      "addCalendar": "Añadir un calendario"
+    },
+    "feedDetail": {
+      "starts": "Empieza",
+      "ends": "Termina",
+      "description": "Descripción",
+      "readOnlyNotice": "De {{calendar}}, un calendario suscrito. Aquí es de solo lectura: cámbialo donde se publica y se actualizará en la próxima lectura.",
+      "openLink": "Abrir enlace"
     }
   },
   "updates": {
     "available": "Versión {{version}} disponible",
     "dismiss": "Ocultar hasta la próxima versión"
+  },
+  "feeds": {
+    "heading": "Calendarios suscritos",
+    "description": "De Google, Outlook, iCloud y otros, por su dirección iCal. Solo lectura.",
+    "readAll": "Volver a leer todos",
+    "listLabel": "Calendarios suscritos",
+    "none": "Aún no hay calendarios. Añade uno por su dirección iCal: la dirección secreta en formato iCal de Google, el enlace publicado de Outlook o cualquier enlace .ics o webcal://.",
+    "changeFailed": "No se pudo guardar tu último cambio.",
+    "removeConfirm": "¿Quitarlo?",
+    "remove": "Quitar",
+    "removeNamed": "Quitar {{name}}",
+    "moveUp": "Subir {{name}}",
+    "moveDown": "Bajar {{name}}",
+    "edit": "Editar {{name}}",
+    "name": "Nombre",
+    "save": "Guardar",
+    "addHeading": "Añadir un calendario",
+    "url": "Dirección iCal",
+    "urlHint": "Un enlace que termina en .ics o empieza por webcal://. Se lee una vez antes de añadirlo.",
+    "nameOptional": "Nombre (opcional)",
+    "namePlaceholder": "El nombre propio del calendario",
+    "add": "Añadir calendario",
+    "failure": {
+      "unreachable": "No se pudo acceder. Revisa la dirección y tu conexión.",
+      "http": "El servidor respondió con un error ({{status}}). Puede que la dirección haya cambiado o se haya revocado.",
+      "notCalendar": "Esa dirección no es un calendario iCal. Busca el enlace en formato iCal (.ics).",
+      "invalidUrl": "Eso no es una dirección web. Debe empezar por https:// o webcal://.",
+      "invalidName": "Ponle un nombre de hasta 200 caracteres."
+    },
+    "status": {
+      "read": "leído {{elapsed}}",
+      "neverRead": "aún sin leer",
+      "reading": "leyendo…",
+      "keptCopy": "Se muestra la última copia ({{read}})."
+    },
+    "colours": {
+      "grey": "Gris",
+      "yellow": "Amarillo",
+      "orange": "Naranja",
+      "red": "Rojo",
+      "pink": "Rosa",
+      "purple": "Morado",
+      "blue": "Azul",
+      "ice": "Hielo",
+      "teal": "Verde azulado",
+      "lime": "Lima"
+    },
+    "urlKeep": "Sin cambios ({{host}})",
+    "urlEditHint": "Pega una dirección nueva para sustituirla. Se lee una vez antes de guardarla."
   }
 }

@@ -75,7 +75,7 @@ export function AllDayBand({
               time={segment.continuesBefore ? undefined : segment.event.time}
               {...(segment.event.done === undefined ? {} : { done: segment.event.done })}
               lifted={drag.draggingId === segment.event.id}
-              {...(onMoveEvent
+              {...(onMoveEvent && !segment.event.feed
                 ? {
                     onDragStart: (event: React.DragEvent) =>
                       drag.start(

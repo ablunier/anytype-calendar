@@ -39,7 +39,9 @@ const date = (key: string, name: string): SchemaProperty => ({ key, name, format
 const SYSTEM_PROPERTIES: SchemaProperty[] = [
   date('created_date', 'Creation date'),
   date('last_modified_date', 'Last modified date'),
-  { key: 'tag', name: 'Tag', format: 'multi_select' }
+  { key: 'tag', name: 'Tag', format: 'multi_select' },
+  { key: 'description', name: 'Description', format: 'text' },
+  { key: 'last_modified_by', name: 'Last modified by', format: 'objects', hidden: true }
 ]
 
 function type(
@@ -59,6 +61,20 @@ const PRIORITY_OPTIONS: SchemaSelectOption[] = [
   { name: 'Medium', color: 'orange' },
   { name: 'Low', color: 'blue' }
 ]
+const TAG_OPTIONS: SchemaSelectOption[] = [
+  { name: 'Work', color: 'blue' },
+  { name: 'Home', color: 'lime' },
+  { name: 'Urgent', color: 'red' }
+]
+const PROJECT_LINK: SchemaProperty = { key: 'linked_projects', name: 'Project', format: 'objects' }
+const ATTENDEES: SchemaProperty = { key: 'attendees', name: 'Attendees', format: 'objects' }
+const LINK: SchemaProperty = { key: 'url', name: 'Link', format: 'url' }
+const VENUE: SchemaProperty = { key: 'venue', name: 'Venue', format: 'text' }
+const EMAIL: SchemaProperty = { key: 'email', name: 'Email', format: 'email' }
+const PHONE: SchemaProperty = { key: 'phone', name: 'Phone', format: 'phone' }
+const AMOUNT: SchemaProperty = { key: 'amount', name: 'Amount', format: 'number' }
+const PAGES: SchemaProperty = { key: 'pages', name: 'Pages', format: 'number' }
+const FINISHED: SchemaProperty = { key: 'finished', name: 'Finished', format: 'checkbox' }
 
 const TASK = { name: 'checkbox', color: 'lime' }
 const PROJECT = { name: 'hammer', color: 'orange' }
@@ -66,6 +82,7 @@ const PROJECT = { name: 'hammer', color: 'orange' }
 /**
  * The design's sample account. Each space's Note has only system dates, so it never shows.
  * Tasks can be ticked done and coloured by priority, and meetings have a location, as under v2.
+ * Each type has a few more properties the detail panel can show, of every format it draws.
  * Studio has a query over its tasks, which InMemoryEventsGateway answers by the same ids.
  * Personal and Studio have collections, Studio two of the same name told apart by backlinks.
  */
@@ -74,17 +91,22 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
     id: 'sp_personal',
     name: 'Personal',
     types: [
-      type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY]),
+      type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY, PROJECT_LINK]),
       type(
         'meeting',
         'Meeting',
         { name: 'people', color: 'teal' },
-        [date('start_date', 'Start date'), date('end_date', 'End date'), LOCATION]
+        [date('start_date', 'Start date'), date('end_date', 'End date'), LOCATION, VENUE, ATTENDEES, LINK]
       ),
-      type('contact', 'Person', { name: 'person-circle', color: 'pink' }, [date('birthday', 'Birthday')]),
+      type(
+        'contact',
+        'Person',
+        { name: 'person-circle', color: 'pink' },
+        [date('birthday', 'Birthday'), EMAIL, PHONE]
+      ),
       type('note', 'Note', { name: 'create', color: 'yellow' }, [])
     ],
-    options: { priority: PRIORITY_OPTIONS },
+    options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS },
     collections: [
       { id: 'col_lisbon', name: 'Trip to Lisbon', lastModified: Date.UTC(2026, 8, 2, 18, 4), backlinks: [] },
       { id: 'col_reading', name: 'Reading list', lastModified: Date.UTC(2026, 6, 19, 10, 30), backlinks: [] }
@@ -100,16 +122,16 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
         PROJECT,
         [date('start_date', 'Start date'), date('due_date', 'Due date')]
       ),
-      type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY]),
+      type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY, PROJECT_LINK]),
       type(
         'invoice',
         'Invoice',
         { name: 'receipt', color: 'red' },
-        [date('issued_on', 'Issued on'), date('due_date', 'Due date')]
+        [date('issued_on', 'Issued on'), date('due_date', 'Due date'), AMOUNT, EMAIL]
       ),
       type('note', 'Note', { name: 'create', color: 'yellow' }, [])
     ],
-    options: { priority: PRIORITY_OPTIONS },
+    options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS },
     queries: [
       {
         id: 'q_open_tasks',
@@ -140,9 +162,10 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
         'book',
         'Book',
         { name: 'book', color: 'purple' },
-        [date('start_date', 'Start date'), date('finish_date', 'Finish date')]
+        [date('start_date', 'Start date'), date('finish_date', 'Finish date'), FINISHED, PAGES]
       )
-    ]
+    ],
+    options: { tag: TAG_OPTIONS }
   },
   {
     id: 'sp_archive',

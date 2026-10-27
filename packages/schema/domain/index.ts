@@ -3,6 +3,7 @@
 
 export * from './model/collection'
 export * from './model/date-property'
+export * from './model/panel-property'
 export * from './model/query'
 export * from './model/select-property'
 export * from './model/selection'

@@ -1,3 +1,4 @@
+import { SCHEMA_DONE_KEY, SCHEMA_LOCATION_KEY } from './select-property'
 import type { SchemaSpace } from './space'
 
 /** A type put on the calendar, with the date properties (keys) its objects are drawn by. */
@@ -19,6 +20,12 @@ export interface SchemaTypeChoice {
    * type's colour too.
    */
   colourBy: string | null
+  /** Properties (keys) the detail panel shows below the dates, in this order. */
+  panel: string[]
+  /** A checkbox property (key) its objects are ticked done by; null for none. */
+  done: string | null
+  /** A text property (key) that says where its objects take place; null for none. */
+  location: string | null
 }
 
 /**
@@ -34,6 +41,9 @@ export interface SchemaQueryChoice {
   to: string | null
   includesTime: boolean
   colourBy: string | null
+  panel: string[]
+  done: string | null
+  location: string | null
 }
 
 /**
@@ -57,9 +67,11 @@ export type SchemaSelectionState =
 
 /**
  * Null unless `value` is a well-formed selection: non-empty ids, a `to` that differs from
- * `from`, and no type or query chosen twice. Spaces listed twice are collapsed. A choice with
- * no `colourBy` at all, as saved before there was one, colours by nothing; a selection with no
- * `queries`, as saved before there were any, chooses none.
+ * `from`, and no type or query chosen twice. Spaces, and panel properties, listed twice are
+ * collapsed. What a selection saved before it existed lacks reads as what it drew then: a
+ * choice with no `colourBy` colours by nothing, one with no `panel` shows nothing more, one with
+ * no `done` or `location` uses Anytype's own Done and Location, and a selection with no
+ * `queries` chooses none.
  */
 export function toSchemaSelection(value: unknown): SchemaSelection | null {
   if (typeof value !== 'object' || value === null) return null
@@ -112,13 +124,26 @@ function toQueryChoice(value: unknown): SchemaQueryChoice | null {
 /** How a choice's objects are drawn: the fields type and query choices share. */
 function toDrawing(
   value: object
-): Pick<SchemaTypeChoice, 'from' | 'to' | 'includesTime' | 'colourBy'> | null {
-  const { from, to, includesTime, colourBy = null } = value as Record<string, unknown>
+): Omit<SchemaTypeChoice, 'spaceId' | 'typeKey'> | null {
+  const {
+    from,
+    to,
+    includesTime,
+    colourBy = null,
+    panel = [],
+    done = SCHEMA_DONE_KEY,
+    location = SCHEMA_LOCATION_KEY
+  } = value as Record<string, unknown>
   if (!isId(from)) return null
   if (to !== null && (!isId(to) || to === from)) return null
   if (typeof includesTime !== 'boolean') return null
-  if (colourBy !== null && !isId(colourBy)) return null
-  return { from, to, includesTime, colourBy }
+  if (!isIdOrNull(colourBy) || !isIdOrNull(done) || !isIdOrNull(location)) return null
+  if (!Array.isArray(panel) || !panel.every(isId)) return null
+  return { from, to, includesTime, colourBy, panel: [...new Set(panel)], done, location }
+}
+
+function isIdOrNull(value: unknown): value is string | null {
+  return value === null || isId(value)
 }
 
 function isId(value: unknown): value is string {
@@ -155,7 +180,10 @@ export function rekeySchemaSelection(
       typeKey: type.key,
       from: currentKey(type.dateProperties, choice.from),
       to: choice.to === null ? null : currentKey(type.dateProperties, choice.to),
-      colourBy: choice.colourBy === null ? null : currentKey(type.selectProperties, choice.colourBy)
+      colourBy: choice.colourBy === null ? null : currentKey(type.selectProperties, choice.colourBy),
+      panel: choice.panel.map((key) => currentKey(type.panelProperties, key)),
+      done: choice.done === null ? null : currentKey(type.checkboxProperties, choice.done),
+      location: choice.location === null ? null : currentKey(type.textProperties, choice.location)
     }
     if (rekeyed.typeKey !== choice.typeKey && chosen.has(`${choice.spaceId}\n${rekeyed.typeKey}`)) {
       changed = true
@@ -165,7 +193,10 @@ export function rekeySchemaSelection(
       rekeyed.typeKey === choice.typeKey &&
       rekeyed.from === choice.from &&
       rekeyed.to === choice.to &&
-      rekeyed.colourBy === choice.colourBy
+      rekeyed.colourBy === choice.colourBy &&
+      rekeyed.panel.every((key, index) => key === choice.panel[index]) &&
+      rekeyed.done === choice.done &&
+      rekeyed.location === choice.location
     ) {
       return [choice]
     }

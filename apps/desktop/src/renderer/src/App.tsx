@@ -5,6 +5,7 @@ import type { AuthView, CalendarView, ConnectedScreen } from './types'
 import { useCalendarVisibility } from './hooks/useCalendarVisibility'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useEvents } from './hooks/useEvents'
+import { useFeeds } from './hooks/useFeeds'
 import { useLocale } from './hooks/useLocale'
 import { useNow } from './hooks/useNow'
 import { useSchemaSelection } from './hooks/useSchemaSelection'
@@ -27,6 +28,7 @@ import {
   spanStatusFor,
   switchDateFor
 } from './lib/events'
+import { feedEventsFor, feedsFor, mergedEvents } from './lib/feeds'
 import {
   collectionsBySpaceFor,
   creatableTypesFor,
@@ -76,9 +78,12 @@ function App(): React.JSX.Element | null {
   const schema = useSchemaSync()
   const selection = useSchemaSelection()
   const events = useEvents()
+  const feeds = useFeeds()
   const update = useUpdate()
   const now = useNow(SYNC_AGE_TICK_MS)
   const [screen, setScreen] = useState<ConnectedScreen>('success')
+  // Whether Settings was opened to add a calendar, so it opens at that form.
+  const [addingFeed, setAddingFeed] = useState(false)
 
   /* Entering the connected phase picks the first screen. A window that has drawn any other
    * phase watched the sign-in, so it shows the success card; one whose very first snapshot
@@ -93,7 +98,7 @@ function App(): React.JSX.Element | null {
     if (session?.phase === 'connected') setScreen(phase === undefined ? 'calendar' : 'success')
   }
 
-  if (!session || !schema || !selection || !events) return null
+  if (!session || !schema || !selection || !events || !feeds) return null
 
   const authView: AuthView | null =
     authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
@@ -169,6 +174,15 @@ function App(): React.JSX.Element | null {
         appVersion={update?.current ?? null}
         updateAvailable={update?.available ?? null}
         onOpenRelease={() => void window.api.update.openRelease()}
+        feeds={feedsFor(feeds, now)}
+        feedActions={{
+          onAdd: (url, name, colour) => window.api.feeds.add({ url, name, colour }),
+          onEdit: (request) => window.api.feeds.edit(request),
+          onRemove: (id) => window.api.feeds.remove(id),
+          onReorder: (ids) => window.api.feeds.reorder(ids),
+          onRefresh: () => void window.api.feeds.refresh()
+        }}
+        focusAddFeed={addingFeed}
       />
     )
   }
@@ -188,16 +202,28 @@ function App(): React.JSX.Element | null {
   const typesOnCalendar = withDates(types, picks.dates)
   const today = localDate(now)
   const sources = sourcesOnCalendar(typesOnCalendar, picks)
-  /* Only keys of sources the calendar still holds are saved, so what the selection dropped
-   * since stops being remembered. */
+  const feedSources = feedsFor(feeds, now)
+  /* Only keys of sources the calendar still holds are saved, so what the selection dropped,
+   * or a subscription removed, since stops being remembered. */
   const setSourcesShown = (keys: string[], shown: boolean): void =>
     updateVisibility(({ hidden, ...rest }) => ({
       ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
-        sources.map(({ key }) => key)
+        [...sources, ...feedSources].map(({ key }) => key)
       )
     }))
+  /* The feeds never wait on Anytype: they are drawn while its read of the span is running, and
+   * only a read that failed with nothing to show hides them behind its error. */
+  const status = spanStatusFor(events, span, now)
+  const anytypeEvents = eventsFor(events, span)
+  const feedEvents = feedEventsFor(feeds)
+  const calendarEvents =
+    anytypeEvents !== null
+      ? mergedEvents(anytypeEvents, feedEvents)
+      : status.state !== 'error' && feedEvents.length > 0
+        ? feedEvents
+        : null
   const toggleSpaceCollapsed = (spaceKey: string): void =>
     updateVisibility((current) => ({
       ...current,
@@ -210,16 +236,17 @@ function App(): React.JSX.Element | null {
       <CalendarScreen
         key={`${span.kind}-${anchorOf(span)}`}
         span={span}
-        events={eventsFor(events, span)}
-        status={spanStatusFor(events, span, now)}
+        events={calendarEvents}
+        status={status}
         types={typesOnCalendar}
         spaces={spacesFor(schema)}
         trackedSpaceKeys={picks.spaceKeys}
         sources={sources}
+        feeds={feedSources}
         hiddenSources={hiddenSources}
         sidebarCollapsed={visibility.collapsed}
         collapsedSpaces={collapsedSpaces}
-        tracksAnything={tracksAnyType(selection)}
+        tracksAnything={tracksAnyType(selection) || feedSources.length > 0}
         today={today}
         nowMinute={minutesOf(now)}
         theme={theme}
@@ -238,13 +265,21 @@ function App(): React.JSX.Element | null {
         }
         onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart))}
         onToggleTheme={toggleTheme}
-        onOpenSettings={() => setScreen('config')}
+        onOpenSettings={() => {
+          setAddingFeed(false)
+          setScreen('config')
+        }}
+        onAddCalendar={() => {
+          setAddingFeed(true)
+          setScreen('config')
+        }}
         onView={showView}
         onPrev={() => showSpan(shiftSpan(span, -1))}
         onNext={() => showSpan(shiftSpan(span, 1))}
         onToday={() => showSpan(spanFor(span.kind, localDate(Date.now()), weekStart))}
         onReread={() => {
           void window.api.schema.sync()
+          void window.api.feeds.refresh()
           showSpan(span)
         }}
         updateNotice={update && !update.dismissed ? update.available : null}

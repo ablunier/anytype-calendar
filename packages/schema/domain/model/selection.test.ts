@@ -15,7 +15,10 @@ const TASK: SchemaTypeChoice = {
   from: 'due_date',
   to: null,
   includesTime: false,
-  colourBy: null
+  colourBy: null,
+  panel: [],
+  done: 'done',
+  location: null
 }
 const PROJECT: SchemaTypeChoice = {
   spaceId: 'sp_1',
@@ -23,7 +26,10 @@ const PROJECT: SchemaTypeChoice = {
   from: 'start_date',
   to: 'finish_date',
   includesTime: true,
-  colourBy: '6aaa450259c0801cdafc4015'
+  colourBy: '6aaa450259c0801cdafc4015',
+  panel: ['priority', 'linked_projects'],
+  done: null,
+  location: 'venue'
 }
 
 const OPEN_TASKS: SchemaQueryChoice = {
@@ -33,7 +39,10 @@ const OPEN_TASKS: SchemaQueryChoice = {
   from: 'due_date',
   to: null,
   includesTime: true,
-  colourBy: null
+  colourBy: null,
+  panel: ['priority'],
+  done: 'done',
+  location: 'location'
 }
 
 describe('toSchemaSelection', () => {
@@ -72,6 +81,20 @@ describe('toSchemaSelection', () => {
       types: [{ ...PROJECT, colourBy: null }],
       queries: []
     })
+  })
+
+  test("reads a choice saved before panel, done and location as showing nothing more, with Anytype's own", () => {
+    const { panel: _, done: _done, location: _location, ...saved } = PROJECT
+    expect(toSchemaSelection({ spaceIds: [], types: [saved], queries: [] })).toEqual({
+      spaceIds: [],
+      types: [{ ...PROJECT, panel: [], done: 'done', location: 'location' }],
+      queries: []
+    })
+  })
+
+  test('collapses a panel property listed twice, keeping the first', () => {
+    const selection = { spaceIds: [], types: [{ ...TASK, panel: ['a', 'b', 'a'] }], queries: [] }
+    expect(toSchemaSelection(selection)?.types[0]?.panel).toEqual(['a', 'b'])
   })
 
   test('collapses a space listed twice', () => {
@@ -115,6 +138,12 @@ describe('toSchemaSelection', () => {
     ['a non-boolean includesTime', { spaceIds: [], types: [{ ...TASK, includesTime: 'yes' }] }],
     ['an empty colourBy', { spaceIds: [], types: [{ ...TASK, colourBy: '' }] }],
     ['a non-string colourBy', { spaceIds: [], types: [{ ...TASK, colourBy: 1 }] }],
+    ['a panel that is not a list', { spaceIds: [], types: [{ ...TASK, panel: 'priority' }] }],
+    ['an empty panel property', { spaceIds: [], types: [{ ...TASK, panel: [''] }] }],
+    ['a non-string panel property', { spaceIds: [], types: [{ ...TASK, panel: [1] }] }],
+    ['an empty done', { spaceIds: [], types: [{ ...TASK, done: '' }] }],
+    ['a non-string location', { spaceIds: [], types: [{ ...TASK, location: false }] }],
+    ['a query with an empty location', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, location: '' }] }],
     ['a query list that is not a list', { spaceIds: [], types: [], queries: {} }],
     ['a query with no id', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, queryId: '' }] }],
     ['a query with no view', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, viewId: undefined }] }],
@@ -137,7 +166,10 @@ describe('rekeySchemaSelection', () => {
     from,
     to,
     includesTime: false,
-    colourBy: null
+    colourBy: null,
+    panel: [],
+    done: null,
+    location: null
   })
   const selectionOf = (...types: SchemaTypeChoice[]): SchemaSelection => ({
     spaceIds: [SPACE],
@@ -158,8 +190,13 @@ describe('rekeySchemaSelection', () => {
             { key: 'start_date', name: 'Start date' },
             { key: '6a6733dc59c08021576f32d2', formerKey: 'finished', name: 'Finished' }
           ],
-          hasDone: false,
-          hasLocation: false,
+          checkboxProperties: [{ key: '6a6733dc59c08021576f3300', formerKey: 'read', name: 'Read' }],
+          textProperties: [{ key: '6a6733dc59c08021576f3301', formerKey: 'shelf', name: 'Shelf' }],
+          panelProperties: [
+            { key: '6a6725f159c08021576f3119', formerKey: 'status', name: 'Status', format: 'select' },
+            { key: 'author', name: 'Author', format: 'text' },
+            { key: '6a6733dc59c08021576f3301', formerKey: 'shelf', name: 'Shelf', format: 'text' }
+          ],
           selectProperties: [
             {
               key: '6a6725f159c08021576f3119',
@@ -174,8 +211,9 @@ describe('rekeySchemaSelection', () => {
           name: 'Task',
           icon: null,
           dateProperties: [{ key: 'due_date', name: 'Due date' }],
-          hasDone: true,
-          hasLocation: false,
+          checkboxProperties: [{ key: 'done', name: 'Done' }],
+          textProperties: [],
+          panelProperties: [],
           selectProperties: []
         }
       ],
@@ -202,6 +240,30 @@ describe('rekeySchemaSelection', () => {
   test('rewrites the property it colours by', () => {
     const selection = selectionOf({ ...choice('book', 'start_date'), colourBy: 'status' })
     expect(rekeySchemaSelection(selection, spaces).types[0]?.colourBy).toBe('6a6725f159c08021576f3119')
+  })
+
+  test('rewrites the properties the panel shows, keeping their order, and its Done and Location', () => {
+    const selection = selectionOf({
+      ...choice('book', 'start_date'),
+      panel: ['shelf', 'author', 'status'],
+      done: 'read',
+      location: 'shelf'
+    })
+    expect(rekeySchemaSelection(selection, spaces).types[0]).toMatchObject({
+      panel: ['6a6733dc59c08021576f3301', 'author', '6a6725f159c08021576f3119'],
+      done: '6a6733dc59c08021576f3300',
+      location: '6a6733dc59c08021576f3301'
+    })
+  })
+
+  test('returns the selection itself when the panel, Done and Location are current', () => {
+    const selection = selectionOf({
+      ...choice('6a67272659c08021576f3127', 'start_date'),
+      panel: ['author'],
+      done: '6a6733dc59c08021576f3300',
+      location: null
+    })
+    expect(rekeySchemaSelection(selection, spaces)).toBe(selection)
   })
 
   test('keeps a choice whose type or space the account does not have', () => {
@@ -235,7 +297,10 @@ describe('rekeySchemaSelection', () => {
       from: 'finished',
       to: null,
       includesTime: false,
-      colourBy: null
+      colourBy: null,
+      panel: ['status'],
+      done: 'read',
+      location: null
     }
     const selection = { ...selectionOf(choice('book', 'start_date')), queries: [query] }
     expect(rekeySchemaSelection(selection, spaces).queries).toEqual([query])
