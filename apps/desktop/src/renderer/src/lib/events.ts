@@ -3,6 +3,8 @@
  * the span in. */
 
 import {
+  DEFAULT_EVENTS_DURATION_MINUTES,
+  eventsSourceHasEnd,
   sameEventsSpan,
   shownEventsSpan,
   type EventsDatedObject,
@@ -24,6 +26,9 @@ import type {
 } from '@renderer/types'
 import { addDays, buildWeek, isoDate } from './calendar'
 import { anytypeTypeKeyOf, elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
+import { minutesOf } from './time-grid'
+
+const MINUTES_PER_DAY = 1440
 
 /** The span main holds, or before any load the one `now` (epoch milliseconds) opens on. */
 export function shownSpanFor(snapshot: EventsSnapshot, view: CalendarView, now: number): EventsSpan {
@@ -153,6 +158,38 @@ export function moveRequestFor(event: CalendarEvent, slot: CalendarSlot): Events
 /** Pulls the end of `event` to `slot`, keeping where it starts. */
 export function resizeRequestFor(event: CalendarEvent, slot: CalendarSlot): EventsRescheduleRequest {
   return rescheduleRequestFor(event, { kind: 'resize', end: eventsSlotOf(slot) })
+}
+
+/**
+ * Moves `event` to start on `date`, keeping how long it lasts: at `time` (`HH:MM`), or where
+ * none is given at the time of day it had.
+ */
+export function startRequestFor(event: CalendarEvent, date: string, time?: string): EventsRescheduleRequest {
+  return moveRequestFor(event, { date, minute: time === undefined ? null : minutesOf(time) })
+}
+
+/** Sets the end of `event` to `date`, at `time` where given and otherwise the time of day it had. */
+export function endRequestFor(event: CalendarEvent, date: string, time?: string): EventsRescheduleRequest {
+  return resizeRequestFor(event, { date, minute: time === undefined ? null : minutesOf(time) })
+}
+
+/** Gives `event` an end: an hour after its start when it is timed, its start's day when it is not. */
+export function addEndRequestFor(event: CalendarEvent): EventsRescheduleRequest {
+  if (event.allDay || event.time === undefined) return resizeRequestFor(event, { date: event.date, minute: null })
+  const minute = minutesOf(event.time) + DEFAULT_EVENTS_DURATION_MINUTES
+  return resizeRequestFor(event, {
+    date: addDays(event.date, Math.floor(minute / MINUTES_PER_DAY)),
+    minute: minute % MINUTES_PER_DAY
+  })
+}
+
+export function clearEndRequestFor(event: CalendarEvent): EventsRescheduleRequest {
+  return rescheduleRequestFor(event, { kind: 'clear-end' })
+}
+
+/** Whether the type's objects have an end of their own to add or remove: a To apart from their From. */
+export function hasOwnEnd(type: ObjectType): boolean {
+  return eventsSourceHasEnd(type)
 }
 
 /** `type` is one of the calendar's types, never a query: a query has no type of its own to create. */

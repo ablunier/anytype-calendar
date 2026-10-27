@@ -15,11 +15,18 @@ describe('a reschedule', () => {
     ).toEqual({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'move', start: { day, minute: 600 } } })
   })
 
+  test('takes a cleared To, with nothing but its kind', () => {
+    expect(
+      toRescheduleRequest({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'clear-end', end: { day, minute: 600 } } })
+    ).toEqual({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'clear-end' } })
+  })
+
   test('refuses a missing id or a malformed change', () => {
     const change = { kind: 'move', start: { day, minute: 600 } }
     expect(toRescheduleRequest({ spaceId: 'sp_1', id: '', change })).toBeNull()
     expect(toRescheduleRequest({ id: 'obj_1', change })).toBeNull()
     expect(toRescheduleRequest({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'move', start: { day } } })).toBeNull()
+    expect(toRescheduleRequest({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'resize' } })).toBeNull()
     expect(toRescheduleRequest('obj_1')).toBeNull()
   })
 })

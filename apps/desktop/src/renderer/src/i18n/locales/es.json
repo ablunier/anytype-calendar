@@ -268,11 +268,16 @@
     "eventDetail": {
       "fromDateFallback": "Fecha de inicio",
       "toDateFallback": "Fecha de fin",
+      "timeOf": "{{caption}}, hora",
       "location": "Ubicación",
       "allDay": "Todo el día",
+      "allDayHint": "Si las fechas de un tipo llevan hora se elige en Ajustes.",
       "done": "Hecho",
       "readOnlyNotice": "Edita el objeto en Anytype y se actualizará aquí en la próxima lectura.",
-      "editNotice": "Arrástralo en el calendario para cambiar sus fechas. Edita todo lo demás en Anytype y se actualizará aquí en la próxima lectura.",
+      "editNotice": "Cambia sus fechas aquí o arrástralo en el calendario. Edita todo lo demás en Anytype y se actualizará aquí en la próxima lectura.",
+      "addEnd": "Añadir fecha de fin",
+      "removeEnd": "Quitar fecha de fin",
+      "goToDate": "Ir a la fecha",
       "openInAnytype": "Abrir en Anytype",
       "showMore": "Ver más",
       "showLess": "Ver menos"

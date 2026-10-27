@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import type {
@@ -29,7 +29,7 @@ import {
   weekLabel
 } from '@renderer/lib/calendar'
 import { editFailureText, readOnlyText } from '@renderer/lib/edit-text'
-import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor } from '@renderer/lib/events'
+import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import { allHidden, visibleEvents } from '@renderer/lib/visibility'
 import { CalendarSidebar } from './CalendarSidebar'
@@ -197,6 +197,15 @@ export function CalendarScreen({
     !(events ?? []).some((event) => sameObject(event, openDetail.event))
       ? null
       : openDetail
+
+  /* Kept up with the object as the span holds it, so its panel still shows an edit that took it
+   * out of the span: that is drawn while the write is in flight, and the span read after it no
+   * longer holds the object. */
+  useEffect(() => {
+    if (openDetail?.kind !== 'event') return
+    const latest = events?.find((event) => sameObject(event, openDetail.event))
+    if (latest && latest !== openDetail.event) setDetail({ kind: 'event', event: latest })
+  }, [events, openDetail])
 
   const openEvent = (event: CalendarEvent, date?: string): void => {
     if (date !== undefined) setSelectedDate(date)
@@ -395,11 +404,15 @@ export function CalendarScreen({
             typesByKey={typesByKey}
             spacesByKey={spacesByKey}
             readOnlyReason={readOnly}
+            picker={{ today, weekStart, showWeekNumbers }}
+            shownDays={spanDays(span)}
             onClose={() => setDetail(null)}
             onOpenEvent={openEvent}
             onSetDone={(event, done) =>
               void edit(onSetDone({ spaceId: event.space, id: event.id, done }))
             }
+            onReschedule={(request) => void edit(onReschedule(request))}
+            onGoToDate={onSelectDate}
           />
         ) : null}
       </div>

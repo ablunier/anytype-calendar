@@ -1,6 +1,6 @@
 import type { AnytypeClient, AnytypeFailure } from '@ablunier/anytype-client'
 import type {
-  EventsDateValues,
+  EventsDateChanges,
   EventsNewObject,
   EventsObjectTarget,
   EventsWriteResult,
@@ -16,7 +16,8 @@ const REFUSED_STATUSES = new Set([400, 404, 409, 422])
 
 /**
  * Writes through v2 alone: v1 has no writes. An object's properties are set with one
- * `set_properties` op; dates go as RFC 3339 in UTC, the spelling Anytype reads them back in.
+ * `set_properties` op; dates go as RFC 3339 in UTC, the spelling Anytype reads them back in,
+ * and a cleared one as null.
  *
  * The client sends each write with an `Idempotency-Key`, and once more if it got no answer. No
  * `If-Match`: search rows carry no etag, and sync moves an object's etag often enough that the
@@ -29,7 +30,7 @@ export class AnytypeV2EventsWriter implements EventsWriter {
     this.#client = client
   }
 
-  reschedule(apiKey: string, target: EventsObjectTarget, dates: EventsDateValues): Promise<EventsWriteResult> {
+  reschedule(apiKey: string, target: EventsObjectTarget, dates: EventsDateChanges): Promise<EventsWriteResult> {
     return this.#setProperties(apiKey, target, rfc3339Dates(dates))
   }
 
@@ -75,12 +76,13 @@ function refusal({ status, error, unsupported }: AnytypeFailure): EventsWriteRes
   throw new Error(`Anytype answered ${status} when asked to write an object`)
 }
 
-/** Whole seconds: that is all Anytype keeps of a date. */
-function rfc3339Dates(dates: EventsDateValues): Record<string, string> {
+function rfc3339Dates(dates: EventsDateChanges): Record<string, string | null> {
   return Object.fromEntries(
-    Object.entries(dates).map(([key, instant]) => [
-      key,
-      new Date(Math.floor(instant / 1000) * 1000).toISOString().replace('.000Z', 'Z')
-    ])
+    Object.entries(dates).map(([key, instant]) => [key, instant === null ? null : rfc3339(instant)])
   )
+}
+
+/** Whole seconds: that is all Anytype keeps of a date. */
+function rfc3339(instant: number): string {
+  return new Date(Math.floor(instant / 1000) * 1000).toISOString().replace('.000Z', 'Z')
 }

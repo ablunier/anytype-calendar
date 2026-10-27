@@ -1,16 +1,41 @@
 import { useTranslation } from 'react-i18next'
+import type { EventsRescheduleRequest } from '@shared/ipc'
 import type { CalendarEvent, FeedEventDetails, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
+import {
+  addEndRequestFor,
+  clearEndRequestFor,
+  endRequestFor,
+  hasOwnEnd,
+  startRequestFor
+} from '@renderer/lib/events'
+import { DateField, type DateFieldProps } from './DateField'
 import { EventDetails } from './EventDetails'
+import { TimeField } from './TimeField'
+
+/** What the date pickers follow. */
+export type DatePickerSettings = Pick<DateFieldProps, 'today' | 'weekStart' | 'showWeekNumbers'>
+
+interface DateEdit {
+  picker: DatePickerSettings
+  /** `YYYY-MM-DD`; the days before it cannot be picked. */
+  min?: string
+  /** `date` is `YYYY-MM-DD`. */
+  onDate: (date: string) => void
+  /** `time` is `HH:MM`. */
+  onTime: (time: string) => void
+}
 
 interface DetailDateProps {
   date: string
   /** Absent for an all-day event, so the date sits alone under the caption. */
   time?: string
   caption: string
+  /** Left off where the date cannot be written. */
+  edit?: DateEdit
 }
 
 /**
@@ -18,9 +43,21 @@ interface DetailDateProps {
  * flex rows (a time row above a date row) don't share column widths on their own, since
  * each row's cells size to that row's own content.
  */
-function DetailDate({ date, time, caption }: DetailDateProps): React.JSX.Element {
-  const { i18n } = useTranslation()
+function DetailDate({ date, time, caption, edit }: DetailDateProps): React.JSX.Element {
+  const { t, i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
+  if (edit) {
+    const { picker, min, onDate, onTime } = edit
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
+        {time ? (
+          <TimeField value={time} label={t('calendar.eventDetail.timeOf', { caption })} onCommit={onTime} />
+        ) : null}
+        <DateField value={date} label={caption} {...picker} {...(min === undefined ? {} : { min })} onChange={onDate} />
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col gap-2">
       <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
@@ -83,22 +120,59 @@ export interface EventDetailProps {
   spacesByKey: Map<string, Space>
   /** Why this panel cannot write to Anytype; null when it can. */
   readOnlyReason: string | null
+  picker: DatePickerSettings
   onSetDone: (done: boolean) => void
+  onReschedule: (request: EventsRescheduleRequest) => void
+  /** Given while none of its dates is on screen: opens the view on its From date. */
+  onGoToDate?: () => void
 }
 
 /**
  * Every date names the relation that surfaced it ("Due date") — the system's rule that
  * trust comes from being explicit about why something is on the grid.
+ *
+ * Where it can write, From and To are fields that write as each is set, as Settings saves
+ * each change: From moves the object, keeping its length, and To moves its end alone, never
+ * to before From. Where the type has a To apart from its From, the end can be added or
+ * removed.
  */
 export function EventDetail({
   event,
   type,
   spacesByKey,
   readOnlyReason,
-  onSetDone
+  picker,
+  onSetDone,
+  onReschedule,
+  onGoToDate
 }: EventDetailProps): React.JSX.Element {
   const { t } = useTranslation()
   const space = spacesByKey.get(event.space)
+  const editable = readOnlyReason === null
+  const ownEnd = type !== undefined && hasOwnEnd(type)
+  const { date, time, until } = event
+  const endTime = event.end ?? time
+
+  const startEdit: DateEdit | undefined = editable
+    ? {
+        picker,
+        onDate: (moved) => onReschedule(startRequestFor(event, moved)),
+        onTime: (moved) => onReschedule(startRequestFor(event, date, moved))
+      }
+    : undefined
+  const endEdit: DateEdit | undefined =
+    editable && ownEnd && until !== undefined
+      ? {
+          picker,
+          min: date,
+          onDate: (moved) => onReschedule(endRequestFor(event, moved)),
+          onTime: (moved) => {
+            // `HH:MM` compares in order as a string; the field goes back to the saved time.
+            if (until === date && time !== undefined && moved < time) return
+            onReschedule(endRequestFor(event, until, moved))
+          }
+        }
+      : undefined
 
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
@@ -124,21 +198,41 @@ export function EventDetail({
       <div className="flex flex-col gap-16 border-t border-line-hairline pt-16">
         <div className="flex items-start gap-10">
           <Icon name="clock" size={16} className="mt-2 text-ink-tertiary" />
-          <div className="flex items-start gap-16">
-            <DetailDate
-              date={event.date}
-              time={!event.allDay ? event.time : undefined}
-              caption={type ? dateLabel(type, type.from) : t('calendar.eventDetail.fromDateFallback')}
-            />
-            {event.until ? (
-              <>
-                <Icon name="chevron-right" size={12} className="mt-4 shrink-0 text-ink-tertiary" />
-                <DetailDate
-                  date={event.until}
-                  time={!event.allDay ? (event.end ?? event.time) : undefined}
-                  caption={type?.to ? dateLabel(type, type.to) : t('calendar.eventDetail.toDateFallback')}
-                />
-              </>
+          <div className="flex flex-col items-start gap-8">
+            <div className="flex items-start gap-16">
+              <DetailDate
+                date={date}
+                time={!event.allDay ? time : undefined}
+                caption={type ? dateLabel(type, type.from) : t('calendar.eventDetail.fromDateFallback')}
+                {...(startEdit ? { edit: startEdit } : {})}
+              />
+              {until ? (
+                <>
+                  <Icon name="chevron-right" size={12} className="mt-4 shrink-0 text-ink-tertiary" />
+                  <DetailDate
+                    date={until}
+                    time={!event.allDay ? endTime : undefined}
+                    caption={type?.to ? dateLabel(type, type.to) : t('calendar.eventDetail.toDateFallback')}
+                    {...(endEdit ? { edit: endEdit } : {})}
+                  />
+                </>
+              ) : null}
+            </div>
+            {editable && ownEnd ? (
+              until ? (
+                <Button variant="ghost" size="sm" iconLeft="minus" onClick={() => onReschedule(clearEndRequestFor(event))}>
+                  {t('calendar.eventDetail.removeEnd')}
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" iconLeft="plus" onClick={() => onReschedule(addEndRequestFor(event))}>
+                  {t('calendar.eventDetail.addEnd')}
+                </Button>
+              )
+            ) : null}
+            {onGoToDate ? (
+              <Button variant="quiet" size="sm" iconRight="arrow-up-right" onClick={onGoToDate}>
+                {t('calendar.eventDetail.goToDate')}
+              </Button>
             ) : null}
           </div>
         </div>
@@ -154,7 +248,10 @@ export function EventDetail({
         <EventDetails event={event} type={type} />
 
         {/* How a type is drawn is the user's choice in Settings, not the object's. */}
-        <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
+        <div className="flex flex-col gap-4">
+          <DetailToggle checked={event.allDay} label={t('calendar.eventDetail.allDay')} />
+          <span className="type-caption text-tiny text-ink-tertiary">{t('calendar.eventDetail.allDayHint')}</span>
+        </div>
         {/* A read-only Done needs no tooltip of its own: the notice below says why. */}
         {event.done === undefined ? null : (
           <DetailToggle

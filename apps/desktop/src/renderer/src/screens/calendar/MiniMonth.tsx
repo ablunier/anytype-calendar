@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CalendarMonth } from '@renderer/types'
-import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { IconButton } from '@renderer/components/ui'
 import {
   buildMonthGrid,
@@ -10,35 +9,42 @@ import {
   monthLabel,
   weekdaysFrom
 } from '@renderer/lib/calendar'
-import { anchorOf, shiftSpan, spanDays } from '@renderer/lib/events'
+import { shiftSpan } from '@renderer/lib/events'
 
 export interface MiniMonthProps {
-  /** What the main calendar draws: the days it covers are marked, and the month starts on it. */
-  span: EventsSpan
+  label: string
+  /** `YYYY-MM-DD`: the month first shown is this day's. */
+  opensOn: string
+  /** The days marked as chosen, `YYYY-MM-DD`, both included. */
+  marked: { first: string; last: string }
   /** `YYYY-MM-DD`. */
   today: string
   weekStart: number
   showWeekNumbers: boolean
+  /** `YYYY-MM-DD`; the days before it cannot be picked. */
+  min?: string
   /** `date` is `YYYY-MM-DD`. */
   onSelectDate: (date: string) => void
 }
 
 /**
- * One month to get around by. Its arrows step through months without moving the main
- * calendar; it opens on the month of the span on screen, and since the screen is keyed by the
- * span, starts over on it whenever that changes. It marks no day that holds objects, which
- * would mean reading months that are not on screen.
+ * One month to pick a day from: the sidebar's, to get around by, and a date field's. Its
+ * arrows step through months on their own; it opens on the month of `opensOn` and does not
+ * follow it later, so whoever wants it to start over keys it. It marks no day that holds
+ * objects, which would mean reading months that are not on screen.
  */
 export function MiniMonth({
-  span,
+  label,
+  opensOn,
+  marked: { first, last },
   today,
   weekStart,
   showWeekNumbers,
+  min,
   onSelectDate
 }: MiniMonthProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const [shown, setShown] = useState<CalendarMonth>(() => monthOfDate(anchorOf(span)))
-  const { first, last } = spanDays(span)
+  const [shown, setShown] = useState<CalendarMonth>(() => monthOfDate(opensOn))
 
   const weeks = chunkWeeks(buildMonthGrid(shown.year, shown.month, weekStart))
   const step = (delta: number): void => {
@@ -47,7 +53,7 @@ export function MiniMonth({
   }
 
   return (
-    <section aria-label={t('calendar.sidebar.miniMonth')} className="flex shrink-0 flex-col gap-8">
+    <section aria-label={label} className="flex shrink-0 flex-col gap-8">
       <div className="flex items-center justify-between">
         <h2 className="type-ui text-small text-ink-primary">
           {monthLabel(shown.year, shown.month, i18n.language)}
@@ -89,6 +95,7 @@ export function MiniMonth({
               {week.map(({ date, day, outside }) => {
                 const isToday = date === today
                 const inSpan = first <= date && date <= last
+                const disabled = min !== undefined && date < min
                 return (
                   <button
                     key={date}
@@ -96,10 +103,14 @@ export function MiniMonth({
                     role="gridcell"
                     aria-label={longDate(date, i18n.language)}
                     aria-current={isToday ? 'date' : undefined}
+                    aria-selected={inSpan}
+                    disabled={disabled}
                     onClick={() => onSelectDate(date)}
                     className={[
                       'h-24 border-0 type-numeral text-micro transition duration-fast ease-standard',
-                      isToday
+                      disabled
+                        ? 'cursor-not-allowed bg-transparent text-ink-muted opacity-50'
+                        : isToday
                         ? 'bg-surface-accent text-ink-inverse'
                         : inSpan
                           ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'

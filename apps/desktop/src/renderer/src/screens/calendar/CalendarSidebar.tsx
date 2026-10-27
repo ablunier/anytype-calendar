@@ -1,10 +1,23 @@
 import { useTranslation } from 'react-i18next'
+import type { EventsSpan } from '@anytype-calendar/events/domain'
 import type { FeedSource, ObjectType, Space } from '@renderer/types'
 import { IconButton } from '@renderer/components/ui'
-import { MiniMonth, type MiniMonthProps } from './MiniMonth'
+import { anchorOf, spanDays } from '@renderer/lib/events'
+import { MiniMonth } from './MiniMonth'
 import { FeedList, SourceTree } from './SourceTree'
 
-export interface CalendarSidebarProps extends MiniMonthProps {
+export interface CalendarSidebarProps {
+  /**
+   * What the main calendar draws: the mini month marks the days it covers and opens on it, and
+   * since the screen is keyed by the span, starts over on it whenever that changes.
+   */
+  span: EventsSpan
+  /** `YYYY-MM-DD`. */
+  today: string
+  weekStart: number
+  showWeekNumbers: boolean
+  /** `date` is `YYYY-MM-DD`. */
+  onSelectDate: (date: string) => void
   collapsed: boolean
   spaces: Space[]
   sources: ObjectType[]
@@ -34,6 +47,7 @@ export function CalendarSidebar({
   onSetShown,
   onToggleCollapsed,
   onAddCalendar,
+  span,
   ...miniMonth
 }: CalendarSidebarProps): React.JSX.Element {
   const { t } = useTranslation()
@@ -55,7 +69,12 @@ export function CalendarSidebar({
       <div className="flex shrink-0 justify-end">
         <IconButton size="sm" icon="panel-left-close" label={t('calendar.sidebar.collapse')} onClick={onToggleCollapsed} />
       </div>
-      <MiniMonth {...miniMonth} />
+      <MiniMonth
+        label={t('calendar.sidebar.miniMonth')}
+        opensOn={anchorOf(span)}
+        marked={spanDays(span)}
+        {...miniMonth}
+      />
       <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
         <div className="flex shrink-0 items-center justify-between">
           <h2 className="type-overline text-micro text-ink-tertiary">{t('calendar.sidebar.calendars')}</h2>

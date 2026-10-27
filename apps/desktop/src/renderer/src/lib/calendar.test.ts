@@ -4,6 +4,7 @@ import {
   addDays,
   daysBetween,
   formatTime,
+  parseTime,
   buildMonthGrid,
   buildWeek,
   dateLabel,
@@ -598,5 +599,34 @@ describe('daysBetween', () => {
     expect(daysBetween('2026-12-30', '2027-01-02')).toBe(3)
     expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2)
     expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
+  })
+})
+
+describe('parseTime', () => {
+  test('reads a 24-hour time, with or without a separator or minutes', () => {
+    expect(parseTime('9')).toBe('09:00')
+    expect(parseTime('09:30')).toBe('09:30')
+    expect(parseTime(' 930 ')).toBe('09:30')
+    expect(parseTime('21.05')).toBe('21:05')
+    expect(parseTime('0:00')).toBe('00:00')
+  })
+
+  test('reads a 12-hour time the way formatTime draws it, in each locale', () => {
+    for (const locale of ['en', 'es', 'gl']) {
+      for (const time of ['00:15', '09:30', '12:00', '23:45']) {
+        expect(parseTime(formatTime(time, '12h', locale))).toBe(time)
+      }
+    }
+    expect(parseTime('9pm')).toBe('21:00')
+    expect(parseTime('12 a. m.')).toBe('00:00')
+  })
+
+  test('reads nothing out of range or not a time', () => {
+    expect(parseTime('24:00')).toBeNull()
+    expect(parseTime('9:60')).toBeNull()
+    expect(parseTime('13 pm')).toBeNull()
+    expect(parseTime('0 am')).toBeNull()
+    expect(parseTime('')).toBeNull()
+    expect(parseTime('noon')).toBeNull()
   })
 })

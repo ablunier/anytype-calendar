@@ -224,6 +224,13 @@ test('moves, ticks and creates objects, which the next read answers', async () =
   expect(OBJECTS[0]?.done).toBeUndefined()
 })
 
+test('drops a date that is cleared, leaving the others', async () => {
+  const { gateway } = setup(OBJECTS)
+  await gateway.reschedule('k', { spaceId: 'sp_1', id: 'o4' }, { due_date: null })
+  const projects = await gateway.listObjects('k', PROJECTS, { start: 0, end: 10_000 })
+  expect(projects.ok && projects.value[0]).toEqual({ id: 'o4', title: 'Range', start: 1_000, end: null })
+})
+
 test('refuses to write an object it does not have', async () => {
   const { gateway } = setup(OBJECTS)
   await expect(gateway.setDone('k', { spaceId: 'sp_2', id: 'o1' }, 'done', true)).resolves.toMatchObject({
