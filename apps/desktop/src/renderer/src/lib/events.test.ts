@@ -331,7 +331,7 @@ describe('spanStatusFor', () => {
   })
 
   test('says why a read failed', () => {
-    const failed = (failure: 'unauthorized' | 'unreachable'): EventsSnapshot => ({
+    const failed = (failure: 'unauthorized' | 'unreachable' | 'outdated'): EventsSnapshot => ({
       phase: 'failed',
       span: SEPTEMBER,
       failure,
@@ -344,6 +344,9 @@ describe('spanStatusFor', () => {
     })
     expect(spanStatusFor(failed('unreachable'), SEPTEMBER, NOW)).toMatchObject({
       detail: { kind: 'unreachable' }
+    })
+    expect(spanStatusFor(failed('outdated'), SEPTEMBER, NOW)).toMatchObject({
+      detail: { kind: 'outdated' }
     })
   })
 })

@@ -16,7 +16,7 @@ const TOO_MANY_REQUESTS = 429
 const REFUSED_STATUSES = new Set([400, 404, 409, 422])
 
 /**
- * Writes through v2 alone: v1 has no writes. An object's properties are set with one
+ * An object's properties are set with one
  * `set_properties` op; dates go as RFC 3339 in UTC, the spelling Anytype reads them back in,
  * and a cleared one as null. An object goes in a collection with an `add_items` op on the
  * collection, which ignores ids already in it.
@@ -25,7 +25,7 @@ const REFUSED_STATUSES = new Set([400, 404, 409, 422])
  * `If-Match`: search rows carry no etag, and sync moves an object's etag often enough that the
  * check would refuse writes nobody raced. The last write wins, as in Anytype's own UI.
  */
-export class AnytypeV2EventsWriter implements EventsWriter {
+export class AnytypeEventsWriter implements EventsWriter {
   readonly #client: AnytypeClient
 
   constructor(client: AnytypeClient) {

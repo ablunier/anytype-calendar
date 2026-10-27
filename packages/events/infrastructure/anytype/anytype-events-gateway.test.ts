@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
 import type { EventsSource } from '../../domain'
-import { AnytypeV2EventsGateway } from './anytype-v2-events-gateway'
+import { AnytypeEventsGateway } from './anytype-events-gateway'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
 type Reply = { status: number; body: unknown }
@@ -47,7 +47,7 @@ function setup(...replies: (Reply | { status: number; text: string })[]) {
   const warn = (message: string): void => {
     warnings.push(message)
   }
-  return { gateway: new AnytypeV2EventsGateway({ client, warn }), calls, warnings }
+  return { gateway: new AnytypeEventsGateway({ client, warn }), calls, warnings }
 }
 
 const page = (data: unknown[], hasMore = false): Reply => ({
@@ -422,9 +422,12 @@ test('rejects on any other error status', async () => {
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).rejects.toThrow('500')
 })
 
-test('rejects when Anytype no longer has the v2 route', async () => {
+test('resolves an Anytype without the v2 route as outdated', async () => {
   const { gateway } = setup({ status: 404, text: '404 page not found' })
-  await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).rejects.toThrow('404')
+  await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).resolves.toEqual({
+    ok: false,
+    failure: 'outdated'
+  })
 })
 
 describe('a query', () => {

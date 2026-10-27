@@ -2,8 +2,6 @@
 // domain and the shared Anytype HTTP client only.
 
 export * from './anytype/anytype-events-gateway'
-export * from './anytype/anytype-v1-events-gateway'
-export * from './anytype/anytype-v2-events-gateway'
-export * from './anytype/anytype-v2-events-writer'
+export * from './anytype/anytype-events-writer'
 export * from './in-memory/in-memory-events-gateway'
 export * from './local-time/local-events-time-zone'

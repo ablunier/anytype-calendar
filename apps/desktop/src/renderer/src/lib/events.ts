@@ -129,7 +129,7 @@ export function spanStatusFor(snapshot: EventsSnapshot, span: EventsSpan, now: n
     case 'failed':
       return {
         state: 'error',
-        detail: { kind: snapshot.failure === 'unauthorized' ? 'unauthorized' : 'unreachable' },
+        detail: { kind: snapshot.failure },
         hasResult
       }
   }

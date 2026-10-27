@@ -14,9 +14,9 @@ import type {
  * first, so an object a type and a query both bring is placed by the type (see LoadEventsSpan).
  *
  * Done, Location, the colour-by property and the panel's are read only where the last read of
- * the account saw the type with them — for a query, the type it runs over: v2 refuses a search
- * for a field the space lacks, so a property named without being there would hide every object
- * of the type. Before that read, each is read by its dates alone.
+ * the account saw the type with them — for a query, the type it runs over: Anytype refuses a
+ * search for a field the space lacks, so a property named without being there would hide every
+ * object of the type. Before that read, each is read by its dates alone.
  */
 export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSync): EventsSource[] {
   if (selection.phase === 'unset') return []

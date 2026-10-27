@@ -300,6 +300,13 @@ test('fails as unauthorized when a source is refused', async () => {
   expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unauthorized' })
 })
 
+test('fails as outdated, as the gateway found it, when Anytype is too old to serve v2', async () => {
+  const { gateway, store, loadEventsSpan } = setup()
+  gateway.listObjects.mockResolvedValueOnce({ ok: false, failure: 'outdated' })
+  await loadEventsSpan.execute(SEPTEMBER)
+  expect(store.get()).toEqual({ phase: 'failed', span: SEPTEMBER, failure: 'outdated', at: NOW })
+})
+
 test('fails as unreachable when a request rejects', async () => {
   const { gateway, store, loadEventsSpan } = setup()
   gateway.listObjects.mockRejectedValueOnce(new TypeError('fetch failed'))

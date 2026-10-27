@@ -90,7 +90,7 @@ export class RescheduleEventsObject {
 }
 
 /**
- * Only as one of the chosen types: that is what says which dates place it. v2 cannot create
+ * Only as one of the chosen types: that is what says which dates place it. The API cannot create
  * into a collection, so the object is created, then added; an add that fails leaves it created,
  * since it is still wanted, and says so in the outcome.
  */
