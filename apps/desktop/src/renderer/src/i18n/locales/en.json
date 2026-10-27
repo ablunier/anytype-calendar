@@ -268,11 +268,16 @@
     "eventDetail": {
       "fromDateFallback": "From date",
       "toDateFallback": "To date",
+      "timeOf": "{{caption}}, time",
       "location": "Location",
       "allDay": "All day",
+      "allDayHint": "Whether a type's dates carry a time is set in Settings.",
       "done": "Done",
       "readOnlyNotice": "Edit the object in Anytype and it updates here on the next read.",
-      "editNotice": "Drag it on the calendar to change its dates. Edit anything else in Anytype, and it updates here on the next read.",
+      "editNotice": "Change its dates here, or drag it on the calendar. Edit anything else in Anytype, and it updates here on the next read.",
+      "addEnd": "Add end date",
+      "removeEnd": "Remove end date",
+      "goToDate": "Go to date",
       "openInAnytype": "Open in Anytype",
       "showMore": "Show more",
       "showLess": "Show less"

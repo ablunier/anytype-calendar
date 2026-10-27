@@ -33,7 +33,8 @@ type and a query both bring is read once through each and kept for each, with it
 `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour (and, if a collection is picked, added to
-it), and ticked done from its panel. `feeds` holds external
+it), and ticked done, given exact dates and times, or given or cleared a To date from its
+panel. `feeds` holds external
 calendars subscribed to by their iCalendar address (Settings → Subscribed calendars): it reads
 each with ical.js, keeps it in memory and expands it over the span on screen, and the renderer
 draws its events read-only beside Anytype's objects. No screen runs on mock data.
@@ -246,7 +247,14 @@ Standard electron-vite three-process layout:
   worked out in the domain (`rescheduleEventsDatedObject`): an all-day date is written as the
   first instant of its day and a range keeps its day count, a timed one lands on the wall-clock
   minute asked for (`EventsTimeZone.at`, which a DST day would put an hour off as
-  `startOfDay` plus minutes) and keeps its length.
+  `startOfDay` plus minutes) and keeps its length. A `resize` moves the To alone, and gives one
+  to an object that had none; `clear-end` clears it, which the writer sends as a null date. Both
+  are refused for a source whose To is its From, or that has none (`eventsSourceHasEnd`). The
+  panel's From and To (`EventDetail`) are a `TimeField`, typed in and read on blur or Enter
+  (`parseTime`), and a `DateField`, which opens the sidebar's `MiniMonth` as a picker rather
+  than `<input type="date">`, which draws in Chromium's locale and has no `gl`. Each writes as
+  it is set, through the same reschedule as a drag. The panel keeps the object as last seen, so
+  one an edit took out of the span still shows its new dates, with a "Go to date" link.
   Feeds need nothing of Anytype: they are loaded from their cached copies at launch and read
   again right after the window opens, every 30 minutes and on focus (at most once per 30 s,
   `feeds/feeds-ipc.ts`), whether or not the session is connected, and leaving `connected`
@@ -554,7 +562,8 @@ the wire belongs there too:
   `AnytypeApiError` carries the issues, and a refused write is shown in its first one's words.
 - Writes (v1 has none): `PATCH …/objects/{id}` with `{ ops: [{ op: 'set_properties', set:
   { [key]: value } }] }`, atomic; `POST …/objects` with the shortcut `{ type, name, properties }`
-  answers `201 { id, etag }`. A date is written as RFC 3339, like it is read. Every write carries
+  answers `201 { id, etag }`. A date is written as RFC 3339, like it is read, and cleared as
+  `null` (not yet checked against a real Anytype). Every write carries
   an `Idempotency-Key` (a replay of the same key and body returns the stored response), and one
   that got no answer is sent once more with it. No `If-Match`: search rows have no etag, so the
   last write wins. A read-only key answers 403 `write_not_granted`, a busy one 429.

@@ -67,6 +67,12 @@ describe('rescheduling', () => {
     })
   })
 
+  test('clears a date by setting it to null', async () => {
+    const { writer, calls } = setup(edited)
+    await writer.reschedule(API_KEY, TARGET, { end_date: null })
+    expect(bodyOf(calls[0])).toEqual({ ops: [{ op: 'set_properties', set: { end_date: null } }] })
+  })
+
   test('sends a write that got no answer once more, under the same Idempotency-Key', async () => {
     const { writer, calls } = setup(new Error('socket hang up'), edited)
 

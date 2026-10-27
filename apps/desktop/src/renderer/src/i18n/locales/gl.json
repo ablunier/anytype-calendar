@@ -268,11 +268,16 @@
     "eventDetail": {
       "fromDateFallback": "Data de inicio",
       "toDateFallback": "Data de fin",
+      "timeOf": "{{caption}}, hora",
       "location": "Localización",
       "allDay": "Todo o día",
+      "allDayHint": "Se as datas dun tipo levan hora escóllese en Axustes.",
       "done": "Feito",
       "readOnlyNotice": "Edita o obxecto en Anytype e actualizarase aquí na próxima lectura.",
-      "editNotice": "Arrástrao no calendario para cambiar as súas datas. Edita todo o demais en Anytype e actualizarase aquí na próxima lectura.",
+      "editNotice": "Cambia as súas datas aquí ou arrástrao no calendario. Edita todo o demais en Anytype e actualizarase aquí na próxima lectura.",
+      "addEnd": "Engadir data de fin",
+      "removeEnd": "Quitar data de fin",
+      "goToDate": "Ir á data",
       "openInAnytype": "Abrir en Anytype",
       "showMore": "Ver máis",
       "showLess": "Ver menos"

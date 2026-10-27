@@ -3,8 +3,12 @@ import type { EventsDatedObject, EventsSpanResult } from '@anytype-calendar/even
 import type { EventsSnapshot } from '@shared/ipc'
 import type { CalendarEvent, ObjectType } from '@renderer/types'
 import {
+  addEndRequestFor,
   anchorOf,
+  clearEndRequestFor,
   createRequestFor,
+  endRequestFor,
+  hasOwnEnd,
   eventsFor,
   localDate,
   localTime,
@@ -16,6 +20,7 @@ import {
   shownSpanFor,
   spanFor,
   spanStatusFor,
+  startRequestFor,
   switchDateFor
 } from './events'
 
@@ -396,6 +401,48 @@ describe('edit requests', () => {
       id: 'obj_1',
       change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 615 } }
     })
+  })
+
+  test('set the start or the end to a date, and a time where one is given', () => {
+    expect(startRequestFor(event, '2026-09-20').change).toEqual({
+      kind: 'move',
+      start: { day: { year: 2026, month: 8, day: 20 }, minute: null }
+    })
+    expect(startRequestFor(event, '2026-09-14', '10:05').change).toEqual({
+      kind: 'move',
+      start: { day: { year: 2026, month: 8, day: 14 }, minute: 605 }
+    })
+    expect(endRequestFor(event, '2026-09-15', '11:20').change).toEqual({
+      kind: 'resize',
+      end: { day: { year: 2026, month: 8, day: 15 }, minute: 680 }
+    })
+  })
+
+  test('add an end an hour after a timed start, into the next day if need be, or on an all-day start', () => {
+    expect(addEndRequestFor(event).change).toEqual({
+      kind: 'resize',
+      end: { day: { year: 2026, month: 8, day: 14 }, minute: 600 }
+    })
+    expect(addEndRequestFor({ ...event, time: '23:30' }).change).toEqual({
+      kind: 'resize',
+      end: { day: { year: 2026, month: 8, day: 15 }, minute: 30 }
+    })
+    const { time: _time, ...allDay } = event
+    expect(addEndRequestFor({ ...allDay, allDay: true }).change).toEqual({
+      kind: 'resize',
+      end: { day: { year: 2026, month: 8, day: 14 }, minute: null }
+    })
+  })
+
+  test('clear the end', () => {
+    expect(clearEndRequestFor(event)).toEqual({ spaceId: 'bafy.space', id: 'obj_1', change: { kind: 'clear-end' } })
+  })
+
+  test('add or remove an end only where the type has a To apart from its From', () => {
+    const type = (from: string, to: string | null) => ({ from, to }) as ObjectType
+    expect(hasOwnEnd(type('start_date', 'end_date'))).toBe(true)
+    expect(hasOwnEnd(type('due_date', null))).toBe(false)
+    expect(hasOwnEnd(type('due_date', 'due_date'))).toBe(false)
   })
 
   test("create the type Anytype knows, in the type's space", () => {

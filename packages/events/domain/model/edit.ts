@@ -2,7 +2,7 @@ import type { EventsTimeZone } from '../gateways/time-zone'
 import type { EventsWriteFailure } from '../gateways/events-writer'
 import { compareEventsDatedObjects, type EventsDatedObject } from './dated-object'
 import { toEventsDay, type EventsDay } from './month'
-import type { EventsTypeSource } from './source'
+import type { EventsSource, EventsTypeSource } from './source'
 import type { EventsSpanLoad } from './span-load'
 
 const MINUTES_PER_DAY = 1440
@@ -12,8 +12,8 @@ const MINUTE_MS = 60_000
 /** Where a new object is timed when the user named a day but no time of it. */
 const DEFAULT_START_MINUTE = 9 * 60
 
-/** How long a new timed object with a To date lasts. */
-const DEFAULT_DURATION_MINUTES = 60
+/** How long a new timed object with a To date lasts, and one given a To date where it had none. */
+export const DEFAULT_EVENTS_DURATION_MINUTES = 60
 
 /**
  * A place on the user's calendar: a day, and the minute of it from midnight. `minute` is null
@@ -27,8 +27,10 @@ export interface EventsSlot {
 export type EventsReschedule =
   /** Its From moves to `start`, and its To with it, so it lasts as long as it did. */
   | { kind: 'move'; start: EventsSlot }
-  /** Its To moves to `end`; its From stays. */
+  /** Its To moves to `end`, or is set there where it had none; its From stays. */
   | { kind: 'resize'; end: EventsSlot }
+  /** Its To is cleared, leaving it the single date its From is. */
+  | { kind: 'clear-end' }
 
 /**
  * Why an edit from the calendar did not happen: Anytype's own refusals, plus the ones found
@@ -72,7 +74,13 @@ export function toEventsReschedule(value: unknown): EventsReschedule | null {
     const slot = toEventsSlot(end)
     return slot && { kind, end: slot }
   }
+  if (kind === 'clear-end') return { kind }
   return null
+}
+
+/** Whether the source's objects can have a To of their own: one apart from their From. */
+export function eventsSourceHasEnd({ from, to }: Pick<EventsSource, 'from' | 'to'>): boolean {
+  return to !== null && to !== from
 }
 
 /**
@@ -80,7 +88,7 @@ export function toEventsReschedule(value: unknown): EventsReschedule | null {
  * From. An all-day date is written as the first instant of its day, which is how Anytype
  * itself stores a date set without a time; an all-day range keeps how many days it covers, a
  * timed one how long it lasts. A timed object moved to a slot with no minute keeps its time of
- * day.
+ * day, and its To pulled to one keeps the To's, or the From's where it had no To.
  */
 export function rescheduleEventsDatedObject(
   object: EventsDatedObject,
@@ -88,6 +96,8 @@ export function rescheduleEventsDatedObject(
   zone: EventsTimeZone
 ): EventsDatedObject | null {
   const { start, end, allDay } = object
+
+  if (change.kind === 'clear-end') return { ...object, end: null }
 
   if (change.kind === 'resize') {
     const { day, minute } = change.end
@@ -118,7 +128,7 @@ export function newEventsObjectDates(
 ): Record<string, number> {
   const start = includesTime ? zone.at(day, minute ?? DEFAULT_START_MINUTE) : zone.startOfDay(day)
   if (to === null || to === from) return { [from]: start }
-  return { [from]: start, [to]: includesTime ? start + DEFAULT_DURATION_MINUTES * MINUTE_MS : start }
+  return { [from]: start, [to]: includesTime ? start + DEFAULT_EVENTS_DURATION_MINUTES * MINUTE_MS : start }
 }
 
 /**

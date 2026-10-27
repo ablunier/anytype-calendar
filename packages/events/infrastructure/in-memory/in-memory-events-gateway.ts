@@ -1,7 +1,7 @@
 import {
   shiftEventsMonth,
   type EventsCollectionTarget,
-  type EventsDateValues,
+  type EventsDateChanges,
   type EventsDetailRef,
   type EventsGateway,
   type EventsGatewayResult,
@@ -320,12 +320,17 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   async reschedule(
     _apiKey: string,
     target: EventsObjectTarget,
-    dates: EventsDateValues
+    dates: EventsDateChanges
   ): Promise<EventsWriteResult> {
     await this.#sleep(this.#requestLatencyMs)
     const object = this.#find(target)
     if (!object) return GONE
-    object.dates = { ...object.dates, ...dates }
+    const next = { ...object.dates }
+    for (const [key, instant] of Object.entries(dates)) {
+      if (instant === null) delete next[key]
+      else next[key] = instant
+    }
+    object.dates = next
     return { ok: true, value: null }
   }
 
