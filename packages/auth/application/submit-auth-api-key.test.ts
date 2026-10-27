@@ -7,7 +7,7 @@ import { SubmitAuthApiKey } from './submit-auth-api-key'
 
 const VALID_KEY = 'ak_secret_4c19'
 const START = 1_000
-const ACCESS = { apiVersion: 'v2', grant: null } as const
+const ACCESS = { grant: null } as const
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -22,7 +22,7 @@ function setup(initialCredential: { apiKey: string; issuedAt: number } | null = 
   let credential = initialCredential
 
   const gateway = {
-    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
+    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: false,
       failure: 'invalid-code'
@@ -96,6 +96,16 @@ describe('submitApiKey', () => {
     await submitAuthApiKey.execute('ak_wrong')
 
     expect(store.get()).toEqual({ phase: 'failed', failure: 'invalid-key', enteredKey: true })
+    expect(stored()).toBeNull()
+  })
+
+  test('fails as outdated, keeping nothing, when Anytype does not serve v2', async () => {
+    const { startAuthKeyEntry, submitAuthApiKey, store, stored, gateway } = setup()
+    gateway.verifyApiKey.mockResolvedValueOnce({ ok: false, failure: 'outdated' })
+    startAuthKeyEntry.execute()
+    await submitAuthApiKey.execute(VALID_KEY)
+
+    expect(store.get()).toEqual({ phase: 'failed', failure: 'outdated', enteredKey: true })
     expect(stored()).toBeNull()
   })
 

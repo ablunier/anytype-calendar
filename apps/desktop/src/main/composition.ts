@@ -23,8 +23,6 @@ import {
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
 import {
   AnytypeAuthGateway,
-  AnytypeV1AuthGateway,
-  AnytypeV2AuthGateway,
   EncryptedFileCredentialRepository,
   InMemoryAuthGateway,
   InMemoryCredentialRepository
@@ -215,14 +213,7 @@ export function composeServices(): AppServices {
   const credentials = credentialRepository(fakeAnytype ? 'credential-fake.bin' : 'credential.bin')
 
   const authSession = new AuthSessionStore()
-  const authGateway =
-    client && v1 && probe
-      ? new AnytypeAuthGateway({
-          probe,
-          v1: new AnytypeV1AuthGateway(v1),
-          v2: new AnytypeV2AuthGateway(client)
-        })
-      : inMemoryAuthGateway()
+  const authGateway = client ? new AnytypeAuthGateway(client) : inMemoryAuthGateway()
   const restoreAuthSession = new RestoreAuthSession({ credentials, store: authSession })
   const checkAuthAccess = new CheckAuthAccess({ gateway: authGateway, credentials, store: authSession })
   const startAuthConnection = new StartAuthConnection({

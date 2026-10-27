@@ -285,7 +285,7 @@ export type CalendarView = 'month' | 'week' | 'day'
  */
 export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'calendar'
 
-export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key'
+export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key' | 'outdated'
 
 export type AuthView =
   | { stage: 'start' }
@@ -334,24 +334,18 @@ export interface ApiKeyView {
   issuedAt: number
 }
 
-/**
- * What the connected key reaches. v1 cannot tell, so it says only which API is read through;
- * under v2 a key with no grant of its own reaches every space and may edit.
- */
-export type ApiAccessView =
-  | { version: 'v1' }
-  | {
-      version: 'v2'
-      /** Null: every space, including ones created later. */
-      spaceCount: number | null
-      canEdit: boolean
-    }
+/** What the connected key reaches. A key with no grant of its own reaches every space and may edit. */
+export interface ApiAccessView {
+  /** Null: every space, including ones created later. */
+  spaceCount: number | null
+  canEdit: boolean
+}
 
 /**
  * Whether the calendar can edit objects: `editable`, or why not — the key was granted read
- * only, Anytype serves only v1, or Anytype has not yet been asked what the key may do.
+ * only, or Anytype has not yet been asked what the key may do.
  */
-export type EditAccess = 'editable' | 'read-only' | 'needs-v2' | 'checking'
+export type EditAccess = 'editable' | 'read-only' | 'checking'
 
 /** A day, `YYYY-MM-DD`, and for a time grid the minute of it from midnight. */
 export interface CalendarSlot {

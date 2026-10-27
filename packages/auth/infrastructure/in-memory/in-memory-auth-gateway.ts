@@ -1,13 +1,16 @@
-import type { AuthAccess, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
+import type {
+  AuthAccess,
+  AuthChallengeResult,
+  AuthExchangeResult,
+  AuthGateway,
+  AuthVerifyResult
+} from '../../domain'
 
 /** Every key it issues, in this run or an earlier one, since a restart restores the last. */
 const ISSUED_KEY_PREFIX = 'ak_mock_'
 
-/** Like a key paired through v2 with every space and write access. */
-const FAKE_ACCESS: AuthAccess = {
-  apiVersion: 'v2',
-  grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' }
-}
+/** Like a key paired with every space and write access. */
+const FAKE_ACCESS: AuthAccess = { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
 
 export interface InMemoryAuthGatewayOptions {
   sleep: (ms: number) => Promise<void>
@@ -54,14 +57,14 @@ export class InMemoryAuthGateway implements AuthGateway {
     this.#exchangeLatencyMs = exchangeLatencyMs
   }
 
-  async createChallenge(appName: string): Promise<string> {
+  async createChallenge(appName: string): Promise<AuthChallengeResult> {
     await this.#sleep(this.#requestLatencyMs)
     const challengeId = `ch_${this.#randomId()}`
     this.#openChallenges.add(challengeId)
     this.#log(
       `[in-memory anytype] "${appName}" asks to connect — challenge ${challengeId}, code ${this.#acceptedCode}`
     )
-    return challengeId
+    return { ok: true, challengeId }
   }
 
   async exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult> {

@@ -1,5 +1,9 @@
 import type { AuthAccess } from '../model/access'
-import type { AuthFailure } from '../model/session'
+
+/** An Anytype too old to pair with is an expected answer, not an error. */
+export type AuthChallengeResult =
+  | { ok: true; challengeId: string }
+  | { ok: false; failure: 'outdated' }
 
 /**
  * A rejected code is an expected answer, not an error, so it is a value; only a transport
@@ -7,12 +11,12 @@ import type { AuthFailure } from '../model/session'
  */
 export type AuthExchangeResult =
   | { ok: true; apiKey: string; access: AuthAccess }
-  | { ok: false; failure: Exclude<AuthFailure, 'unreachable'> }
+  | { ok: false; failure: 'invalid-code' | 'expired' | 'outdated' }
 
 /** A key Anytype does not recognise is an expected answer too, not an error. */
 export type AuthVerifyResult =
   | { ok: true; access: AuthAccess }
-  | { ok: false; failure: 'invalid-key' }
+  | { ok: false; failure: 'invalid-key' | 'outdated' }
 
 /**
  * Every method rejects when Anytype cannot be reached. There is no cancellation — the
@@ -23,13 +27,10 @@ export type AuthVerifyResult =
  * the user, in the Anytype app's API key settings.
  */
 export interface AuthGateway {
-  /**
-   * POST /v2/auth/challenges, or /v1/… where v2 is not served. Anytype shows the user a code;
-   * resolves the challenge id.
-   */
-  createChallenge(appName: string): Promise<string>
+  /** POST /v2/auth/challenges. Anytype shows the user a code; resolves the challenge id. */
+  createChallenge(appName: string): Promise<AuthChallengeResult>
 
-  /** POST /v2/auth/api_keys, or /v1/… for a challenge v1 issued. */
+  /** POST /v2/auth/api_keys. */
   exchangeCode(challengeId: string, code: string): Promise<AuthExchangeResult>
 
   /**

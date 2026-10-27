@@ -1,19 +1,19 @@
 import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
-import {
-  AnytypeDialectProbe,
-  AnytypeV1Client,
-  type AnytypeDialect
-} from '@anytype-calendar/anytype-v1/infrastructure'
 import { AnytypeAuthGateway } from './anytype-auth-gateway'
-import { AnytypeV1AuthGateway } from './anytype-v1-auth-gateway'
-import { AnytypeV2AuthGateway } from './anytype-v2-auth-gateway'
 
 type Reply = { status: number; text: string }
+type FetchCall = { route: string; init: Parameters<AnytypeFetch>[1] }
 
 const NO_ROUTE: Reply = { status: 404, text: '404 page not found' }
 const json = (status: number, body: unknown): Reply => ({ status, text: JSON.stringify(body) })
 const REFUSED = json(401, { object: 'error', status: 401, code: 'unauthorized', message: 'x' })
+const AUTH_FAILURE = {
+  object: 'error',
+  status: 500,
+  code: 'internal_server_error',
+  message: 'failed to authenticate user'
+}
 
 /** A key the user paired for two spaces, read-only, as `whoami?ids=full&spaces=true` describes it. */
 const RESTRICTED = json(200, {
@@ -40,13 +40,13 @@ const RESTRICTED_GRANT = {
   permission: 'read'
 }
 
-/** Replies by method and path; a list of replies is served in turn. */
-function setup(routes: Record<string, Reply | Reply[]>, forced?: AnytypeDialect) {
-  const calls: string[] = []
+/** Replies by method and path; a list of replies is served in turn. Any other route has none. */
+function setup(routes: Record<string, Reply | Reply[]>) {
+  const calls: FetchCall[] = []
   const served: Record<string, number> = {}
   const fetch: AnytypeFetch = async (url, init) => {
     const route = `${init.method} ${url.replace('http://127.0.0.1:31009', '').split('?')[0]}`
-    calls.push(route)
+    calls.push({ route, init })
     const replies = routes[route]
     if (!replies) return { status: NO_ROUTE.status, text: async () => NO_ROUTE.text }
     const list = Array.isArray(replies) ? replies : [replies]
@@ -54,36 +54,56 @@ function setup(routes: Record<string, Reply | Reply[]>, forced?: AnytypeDialect)
     const reply = list[Math.min(n, list.length) - 1] as Reply
     return { status: reply.status, text: async () => reply.text }
   }
-  const client = new AnytypeClient({ fetch, onUnsupported: () => probe.forgetV2() })
-  const probe = new AnytypeDialectProbe(forced ? { client, forced } : { client })
-  const gateway = new AnytypeAuthGateway({
-    probe,
-    v1: new AnytypeV1AuthGateway(new AnytypeV1Client(client)),
-    v2: new AnytypeV2AuthGateway(client)
-  })
-  return { gateway, calls }
+  const gateway = new AnytypeAuthGateway(new AnytypeClient({ fetch }))
+  return { gateway, calls, routes: () => calls.map(({ route }) => route) }
 }
 
-describe('pairing', () => {
-  test('pairs through v2 where Anytype serves it, and asks what the new key reaches', async () => {
-    const { gateway, calls } = setup({
-      'POST /v2/auth/challenges': json(201, { challenge_id: 'ch_2' }),
+describe('createChallenge', () => {
+  test('asks Anytype for a challenge under the app name and resolves its id', async () => {
+    const { gateway, calls } = setup({ 'POST /v2/auth/challenges': json(201, { challenge_id: 'ch_1' }) })
+
+    await expect(gateway.createChallenge('Calendar')).resolves.toEqual({ ok: true, challengeId: 'ch_1' })
+    expect(calls[0]?.route).toBe('POST /v2/auth/challenges')
+    expect(calls[0]?.init).toMatchObject({ method: 'POST', body: '{"app_name":"Calendar"}' })
+    expect(calls[0]?.init.headers).not.toHaveProperty('Authorization')
+  })
+
+  test('reads an Anytype without the route as outdated', async () => {
+    const { gateway } = setup({})
+    await expect(gateway.createChallenge('Calendar')).resolves.toEqual({ ok: false, failure: 'outdated' })
+  })
+
+  test('reads an Anytype that asks a key of a route that needs none as outdated', async () => {
+    const { gateway } = setup({ 'POST /v2/auth/challenges': REFUSED })
+    await expect(gateway.createChallenge('Calendar')).resolves.toEqual({ ok: false, failure: 'outdated' })
+  })
+
+  test('rejects on an error status', async () => {
+    const { gateway } = setup({
+      'POST /v2/auth/challenges': json(500, { ...AUTH_FAILURE, message: 'failed to create a new challenge' })
+    })
+    await expect(gateway.createChallenge('Calendar')).rejects.toThrow('500')
+  })
+})
+
+describe('exchangeCode', () => {
+  test('exchanges the challenge and code for the key, and asks what the new key reaches', async () => {
+    const { gateway, calls, routes } = setup({
       'POST /v2/auth/api_keys': json(201, { api_key: 'anytype_key', grant: null }),
       'GET /v2/auth/whoami': RESTRICTED
     })
 
-    await expect(gateway.createChallenge('Calendar')).resolves.toBe('ch_2')
-    await expect(gateway.exchangeCode('ch_2', '2749')).resolves.toEqual({
+    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({
       ok: true,
       apiKey: 'anytype_key',
-      access: { apiVersion: 'v2', grant: RESTRICTED_GRANT }
+      access: { grant: RESTRICTED_GRANT }
     })
-    expect(calls).toEqual(['POST /v2/auth/challenges', 'POST /v2/auth/api_keys', 'GET /v2/auth/whoami'])
+    expect(calls[0]?.init.body).toBe('{"challenge_id":"ch_1","code":"2749"}')
+    expect(routes()).toEqual(['POST /v2/auth/api_keys', 'GET /v2/auth/whoami'])
   })
 
   test('keeps the grant pairing answered with should whoami fail', async () => {
     const { gateway } = setup({
-      'POST /v2/auth/challenges': json(201, { challenge_id: 'ch_2' }),
       'POST /v2/auth/api_keys': json(201, {
         api_key: 'anytype_key',
         grant: { all_spaces: false, space_ids: ['bafy1.repl1'], permission: 'readwrite' }
@@ -91,73 +111,40 @@ describe('pairing', () => {
       'GET /v2/auth/whoami': json(500, { status: 500, code: 'internal', message: 'x' })
     })
 
-    await gateway.createChallenge('Calendar')
-    await expect(gateway.exchangeCode('ch_2', '2749')).resolves.toMatchObject({
-      access: {
-        apiVersion: 'v2',
-        grant: { allSpaces: false, spaceIds: ['bafy1.repl1'], permission: 'readwrite' }
-      }
+    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toMatchObject({
+      access: { grant: { allSpaces: false, spaceIds: ['bafy1.repl1'], permission: 'readwrite' } }
     })
   })
 
-  test('reads through v1 a key paired through v2 while v1 is forced', async () => {
-    const { gateway } = setup(
-      {
-        'POST /v2/auth/challenges': json(201, { challenge_id: 'ch_2' }),
-        'POST /v2/auth/api_keys': json(201, { api_key: 'anytype_key', grant: null })
-      },
-      'v1'
-    )
-
-    await gateway.createChallenge('Calendar')
-    await expect(gateway.exchangeCode('ch_2', '2749')).resolves.toMatchObject({
-      access: { apiVersion: 'v1', grant: null }
-    })
-  })
-
-  test('falls back to v1, and exchanges the code where the challenge came from', async () => {
-    const { gateway, calls } = setup({
-      'POST /v1/auth/challenges': json(201, { challenge_id: 'ch_1' }),
-      'POST /v1/auth/api_keys': [
-        json(500, { object: 'error', code: 'internal_server_error', message: 'x' }),
-        json(201, { api_key: 'ak_key' })
-      ]
-    })
-
-    await expect(gateway.createChallenge('Calendar')).resolves.toBe('ch_1')
+  test.each([400, 500])('resolves a %i as a rejected code', async (status) => {
+    const { gateway } = setup({ 'POST /v2/auth/api_keys': json(status, { ...AUTH_FAILURE, status }) })
     await expect(gateway.exchangeCode('ch_1', '0000')).resolves.toEqual({ ok: false, failure: 'invalid-code' })
-    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({
-      ok: true,
-      apiKey: 'ak_key',
-      access: { apiVersion: 'v1', grant: null }
-    })
-    expect(calls).toEqual([
-      'POST /v2/auth/challenges',
-      'POST /v1/auth/challenges',
-      'POST /v1/auth/api_keys',
-      'POST /v1/auth/api_keys',
-      'GET /v2/auth/whoami'
-    ])
+  })
+
+  test('reads an Anytype without the route as outdated', async () => {
+    const { gateway } = setup({})
+    await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({ ok: false, failure: 'outdated' })
+  })
+
+  test('rejects on any other error status, without echoing the body', async () => {
+    const { gateway } = setup({ 'POST /v2/auth/api_keys': json(403, { message: 'anytype_secret' }) })
+    const exchange = gateway.exchangeCode('ch_1', '2749')
+    await expect(exchange).rejects.toThrow('403')
+    await expect(exchange).rejects.not.toThrow('anytype_secret')
   })
 })
 
 describe('verifyApiKey', () => {
-  test('accepts a key v2 answers whoami for, and reads its grant from that answer', async () => {
-    const { gateway, calls } = setup({ 'GET /v2/auth/whoami': RESTRICTED })
+  test('accepts a key whoami answers for, and reads its grant from that answer', async () => {
+    const { gateway, routes } = setup({ 'GET /v2/auth/whoami': RESTRICTED })
 
-    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({
-      ok: true,
-      access: { apiVersion: 'v2', grant: RESTRICTED_GRANT }
-    })
-    expect(calls).toEqual(['GET /v2/auth/whoami'])
+    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({ ok: true, access: { grant: RESTRICTED_GRANT } })
+    expect(routes()).toEqual(['GET /v2/auth/whoami'])
   })
 
   test('reads a legacy key as having no grant', async () => {
     const { gateway } = setup({ 'GET /v2/auth/whoami': LEGACY })
-    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({
-      ok: true,
-      access: { apiVersion: 'v2', grant: null }
-    })
+    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({ ok: true, access: { grant: null } })
   })
 
   test('reads an all-spaces grant without its list of spaces', async () => {
@@ -175,18 +162,16 @@ describe('verifyApiKey', () => {
     })
     await expect(gateway.verifyApiKey('ak')).resolves.toEqual({
       ok: true,
-      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
     })
   })
 
   test('asks afresh each time, since the grant may have changed in Anytype', async () => {
-    const { gateway, calls } = setup({ 'GET /v2/auth/whoami': [LEGACY, RESTRICTED] })
+    const { gateway, routes } = setup({ 'GET /v2/auth/whoami': [LEGACY, RESTRICTED] })
 
     await expect(gateway.verifyApiKey('ak')).resolves.toMatchObject({ access: { grant: null } })
-    await expect(gateway.verifyApiKey('ak')).resolves.toMatchObject({
-      access: { grant: RESTRICTED_GRANT }
-    })
-    expect(calls).toEqual(['GET /v2/auth/whoami', 'GET /v2/auth/whoami'])
+    await expect(gateway.verifyApiKey('ak')).resolves.toMatchObject({ access: { grant: RESTRICTED_GRANT } })
+    expect(routes()).toEqual(['GET /v2/auth/whoami', 'GET /v2/auth/whoami'])
   })
 
   test('refuses a key whoami refuses', async () => {
@@ -194,18 +179,15 @@ describe('verifyApiKey', () => {
     await expect(gateway.verifyApiKey('ak')).resolves.toEqual({ ok: false, failure: 'invalid-key' })
   })
 
-  test('accepts a key through v1 where Anytype has no v2, with no grant known', async () => {
-    const { gateway } = setup({ 'GET /v1/spaces': json(200, { data: [] }) })
-    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({
-      ok: true,
-      access: { apiVersion: 'v1', grant: null }
-    })
+  test('reads an Anytype without v2 as outdated, asking nothing of v1', async () => {
+    const { gateway, routes } = setup({})
+
+    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({ ok: false, failure: 'outdated' })
+    expect(routes()).toEqual(['GET /v2/auth/whoami'])
   })
 
-  test('checks the key through v1 where Anytype has no v2', async () => {
-    const { gateway, calls } = setup({ 'GET /v1/spaces': REFUSED })
-
-    await expect(gateway.verifyApiKey('ak')).resolves.toEqual({ ok: false, failure: 'invalid-key' })
-    expect(calls).toEqual(['GET /v2/auth/whoami', 'GET /v1/spaces'])
+  test('rejects on any other error status', async () => {
+    const { gateway } = setup({ 'GET /v2/auth/whoami': json(500, { status: 500, code: 'internal', message: 'x' }) })
+    await expect(gateway.verifyApiKey('ak')).rejects.toThrow('500')
   })
 })

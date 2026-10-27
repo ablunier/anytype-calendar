@@ -41,8 +41,6 @@ export function readOnlyText(t: TFunction, access: EditAccess): string | null {
       return null
     case 'read-only':
       return t('calendar.edit.readOnly.key')
-    case 'needs-v2':
-      return t('calendar.edit.readOnly.needsV2')
     case 'checking':
       return t('calendar.edit.readOnly.checking')
   }

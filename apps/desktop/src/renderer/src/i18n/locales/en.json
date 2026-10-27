@@ -105,6 +105,12 @@
         "body": "Anytype did not accept this key. Check it was pasted in full, or issue a new one in Anytype's API settings.",
         "detail": "Invalid or unknown API key (HTTP 401)",
         "retry": "Try again"
+      },
+      "outdated": {
+        "title": "Anytype needs an update",
+        "body": "This version of Anytype is too old. Update Anytype and try again.",
+        "detail": "Anytype does not serve version 2 of its API",
+        "retry": "Try again"
       }
     },
     "success": {
@@ -177,8 +183,6 @@
       "copyKey": "Copy key",
       "api": "Anytype API",
       "accessUnknown": "Checking what the key reaches…",
-      "accessV1": "v1",
-      "accessV2": "v2 (preview)",
       "allSpaces": "all spaces",
       "canEdit": "can edit",
       "readOnly": "read-only",
@@ -189,7 +193,6 @@
       "revokeTitle": "Revoke API key",
       "revokeInstructions": "To revoke it for every space on the account, open the Anytype app, go to {{breadcrumb}} and revoke Calendar for Anytype. Then sign out here. Reconnecting means running the 4-digit code flow again."
     },
-    "queriesNeedV2": "Queries show here once Anytype serves version 2 of its API, as newer versions of the app do.",
     "about": {
       "heading": "About",
       "version": "Version"
@@ -312,7 +315,6 @@
       },
       "readOnly": {
         "key": "This key can only read. To edit here, grant it edit access in Anytype, or connect again.",
-        "needsV2": "Editing here needs a newer Anytype, one that serves API v2.",
         "checking": "Checking what this key may do in Anytype…"
       },
       "noTypes": "Choose a type in Settings to create its objects here.",

@@ -9,15 +9,13 @@ import { TypeSettingsDialog, type TypeSettingsDialogProps } from './TypeSettings
 
 export type TypeSettingsHandlers = Omit<
   TypeSettingsDialogProps,
-  'type' | 'open' | 'mapping' | 'details' | 'onClose'
+  'type' | 'open' | 'mapping' | 'onClose'
 >
 
 export interface TypeConfigRowProps extends TypeSettingsHandlers {
   type: ObjectType
   checked: boolean
   mapping: DateMapping
-  /** Whether it can pick its Done, Location and panel properties: only under v2. */
-  details: boolean
   last: boolean
   onToggle: () => void
 }
@@ -30,7 +28,6 @@ export function TypeConfigRow({
   type,
   checked,
   mapping,
-  details,
   last,
   onToggle,
   ...handlers
@@ -66,7 +63,7 @@ export function TypeConfigRow({
             checked ? 'text-ink-secondary' : 'text-ink-tertiary'
           ].join(' ')}
         >
-          {summaryOf(type, mapping, details, t)}
+          {summaryOf(type, mapping, t)}
         </span>
       </div>
       {/* Only a ticked type is saved, so there is nothing to set for one that is not. */}
@@ -84,7 +81,6 @@ export function TypeConfigRow({
         type={type}
         open={open}
         mapping={mapping}
-        details={details}
         onClose={() => setOpen(false)}
         {...handlers}
       />
@@ -93,7 +89,7 @@ export function TypeConfigRow({
 }
 
 /** e.g. `Start date → End date · With time · Coloured by Priority · 2 properties in the panel`. */
-function summaryOf(type: ObjectType, mapping: DateMapping, details: boolean, t: TFunction): string {
+function summaryOf(type: ObjectType, mapping: DateMapping, t: TFunction): string {
   const { from, to, includesTime, colourBy, view, panel } = mapping
   const parts = [
     to === null
@@ -107,6 +103,6 @@ function summaryOf(type: ObjectType, mapping: DateMapping, details: boolean, t: 
   }
   const colour = type.selects.find(({ key }) => key === colourBy)?.label
   if (colour) parts.push(t('config.summaryColour', { property: colour }))
-  if (details && panel.length > 0) parts.push(t('config.summaryPanel', { count: panel.length }))
+  if (panel.length > 0) parts.push(t('config.summaryPanel', { count: panel.length }))
   return parts.join(' · ')
 }

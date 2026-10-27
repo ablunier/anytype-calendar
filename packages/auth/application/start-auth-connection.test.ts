@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
-import { AUTH_CHALLENGE_LIFETIME_MS, type AuthGateway } from '../domain'
+import { AUTH_CHALLENGE_LIFETIME_MS, type AuthChallengeResult, type AuthGateway } from '../domain'
 import { AuthSessionStore } from './session-store'
 import { StartAuthConnection } from './start-auth-connection'
 import { StepBackAuthConnection } from './step-back-auth-connection'
@@ -16,11 +16,11 @@ function deferred<T>() {
 
 function setup() {
   const gateway = {
-    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
+    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: true,
       apiKey: 'unused',
-      access: { apiVersion: 'v2', grant: null }
+      access: { grant: null }
     }))
   }
   const store = new AuthSessionStore()
@@ -52,15 +52,22 @@ describe('startConnection', () => {
     expect(store.get()).toEqual({ phase: 'failed', failure: 'unreachable' })
   })
 
+  test('fails as outdated when Anytype is too old to pair with', async () => {
+    const { store, gateway, startAuthConnection } = setup()
+    gateway.createChallenge.mockResolvedValueOnce({ ok: false, failure: 'outdated' })
+    await startAuthConnection.execute()
+    expect(store.get()).toEqual({ phase: 'failed', failure: 'outdated' })
+  })
+
   test('drops a challenge that arrives after the user stepped back', async () => {
     const { store, gateway, startAuthConnection, stepBackAuthConnection } = setup()
     await startAuthConnection.execute()
-    const next = deferred<string>()
+    const next = deferred<AuthChallengeResult>()
     gateway.createChallenge.mockReturnValueOnce(next.promise)
 
     const requesting = startAuthConnection.execute()
     stepBackAuthConnection.execute()
-    next.resolve('ch_2')
+    next.resolve({ ok: true, challengeId: 'ch_2' })
     await requesting
 
     expect(store.get()).toEqual({ phase: 'signed-out' })

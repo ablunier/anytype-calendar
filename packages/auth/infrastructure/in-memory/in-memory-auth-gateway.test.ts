@@ -16,11 +16,17 @@ function setup(options: Partial<InMemoryAuthGatewayOptions> = {}) {
   return { gateway, slept, logs }
 }
 
+async function challenge(gateway: InMemoryAuthGateway): Promise<{ challengeId: string }> {
+  const result = await gateway.createChallenge('Calendar')
+  if (!result.ok) throw new Error('the fake always opens a challenge')
+  return result
+}
+
 describe('createChallenge', () => {
   test('opens a challenge and logs the code the user would see in Anytype', async () => {
     const { gateway, slept, logs } = setup()
 
-    await expect(gateway.createChallenge('Calendar')).resolves.toBe('ch_id1')
+    await expect(gateway.createChallenge('Calendar')).resolves.toEqual({ ok: true, challengeId: 'ch_id1' })
     expect(logs).toEqual([
       '[in-memory anytype] "Calendar" asks to connect — challenge ch_id1, code 2749'
     ])
@@ -31,19 +37,19 @@ describe('createChallenge', () => {
 describe('exchangeCode', () => {
   test('issues a key for the accepted code, after the exchange latency', async () => {
     const { gateway, slept } = setup()
-    const challengeId = await gateway.createChallenge('Calendar')
+    const { challengeId } = await challenge(gateway)
 
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toEqual({
       ok: true,
       apiKey: 'ak_mock_id2',
-      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
     })
     expect(slept).toEqual([300, 1_200])
   })
 
   test('rejects a wrong code, leaving the challenge open for another try', async () => {
     const { gateway } = setup()
-    const challengeId = await gateway.createChallenge('Calendar')
+    const { challengeId } = await challenge(gateway)
 
     await expect(gateway.exchangeCode(challengeId, '1111')).resolves.toEqual({
       ok: false,
@@ -54,7 +60,7 @@ describe('exchangeCode', () => {
 
   test('a challenge is consumed by a successful exchange', async () => {
     const { gateway } = setup()
-    const challengeId = await gateway.createChallenge('Calendar')
+    const { challengeId } = await challenge(gateway)
     await gateway.exchangeCode(challengeId, '2749')
 
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toEqual({
@@ -73,7 +79,7 @@ describe('exchangeCode', () => {
 
   test('honours a configured code and latency', async () => {
     const { gateway, slept } = setup({ acceptedCode: '0000', exchangeLatencyMs: 5 })
-    const challengeId = await gateway.createChallenge('Calendar')
+    const { challengeId } = await challenge(gateway)
 
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toMatchObject({ ok: false })
     await expect(gateway.exchangeCode(challengeId, '0000')).resolves.toMatchObject({ ok: true })
@@ -87,7 +93,7 @@ describe('verifyApiKey', () => {
 
     await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toEqual({
       ok: true,
-      access: { apiVersion: 'v2', grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
     })
     expect(slept).toEqual([1_200])
   })

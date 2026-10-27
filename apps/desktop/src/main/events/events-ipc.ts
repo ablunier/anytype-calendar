@@ -19,8 +19,8 @@ export function registerEventsIpc({
   const connected = (): boolean => authSession.get().phase === 'connected'
 
   /* The renderer hides every edit a session cannot make, but it is not trusted to: a key
-   * granted read only, or v1, would have Anytype refuse the write anyway, after the object had
-   * been drawn moved. */
+   * granted read only would have Anytype refuse the write anyway, after the object had been
+   * drawn moved. */
   const edit = <T>(parse: (value: unknown) => T | null, run: (request: T) => Promise<EventsEditOutcome>) =>
     (_event: unknown, value: unknown): Promise<EventsEditOutcome> => {
       const request = parse(value)

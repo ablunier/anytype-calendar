@@ -12,11 +12,11 @@ function setup(initialCredential: AuthCredential | null = null) {
   let credential = initialCredential
 
   const gateway = {
-    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
+    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: true,
       apiKey: API_KEY,
-      access: { apiVersion: 'v2', grant: null }
+      access: { grant: null }
     }))
   }
   const credentials = {

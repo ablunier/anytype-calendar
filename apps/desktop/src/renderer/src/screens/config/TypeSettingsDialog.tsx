@@ -9,11 +9,6 @@ export interface TypeSettingsDialogProps {
   type: ObjectType
   open: boolean
   mapping: DateMapping
-  /**
-   * Whether to offer Done, Location and the panel's properties: only v2 reads them, so under v1
-   * they would change nothing.
-   */
-  details: boolean
   onClose: () => void
   onFromChange: (value: string) => void
   onToChange: (value: string | null) => void
@@ -30,7 +25,6 @@ export function TypeSettingsDialog({
   type,
   open,
   mapping: { from, to, includesTime, colourBy, view, panel, done, location },
-  details,
   onClose,
   onFromChange,
   onToChange,
@@ -98,35 +92,32 @@ export function TypeSettingsDialog({
               onChange={(value) => onColourByChange(value === typeColour.value ? null : value)}
             />
           </div>
-          {/* Only v2 says what a select's options look like, so under v1 there is nothing to pick. */}
           {selects.length === 0 ? (
             <p className="type-caption text-tiny text-ink-tertiary">{t('config.noColourProperty')}</p>
           ) : null}
         </Section>
 
-        {details ? (
-          <Section title={t('config.panelSection')}>
-            <div className="grid grid-cols-2 gap-12">
-              <Select
-                label={t('config.done')}
-                options={[none, ...doneOptions(type)]}
-                value={done ?? none.value}
-                onChange={(value) => onDoneChange(value === none.value ? null : value)}
-              />
-              <Select
-                label={t('config.location')}
-                options={[none, ...locationOptions(type)]}
-                value={location ?? none.value}
-                onChange={(value) => onLocationChange(value === none.value ? null : value)}
-              />
-            </div>
-            <div className="flex flex-col gap-6">
-              <span className="type-ui text-small text-ink-secondary">{t('config.panelShown')}</span>
-              <span className="type-caption text-tiny text-ink-tertiary">{t('config.panelDescription')}</span>
-              <PanelPropertyList type={type} panel={panel} onChange={onPanelChange} />
-            </div>
-          </Section>
-        ) : null}
+        <Section title={t('config.panelSection')}>
+          <div className="grid grid-cols-2 gap-12">
+            <Select
+              label={t('config.done')}
+              options={[none, ...doneOptions(type)]}
+              value={done ?? none.value}
+              onChange={(value) => onDoneChange(value === none.value ? null : value)}
+            />
+            <Select
+              label={t('config.location')}
+              options={[none, ...locationOptions(type)]}
+              value={location ?? none.value}
+              onChange={(value) => onLocationChange(value === none.value ? null : value)}
+            />
+          </div>
+          <div className="flex flex-col gap-6">
+            <span className="type-ui text-small text-ink-secondary">{t('config.panelShown')}</span>
+            <span className="type-caption text-tiny text-ink-tertiary">{t('config.panelDescription')}</span>
+            <PanelPropertyList type={type} panel={panel} onChange={onPanelChange} />
+          </div>
+        </Section>
       </div>
     </Dialog>
   )
