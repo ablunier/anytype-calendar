@@ -16,8 +16,9 @@ builds their event schema from their Anytype data — reads each space's dated t
 with a user date property, their own or one their templates show in their content) and tracks
 the last sync, which feeds the post-sign-in success
 card and onboarding. Under v2 a sync also reads each space's image, whether each type has
-Anytype's own Done and Location, its select properties' option colours, and its queries over
-a single dated type, with their views. It also persists
+Anytype's own Done and Location, its select properties' option colours, its queries over
+a single dated type, with their views, and its collections, which a new object can be added
+to. It also persists
 the user's selection — which spaces, types and queries go on the calendar, each one's From/To
 date property (a query's are its type's), whether those dates carry a time of day, which
 select property, if any, colours its objects (`colourBy`), which checkbox ticks it done and
@@ -31,8 +32,9 @@ per space), which the calendar screen draws as a month grid or as an hour grid. 
 type and a query both bring is read once through each and kept for each, with its source's
 `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
 key reads through v2 and may write, the calendar also edits: an object is moved by dragging
-it, created by double-clicking a day or an hour, and ticked done, given exact dates and times,
-or given or cleared a To date from its panel. `feeds` holds external
+it, created by double-clicking a day or an hour (and, if a collection is picked, added to
+it), and ticked done, given exact dates and times, or given or cleared a To date from its
+panel. `feeds` holds external
 calendars subscribed to by their iCalendar address (Settings → Subscribed calendars): it reads
 each with ical.js, keeps it in memory and expands it over the span on screen, and the renderer
 draws its events read-only beside Anytype's objects. No screen runs on mock data.
@@ -408,7 +410,12 @@ Standard electron-vite three-process layout:
     `TimeGrid` serves the week and the day alike — they differ only in how many columns it
     draws, so it takes `days: DayColumn[]`, seven of them or one.
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
-    barrel-exported from `components/ui/index.ts`.
+    barrel-exported from `components/ui/index.ts`. `Combobox` is a Select that can be typed in
+    to narrow it; the caller does the matching (`optionsFor`), so it knows nothing of what it
+    lists. `CreateEventDialog` uses it for the Collection field, over `collectionChoices` and
+    `collectionPicksFor` (`lib/schema.ts`): None first, names matched ignoring case and accents,
+    and same-name collections told apart by the backlinks they do not all share, or else by
+    when they were last modified.
   - `components/app/` — app-level chrome shared across screens (`Wordmark`,
     `SpaceMonogram`, `TypeTile`). Only types carry a hue: their Anytype icon colour, one
     category hue per each of Anytype's ten (`lib/schema.ts`). Anytype gives spaces no
@@ -560,6 +567,15 @@ the wire belongs there too:
   an `Idempotency-Key` (a replay of the same key and body returns the stored response), and one
   that got no answer is sent once more with it. No `If-Match`: search rows have no etag, so the
   last write wins. A read-only key answers 403 `write_not_granted`, a busy one 429.
+- Collections (October 2026): Anytype's bundled Collection type is `collection`, found by
+  searching `{ type: 'collection', fields: ['last_modified_date', 'backlinks'] }`; rows carry
+  `backlinks` as object ids, which the schema sync reads names for (`GET …/objects/{id}
+  ?include=properties`, once per id) only where a name repeats in the space. v2 cannot create
+  into one: `CreateEventsObject` creates, then sends `PATCH …/objects/{collectionId}` with
+  `{ ops: [{ op: 'add_items', items: [id] }] }` (1 to 1000 ids; one already in it is ignored),
+  each with its own `Idempotency-Key`. An add that fails leaves the object created, and the
+  outcome says so (`{ ok: true, collection }`), which the calendar shows as a toast. The
+  client types only `set_properties`; other ops pass through it as given.
 
 ### Toolchain quirks (see `docs/deps-notes.md` for full detail)
 

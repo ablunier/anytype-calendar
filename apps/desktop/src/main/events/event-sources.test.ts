@@ -61,7 +61,8 @@ const SYNCED: SchemaSync = {
             ]
           }
         ],
-        queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: [{ id: '63194', name: 'Open' }] }]
+        queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: [{ id: '63194', name: 'Open' }] }],
+        collections: []
       }
     ]
   }

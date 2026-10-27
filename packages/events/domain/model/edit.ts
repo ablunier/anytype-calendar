@@ -45,7 +45,11 @@ export type EventsEditFailure =
   /** The change cannot be made to this object, e.g. a To date before its From. */
   | { failure: 'invalid' }
 
-export type EventsEditOutcome = { ok: true } | ({ ok: false } & EventsEditFailure)
+/**
+ * `collection` says why an object created to go in a collection was not added to it: it was
+ * created all the same.
+ */
+export type EventsEditOutcome = { ok: true; collection?: EventsEditFailure } | ({ ok: false } & EventsEditFailure)
 
 /** Null unless `value` is a slot whose day is in range and whose minute, if any, is within it. */
 export function toEventsSlot(value: unknown): EventsSlot | null {

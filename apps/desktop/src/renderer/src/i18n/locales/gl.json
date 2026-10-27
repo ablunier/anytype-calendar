@@ -323,6 +323,12 @@
       "name": "Nome",
       "type": "Tipo",
       "typeInSpace": "{{type}} · {{space}}",
+      "collection": "Colección",
+      "noCollection": "Ningunha",
+      "noCollectionMatch": "Ningunha colección coincide",
+      "collectionModified": "modificada o {{date}}",
+      "collectionBacklinksMore": "{{names}} +{{more}}",
+      "notAdded": "Creouse, pero non se engadiu á colección. {{reason}}",
       "time": "Hora",
       "submit": "Crear"
     },

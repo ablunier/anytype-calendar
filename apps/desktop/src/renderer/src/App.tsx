@@ -30,6 +30,7 @@ import {
 } from './lib/events'
 import { feedEventsFor, feedsFor, mergedEvents } from './lib/feeds'
 import {
+  collectionsBySpaceFor,
   creatableTypesFor,
   hasNotGrantedSpaces,
   isOnboarded,
@@ -253,6 +254,7 @@ function App(): React.JSX.Element | null {
         weekStart={weekStart}
         editAccess={editAccessFor(session)}
         creatableTypes={creatableTypesFor(typesOnCalendar, picks)}
+        collectionsBySpace={collectionsBySpaceFor(schema)}
         onReschedule={(request) => window.api.events.reschedule(request)}
         onCreate={(request) => window.api.events.create(request)}
         onSetDone={(request) => window.api.events.setDone(request)}

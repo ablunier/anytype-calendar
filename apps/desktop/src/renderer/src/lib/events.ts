@@ -192,9 +192,18 @@ export function hasOwnEnd(type: ObjectType): boolean {
   return eventsSourceHasEnd(type)
 }
 
-/** `type` is one of the calendar's types, never a query: a query has no type of its own to create. */
-export function createRequestFor(type: ObjectType, name: string, slot: CalendarSlot): EventsCreateRequest {
-  return { spaceId: type.space, typeKey: anytypeTypeKeyOf(type), name, at: eventsSlotOf(slot) }
+/**
+ * `type` is one of the calendar's types, never a query: a query has no type of its own to
+ * create. `collectionId` is a collection of the type's space to add the object to.
+ */
+export function createRequestFor(
+  type: ObjectType,
+  name: string,
+  slot: CalendarSlot,
+  collectionId: string | null = null
+): EventsCreateRequest {
+  const request = { spaceId: type.space, typeKey: anytypeTypeKeyOf(type), name, at: eventsSlotOf(slot) }
+  return collectionId === null ? request : { ...request, collectionId }
 }
 
 function rescheduleRequestFor(event: CalendarEvent, change: EventsReschedule): EventsRescheduleRequest {

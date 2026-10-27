@@ -633,3 +633,118 @@ describe('listQueries', () => {
     await expect(gateway.listQueries(API_KEY, SPACE_ID)).rejects.toThrow('404')
   })
 })
+
+describe('listCollections', () => {
+  const SEARCH = `/v2/spaces/${SPACE_ID}/search`
+  const object = (id: string) => `/v2/spaces/${SPACE_ID}/objects/${id}`
+  const document = (id: string, name: string): Reply => ({
+    status: 200,
+    body: { id, type: 'page', properties: { name } }
+  })
+  const notFound: Reply = { status: 404, body: { status: 404, code: 'not_found', message: 'x', issues: [] } }
+
+  // As a real account answered, October 2026.
+  const row = (id: string, name: string, backlinks: string[], modified = '2026-10-12T08:15:00Z') => ({
+    id,
+    name,
+    type: 'collection',
+    properties: { last_modified_date: modified, backlinks }
+  })
+
+  test('searches the space for collections with when each was last modified', async () => {
+    const { gateway, calls } = setup({
+      [SEARCH]: page([row('col_trip', 'Trip to Lisbon', ['obj_home']), row('col_q4', 'Q4 launch', [])])
+    })
+
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).resolves.toEqual({
+      ok: true,
+      value: [
+        { id: 'col_trip', name: 'Trip to Lisbon', lastModified: Date.UTC(2026, 9, 12, 8, 15), backlinks: [] },
+        { id: 'col_q4', name: 'Q4 launch', lastModified: Date.UTC(2026, 9, 12, 8, 15), backlinks: [] }
+      ]
+    })
+    expect(calls[0]?.url).toBe(`${BASE}${SEARCH}?offset=0&limit=1000`)
+    expect(calls[0]?.init.method).toBe('POST')
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({
+      type: 'collection',
+      fields: ['last_modified_date', 'backlinks']
+    })
+    // No name repeats, so no backlink is read.
+    expect(calls).toHaveLength(1)
+  })
+
+  test('reads the names of the objects linking to collections whose name repeats, each once', async () => {
+    const { gateway, calls } = setup({
+      [SEARCH]: page([
+        row('col_home', 'Notes', ['obj_home', 'obj_review']),
+        row('col_work', 'Notes', ['obj_work', 'obj_review']),
+        row('col_trip', 'Trip', ['obj_unread'])
+      ]),
+      [object('obj_home')]: document('obj_home', 'Home'),
+      [object('obj_work')]: document('obj_work', 'Work'),
+      [object('obj_review')]: document('obj_review', 'Weekly review')
+    })
+
+    const result = await gateway.listCollections(API_KEY, SPACE_ID)
+
+    expect(result.ok && result.value.map(({ id, backlinks }) => ({ id, backlinks }))).toEqual([
+      { id: 'col_home', backlinks: ['Home', 'Weekly review'] },
+      { id: 'col_work', backlinks: ['Work', 'Weekly review'] },
+      { id: 'col_trip', backlinks: [] }
+    ])
+    const reads = calls.map(({ url }) => url).filter((url) => url.includes('/objects/'))
+    expect(reads.sort()).toEqual(
+      ['obj_home', 'obj_review', 'obj_work'].map((id) => `${BASE}${object(id)}?include=properties`)
+    )
+  })
+
+  test.each([
+    ['gone', notFound],
+    ['outside the grant', notGranted]
+  ])('leaves out a backlink that is %s', async (_, reply) => {
+    const { gateway } = setup({
+      [SEARCH]: page([row('col_home', 'Notes', ['obj_home', 'obj_gone']), row('col_work', 'Notes', [])]),
+      [object('obj_home')]: document('obj_home', 'Home'),
+      [object('obj_gone')]: reply
+    })
+    const result = await gateway.listCollections(API_KEY, SPACE_ID)
+    expect(result.ok && result.value[0]?.backlinks).toEqual(['Home'])
+  })
+
+  test('reads a collection with no last-modified date as having none', async () => {
+    const { gateway } = setup({
+      [SEARCH]: page([{ id: 'col_new', name: 'New', type: 'collection', properties: {} }])
+    })
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).resolves.toEqual({
+      ok: true,
+      value: [{ id: 'col_new', name: 'New', lastModified: null, backlinks: [] }]
+    })
+  })
+
+  test.each([
+    ['no longer granted', notGranted],
+    ['not open', notFound]
+  ])('reads a space %s as holding no collections', async (_, reply) => {
+    const { gateway } = setup({ [SEARCH]: reply })
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).resolves.toEqual({ ok: true, value: [] })
+  })
+
+  test.each([
+    ['the search', { [SEARCH]: unauthorized }],
+    [
+      'a backlink',
+      { [SEARCH]: page([row('a', 'Notes', ['obj_home']), row('b', 'Notes', [])]), [object('obj_home')]: unauthorized }
+    ]
+  ])('resolves a key refused on %s as unauthorized', async (_, routes) => {
+    const { gateway } = setup(routes)
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).resolves.toEqual({
+      ok: false,
+      failure: 'unauthorized'
+    })
+  })
+
+  test('rejects when Anytype no longer has the v2 route', async () => {
+    const { gateway } = setup({})
+    await expect(gateway.listCollections(API_KEY, SPACE_ID)).rejects.toThrow('404')
+  })
+})

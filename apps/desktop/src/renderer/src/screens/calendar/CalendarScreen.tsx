@@ -11,6 +11,7 @@ import type {
   CalendarEvent,
   CalendarSlot,
   CalendarView,
+  Collection,
   DetailTarget,
   EditAccess,
   FeedSource,
@@ -28,7 +29,7 @@ import {
   spacesByKeys,
   weekLabel
 } from '@renderer/lib/calendar'
-import { editFailureText, readOnlyText } from '@renderer/lib/edit-text'
+import { editFailureText, notAddedText, readOnlyText } from '@renderer/lib/edit-text'
 import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import { allHidden, visibleEvents } from '@renderer/lib/visibility'
@@ -74,6 +75,8 @@ export interface CalendarScreenProps {
   editAccess: EditAccess
   /** The types a new object can be created as. */
   creatableTypes: ObjectType[]
+  /** By space key, the collections a new object can be added to. */
+  collectionsBySpace: Map<string, Collection[]>
   onReschedule: (request: EventsRescheduleRequest) => Promise<EventsEditResult>
   onCreate: (request: EventsCreateRequest) => Promise<EventsEditResult>
   onSetDone: (request: EventsSetDoneRequest) => Promise<EventsEditResult>
@@ -128,6 +131,7 @@ export function CalendarScreen({
   weekStart,
   editAccess,
   creatableTypes,
+  collectionsBySpace,
   onReschedule,
   onCreate,
   onSetDone,
@@ -234,6 +238,7 @@ export function CalendarScreen({
       result = { ok: false, failure: 'unreachable' }
     }
     if (!result.ok) say(editFailureText(t, result))
+    else if (result.collection) say(notAddedText(t, result.collection))
     return result.ok
   }
 
@@ -422,8 +427,11 @@ export function CalendarScreen({
           slot={creating}
           types={creatable}
           spacesByKey={spacesByKey}
+          collectionsBySpace={collectionsBySpace}
           onClose={() => setCreating(null)}
-          onCreate={(type, name, slot) => edit(onCreate(createRequestFor(type, name, slot)))}
+          onCreate={(type, name, slot, collectionId) =>
+            edit(onCreate(createRequestFor(type, name, slot, collectionId)))
+          }
         />
       ) : null}
 

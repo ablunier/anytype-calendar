@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import type {
+  SchemaCollection,
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
@@ -59,6 +60,10 @@ const QUERIES: Record<string, SchemaQueryRef[]> = {
   ]
 }
 
+const COLLECTIONS: Record<string, SchemaCollection[]> = {
+  sp_personal: [{ id: 'col_trip', name: 'Trip', lastModified: 5_000, backlinks: [] }]
+}
+
 const ok = <T>(value: T): SchemaGatewayResult<T> => ({ ok: true, value })
 const listed = (spaces: SchemaSpaceRef[], hasNotGrantedSpaces = false): SchemaSpaceList => ({
   spaces,
@@ -82,7 +87,10 @@ function setup(apiKey: string | null = API_KEY) {
     listSelectOptions: vi.fn<SchemaGateway['listSelectOptions']>(async (_key, _space, property) =>
       ok(property === 'priority' ? [P1] : property === 'tag' ? [WORK] : [])
     ),
-    listQueries: vi.fn<SchemaGateway['listQueries']>(async (_key, spaceId) => ok(QUERIES[spaceId] ?? []))
+    listQueries: vi.fn<SchemaGateway['listQueries']>(async (_key, spaceId) => ok(QUERIES[spaceId] ?? [])),
+    listCollections: vi.fn<SchemaGateway['listCollections']>(async (_key, spaceId) =>
+      ok(COLLECTIONS[spaceId] ?? [])
+    )
   }
   const store = new SchemaSyncStore()
   const syncSchema = new SyncSchema({
@@ -141,15 +149,17 @@ test('reads every space with its dated types', async () => {
               selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
             }
           ],
-          queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: VIEWS }]
+          queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: VIEWS }],
+          collections: COLLECTIONS['sp_personal']
         },
-        { id: 'sp_empty', name: 'Empty', types: [], queries: [] }
+        { id: 'sp_empty', name: 'Empty', types: [], queries: [], collections: [] }
       ]
     }
   })
   expect(gateway.listSpaces).toHaveBeenCalledWith(API_KEY)
   expect(gateway.listTypes).toHaveBeenCalledWith(API_KEY, 'sp_personal')
   expect(gateway.listQueries).toHaveBeenCalledWith(API_KEY, 'sp_personal')
+  expect(gateway.listCollections).toHaveBeenCalledWith(API_KEY, 'sp_personal')
 })
 
 test('keys a query that names its type by its former key to the type as the space now spells it', async () => {
@@ -267,7 +277,7 @@ test('fails as unauthorized without a stored key, asking Anytype nothing', async
   expect(gateway.listSpaces).not.toHaveBeenCalled()
 })
 
-test.each(['listSpaces', 'listTypes', 'listQueries'] as const)(
+test.each(['listSpaces', 'listTypes', 'listQueries', 'listCollections'] as const)(
   'fails as unauthorized when %s is refused',
   async (method) => {
     const { gateway, store, syncSchema } = setup()

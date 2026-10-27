@@ -1,8 +1,11 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CalendarSlot, ObjectType, Space } from '@renderer/types'
-import { Button, Dialog, Input, Select } from '@renderer/components/ui'
+import type { TFunction } from 'i18next'
+import type { CalendarSlot, Collection, CollectionHint, ObjectType, Space } from '@renderer/types'
+import { Button, Combobox, Dialog, Input, Select, type ComboboxOption } from '@renderer/components/ui'
 import { longDate } from '@renderer/lib/calendar'
+import { localDate } from '@renderer/lib/events'
+import { collectionChoices, collectionPicksFor } from '@renderer/lib/schema'
 import { timeOfMinute } from '@renderer/lib/time-grid'
 
 /** Where a new timed object starts when the slot it was asked for names no time: a month cell. */
@@ -13,19 +16,27 @@ export interface CreateEventDialogProps {
   /** Never empty: the calendar only offers creating when there is a type to create. */
   types: ObjectType[]
   spacesByKey: Map<string, Space>
+  /** By space key; a space with none, as every space under v1, offers no Collection field. */
+  collectionsBySpace: Map<string, Collection[]>
   onClose: () => void
-  /** Resolves whether the object was created; the dialog stays open, as filled in, when not. */
-  onCreate: (type: ObjectType, name: string, slot: CalendarSlot) => Promise<boolean>
+  /**
+   * Resolves whether the object was created; the dialog stays open, as filled in, when not.
+   * `collectionId` is null for None.
+   */
+  onCreate: (type: ObjectType, name: string, slot: CalendarSlot, collectionId: string | null) => Promise<boolean>
 }
 
 /**
  * Names the object and picks its type; the day is the one double-clicked. A time is asked for
- * only where the type's dates carry one, starting at the slot's.
+ * only where the type's dates carry one, starting at the slot's, and a collection to add it to
+ * only where the type's space has some. A type in another space puts the collection back to
+ * None; one in the same space keeps it.
  */
 export function CreateEventDialog({
   slot,
   types,
   spacesByKey,
+  collectionsBySpace,
   onClose,
   onCreate
 }: CreateEventDialogProps): React.JSX.Element {
@@ -34,8 +45,10 @@ export function CreateEventDialog({
   const [name, setName] = useState('')
   const [typeKey, setTypeKey] = useState(types[0]?.key ?? '')
   const [time, setTime] = useState(timeOfMinute(slot.minute ?? DEFAULT_MINUTE))
+  const [collectionId, setCollectionId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const type = types.find(({ key }) => key === typeKey) ?? types[0]
+  const choices = collectionChoices((type && collectionsBySpace.get(type.space)) ?? [])
   // A label alone would repeat when two chosen spaces each have a type of that name.
   const spaceCount = new Set(types.map(({ space }) => space)).size
 
@@ -43,7 +56,7 @@ export function CreateEventDialog({
     if (!type || creating) return
     setCreating(true)
     const minute = type.includesTime ? (minuteOf(time) ?? DEFAULT_MINUTE) : null
-    const created = await onCreate(type, name.trim(), { date: slot.date, minute })
+    const created = await onCreate(type, name.trim(), { date: slot.date, minute }, collectionId)
     setCreating(false)
     if (created) onClose()
   }
@@ -82,7 +95,10 @@ export function CreateEventDialog({
         <Select
           label={t('calendar.create.type')}
           value={type?.key ?? ''}
-          onChange={setTypeKey}
+          onChange={(key) => {
+            if (types.find((option) => option.key === key)?.space !== type?.space) setCollectionId(null)
+            setTypeKey(key)
+          }}
           options={types.map((option) => ({
             value: option.key,
             label:
@@ -94,12 +110,42 @@ export function CreateEventDialog({
                 : option.label
           }))}
         />
+        {choices.length > 0 ? (
+          <Combobox
+            label={t('calendar.create.collection')}
+            value={collectionId ?? ''}
+            onChange={(value) => setCollectionId(value === '' ? null : value)}
+            noMatchText={t('calendar.create.noCollectionMatch')}
+            optionsFor={(query) =>
+              collectionPicksFor(choices, query).map(
+                (pick): ComboboxOption =>
+                  pick.kind === 'none'
+                    ? { value: '', label: t('calendar.create.noCollection'), pinned: true }
+                    : {
+                        value: pick.collection.key,
+                        label: pick.collection.name || t('common.untitled'),
+                        detail: hintText(t, pick.hint, i18n.language) ?? undefined
+                      }
+              )
+            }
+          />
+        ) : null}
         {type?.includesTime ? (
           <Input label={t('calendar.create.time')} type="time" value={time} onChange={setTime} />
         ) : null}
       </form>
     </Dialog>
   )
+}
+
+/** What tells a collection apart from the others of its name, as the list shows it. */
+function hintText(t: TFunction, hint: CollectionHint, locale: string): string | null {
+  if (hint === null) return null
+  if (hint.kind === 'modified') {
+    return t('calendar.create.collectionModified', { date: longDate(localDate(hint.at), locale) })
+  }
+  const names = hint.names.join(', ')
+  return hint.more === 0 ? names : t('calendar.create.collectionBacklinksMore', { names, more: hint.more })
 }
 
 /** Null for an input the user emptied. */

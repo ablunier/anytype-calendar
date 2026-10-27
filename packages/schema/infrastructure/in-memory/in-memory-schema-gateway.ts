@@ -1,4 +1,5 @@
 import type {
+  SchemaCollection,
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
@@ -23,6 +24,8 @@ export interface InMemorySchemaSpace {
   /** By property key: as in Anytype, a property's options are the space's, not a type's. */
   options?: Record<string, SchemaSelectOption[]>
   queries?: SchemaQueryRef[]
+  /** Backlinks are read only for repeated names, as AnytypeV2SchemaGateway reads them. */
+  collections?: SchemaCollection[]
 }
 
 export interface InMemorySchemaGatewayOptions {
@@ -81,6 +84,7 @@ const PROJECT = { name: 'hammer', color: 'orange' }
  * Tasks can be ticked done and coloured by priority, and meetings have a location, as under v2.
  * Each type has a few more properties the detail panel can show, of every format it draws.
  * Studio has a query over its tasks, which InMemoryEventsGateway answers by the same ids.
+ * Personal and Studio have collections, Studio two of the same name told apart by backlinks.
  */
 export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
   {
@@ -102,7 +106,11 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
       ),
       type('note', 'Note', { name: 'create', color: 'yellow' }, [])
     ],
-    options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS }
+    options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS },
+    collections: [
+      { id: 'col_lisbon', name: 'Trip to Lisbon', lastModified: Date.UTC(2026, 8, 2, 18, 4), backlinks: [] },
+      { id: 'col_reading', name: 'Reading list', lastModified: Date.UTC(2026, 6, 19, 10, 30), backlinks: [] }
+    ]
   },
   {
     id: 'sp_studio',
@@ -133,6 +141,16 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
           { id: 'v_open', name: 'Open' },
           { id: 'v_all', name: 'All' }
         ]
+      }
+    ],
+    collections: [
+      { id: 'col_q4', name: 'Q4 launch', lastModified: Date.UTC(2026, 9, 12, 8, 15), backlinks: [] },
+      { id: 'col_notes_home', name: 'Notes', lastModified: Date.UTC(2026, 9, 1, 20, 0), backlinks: ['Home'] },
+      {
+        id: 'col_notes_work',
+        name: 'Notes',
+        lastModified: Date.UTC(2026, 9, 20, 9, 45),
+        backlinks: ['Work', 'Weekly review']
       }
     ]
   },
@@ -219,6 +237,15 @@ export class InMemorySchemaGateway implements SchemaGateway {
         typeKeys: [...typeKeys],
         views: views.map((view) => ({ ...view }))
       }))
+    }
+  }
+
+  async listCollections(_apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaCollection[]>> {
+    await this.#sleep(this.#requestLatencyMs)
+    const collections = this.#space(spaceId).collections ?? []
+    return {
+      ok: true,
+      value: collections.map(({ backlinks, ...collection }) => ({ ...collection, backlinks: [...backlinks] }))
     }
   }
 

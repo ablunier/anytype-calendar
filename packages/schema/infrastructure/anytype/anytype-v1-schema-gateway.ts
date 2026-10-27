@@ -1,6 +1,7 @@
 import type { AnytypeFailure } from '@ablunier/anytype-client'
 import { listAllV1, type AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type {
+  SchemaCollection,
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
@@ -65,6 +66,10 @@ export class AnytypeV1SchemaGateway implements SchemaGateway {
 
   /** v1 serves no route that reads a query through its views. */
   async listQueries(): Promise<SchemaGatewayResult<SchemaQueryRef[]>> {
+    return { ok: true, value: [] }
+  }
+
+  async listCollections(): Promise<SchemaGatewayResult<SchemaCollection[]>> {
     return { ok: true, value: [] }
   }
 

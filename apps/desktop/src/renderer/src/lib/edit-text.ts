@@ -26,6 +26,14 @@ export function editFailureText(t: TFunction, result: Exclude<EventsEditResult, 
   }
 }
 
+/** Why an object was created but not added to the collection picked for it. */
+export function notAddedText(
+  t: TFunction,
+  failure: NonNullable<Extract<EventsEditResult, { ok: true }>['collection']>
+): string {
+  return t('calendar.create.notAdded', { reason: editFailureText(t, { ok: false, ...failure }) })
+}
+
 /** Why the calendar cannot edit; null when it can. */
 export function readOnlyText(t: TFunction, access: EditAccess): string | null {
   switch (access) {

@@ -1,3 +1,4 @@
+import type { SchemaCollection } from './collection'
 import type { SchemaQuery } from './query'
 import type { SchemaType } from './type'
 
@@ -10,4 +11,6 @@ export interface SchemaSpace {
   types: SchemaType[]
   /** Only the ones over a type in `types`; empty where the API serves none (v1). */
   queries: SchemaQuery[]
+  /** Empty where the API serves none (v1). */
+  collections: SchemaCollection[]
 }

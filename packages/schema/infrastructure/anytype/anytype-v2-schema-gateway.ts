@@ -14,6 +14,7 @@ import {
 } from '@ablunier/anytype-client'
 import type { AnytypeV1Client } from '@anytype-calendar/anytype-v1/infrastructure'
 import type {
+  SchemaCollection,
   SchemaGateway,
   SchemaGatewayResult,
   SchemaProperty,
@@ -29,6 +30,9 @@ const TYPE_READS_AT_ONCE = 4
 
 /** Anytype's own type of queries, which it still calls `set` internally. */
 const QUERY_TYPE_KEY = 'query'
+
+/** Anytype's bundled Collection type; user types with a collection layout are not offered. */
+const COLLECTION_TYPE_KEY = 'collection'
 
 /** Pixels. A space's image is drawn at 16, so this covers a 4x display. */
 const SPACE_ICON_WIDTH = 64
@@ -309,6 +313,54 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     return { ok: true, value: queries.filter((query) => query != null) }
   }
 
+  /**
+   * A search row names a collection's backlinks by object id only, so where two collections in
+   * the space share a name, the objects linking to them are read for their names, each once.
+   */
+  async listCollections(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaCollection[]>> {
+    const api = this.#client.withApiKey(apiKey)
+    const search = { type: COLLECTION_TYPE_KEY, fields: ['last_modified_date', 'backlinks'] }
+    const listed = await this.#listAll((paging) => api.search.inSpace(spaceId, search, paging), 'collections')
+    if (!listed.ok) return listed
+    const rows = listed.value.items.map((item) => {
+      const id = nonEmpty(item.id)
+      if (id === undefined) throw malformed('collections')
+      const lastModified = Date.parse(nonEmpty(item.properties?.['last_modified_date']) ?? '')
+      return {
+        id,
+        name: nonEmpty(item.name) ?? '',
+        lastModified: Number.isNaN(lastModified) ? null : lastModified,
+        backlinks: toIds(item.properties?.['backlinks'])
+      }
+    })
+
+    const counts = new Map<string, number>()
+    for (const { name } of rows) counts.set(name, (counts.get(name) ?? 0) + 1)
+    const repeated = (name: string): boolean => (counts.get(name) ?? 0) > 1
+    const linking = [...new Set(rows.flatMap(({ name, backlinks }) => (repeated(name) ? backlinks : [])))]
+
+    const names = new Map<string, string>()
+    let refused = false
+    await eachAtMost(TYPE_READS_AT_ONCE, linking, async (id) => {
+      const document = await api.objects.get(spaceId, id, { include: 'properties' })
+      if (document.ok) {
+        const name = nonEmpty(document.body?.properties?.['name'])
+        if (name !== undefined) names.set(id, name)
+        return
+      }
+      if (document.status === UNAUTHORIZED) refused = true
+      else if (!isGone(document)) throw unexpected(document, 'a backlink')
+    })
+    if (refused) return { ok: false, failure: 'unauthorized' }
+    return {
+      ok: true,
+      value: rows.map(({ backlinks, ...collection }) => ({
+        ...collection,
+        backlinks: repeated(collection.name) ? backlinks.flatMap((id) => names.get(id) ?? []) : []
+      }))
+    }
+  }
+
   async #listAll<Page extends AnytypePage<unknown>>(
     page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<Page>>,
     what: string
@@ -317,13 +369,14 @@ export class AnytypeV2SchemaGateway implements SchemaGateway {
     if (response.ok) return { ok: true, value: { items: response.body.data, pages: response.body.pages } }
     if (response.status === UNAUTHORIZED) return { ok: false, failure: 'unauthorized' }
     // A space taken out of the grant holds nothing; so does a property deleted since its type
-    // was read, for which the options route answers 404 or 400, and a query deleted since it
-    // was listed, whose views route answers 404. Templates only add to what the types say, so
-    // a build that does not serve them, or the space's properties, reads as having none.
+    // was read, for which the options route answers 404 or 400, a query deleted since it was
+    // listed, whose views route answers 404, and a space not open, whose collection search
+    // answers 404. Templates only add to what the types say, so a build that does not serve
+    // them, or the space's properties, reads as having none.
     if (
       response.status === FORBIDDEN ||
       (what === 'options' && response.status === BAD_REQUEST) ||
-      ((what === 'options' || what === 'views') && isGone(response)) ||
+      ((what === 'options' || what === 'views' || what === 'collections') && isGone(response)) ||
       ((what === 'templates' || what === 'properties') && response.status === NOT_FOUND)
     ) {
       return { ok: true, value: { items: [], pages: [] } }
@@ -441,6 +494,10 @@ async function eachAtMost<T>(
     }
   }
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+}
+
+function toIds(value: unknown): string[] {
+  return Array.isArray(value) ? value.flatMap((id) => nonEmpty(id) ?? []) : []
 }
 
 function field(value: unknown, name: string): unknown {

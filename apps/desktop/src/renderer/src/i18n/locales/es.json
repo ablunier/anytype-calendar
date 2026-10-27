@@ -323,6 +323,12 @@
       "name": "Nombre",
       "type": "Tipo",
       "typeInSpace": "{{type}} · {{space}}",
+      "collection": "Colección",
+      "noCollection": "Ninguna",
+      "noCollectionMatch": "Ninguna colección coincide",
+      "collectionModified": "modificada el {{date}}",
+      "collectionBacklinksMore": "{{names}} +{{more}}",
+      "notAdded": "Se creó, pero no se añadió a la colección. {{reason}}",
       "time": "Hora",
       "submit": "Crear"
     },

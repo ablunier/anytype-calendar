@@ -1,5 +1,6 @@
 import {
   shiftEventsMonth,
+  type EventsCollectionTarget,
   type EventsDateChanges,
   type EventsDetailRef,
   type EventsGateway,
@@ -245,6 +246,8 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   readonly #members: InMemoryEventsMember[]
   readonly #requestLatencyMs: number
   #created = 0
+  /** Object ids by `spaceId/collectionId`, in the order they were added. */
+  readonly #collections = new Map<string, string[]>()
 
   constructor({
     sleep,
@@ -339,6 +342,23 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     const id = `obj_new_${++this.#created}`
     this.#objects.push({ id, spaceId, typeKey, title: name, dates: { ...dates } })
     return { ok: true, value: { id } }
+  }
+
+  /** Any collection id is taken: the fake keeps no collections of its own, only what was added. */
+  async addToCollection(
+    _apiKey: string,
+    { spaceId, collectionId }: EventsCollectionTarget,
+    objectId: string
+  ): Promise<EventsWriteResult> {
+    await this.#sleep(this.#requestLatencyMs)
+    if (!this.#find({ spaceId, id: objectId })) return GONE
+    const items = this.#collections.get(`${spaceId}/${collectionId}`) ?? []
+    if (!items.includes(objectId)) this.#collections.set(`${spaceId}/${collectionId}`, [...items, objectId])
+    return { ok: true, value: null }
+  }
+
+  collectionItems(spaceId: string, collectionId: string): string[] {
+    return [...(this.#collections.get(`${spaceId}/${collectionId}`) ?? [])]
   }
 
   async setDone(
