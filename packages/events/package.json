@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@ablunier/anytype-client": "^0.3.0",
-    "@anytype-calendar/anytype-v1": "*",
     "@anytype-calendar/kernel": "*"
   },
   "scripts": {

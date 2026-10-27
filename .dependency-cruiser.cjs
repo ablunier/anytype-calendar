@@ -69,15 +69,13 @@ module.exports = {
       name: 'infrastructure-only-own-domain',
       comment:
         "A context's infrastructure layer holds its driven adapters. It may import itself " +
-        "and its own context's domain (to implement its ports), plus the Anytype client and " +
-        'the private v1 package, nothing else. anytype-v1 is not a context: it has only an ' +
-        'infrastructure layer, so this same rule keeps it a leaf that imports no context. ' +
-        'feeds, which talks to no Anytype, has a rule of its own below.',
+        "and its own context's domain (to implement its ports), plus the Anytype client, " +
+        'nothing else. feeds, which talks to no Anytype, has a rule of its own below.',
       severity: 'error',
       from: { path: '^packages/([^/]+)/infrastructure/', pathNot: '^packages/feeds/' },
       to: {
         pathNot:
-          '^(?:packages/(?:$1/(?:infrastructure|domain)|anytype-v1/infrastructure)/' +
+          '^(?:packages/$1/(?:infrastructure|domain)/' +
           '|node_modules/@ablunier/anytype-client/)'
       }
     },
