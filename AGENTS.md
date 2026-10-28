@@ -623,7 +623,3 @@ the wire belongs there too:
 - Prefer reading existing doc comments in a file before changing its behavior; several
   files (e.g. `App.tsx`, `lib/session.ts`, `types/index.ts`, `.dependency-cruiser.cjs`)
   explain *why* a structural choice was made, not just what it does.
-- Before writing a commit, read `.agents/skills/commit/SKILL.md`: message format, scopes,
-  how to split a change, and the attribution trailer. Skills live in `.agents/skills/`.
-  An agent that looks elsewhere needs its own link to it, kept out of the repo like
-  `CLAUDE.md` (for Claude Code: `ln -s ../.agents/skills .claude/skills`).
