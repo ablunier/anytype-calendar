@@ -5,18 +5,12 @@ import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerFeedsIpc } from './feeds/feeds-ipc'
-import { registerLanguageIpc } from './language/language-ipc'
+import { registerPreferencesIpc } from './preferences/preference-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
-import { registerThemeIpc } from './theme/theme-ipc'
-import { registerTimeFormatIpc } from './time-format/time-format-ipc'
 import { startUpdates } from './updates/auto-update'
 import { registerUpdateIpc } from './updates/update-ipc'
-import { registerCalendarVisibilityIpc } from './calendar-visibility/calendar-visibility-ipc'
-import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
-import { registerCalendarViewIpc } from './calendar-view/calendar-view-ipc'
-import { registerWeekStartIpc } from './week-start/week-start-ipc'
 import icon from '../../resources/icon.png?asset'
 
 const isSquirrelEvent = handleSquirrelEvent()
@@ -63,29 +57,23 @@ app.whenReady().then(async () => {
   registerSchemaIpc(services)
   registerEventsIpc(services)
   registerFeedsIpc(services)
-  registerThemeIpc(services)
-  registerLanguageIpc(services)
-  registerWeekNumbersIpc(services)
-  registerCalendarVisibilityIpc(services)
-  registerWeekStartIpc(services)
-  registerTimeFormatIpc(services)
-  registerCalendarViewIpc(services)
+  registerPreferencesIpc(services.preferences)
   registerShellIpc()
   registerUpdateIpc(services)
   // The span a launch opens on is read from these two, and restoring the session is what
   // starts that first load, so they have to be in place before it runs. The feeds are drawn
   // over that span too, before Anytype has been asked anything.
-  await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
+  await Promise.all([services.preferences.calendarView.load(), services.preferences.weekStart.load()])
   services.showFeedsForSpan()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
     services.restoreAuthSession.execute(),
     services.loadSchemaSelection.execute(),
-    services.loadTheme.execute(),
-    services.loadLanguage.execute(),
-    services.loadWeekNumbers.execute(),
-    services.loadCalendarVisibility.execute(),
-    services.loadTimeFormat.execute(),
+    services.preferences.theme.load(),
+    services.preferences.language.load(),
+    services.preferences.weekNumbers.load(),
+    services.preferences.calendarVisibility.load(),
+    services.preferences.timeFormat.load(),
     // Only the copies cached at the last read: the network is asked once a window is open.
     services.loadFeeds.execute()
   ])

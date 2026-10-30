@@ -134,7 +134,7 @@ Standard electron-vite three-process layout:
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
     (`objectTypeKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
-    the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
+    the `calendarVisibility` section (`main/preferences/calendar-visibility.ts`), as are the spaces folded in the tree
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
     not the last one pushed, so two toggles in a row both count. The mini month follows the span on
@@ -142,22 +142,26 @@ Standard electron-vite three-process layout:
     clicked day asks main for `spanFor(span.kind, date)`; it marks no days that hold objects.
     The theme toggle lives in the
     calendar's top bar only; other screens follow the system theme until it is used.
+    Each of these preferences is one `preference({ section, initial, parse })`
+    (`main/preferences/preference.ts`): a store, a load and a save over its section of
+    `app-config.json`, served by `registerPreferenceIpc`. A parser returns `undefined` for what is
+    not a value, so `null` can be one; a load falls back to the initial value.
     The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the
-    theme, in the `weekNumbers` section of `app-config.json` (`main/week-numbers/`). The month grid
+    theme, in the `weekNumbers` section of `app-config.json` (`main/preferences/week-numbers.ts`). The month grid
     draws it in a gutter beside each week row, never as a column of it: bars are positioned as
     `100% / 7` of that row. The first day of the week (Settings → Calendar, Monday by default) is
-    saved the same way, in the `weekStart` section (`main/week-start/`), as an index with
+    saved the same way, in the `weekStart` section (`main/preferences/week-start.ts`), as an index with
     Monday 0 and Sunday 6; the grid, its headers and its weekend shading follow it, and a row's
     week number is that of its Thursday.
     The time format (Settings → Calendar, 24-hour by default) is saved likewise, in the `timeFormat`
-    section (`main/time-format/`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
+    section (`main/preferences/time-format.ts`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
     `formatTime` (`lib/calendar.ts`) draws them, reading the format from `TimeFormatContext`.
     The view a launch opens on (Settings → Calendar, the month by default) is saved the same
-    way, in the `calendarView` section (`main/calendar-view/`) as `'month' | 'week' | 'day'` —
+    way, in the `calendarView` section (`main/preferences/calendar-view.ts`) as `'month' | 'week' | 'day'` —
     the same three names an `EventsSpan`'s `kind` uses, so there is one vocabulary for them.
     The app is localized into English, Spanish and Galician (`react-i18next`, resources under
     `renderer/src/i18n/locales/`). The language (Settings → Calendar) follows the OS language
-    by default: `LanguageSnapshot` (`main/language/`, saved in the `language` section of
+    by default: `LanguageSnapshot` (`main/preferences/language.ts`, saved in the `language` section of
     `app-config.json`) is `'en' | 'es' | 'gl' | null`, where `null` — the initial value, and
     "System default" in the Select — means "follow the OS", the same shape `ThemeSnapshot`
     uses for the OS theme. Unlike the theme, which reads `prefers-color-scheme` in CSS,
