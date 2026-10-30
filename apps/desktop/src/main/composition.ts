@@ -91,28 +91,8 @@ import { credentialFileAt, safeStorageCipher } from './auth/credential-storage'
 import { defaultEventsSpan } from './events/default-span'
 import { eventsSourcesFor } from './events/event-sources'
 import { cacheDirectoryAt, safeStorageUrlCipher, subscriptionFileAt } from './feeds/feeds-storage'
-import { LoadLanguage } from './language/load-language'
-import { SaveLanguage } from './language/save-language'
-import { LanguageStore } from './language/language-store'
+import { composePreferences, type Preferences } from './preferences/compose-preferences'
 import { selectionFileAt } from './schema/selection-storage'
-import { LoadTheme } from './theme/load-theme'
-import { SaveTheme } from './theme/save-theme'
-import { ThemeStore } from './theme/theme-store'
-import { LoadTimeFormat } from './time-format/load-time-format'
-import { SaveTimeFormat } from './time-format/save-time-format'
-import { TimeFormatStore } from './time-format/time-format-store'
-import { CalendarViewStore } from './calendar-view/calendar-view-store'
-import { LoadCalendarView } from './calendar-view/load-calendar-view'
-import { SaveCalendarView } from './calendar-view/save-calendar-view'
-import { LoadWeekStart } from './week-start/load-week-start'
-import { SaveWeekStart } from './week-start/save-week-start'
-import { WeekStartStore } from './week-start/week-start-store'
-import { CalendarVisibilityStore } from './calendar-visibility/calendar-visibility-store'
-import { LoadCalendarVisibility } from './calendar-visibility/load-calendar-visibility'
-import { SaveCalendarVisibility } from './calendar-visibility/save-calendar-visibility'
-import { LoadWeekNumbers } from './week-numbers/load-week-numbers'
-import { SaveWeekNumbers } from './week-numbers/save-week-numbers'
-import { WeekNumbersStore } from './week-numbers/week-numbers-store'
 import { fetchLatestRelease } from './updates/auto-update'
 import { CheckForUpdate, DismissUpdateNotice } from './updates/check-for-update'
 import { UpdateNoticeStore } from './updates/update-notice-store'
@@ -156,27 +136,7 @@ export interface AppServices {
   reorderFeedsSubscriptions: ReorderFeedsSubscriptions
   /** Expands the feeds over the span on screen, or before any, the one a launch opens on. */
   showFeedsForSpan: () => void
-  themeState: ThemeStore
-  loadTheme: LoadTheme
-  saveTheme: SaveTheme
-  languageState: LanguageStore
-  loadLanguage: LoadLanguage
-  saveLanguage: SaveLanguage
-  calendarVisibilityState: CalendarVisibilityStore
-  loadCalendarVisibility: LoadCalendarVisibility
-  saveCalendarVisibility: SaveCalendarVisibility
-  weekNumbersState: WeekNumbersStore
-  loadWeekNumbers: LoadWeekNumbers
-  saveWeekNumbers: SaveWeekNumbers
-  weekStartState: WeekStartStore
-  loadWeekStart: LoadWeekStart
-  saveWeekStart: SaveWeekStart
-  calendarViewState: CalendarViewStore
-  loadCalendarView: LoadCalendarView
-  saveCalendarView: SaveCalendarView
-  timeFormatState: TimeFormatStore
-  loadTimeFormat: LoadTimeFormat
-  saveTimeFormat: SaveTimeFormat
+  preferences: Preferences
   updateNotice: UpdateNoticeStore
   checkForUpdate: CheckForUpdate
   dismissUpdateNotice: DismissUpdateNotice
@@ -232,6 +192,8 @@ export function composeServices(): AppServices {
     )
   )
 
+  const preferences = composePreferences(appConfig)
+
   const selectionRepository = new JsonFileSchemaSelectionRepository(selectionFileAt(appConfig))
   const schemaSelection = new SchemaSelectionStore()
   const loadSchemaSelection = new LoadSchemaSelection({
@@ -246,7 +208,11 @@ export function composeServices(): AppServices {
 
   const zone = new LocalEventsTimeZone()
   const openingSpan = (): EventsSpan =>
-    defaultEventsSpan(calendarViewState.get(), zone.dayOf(Date.now()), weekStartState.get())
+    defaultEventsSpan(
+      preferences.calendarView.state.get(),
+      zone.dayOf(Date.now()),
+      preferences.weekStart.state.get()
+    )
   const eventsState = new EventsSpanStore()
   const events = client ? anytypeEvents(client) : inMemoryEvents(zone)
   const eventSources = { current: () => eventsSourcesFor(schemaSelection.get(), schemaState.get()) }
@@ -320,39 +286,6 @@ export function composeServices(): AppServices {
   // memory is all moving to another span takes: no feed is read again for it.
   const showFeedsForSpan = (): void =>
     showFeedsWindow.execute(eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone))
-
-  const themeState = new ThemeStore()
-  const loadTheme = new LoadTheme({ config: appConfig, store: themeState })
-  const saveTheme = new SaveTheme({ config: appConfig, store: themeState })
-
-  const languageState = new LanguageStore()
-  const loadLanguage = new LoadLanguage({ config: appConfig, store: languageState })
-  const saveLanguage = new SaveLanguage({ config: appConfig, store: languageState })
-
-  const weekNumbersState = new WeekNumbersStore()
-  const loadWeekNumbers = new LoadWeekNumbers({ config: appConfig, store: weekNumbersState })
-  const saveWeekNumbers = new SaveWeekNumbers({ config: appConfig, store: weekNumbersState })
-
-  const calendarVisibilityState = new CalendarVisibilityStore()
-  const loadCalendarVisibility = new LoadCalendarVisibility({
-    config: appConfig,
-    store: calendarVisibilityState
-  })
-  const saveCalendarVisibility = new SaveCalendarVisibility({
-    config: appConfig,
-    store: calendarVisibilityState
-  })
-
-  const weekStartState = new WeekStartStore()
-  const loadWeekStart = new LoadWeekStart({ config: appConfig, store: weekStartState })
-  const saveWeekStart = new SaveWeekStart({ config: appConfig, store: weekStartState })
-  const calendarViewState = new CalendarViewStore()
-  const loadCalendarView = new LoadCalendarView({ config: appConfig, store: calendarViewState })
-  const saveCalendarView = new SaveCalendarView({ config: appConfig, store: calendarViewState })
-
-  const timeFormatState = new TimeFormatStore()
-  const loadTimeFormat = new LoadTimeFormat({ config: appConfig, store: timeFormatState })
-  const saveTimeFormat = new SaveTimeFormat({ config: appConfig, store: timeFormatState })
 
   const updateNotice = new UpdateNoticeStore(app.getVersion())
   const checkForUpdate = new CheckForUpdate({
@@ -442,27 +375,7 @@ export function composeServices(): AppServices {
     removeFeedsSubscription,
     reorderFeedsSubscriptions,
     showFeedsForSpan,
-    themeState,
-    loadTheme,
-    saveTheme,
-    languageState,
-    loadLanguage,
-    saveLanguage,
-    calendarVisibilityState,
-    loadCalendarVisibility,
-    saveCalendarVisibility,
-    weekNumbersState,
-    loadWeekNumbers,
-    saveWeekNumbers,
-    weekStartState,
-    loadWeekStart,
-    saveWeekStart,
-    calendarViewState,
-    loadCalendarView,
-    saveCalendarView,
-    timeFormatState,
-    loadTimeFormat,
-    saveTimeFormat,
+    preferences,
     updateNotice,
     checkForUpdate,
     dismissUpdateNotice
