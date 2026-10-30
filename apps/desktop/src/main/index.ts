@@ -52,30 +52,30 @@ app.whenReady().then(async () => {
 
   electronApp.setAppUserModelId(squirrelAppUserModelId)
 
-  const services = composeServices()
-  registerAuthIpc(services)
-  registerSchemaIpc(services)
-  registerEventsIpc(services)
-  registerFeedsIpc(services)
-  registerPreferencesIpc(services.preferences)
+  const { auth, schema, events, feeds, preferences, updates } = composeServices()
+  registerAuthIpc(auth)
+  registerSchemaIpc(schema)
+  registerEventsIpc(events, { ...auth, ...schema })
+  registerFeedsIpc(feeds)
+  registerPreferencesIpc(preferences)
   registerShellIpc()
-  registerUpdateIpc(services)
+  registerUpdateIpc(updates)
   // The span a launch opens on is read from these two, and restoring the session is what
   // starts that first load, so they have to be in place before it runs. The feeds are drawn
   // over that span too, before Anytype has been asked anything.
-  await Promise.all([services.preferences.calendarView.load(), services.preferences.weekStart.load()])
-  services.showFeedsForSpan()
+  await Promise.all([preferences.calendarView.load(), preferences.weekStart.load()])
+  feeds.showFeedsForSpan()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
-    services.restoreAuthSession.execute(),
-    services.loadSchemaSelection.execute(),
-    services.preferences.theme.load(),
-    services.preferences.language.load(),
-    services.preferences.weekNumbers.load(),
-    services.preferences.calendarVisibility.load(),
-    services.preferences.timeFormat.load(),
+    auth.restoreAuthSession.execute(),
+    schema.loadSchemaSelection.execute(),
+    preferences.theme.load(),
+    preferences.language.load(),
+    preferences.weekNumbers.load(),
+    preferences.calendarVisibility.load(),
+    preferences.timeFormat.load(),
     // Only the copies cached at the last read: the network is asked once a window is open.
-    services.loadFeeds.execute()
+    feeds.loadFeeds.execute()
   ])
 
   app.on('browser-window-created', (_, window) => {
@@ -83,8 +83,8 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
-  startUpdates(services.checkForUpdate)
-  void services.refreshFeeds.execute()
+  startUpdates(updates.checkForUpdate)
+  void feeds.refreshFeeds.execute()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

@@ -1,6 +1,6 @@
 import { BrowserWindow, clipboard, ipcMain } from 'electron'
 import { IpcChannel } from '@shared/ipc'
-import type { AppServices } from '../composition'
+import type { Auth } from './compose-auth'
 
 export function registerAuthIpc({
   authSession,
@@ -11,7 +11,7 @@ export function registerAuthIpc({
   stepBackAuthConnection,
   signOutOfAuth,
   copyAuthApiKey
-}: AppServices): void {
+}: Auth): void {
   ipcMain.handle(IpcChannel.sessionGet, () => authSession.get())
   ipcMain.handle(IpcChannel.authStart, () => startAuthConnection.execute())
   ipcMain.handle(IpcChannel.authSubmitCode, (_event, code: unknown) => {

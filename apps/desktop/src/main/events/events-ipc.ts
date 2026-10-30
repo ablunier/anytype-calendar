@@ -2,20 +2,19 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
 import { toEventsSpan, type EventsEditOutcome } from '@anytype-calendar/events/domain'
 import { IpcChannel } from '@shared/ipc'
-import type { AppServices } from '../composition'
+import type { Auth } from '../auth/compose-auth'
+import type { Schema } from '../schema/compose-schema'
+import type { Events } from './compose-events'
 import { toCreateRequest, toRescheduleRequest, toSetDoneRequest } from './edit-requests'
 import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
 
-export function registerEventsIpc({
-  authSession,
-  checkAuthAccess,
-  schemaSync,
-  eventsState,
-  loadEventsSpan,
-  rescheduleEventsObject,
-  createEventsObject,
-  completeEventsObject
-}: AppServices): void {
+/** Edits need the session's grant, and a focus refresh asks auth and schema again too. */
+export type EventsIpcLinks = Pick<Auth, 'authSession' | 'checkAuthAccess'> & Pick<Schema, 'schemaSync'>
+
+export function registerEventsIpc(
+  { eventsState, loadEventsSpan, rescheduleEventsObject, createEventsObject, completeEventsObject }: Events,
+  { authSession, checkAuthAccess, schemaSync }: EventsIpcLinks
+): void {
   const connected = (): boolean => authSession.get().phase === 'connected'
 
   /* The renderer hides every edit a session cannot make, but it is not trusted to: a key
