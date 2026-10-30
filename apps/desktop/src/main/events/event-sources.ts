@@ -14,9 +14,13 @@ import type {
  * first, so an object a type and a query both bring is placed by the type (see LoadEventsSpan).
  *
  * Done, Location, the colour-by property and the panel's are read only where the last read of
- * the account saw the type with them — for a query, the type it runs over: v2 refuses a search
- * for a field the space lacks, so a property named without being there would hide every object
- * of the type. Before that read, each is read by its dates alone.
+ * the account saw the type with them — for a query, the type it runs over: Anytype refuses a
+ * search for a field the space lacks, so a property named without being there would hide every
+ * object of the type. Before that read, each is read by its dates alone.
+ *
+ * A saved From or To the synced type no longer has is read as the type's own dates, which is how
+ * the renderer draws and offers it (see `picksFor`): Anytype matches nothing on a key it does
+ * not have, so the saved one would empty the type with no failure to show.
  */
 export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSync): EventsSource[] {
   if (selection.phase === 'unset') return []
@@ -28,22 +32,33 @@ export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSy
   const typeSources = types
     .filter((choice) => spaceIds.includes(choice.spaceId))
     .map((choice) => {
-      const { spaceId, typeKey, from, to, includesTime } = choice
-      const source: EventsSource = { kind: 'type', spaceId, typeKey, from, to, includesTime }
+      const { spaceId, typeKey } = choice
       const type = spaceOf(spaceId)?.types.find(({ key }) => key === typeKey)
+      const source: EventsSource = { kind: 'type', spaceId, typeKey, ...datesOf(choice, type) }
       return type ? withDetails(source, type, choice) : source
     })
   const querySources = queries
     .filter((choice) => spaceIds.includes(choice.spaceId))
     .map((choice) => {
-      const { spaceId, queryId, viewId, from, to, includesTime } = choice
-      const source: EventsSource = { kind: 'query', spaceId, queryId, viewId, from, to, includesTime }
+      const { spaceId, queryId, viewId } = choice
       const space = spaceOf(spaceId)
       const typeKey = space?.queries.find(({ id }) => id === queryId)?.typeKey
       const type = space?.types.find(({ key }) => key === typeKey)
+      const source: EventsSource = { kind: 'query', spaceId, queryId, viewId, ...datesOf(choice, type) }
       return type ? withDetails(source, type, choice) : source
     })
   return [...typeSources, ...querySources]
+}
+
+/** The type's own dates are the renderer's `defaultMapping`: its first date, single and all-day. */
+function datesOf(
+  { from, to, includesTime }: SchemaTypeChoice | SchemaQueryChoice,
+  type: SchemaType | undefined
+): Pick<EventsSource, 'from' | 'to' | 'includesTime'> {
+  const has = (key: string): boolean => type?.dateProperties.some((property) => property.key === key) === true
+  const first = type?.dateProperties[0]
+  if (first === undefined || (has(from) && (to === null || has(to)))) return { from, to, includesTime }
+  return { from: first.key, to: null, includesTime: false }
 }
 
 function withDetails(

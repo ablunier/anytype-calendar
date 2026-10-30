@@ -16,12 +16,13 @@ export interface CheckAuthAccessDeps {
 }
 
 /**
- * Asks Anytype which API it serves the connected key through, and what the key reaches. The
+ * Asks Anytype what the connected key reaches. The
  * answer is applied only while the same key is still connected: an earlier check landing in
  * between replaces the session but keeps its key, a sign-out or a new sign-in does not.
  *
- * A refused key or an unreachable Anytype changes nothing here: the reads that run beside a
- * check meet the same answer, and those already sign a refused key out.
+ * A refused key, an unreachable Anytype or one too old to serve v2 changes nothing here: the
+ * reads that run beside a check meet the same answer, and those already sign a refused key out.
+ * A key kept through an outdated Anytype works again once it is updated.
  */
 export class CheckAuthAccess {
   readonly #gateway: AuthGateway

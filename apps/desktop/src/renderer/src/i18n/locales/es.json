@@ -38,7 +38,8 @@
     },
     "failure": {
       "unauthorized": "Clave no aceptada",
-      "unreachable": "¿Está Anytype abierto?"
+      "unreachable": "¿Está Anytype abierto?",
+      "outdated": "Anytype necesita actualizarse"
     }
   },
   "auth": {
@@ -104,6 +105,12 @@
         "title": "Esa clave no funcionó",
         "body": "Anytype no aceptó esta clave. Comprueba que la pegaste completa, o genera una nueva en los ajustes de API de Anytype.",
         "detail": "Clave de API inválida o desconocida (HTTP 401)",
+        "retry": "Reintentar"
+      },
+      "outdated": {
+        "title": "Anytype necesita actualizarse",
+        "body": "Esta versión de Anytype es demasiado antigua. Actualiza Anytype y vuelve a intentarlo.",
+        "detail": "Anytype no sirve la versión 2 de su API",
         "retry": "Reintentar"
       }
     },
@@ -177,8 +184,6 @@
       "copyKey": "Copiar clave",
       "api": "API de Anytype",
       "accessUnknown": "Comprobando a qué llega la clave…",
-      "accessV1": "v1",
-      "accessV2": "v2 (versión preliminar)",
       "allSpaces": "todos los espacios",
       "canEdit": "puede editar",
       "readOnly": "solo lectura",
@@ -189,7 +194,6 @@
       "revokeTitle": "Revocar clave de API",
       "revokeInstructions": "Para revocarla en todos los espacios de la cuenta, abre la aplicación de Anytype, ve a {{breadcrumb}} y revoca Calendar for Anytype. Luego cierra sesión aquí. Reconectar implica repetir el proceso del código de 4 dígitos."
     },
-    "queriesNeedV2": "Las consultas aparecen aquí cuando Anytype sirve la versión 2 de su API, como hacen las versiones más recientes de la aplicación.",
     "about": {
       "heading": "Acerca de",
       "version": "Versión"
@@ -312,7 +316,6 @@
       },
       "readOnly": {
         "key": "Esta clave solo puede leer. Para editar aquí, dale permiso de edición en Anytype o vuelve a conectar.",
-        "needsV2": "Editar aquí requiere un Anytype más reciente, que sirva la API v2.",
         "checking": "Comprobando qué puede hacer esta clave en Anytype…"
       },
       "noTypes": "Elige un tipo en Ajustes para crear sus objetos aquí.",

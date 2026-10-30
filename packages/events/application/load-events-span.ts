@@ -37,7 +37,14 @@ export interface LoadEventsSpanDeps {
 }
 
 /** Thrown inside a load to stop it at the first refused request. */
-class Unauthorized extends Error {}
+class Refused extends Error {
+  readonly failure: 'unauthorized' | 'outdated'
+
+  constructor(failure: 'unauthorized' | 'outdated') {
+    super(failure)
+    this.failure = failure
+  }
+}
 
 /**
  * The newest load wins. Each one starts a fresh `loading` state and applies its result only
@@ -80,7 +87,7 @@ export class LoadEventsSpan {
     try {
       objects = await this.#fetchObjects(target)
     } catch (error) {
-      const failure = error instanceof Unauthorized ? 'unauthorized' : 'unreachable'
+      const failure = error instanceof Refused ? error.failure : 'unreachable'
       if (this.#guard.isCurrent(loading)) {
         this.#guard.dispatch({ type: 'load-failed', failure, at: this.#now() })
       }
@@ -95,12 +102,12 @@ export class LoadEventsSpan {
     const window = eventsSpanWindow(span, this.#zone)
     const sources = this.#sources.current()
     const apiKey = await this.#apiKeys.current()
-    if (apiKey === null) throw new Unauthorized()
+    if (apiKey === null) throw new Refused('unauthorized')
 
     const perSource = await Promise.all(
       sources.map(async (source, rank) => {
         const result = await this.#gateway.listObjects(apiKey, source, window)
-        if (!result.ok) throw new Unauthorized()
+        if (!result.ok) throw new Refused(result.failure)
         return { source, rank, refs: result.value }
       })
     )
@@ -130,7 +137,7 @@ export class LoadEventsSpan {
     const perSpace = await Promise.all(
       [...idsBySpace].map(async ([spaceId, ids]) => {
         const result = await this.#gateway.listLinkedObjects(apiKey, spaceId, [...ids])
-        if (!result.ok) throw new Unauthorized()
+        if (!result.ok) throw new Refused(result.failure)
         return result.value.map((object): [string, EventsLinkedObject] => [`${spaceId}\n${object.id}`, object])
       })
     )

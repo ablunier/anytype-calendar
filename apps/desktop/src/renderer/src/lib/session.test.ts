@@ -104,13 +104,8 @@ describe('apiAccessFor', () => {
     expect(apiAccessFor({ phase: 'signed-out' })).toBeNull()
   })
 
-  test('says only the major under v1', () => {
-    expect(apiAccessFor(connected({ apiVersion: 'v1', grant: null }))).toEqual({ version: 'v1' })
-  })
-
   test('reads a key with no grant as reaching every space, and able to edit', () => {
-    expect(apiAccessFor(connected({ apiVersion: 'v2', grant: null }))).toEqual({
-      version: 'v2',
+    expect(apiAccessFor(connected({ grant: null }))).toEqual({
       spaceCount: null,
       canEdit: true
     })
@@ -118,8 +113,7 @@ describe('apiAccessFor', () => {
 
   test('counts the spaces of a restricted grant, and reads its permission', () => {
     const grant = { allSpaces: false, spaceIds: ['a', 'b'], permission: 'read' as const }
-    expect(apiAccessFor(connected({ apiVersion: 'v2', grant }))).toEqual({
-      version: 'v2',
+    expect(apiAccessFor(connected({ grant }))).toEqual({
       spaceCount: 2,
       canEdit: false
     })
@@ -127,8 +121,7 @@ describe('apiAccessFor', () => {
 
   test('reads an all-spaces grant as every space', () => {
     const grant = { allSpaces: true, spaceIds: [], permission: 'readwrite' as const }
-    expect(apiAccessFor(connected({ apiVersion: 'v2', grant }))).toEqual({
-      version: 'v2',
+    expect(apiAccessFor(connected({ grant }))).toEqual({
       spaceCount: null,
       canEdit: true
     })
@@ -142,16 +135,15 @@ describe('editAccessFor', () => {
     access
   })
 
-  test('can edit through a v2 key granted read/write, or one with no grant of its own', () => {
+  test('can edit through a key granted read/write, or one with no grant of its own', () => {
     const grant = { allSpaces: true, spaceIds: [], permission: 'readwrite' as const }
-    expect(editAccessFor(connected({ apiVersion: 'v2', grant }))).toBe('editable')
-    expect(editAccessFor(connected({ apiVersion: 'v2', grant: null }))).toBe('editable')
+    expect(editAccessFor(connected({ grant }))).toBe('editable')
+    expect(editAccessFor(connected({ grant: null }))).toBe('editable')
   })
 
   test('says why it cannot edit otherwise', () => {
     const grant = { allSpaces: true, spaceIds: [], permission: 'read' as const }
-    expect(editAccessFor(connected({ apiVersion: 'v2', grant }))).toBe('read-only')
-    expect(editAccessFor(connected({ apiVersion: 'v1', grant: null }))).toBe('needs-v2')
+    expect(editAccessFor(connected({ grant }))).toBe('read-only')
     expect(editAccessFor(connected(null))).toBe('checking')
     expect(editAccessFor({ phase: 'signed-out' })).toBe('checking')
   })

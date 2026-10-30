@@ -287,6 +287,15 @@ describe('syncViewFor', () => {
       hasResult: true
     })
   })
+
+  test('failed outdated says Anytype needs an update, keeping any last result', () => {
+    const failed: SchemaSnapshot = { phase: 'failed', failure: 'outdated', at: SYNCED_AT, last: SYNCED.last }
+    expect(syncViewFor(failed, SYNCED_AT)).toEqual({
+      state: 'error',
+      detail: { kind: 'outdated' },
+      hasResult: true
+    })
+  })
 })
 
 describe('isOnboarded', () => {

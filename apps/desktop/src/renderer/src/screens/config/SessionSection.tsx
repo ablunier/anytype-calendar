@@ -31,18 +31,13 @@ export function SessionSection({
     return t('config.session.keySummary', { hint, added })
   }
 
-  /* The major is all v1 can say. Never whoami's own `api.version`: it names v1's date even
-   * over v2. */
-  const accessSummary = (view: ApiAccessView): string => {
-    if (view.version === 'v1') return t('config.session.accessV1')
-    return [
-      t('config.session.accessV2'),
+  const accessSummary = (view: ApiAccessView): string =>
+    [
       view.spaceCount === null
         ? t('config.session.allSpaces')
         : t('common.spacesCount', { count: view.spaceCount }),
       view.canEdit ? t('config.session.canEdit') : t('config.session.readOnly')
     ].join(' · ')
-  }
 
   useEffect(() => {
     if (!copied) return

@@ -38,7 +38,8 @@
     },
     "failure": {
       "unauthorized": "Clave non aceptada",
-      "unreachable": "Está Anytype aberto?"
+      "unreachable": "Está Anytype aberto?",
+      "outdated": "Anytype necesita actualizarse"
     }
   },
   "auth": {
@@ -104,6 +105,12 @@
         "title": "Esa clave non funcionou",
         "body": "Anytype non aceptou esta clave. Comproba que a pegaches completa, ou xera unha nova nos axustes de API de Anytype.",
         "detail": "Clave de API non válida ou descoñecida (HTTP 401)",
+        "retry": "Tentar de novo"
+      },
+      "outdated": {
+        "title": "Anytype necesita actualizarse",
+        "body": "Esta versión de Anytype é demasiado antiga. Actualiza Anytype e téntao de novo.",
+        "detail": "Anytype non serve a versión 2 da súa API",
         "retry": "Tentar de novo"
       }
     },
@@ -177,8 +184,6 @@
       "copyKey": "Copiar clave",
       "api": "API de Anytype",
       "accessUnknown": "Comprobando a que chega a clave…",
-      "accessV1": "v1",
-      "accessV2": "v2 (versión preliminar)",
       "allSpaces": "todos os espazos",
       "canEdit": "pode editar",
       "readOnly": "só lectura",
@@ -189,7 +194,6 @@
       "revokeTitle": "Revogar clave de API",
       "revokeInstructions": "Para revogala en todos os espazos da conta, abre a aplicación de Anytype, vai a {{breadcrumb}} e revoga Calendar for Anytype. Despois pecha sesión aquí. Reconectar implica repetir o proceso do código de 4 díxitos."
     },
-    "queriesNeedV2": "As consultas aparecen aquí cando Anytype serve a versión 2 da súa API, como fan as versións máis recentes da aplicación.",
     "about": {
       "heading": "Acerca de",
       "version": "Versión"
@@ -312,7 +316,6 @@
       },
       "readOnly": {
         "key": "Esta clave só pode ler. Para editar aquí, dálle permiso de edición en Anytype ou volve conectar.",
-        "needsV2": "Editar aquí require un Anytype máis recente, que sirva a API v2.",
         "checking": "Comprobando que pode facer esta clave en Anytype…"
       },
       "noTypes": "Escolle un tipo en Axustes para crear os seus obxectos aquí.",

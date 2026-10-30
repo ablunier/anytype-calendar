@@ -7,13 +7,14 @@ calendar. It talks to the Anytype local API. npm workspaces monorepo, currently 
 early pass: the UI (`apps/desktop`) is fully built; the backend is being built as one
 package per bounded context under `packages/`. `auth` is fully wired: it signs in against
 the real Anytype local API, either through the challenge/code exchange or by pasting a key
-the user already holds, and keeps the key across restarts. The connected session also says
-which major of the API the app reads through and what the key was granted (its spaces, and
-read or read/write), which Settings shows. `schema` — how the user
+the user already holds, and keeps the key across restarts. It reads through v2 of the API
+alone: an Anytype too old to serve it fails as `outdated`, which says to update Anytype and,
+for a key already held, keeps it. The connected session also says what the key was granted
+(its spaces, and read or read/write), which Settings shows. `schema` — how the user
 builds their event schema from their Anytype data — reads each space's dated types (types
 with a user date property, their own or one their templates show in their content) and tracks
 the last sync, which feeds the post-sign-in success
-card and onboarding. Under v2 a sync also reads each space's image, whether each type has
+card and onboarding. A sync also reads each space's image, whether each type has
 Anytype's own Done and Location, its select properties' option colours, its queries over
 a single dated type, with their views, and its collections, which a new object can be added
 to. It also persists
@@ -25,11 +26,11 @@ its detail panel shows, in order (`panel`), and a query's view — which onboard
 save.
 `events` reads, for the span on screen — a month, a week or a day — the objects of the
 selected types and queries whose dates fall in it, with their Done, Location, colour-by option
-and panel properties where v2 serves them (linked objects named in the same load, one search
+and panel properties (linked objects named in the same load, one search
 per space), which the calendar screen draws as a month grid or as an hour grid. An object a
 type and a query both bring is read once through each and kept for each, with its source's
 `rank`; the renderer draws it once, as its lowest-ranked visible source places it. Where the
-key reads through v2 and may write, the calendar also edits: an object is moved by dragging
+key may write, the calendar also edits: an object is moved by dragging
 it, created by double-clicking a day or an hour (and, if a collection is picked, added to
 it), and ticked done, given exact dates and times, or given or cleared a To date from its
 panel. `feeds` holds external
@@ -40,7 +41,7 @@ draws its events read-only beside Anytype's objects. No screen runs on mock data
 ## Layout: bounded context → layer → role
 
 Each package under `packages/` is one bounded context (currently `auth`, `schema`, `events` and `feeds`), and its
-layers are folders inside it — except `anytype-v1` and `kernel` (see below):
+layers are folders inside it — except `kernel` (see below):
 
 ```
 packages/<context>/
@@ -60,19 +61,14 @@ goes there and is released as a new version, not patched here. Adapters call one
 statuses resolve as values (`{ ok: false, status, error, unsupported }`), and only transport
 failure rejects (`AnytypeTransportError`). The composition root injects `fetch`, with a
 timeout. Writes carry an `Idempotency-Key` and are retried once when they got no answer.
+Each context's `infrastructure/anytype/` has one `Anytype*Gateway`. `unsupported` — a bare
+plain-text 404 — means an Anytype build without v2: every gateway reads it as `outdated`
+(`AuthFailure`, `SchemaSyncFailure`, `EventsLoadFailure`), beside `unreachable` and
+`unauthorized`. Unlike `unauthorized`, it never signs out: the key is still valid, and works
+once Anytype is updated.
 
-`packages/anytype-v1` and `packages/kernel` are not contexts but shared packages, each
-with only one layer, so the pattern-based aliases, vitest projects and lint rules apply to
-them unedited. `anytype-v1` holds what the app still needs of v1, which the client does not
-serve: `AnytypeV1Client` (the few v1 routes read, through the same `AnytypeClient`, with v1's
-`Anytype-Version` header; `listAllV1` pages them) and `AnytypeDialectProbe`, which asks
-Anytype once per key which major of the API it serves (`whoami`: an answer means v2, an
-`unsupported` one — a bare plain-text 404 — means a build without v2). Each context's
-`infrastructure/anytype/` has an `AnytypeV1*Gateway`, an `AnytypeV2*Gateway` and an
-`Anytype*Gateway` that picks one of the two per call through the probe, so dropping v1 later
-means deleting `anytype-v1` and one file per context. The client's `onUnsupported` calls
-`probe.forgetV2()`, so any v2 route meeting the bare 404 drops a v2 answer, and leaving the
-`connected` session calls `probe.forget()`. `kernel` holds `DispatchGuard`, the store-plus-reducer dispatch/
+`packages/kernel` is not a context but a shared package with only one layer, so the
+pattern-based aliases, vitest projects and lint rules apply to it unedited. It holds `DispatchGuard`, the store-plus-reducer dispatch/
 staleness-guard pattern every use case that races an async gateway call against a later
 reset, step-back or newer request repeats (see `SubmitAuthCode`, `SyncSchema`,
 `LoadEventsSpan`); it has only an
@@ -96,9 +92,8 @@ context's `application` layer without adding a dependency edge of its own
   root `tsconfig.json` and both `apps/desktop` tsconfigs, plus a dependency in
   `apps/desktop/package.json`. Aliases, vitest projects and lint rules are all
   pattern-based and need no edits. A context whose adapters talk to Anytype also lists
-  `@ablunier/anytype-client` and `@anytype-calendar/anytype-v1` as dependencies and
-  references `../anytype-v1` from its tsconfig, as `auth` does;
-  likewise for `kernel` in a context's `application` layer (`auth`, `schema` and
+  `@ablunier/anytype-client` as a dependency, as `auth` does; likewise for `kernel` (and a
+  reference to `../kernel` from its tsconfig) in a context's `application` layer (`auth`, `schema` and
   `events` all do). Either way, run `npm install` afterward so npm workspaces symlinks the new package
   into `node_modules` — without it, `tsc -b` fails with `TS2307: Cannot find module`.
 
@@ -107,7 +102,7 @@ context's `application` layer without adding a dependency edge of its own
 ```
 packages/<ctx>/domain          -> nothing outside itself (no npm deps, no Node core)
 packages/<ctx>/application     -> its own context's domain, plus kernel (use cases / orchestration)
-packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client and anytype-v1 (driven adapters implementing domain ports)
+packages/<ctx>/infrastructure  -> its own context's domain, plus anytype-client (driven adapters implementing domain ports)
 packages/feeds/infrastructure  -> its own domain, plus ical.js (feeds talks to no Anytype)
 apps/desktop                   -> any context's layers, plus Electron and React
 ```
@@ -122,8 +117,7 @@ Rules worth knowing before adding an import:
   leaf that imports no context, and a separate `kernel-is-pure` rule additionally forbids
   it from importing anything at all, context or otherwise.
 - `infrastructure` holds *driven* adapters (implementations of domain ports); it may only
-  reach into its own `domain`, `packages/anytype-v1/infrastructure` and the Anytype client
-  (`node_modules/@ablunier/anytype-client`). The same rule keeps `anytype-v1` itself a leaf that imports no context.
+  reach into its own `domain` and the Anytype client (`node_modules/@ablunier/anytype-client`).
   `feeds` is the exception, by a rule of its own: its infrastructure may import its own domain
   and `ical.js`, nothing else, and ical.js stays behind the domain port `FeedsCalendarParser`.
 - Contexts never import each other; the composition root in `apps/desktop/src/main` wires

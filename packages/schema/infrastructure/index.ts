@@ -2,7 +2,5 @@
 // domain and the shared Anytype HTTP client only.
 
 export * from './anytype/anytype-schema-gateway'
-export * from './anytype/anytype-v1-schema-gateway'
-export * from './anytype/anytype-v2-schema-gateway'
 export * from './in-memory/in-memory-schema-gateway'
 export * from './json-file/json-file-schema-selection-repository'

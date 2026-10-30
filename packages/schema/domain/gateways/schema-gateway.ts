@@ -13,22 +13,22 @@ export interface SchemaSpaceRef {
 
 export interface SchemaSpaceList {
   spaces: SchemaSpaceRef[]
-  /**
-   * The key's grant leaves out spaces the account has. Only v2 can tell: v1 reads as false,
-   * as does a key that reaches every space.
-   */
+  /** The key's grant leaves out spaces the account has; false for a key that reaches every space. */
   hasNotGrantedSpaces: boolean
 }
 
 export interface SchemaTypeRef {
   key: string
-  /** How v1 of the local API spelled the key, where v2 spells it otherwise. */
+  /**
+   * How v1 of the local API spelled the key, where v2 spells it otherwise: a selection saved
+   * while the app read through v1 names the type this way. See rekeySchemaSelection.
+   */
   formerKey?: string
   name: string
   icon: SchemaTypeIcon | null
   /**
    * The ones the type lists, then any its templates show in their content without the type
-   * listing them, where the API serves templates (v2).
+   * listing them.
    */
   properties: SchemaProperty[]
 }
@@ -43,16 +43,16 @@ export interface SchemaQueryRef {
 }
 
 /**
- * A refused key is an expected answer, not an error, so it is a value; only a transport
- * breakdown or a response Anytype should never give rejects the promise.
+ * A refused key, or an Anytype too old to serve v2 of its API, is an expected answer, not an
+ * error, so it is a value; only a transport breakdown or a response Anytype should never give
+ * rejects the promise.
  */
-export type SchemaGatewayResult<T> = { ok: true; value: T } | { ok: false; failure: 'unauthorized' }
+export type SchemaGatewayResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; failure: 'unauthorized' | 'outdated' }
 
 export interface SchemaGateway {
-  /**
-   * Leaves out Anytype's own tech space, and one-to-one chats where the API says which spaces
-   * those are (v1 does, v2 does not).
-   */
+  /** Leaves out Anytype's own tech space. */
   listSpaces(apiKey: string): Promise<SchemaGatewayResult<SchemaSpaceList>>
 
   /**
@@ -61,25 +61,16 @@ export interface SchemaGateway {
    */
   listTypes(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaTypeRef[]>>
 
-  /**
-   * A select property's options. Empty where the API cannot list them (v1), and for a property
-   * or space that is gone or no longer granted.
-   */
+  /** A select property's options. Empty for a property or space that is gone or no longer granted. */
   listSelectOptions(
     apiKey: string,
     spaceId: string,
     propertyKey: string
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>>
 
-  /**
-   * Leaves out archived queries. Empty where the API serves none (v1), and for a space no
-   * longer granted.
-   */
+  /** Leaves out archived queries. Empty for a space no longer granted. */
   listQueries(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaQueryRef[]>>
 
-  /**
-   * Leaves out archived collections. Empty where the API serves none (v1), and for a space no
-   * longer granted.
-   */
+  /** Leaves out archived collections. Empty for a space no longer granted. */
   listCollections(apiKey: string, spaceId: string): Promise<SchemaGatewayResult<SchemaCollection[]>>
 }

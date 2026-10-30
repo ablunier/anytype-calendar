@@ -14,7 +14,7 @@ import { SubmitAuthCode } from './submit-auth-code'
 const VALID_CODE = '2749'
 const API_KEY = 'ak_secret_4c19'
 const START = 1_000
-const ACCESS = { apiVersion: 'v2', grant: null } as const
+const ACCESS = { grant: null } as const
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -29,7 +29,7 @@ function setup(initialCredential: AuthCredential | null = null) {
   let credential = initialCredential
 
   const gateway = {
-    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => 'ch_1'),
+    createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async (_challengeId, code) =>
       code === VALID_CODE ? { ok: true, apiKey: API_KEY, access: ACCESS } : { ok: false, failure: 'invalid-code' }
     )

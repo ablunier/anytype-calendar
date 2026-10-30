@@ -9,6 +9,8 @@ export function syncDetailText(t: TFunction, detail: SyncDetail | undefined): st
       return t('sync.failure.unauthorized')
     case 'unreachable':
       return t('sync.failure.unreachable')
+    case 'outdated':
+      return t('sync.failure.outdated')
     case 'elapsed':
       switch (detail.elapsed.key) {
         case 'justNow':

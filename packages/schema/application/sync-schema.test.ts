@@ -287,6 +287,16 @@ test.each(['listSpaces', 'listTypes', 'listQueries', 'listCollections'] as const
   }
 )
 
+test.each(['listSpaces', 'listTypes', 'listSelectOptions', 'listQueries', 'listCollections'] as const)(
+  'fails as outdated when %s finds Anytype too old to serve v2',
+  async (method) => {
+    const { gateway, store, syncSchema } = setup()
+    gateway[method].mockResolvedValue({ ok: false, failure: 'outdated' })
+    await syncSchema.execute()
+    expect(store.get()).toMatchObject({ phase: 'failed', failure: 'outdated' })
+  }
+)
+
 test('fails as unreachable when a request rejects', async () => {
   const { gateway, store, syncSchema } = setup()
   gateway.listTypes.mockRejectedValue(new TypeError('fetch failed'))

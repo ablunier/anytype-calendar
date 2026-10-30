@@ -34,7 +34,7 @@ export type EventsWriteFailure =
   /** The key may not write, or not to this space. */
   | { failure: 'not-granted' }
   | { failure: 'rate-limited' }
-  /** This Anytype takes no writes through the API: it serves only v1. */
+  /** This Anytype does not serve v2 of its API, which writes go through: it must be updated. */
   | { failure: 'unsupported' }
   /** Anytype refused the change itself, e.g. an object that is gone; `message` says why, in its words. */
   | { failure: 'rejected'; message: string }

@@ -8,6 +8,7 @@ import {
   type SchemaTypeChoice
 } from './selection'
 import type { SchemaSpace } from './space'
+import type { SchemaType } from './type'
 
 const TASK: SchemaTypeChoice = {
   spaceId: 'sp_1',
@@ -176,94 +177,61 @@ describe('rekeySchemaSelection', () => {
     types,
     queries: []
   })
-  const spaces: SchemaSpace[] = [
-    {
-      id: SPACE,
-      name: 'Personal',
-      types: [
-        {
-          key: '6a67272659c08021576f3127',
-          formerKey: 'book',
-          name: 'Book',
-          icon: null,
-          dateProperties: [
-            { key: 'start_date', name: 'Start date' },
-            { key: '6a6733dc59c08021576f32d2', formerKey: 'finished', name: 'Finished' }
-          ],
-          checkboxProperties: [{ key: '6a6733dc59c08021576f3300', formerKey: 'read', name: 'Read' }],
-          textProperties: [{ key: '6a6733dc59c08021576f3301', formerKey: 'shelf', name: 'Shelf' }],
-          panelProperties: [
-            { key: '6a6725f159c08021576f3119', formerKey: 'status', name: 'Status', format: 'select' },
-            { key: 'author', name: 'Author', format: 'text' },
-            { key: '6a6733dc59c08021576f3301', formerKey: 'shelf', name: 'Shelf', format: 'text' }
-          ],
-          selectProperties: [
-            {
-              key: '6a6725f159c08021576f3119',
-              formerKey: 'status',
-              name: 'Status',
-              options: [{ name: 'Reading', color: 'teal' }]
-            }
-          ]
-        },
-        {
-          key: 'task',
-          name: 'Task',
-          icon: null,
-          dateProperties: [{ key: 'due_date', name: 'Due date' }],
-          checkboxProperties: [{ key: 'done', name: 'Done' }],
-          textProperties: [],
-          panelProperties: [],
-          selectProperties: []
-        }
-      ],
-      queries: []
-    }
-  ]
+  const book: SchemaType = {
+    key: '6a67272659c08021576f3127',
+    formerKey: 'book',
+    name: 'Book',
+    icon: null,
+    dateProperties: [
+      { key: 'start_date', name: 'Start date' },
+      { key: '6a6733dc59c08021576f32d2', name: 'Finished' }
+    ],
+    checkboxProperties: [],
+    textProperties: [],
+    panelProperties: [],
+    selectProperties: []
+  }
+  const task: SchemaType = {
+    key: 'task',
+    name: 'Task',
+    icon: null,
+    dateProperties: [{ key: 'due_date', name: 'Due date' }],
+    checkboxProperties: [{ key: 'done', name: 'Done' }],
+    textProperties: [],
+    panelProperties: [],
+    selectProperties: []
+  }
+  const spaceOf = (...types: SchemaType[]): SchemaSpace[] => [{ id: SPACE, name: 'Personal', types, queries: [] }]
+  const spaces = spaceOf(book, task)
 
-  test('returns the selection itself when every key is current', () => {
-    const selection = selectionOf(choice('task', 'due_date'))
+  test('returns the selection itself when every type key is current', () => {
+    const selection = selectionOf(choice('task', 'due_date'), choice('6a67272659c08021576f3127', 'finished'))
     expect(rekeySchemaSelection(selection, spaces)).toBe(selection)
   })
 
-  test("rewrites a type and its properties from v1's spelling to the current one", () => {
-    expect(rekeySchemaSelection(selectionOf(choice('book', 'start_date', 'finished')), spaces)).toEqual(
-      selectionOf(choice('6a67272659c08021576f3127', 'start_date', '6a6733dc59c08021576f32d2'))
-    )
-  })
-
-  test('rewrites a property of a type whose key is current', () => {
-    const selection = selectionOf(choice('6a67272659c08021576f3127', 'finished'))
-    expect(rekeySchemaSelection(selection, spaces).types[0]?.from).toBe('6a6733dc59c08021576f32d2')
-  })
-
-  test('rewrites the property it colours by', () => {
-    const selection = selectionOf({ ...choice('book', 'start_date'), colourBy: 'status' })
-    expect(rekeySchemaSelection(selection, spaces).types[0]?.colourBy).toBe('6a6725f159c08021576f3119')
-  })
-
-  test('rewrites the properties the panel shows, keeping their order, and its Done and Location', () => {
+  test("rewrites a type from v1's spelling to the current one, leaving its properties as saved", () => {
     const selection = selectionOf({
-      ...choice('book', 'start_date'),
-      panel: ['shelf', 'author', 'status'],
+      ...choice('book', 'start_date', 'finished'),
+      colourBy: 'status',
+      panel: ['shelf', 'author'],
       done: 'read',
       location: 'shelf'
     })
-    expect(rekeySchemaSelection(selection, spaces).types[0]).toMatchObject({
-      panel: ['6a6733dc59c08021576f3301', 'author', '6a6725f159c08021576f3119'],
-      done: '6a6733dc59c08021576f3300',
-      location: '6a6733dc59c08021576f3301'
-    })
+    expect(rekeySchemaSelection(selection, spaces)).toEqual(
+      selectionOf({
+        ...choice('6a67272659c08021576f3127', 'start_date', 'finished'),
+        colourBy: 'status',
+        panel: ['shelf', 'author'],
+        done: 'read',
+        location: 'shelf'
+      })
+    )
   })
 
-  test('returns the selection itself when the panel, Done and Location are current', () => {
-    const selection = selectionOf({
-      ...choice('6a67272659c08021576f3127', 'start_date'),
-      panel: ['author'],
-      done: '6a6733dc59c08021576f3300',
-      location: null
-    })
-    expect(rekeySchemaSelection(selection, spaces)).toBe(selection)
+  test('keeps a choice whose key is current, though another type was once spelled that way', () => {
+    const bundled: SchemaType = { ...task, key: 'book', name: 'Book' }
+    const selection = selectionOf(choice('book', 'due_date'))
+    expect(rekeySchemaSelection(selection, spaceOf(book, bundled))).toBe(selection)
   })
 
   test('keeps a choice whose type or space the account does not have', () => {

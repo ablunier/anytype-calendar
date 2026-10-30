@@ -25,7 +25,7 @@ export interface Space {
   icon?: string
 }
 
-/** A collection a new object can be added to. Only v2 of the local API serves them. */
+/** A collection a new object can be added to. */
 export interface Collection {
   /** Anytype's object id. */
   key: string
@@ -120,7 +120,6 @@ export interface ObjectType {
   query?: QuerySource
   /** Date properties only. */
   props: DateProperty[]
-  /** Empty where the API cannot say what the options' colours are (v1). */
   selects: SelectProperty[]
   checkboxes: NamedProperty[]
   texts: NamedProperty[]
@@ -285,7 +284,7 @@ export type CalendarView = 'month' | 'week' | 'day'
  */
 export type ConnectedScreen = 'success' | 'onboarding' | 'config' | 'calendar'
 
-export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key'
+export type AuthFailureKind = 'invalid-code' | 'expired' | 'unreachable' | 'invalid-key' | 'outdated'
 
 export type AuthView =
   | { stage: 'start' }
@@ -318,6 +317,7 @@ export type SyncDetail =
   | { kind: 'elapsed'; elapsed: Elapsed }
   | { kind: 'unauthorized' }
   | { kind: 'unreachable' }
+  | { kind: 'outdated' }
 
 /** How the last read of the account went, ready for SyncStatus. */
 export interface SyncView {
@@ -334,24 +334,18 @@ export interface ApiKeyView {
   issuedAt: number
 }
 
-/**
- * What the connected key reaches. v1 cannot tell, so it says only which API is read through;
- * under v2 a key with no grant of its own reaches every space and may edit.
- */
-export type ApiAccessView =
-  | { version: 'v1' }
-  | {
-      version: 'v2'
-      /** Null: every space, including ones created later. */
-      spaceCount: number | null
-      canEdit: boolean
-    }
+/** What the connected key reaches. A key with no grant of its own reaches every space and may edit. */
+export interface ApiAccessView {
+  /** Null: every space, including ones created later. */
+  spaceCount: number | null
+  canEdit: boolean
+}
 
 /**
  * Whether the calendar can edit objects: `editable`, or why not — the key was granted read
- * only, Anytype serves only v1, or Anytype has not yet been asked what the key may do.
+ * only, or Anytype has not yet been asked what the key may do.
  */
-export type EditAccess = 'editable' | 'read-only' | 'needs-v2' | 'checking'
+export type EditAccess = 'editable' | 'read-only' | 'checking'
 
 /** A day, `YYYY-MM-DD`, and for a time grid the minute of it from midnight. */
 export interface CalendarSlot {

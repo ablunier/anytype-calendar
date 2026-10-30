@@ -7,8 +7,7 @@ export interface SchemaQueryView {
 
 /**
  * A query (Anytype's "set") over one of the space's dated types. Its objects are that type's,
- * narrowed by the view read through, so they are placed by the type's date properties. Only
- * v2 of the local API serves queries.
+ * narrowed by the view read through, so they are placed by the type's date properties.
  */
 export interface SchemaQuery {
   /** Anytype's object id. */

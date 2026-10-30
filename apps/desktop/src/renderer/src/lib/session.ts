@@ -43,11 +43,9 @@ export function apiKeyFor(session: SessionSnapshot): ApiKeyView | null {
 /** Null until connected, and until Anytype has been asked what a restored key reaches. */
 export function apiAccessFor(session: SessionSnapshot): ApiAccessView | null {
   if (session.phase !== 'connected' || session.access === null) return null
-  const { apiVersion, grant } = session.access
-  if (apiVersion === 'v1') return { version: 'v1' }
-  if (grant === null) return { version: 'v2', spaceCount: null, canEdit: true }
+  const { grant } = session.access
+  if (grant === null) return { spaceCount: null, canEdit: true }
   return {
-    version: 'v2',
     spaceCount: grant.allSpaces ? null : grant.spaceIds.length,
     canEdit: grant.permission === 'readwrite'
   }
@@ -55,6 +53,5 @@ export function apiAccessFor(session: SessionSnapshot): ApiAccessView | null {
 
 export function editAccessFor(session: SessionSnapshot): EditAccess {
   if (session.phase !== 'connected' || session.access === null) return 'checking'
-  if (authAccessCanWrite(session.access)) return 'editable'
-  return session.access.apiVersion === 'v1' ? 'needs-v2' : 'read-only'
+  return authAccessCanWrite(session.access) ? 'editable' : 'read-only'
 }

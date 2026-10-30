@@ -2,6 +2,7 @@ import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   createAuthChallenge,
   nextAuthSession,
+  type AuthChallengeResult,
   type AuthEvent,
   type AuthGateway,
   type AuthSession
@@ -37,17 +38,23 @@ export class StartAuthConnection {
 
   async execute(): Promise<void> {
     const origin = this.#guard.current()
-    let challengeId: string
+    let result: AuthChallengeResult
     try {
-      challengeId = await this.#gateway.createChallenge(this.#appName)
+      result = await this.#gateway.createChallenge(this.#appName)
     } catch {
-      if (this.#guard.isCurrent(origin)) this.#guard.dispatch({ type: 'challenge-failed' })
+      if (this.#guard.isCurrent(origin)) {
+        this.#guard.dispatch({ type: 'challenge-failed', failure: 'unreachable' })
+      }
       return
     }
     if (!this.#guard.isCurrent(origin)) return
+    if (!result.ok) {
+      this.#guard.dispatch({ type: 'challenge-failed', failure: result.failure })
+      return
+    }
     this.#guard.dispatch({
       type: 'challenge-issued',
-      challenge: createAuthChallenge(challengeId, this.#now())
+      challenge: createAuthChallenge(result.challengeId, this.#now())
     })
   }
 }

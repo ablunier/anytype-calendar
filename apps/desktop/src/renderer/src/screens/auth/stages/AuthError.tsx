@@ -46,6 +46,12 @@ function copyFor(t: TFunction, failure: AuthFailureKind): FailureCopy {
       body: t('auth.error.invalidKey.body'),
       detail: t('auth.error.invalidKey.detail'),
       retry: t('auth.error.invalidKey.retry')
+    },
+    outdated: {
+      title: t('auth.error.outdated.title'),
+      body: t('auth.error.outdated.body'),
+      detail: t('auth.error.outdated.detail'),
+      retry: t('auth.error.outdated.retry')
     }
   }
   return table[failure]

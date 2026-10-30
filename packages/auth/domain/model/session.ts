@@ -9,6 +9,8 @@ export type AuthFailure =
   | 'unreachable'
   /** A pasted key Anytype does not recognise. */
   | 'invalid-key'
+  /** This Anytype does not serve v2 of its local API: it must be updated. */
+  | 'outdated'
 
 /** Grouped so a code never appears without the challenge it was submitted against. */
 export interface AuthAttempt {
@@ -44,8 +46,7 @@ export type AuthSessionPhase = AuthSession['phase']
 
 export type AuthEvent =
   | { type: 'challenge-issued'; challenge: AuthChallenge }
-  /** Opening a challenge can only fail by Anytype being unreachable. */
-  | { type: 'challenge-failed' }
+  | { type: 'challenge-failed'; failure: 'unreachable' | 'outdated' }
   /** `at` decides whether the code arrived before its challenge expired. */
   | { type: 'code-submitted'; code: string; at: number }
   | { type: 'exchange-succeeded'; key: ApiKeyInfo; access: AuthAccess }
@@ -72,7 +73,7 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
       return canOpenChallenge(session) ? { phase: 'awaiting-code', challenge: event.challenge } : session
 
     case 'challenge-failed':
-      return canOpenChallenge(session) ? { phase: 'failed', failure: 'unreachable' } : session
+      return canOpenChallenge(session) ? { phase: 'failed', failure: event.failure } : session
 
     case 'code-submitted': {
       if (session.phase !== 'awaiting-code' || !isWellFormedAuthCode(event.code)) return session

@@ -12,10 +12,7 @@ import { AuthSessionStore } from './session-store'
 
 const API_KEY = 'ak_secret_4c19'
 const KEY = { hint: '4c19', issuedAt: 42 }
-const GRANTED: AuthAccess = {
-  apiVersion: 'v2',
-  grant: { allSpaces: false, spaceIds: ['sp_1'], permission: 'read' }
-}
+const GRANTED: AuthAccess = { grant: { allSpaces: false, spaceIds: ['sp_1'], permission: 'read' } }
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -58,10 +55,12 @@ describe('CheckAuthAccess', () => {
     expect(store.get()).toEqual({ phase: 'signed-out' })
   })
 
-  test('changes nothing when the key is refused, or Anytype cannot be reached', async () => {
+  test('changes nothing when the key is refused, Anytype is too old, or cannot be reached', async () => {
     const { store, gateway, checkAuthAccess } = setup()
     const before = store.get()
     gateway.verifyApiKey.mockResolvedValueOnce({ ok: false, failure: 'invalid-key' })
+    await checkAuthAccess.execute()
+    gateway.verifyApiKey.mockResolvedValueOnce({ ok: false, failure: 'outdated' })
     await checkAuthAccess.execute()
     gateway.verifyApiKey.mockRejectedValueOnce(new TypeError('fetch failed'))
     await checkAuthAccess.execute()
@@ -100,7 +99,7 @@ describe('CheckAuthAccess', () => {
     gateway.verifyApiKey.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
     const runs = [checkAuthAccess.execute(), checkAuthAccess.execute()]
     await vi.waitFor(() => expect(gateway.verifyApiKey).toHaveBeenCalledTimes(2))
-    first.resolve({ ok: true, access: { apiVersion: 'v2', grant: null } })
+    first.resolve({ ok: true, access: { grant: null } })
     second.resolve({ ok: true, access: GRANTED })
     await Promise.all(runs)
     expect(store.get()).toEqual({ phase: 'connected', key: KEY, access: GRANTED })

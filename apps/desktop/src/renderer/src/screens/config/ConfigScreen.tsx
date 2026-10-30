@@ -180,17 +180,11 @@ function Settings({
                 <NotGrantedSpacesHint />
               </div>
             ) : null}
-            {read && access?.version === 'v1' ? (
-              <p className="mb-12 type-caption text-tiny text-ink-tertiary">
-                {t('config.queriesNeedV2')}
-              </p>
-            ) : null}
             {read ? (
               <SpacesAndTypes
                 spaces={spaces}
                 types={types}
                 selection={selection}
-                details={access?.version !== 'v1'}
                 syncing={syncing}
                 saveFailed={saveFailed}
                 onReread={onReread}
@@ -304,7 +298,6 @@ interface SpacesAndTypesProps {
   spaces: Space[]
   types: ObjectType[]
   selection: TypeSelection
-  details: boolean
   syncing: boolean
   saveFailed: boolean
   onReread: () => void
@@ -315,7 +308,6 @@ function SpacesAndTypes({
   spaces,
   types,
   selection,
-  details,
   syncing,
   saveFailed,
   onReread,
@@ -356,7 +348,6 @@ function SpacesAndTypes({
             types={typesInSpace(types, space.key)}
             queries={queriesInSpace(types, space.key)}
             selection={selection}
-            details={details}
           />
         ))}
       </div>

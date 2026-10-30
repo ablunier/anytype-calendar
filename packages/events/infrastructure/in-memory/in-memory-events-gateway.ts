@@ -29,7 +29,7 @@ export interface InMemoryEventsObject {
   /** Option names by select property key. */
   options?: Record<string, string>
   /**
-   * Every other property's value by key, as a v2 search row gives it: option names and linked
+   * Every other property's value by key, as a search row gives it: option names and linked
    * ids in lists. A checkbox or text other than Anytype's own Done and Location is read from
    * here.
    */
@@ -401,7 +401,7 @@ function locationOf(object: InMemoryEventsObject, key: string): string | undefin
   return typeof value === 'string' && value !== '' ? value : undefined
 }
 
-/** As AnytypeV2EventsGateway reads a row: nothing for no value, or one of another shape. */
+/** As AnytypeEventsGateway reads a row: nothing for no value, or one of another shape. */
 function detailOf(object: InMemoryEventsObject, { key, format }: EventsPanelProperty): EventsDetailRef[] {
   const value = object.values?.[key]
   switch (format) {

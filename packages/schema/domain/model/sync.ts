@@ -5,6 +5,8 @@ export type SchemaSyncFailure =
   | 'unreachable'
   /** No key is stored, or Anytype refused it — usually deleted in Anytype's settings. */
   | 'unauthorized'
+  /** This Anytype does not serve v2 of its local API: it must be updated. The key is kept. */
+  | 'outdated'
 
 export interface SchemaSyncResult {
   spaces: SchemaSpace[]

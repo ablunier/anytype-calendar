@@ -4,39 +4,39 @@ Standard electron-vite three-process layout:
 - `src/main` — Electron main process and the **composition root**. `composition.ts` is
   the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
   needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
-  through v2 where served (the user then picks the spaces and read/write access in Anytype)
-  and v1 where not, exchanging a code with the major that issued its challenge — and keeps
+  through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
-  warning. Every context's Anytype gateway shares one `AnytypeClient` and one `AnytypeV1Client`. Schema and events
+  warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
   which the composition root adapts from auth's credential repository; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location, the colour-by property and the panel's only where the last schema
-  sync saw the type — for a query, the type it runs over — with them, since v2 refuses a search
-  `field` the space lacks), and places a
+  sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
+  `field` the space lacks; a saved From or To that sync saw the type without reads as the type's
+  own dates, as the renderer draws it, since a filter on it would match nothing), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`
   replacing its access — reads nothing again); a successful schema sync and every saved
   selection reload that span; and a window gaining focus re-runs both, at most once per 30 s
   (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
-  connected key reaches (`verifyApiKey`, which always re-asks the probe, so a grant changed in
-  Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
-  and refreshes it on focus. The connected session's `access` is `{ apiVersion, grant }`; a
-  null `grant` is a legacy key, or v1, which cannot say, and reaches every space with write
-  access. `LoadEventsSpan` lets the
+  connected key reaches (`verifyApiKey`, which always asks `whoami` afresh, so a grant changed
+  in Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
+  and refreshes it on focus; an outdated or unreachable Anytype leaves it as it is. The
+  connected session's `access` is `{ grant }`; a null `grant` is a legacy key, paired before
+  grants existed, which reaches every space with write access. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
   result. Edits (`RescheduleEventsObject`, `CreateEventsObject`, `CompleteEventsObject`) write
-  through `EventsWriter` — `AnytypeV2EventsWriter`, or in fake mode the same
+  through `EventsWriter` — `AnytypeEventsWriter`, or in fake mode the same
   `InMemoryEventsGateway` that reads, so an edit shows on the next read — and then re-run
   `LoadEventsSpan`. Meanwhile the moved or ticked object is held in `EventsSpanStore` as an
   edit in flight: `get()` is the load the use cases dispatch to, `shown()` draws the edits over
   it and is what IPC pushes, so a drag never snaps back while Anytype is asked, and a refused
   write drops it. `events-ipc.ts` validates each request (`events/edit-requests.ts`) and
-  answers `not-granted` without writing unless `authAccessCanWrite(session.access)`: v2 and a
+  answers `not-granted` without writing unless `authAccessCanWrite(session.access)`: a
   read/write grant, or no grant of its own. The renderer reads the same rule as an
   `EditAccess` (`editAccessFor`, `lib/session.ts`), which turns dragging off and has a
   double-click say why; every failed edit is a toast (`lib/edit-text.ts`). A move is

@@ -10,8 +10,6 @@ export interface SchemaSelectOption {
 export interface SchemaSelectProperty {
   key: string
   name: string
-  /** How v1 of the local API spelled the key, where v2 spells it otherwise. */
-  formerKey?: string
   /** Never empty: a select with no options has nothing to colour by. */
   options: SchemaSelectOption[]
 }

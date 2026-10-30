@@ -17,11 +17,8 @@ const challenge = createAuthChallenge('ch_1', 0)
 const attempt = { challenge, code: '2749' }
 const freshChallenge = createAuthChallenge('ch_2', 1_000)
 const key: ApiKeyInfo = { hint: '4c19', issuedAt: 5 }
-const access: AuthAccess = { apiVersion: 'v2', grant: null }
-const narrowed: AuthAccess = {
-  apiVersion: 'v2',
-  grant: { allSpaces: false, spaceIds: ['sp_1'], permission: 'read' }
-}
+const access: AuthAccess = { grant: null }
+const narrowed: AuthAccess = { grant: { allSpaces: false, spaceIds: ['sp_1'], permission: 'read' } }
 
 const sessions = deepFreeze({
   signedOut: { phase: 'signed-out' },
@@ -39,7 +36,8 @@ const sessions = deepFreeze({
 
 const events = deepFreeze({
   challengeIssued: { type: 'challenge-issued', challenge: freshChallenge },
-  challengeFailed: { type: 'challenge-failed' },
+  challengeFailed: { type: 'challenge-failed', failure: 'unreachable' },
+  challengeOutdated: { type: 'challenge-failed', failure: 'outdated' },
   codeSubmitted: { type: 'code-submitted', code: '2749', at: 1_000 },
   exchangeSucceeded: { type: 'exchange-succeeded', key, access },
   exchangeFailed: { type: 'exchange-failed', failure: 'invalid-code' },
@@ -69,6 +67,11 @@ const transitions: Array<[SessionName, EventName, AuthSession]> = [
   ['failedAttempt', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
   ['failedUnreachable', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
   ['failedKey', 'challengeFailed', { phase: 'failed', failure: 'unreachable' }],
+  ['signedOut', 'challengeOutdated', { phase: 'failed', failure: 'outdated' }],
+  ['awaitingCode', 'challengeOutdated', { phase: 'failed', failure: 'outdated' }],
+  ['failedAttempt', 'challengeOutdated', { phase: 'failed', failure: 'outdated' }],
+  ['failedUnreachable', 'challengeOutdated', { phase: 'failed', failure: 'outdated' }],
+  ['failedKey', 'challengeOutdated', { phase: 'failed', failure: 'outdated' }],
 
   ['awaitingCode', 'codeSubmitted', { phase: 'verifying', attempt }],
 
@@ -141,7 +144,7 @@ describe('nextAuthSession', () => {
   })
 
   test('keeps the same session when a check finds the access unchanged', () => {
-    const same = { type: 'access-checked', access: { apiVersion: 'v2', grant: null } } as const
+    const same = { type: 'access-checked', access: { grant: null } } as const
     expect(nextAuthSession(sessions.connected, same)).toBe(sessions.connected)
   })
 

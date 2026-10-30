@@ -29,7 +29,14 @@ export interface SyncSchemaDeps {
 }
 
 /** Thrown inside a sync to stop it at the first refused request. */
-class Unauthorized extends Error {}
+class Refused extends Error {
+  readonly failure: 'unauthorized' | 'outdated'
+
+  constructor(failure: 'unauthorized' | 'outdated') {
+    super(failure)
+    this.failure = failure
+  }
+}
 
 /**
  * A sync's result is applied only if the store still holds the exact `syncing` state it
@@ -58,7 +65,7 @@ export class SyncSchema {
     try {
       read = await this.#fetchSpaces()
     } catch (error) {
-      const failure = error instanceof Unauthorized ? 'unauthorized' : 'unreachable'
+      const failure = error instanceof Refused ? error.failure : 'unreachable'
       if (this.#guard.isCurrent(syncing)) {
         this.#guard.dispatch({ type: 'sync-failed', failure, at: this.#now() })
       }
@@ -71,7 +78,7 @@ export class SyncSchema {
 
   async #fetchSpaces(): Promise<{ spaces: SchemaSpace[]; hasNotGrantedSpaces: boolean }> {
     const apiKey = await this.#apiKeys.current()
-    if (apiKey === null) throw new Unauthorized()
+    if (apiKey === null) throw new Refused('unauthorized')
 
     const listed: SchemaSpaceList = accepted(await this.#gateway.listSpaces(apiKey))
     const spaces = await Promise.all(
@@ -113,8 +120,7 @@ export class SyncSchema {
         selectProperties: properties.flatMap((property): SchemaSelectProperty[] => {
           const found = property.format === 'select' ? options.get(property.key) : undefined
           if (!found || found.length === 0) return []
-          const select = { key: property.key, name: property.name, options: found }
-          return [property.formerKey === undefined ? select : { ...select, formerKey: property.formerKey }]
+          return [{ key: property.key, name: property.name, options: found }]
         })
       }
       return formerKey === undefined ? type : { ...type, formerKey }
@@ -155,6 +161,6 @@ function hasOptions(format: string): boolean {
 }
 
 function accepted<T>(result: SchemaGatewayResult<T>): T {
-  if (!result.ok) throw new Unauthorized()
+  if (!result.ok) throw new Refused(result.failure)
   return result.value
 }

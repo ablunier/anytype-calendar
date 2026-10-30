@@ -9,7 +9,7 @@ export interface EventsObjectRef {
   start: number
   /** Epoch milliseconds: the To value; null when the source has no To property or the object leaves it empty. */
   end: number | null
-  /** Each left off where the source has no such property, the object no value for it, or the API does not read it (v1). */
+  /** Each left off where the source has no such property, or the object no value for it. */
   done?: boolean
   location?: string
   /** The name of the option picked in the source's `colourBy` property. */
@@ -19,10 +19,13 @@ export interface EventsObjectRef {
 }
 
 /**
- * A refused key is an expected answer, not an error, so it is a value; only a transport
- * breakdown or a response Anytype should never give rejects the promise.
+ * A refused key, or an Anytype too old to serve v2 of its API, is an expected answer, not an
+ * error, so it is a value; only a transport breakdown or a response Anytype should never give
+ * rejects the promise.
  */
-export type EventsGatewayResult<T> = { ok: true; value: T } | { ok: false; failure: 'unauthorized' }
+export type EventsGatewayResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; failure: 'unauthorized' | 'outdated' }
 
 export interface EventsGateway {
   /**
@@ -39,7 +42,7 @@ export interface EventsGateway {
 
   /**
    * The objects and space members of the space with these ids, for their names. One that is
-   * gone, or cannot be read, is left out; so is every one where the API cannot read them (v1).
+   * gone, or cannot be read, is left out.
    */
   listLinkedObjects(
     apiKey: string,

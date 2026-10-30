@@ -24,7 +24,7 @@ export interface InMemorySchemaSpace {
   /** By property key: as in Anytype, a property's options are the space's, not a type's. */
   options?: Record<string, SchemaSelectOption[]>
   queries?: SchemaQueryRef[]
-  /** Backlinks are read only for repeated names, as AnytypeV2SchemaGateway reads them. */
+  /** Backlinks are read only for repeated names, as AnytypeSchemaGateway reads them. */
   collections?: SchemaCollection[]
 }
 

@@ -102,7 +102,7 @@ export function spacesFor(snapshot: SchemaSnapshot): Space[] {
   )
 }
 
-/** By space key, the collections of the last successful sync; empty where there are none (v1). */
+/** By space key, the collections of the last successful sync. */
 export function collectionsBySpaceFor(snapshot: SchemaSnapshot): Map<string, Collection[]> {
   return new Map(
     syncedSpaces(snapshot).map((space) => [
@@ -201,7 +201,7 @@ export function syncViewFor(snapshot: SchemaSnapshot, now: number): SyncView {
     case 'failed':
       return {
         state: 'error',
-        detail: { kind: snapshot.failure === 'unauthorized' ? 'unauthorized' : 'unreachable' },
+        detail: { kind: snapshot.failure },
         hasResult
       }
   }

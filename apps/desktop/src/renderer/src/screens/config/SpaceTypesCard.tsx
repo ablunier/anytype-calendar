@@ -10,16 +10,13 @@ export interface SpaceTypesCardProps {
   types: ObjectType[]
   queries: ObjectType[]
   selection: TypeSelection
-  /** Whether types can pick their Done, Location and panel properties: only under v2. */
-  details: boolean
 }
 
 export function SpaceTypesCard({
   space,
   types,
   queries,
-  selection,
-  details
+  selection
 }: SpaceTypesCardProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = selection.spaceKeys.includes(space.key)
@@ -29,7 +26,6 @@ export function SpaceTypesCard({
         type={type}
         checked={selection.typeKeys.includes(type.key)}
         mapping={selection.mappingFor(type)}
-        details={details}
         last={last}
         onToggle={() => selection.toggleType(type.key)}
         onFromChange={(value) => selection.setFrom(type.key, value)}

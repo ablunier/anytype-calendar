@@ -34,8 +34,6 @@ export interface SchemaPanelProperty {
   key: string
   name: string
   format: SchemaPanelFormat
-  /** How v1 of the local API spelled the key, where v2 spells it otherwise. */
-  formerKey?: string
   /** A select's or multi-select's options, which name and colour its values. */
   options?: SchemaSelectOption[]
 }
@@ -44,7 +42,6 @@ export interface SchemaPanelProperty {
 export interface SchemaNamedProperty {
   key: string
   name: string
-  formerKey?: string
 }
 
 /**
@@ -53,19 +50,16 @@ export interface SchemaNamedProperty {
  * draws anyway.
  */
 export function panelProperties(properties: readonly SchemaProperty[]): Omit<SchemaPanelProperty, 'options'>[] {
-  return properties.flatMap(({ key, name, format, formerKey, hidden }) => {
-    if (hidden === true || DRAWN_KEYS.has(key) || !isPanelFormat(format)) return []
-    const property = { key, name, format }
-    return [formerKey === undefined ? property : { ...property, formerKey }]
-  })
+  return properties.flatMap(({ key, name, format, hidden }) =>
+    hidden === true || DRAWN_KEYS.has(key) || !isPanelFormat(format) ? [] : [{ key, name, format }]
+  )
 }
 
 /** In the order given; the object's name is never one, since the panel draws it as its title. */
 export function namedProperties(properties: readonly SchemaProperty[], format: string): SchemaNamedProperty[] {
-  return properties.flatMap(({ key, name, format: own, formerKey }) => {
-    if (own !== format || DRAWN_KEYS.has(key)) return []
-    return [formerKey === undefined ? { key, name } : { key, name, formerKey }]
-  })
+  return properties.flatMap(({ key, name, format: own }) =>
+    own !== format || DRAWN_KEYS.has(key) ? [] : [{ key, name }]
+  )
 }
 
 function isPanelFormat(format: string): format is SchemaPanelFormat {
