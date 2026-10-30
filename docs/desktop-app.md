@@ -15,7 +15,8 @@ Standard electron-vite three-process layout:
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location, the colour-by property and the panel's only where the last schema
   sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
-  `field` the space lacks), and places a
+  `field` the space lacks; a saved From or To that sync saw the type without reads as the type's
+  own dates, as the renderer draws it, since a filter on it would match nothing), and places a
   span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
   where the contexts are linked: entering `connected` syncs the schema and loads the span on
   screen, and leaving it resets both (a session that stays connected — `access-checked`

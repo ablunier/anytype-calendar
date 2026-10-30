@@ -102,6 +102,51 @@ test('keeps the chosen types of chosen spaces only', () => {
   ])
 })
 
+test.each([
+  ['From', { from: 'v1_due_date' }],
+  ['To', { to: 'v1_end_date' }]
+])('reads a type by its own dates when the synced type no longer has the saved %s', (_, stale) => {
+  expect(
+    eventsSourcesFor(
+      { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, ...stale }], queries: [] } },
+      SYNCED
+    )
+  ).toMatchObject([{ typeKey: 'task', from: 'due_date', to: null, includesTime: false }])
+})
+
+test("reads a query by its type's own dates when that type no longer has the saved From", () => {
+  expect(
+    eventsSourcesFor(
+      {
+        phase: 'saved',
+        selection: { spaceIds: ['sp_1'], types: [], queries: [{ ...OPEN_TASKS, from: 'v1_due_date' }] }
+      },
+      SYNCED
+    )
+  ).toMatchObject([{ queryId: 'q_open', from: 'due_date', to: null, includesTime: false }])
+})
+
+test('keeps the Done, Location and colours of a type read by its own dates', () => {
+  expect(
+    eventsSourcesFor(
+      { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, from: 'v1_due_date' }], queries: [] } },
+      SYNCED
+    )
+  ).toMatchObject([{ done: 'done', location: 'location', colourBy: { key: 'priority' } }])
+})
+
+test('keeps the saved dates of a type the sync did not see', () => {
+  expect(
+    eventsSourcesFor(
+      {
+        phase: 'saved',
+        selection: { spaceIds: ['sp_1'], types: [{ ...TASK, typeKey: 'gone', from: 'v1_due_date' }], queries: [] }
+      },
+      SYNCED
+    )
+  ).toMatchObject([{ typeKey: 'gone', from: 'v1_due_date', includesTime: true }])
+})
+
 test('reads Done, Location and the chosen colours where the synced type has them', () => {
   expect(
     eventsSourcesFor({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [TASK], queries: [] } }, SYNCED)

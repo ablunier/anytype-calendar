@@ -61,7 +61,8 @@ belongs there too:
   app read through v1 may name a type by it: the type document keeps that key as
   `type_settings.api_key`, and `rekeySchemaSelection` rewrites such a choice after each sync
   (`formerKey` on types). A property's v1 key was known only to v1, so properties are not
-  rekeyed: one that no longer resolves falls back as any stale property does.
+  rekeyed: a From or To that no longer resolves reads as the type's own dates, as any stale
+  one does (`eventsSourcesFor`).
 - Search takes `{ type, filters, fields }`. Structured `filters` use the long condition names
   (`greater_or_equal`, `not_empty` …) and dates as **unix seconds**, and still round date
   comparisons out to whole local days; `less_or_equal` still matches an empty date. The
