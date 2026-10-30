@@ -5,18 +5,12 @@ import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerFeedsIpc } from './feeds/feeds-ipc'
-import { registerLanguageIpc } from './language/language-ipc'
+import { registerPreferencesIpc } from './preferences/preference-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
-import { registerThemeIpc } from './theme/theme-ipc'
-import { registerTimeFormatIpc } from './time-format/time-format-ipc'
 import { startUpdates } from './updates/auto-update'
 import { registerUpdateIpc } from './updates/update-ipc'
-import { registerCalendarVisibilityIpc } from './calendar-visibility/calendar-visibility-ipc'
-import { registerWeekNumbersIpc } from './week-numbers/week-numbers-ipc'
-import { registerCalendarViewIpc } from './calendar-view/calendar-view-ipc'
-import { registerWeekStartIpc } from './week-start/week-start-ipc'
 import icon from '../../resources/icon.png?asset'
 
 const isSquirrelEvent = handleSquirrelEvent()
@@ -58,36 +52,30 @@ app.whenReady().then(async () => {
 
   electronApp.setAppUserModelId(squirrelAppUserModelId)
 
-  const services = composeServices()
-  registerAuthIpc(services)
-  registerSchemaIpc(services)
-  registerEventsIpc(services)
-  registerFeedsIpc(services)
-  registerThemeIpc(services)
-  registerLanguageIpc(services)
-  registerWeekNumbersIpc(services)
-  registerCalendarVisibilityIpc(services)
-  registerWeekStartIpc(services)
-  registerTimeFormatIpc(services)
-  registerCalendarViewIpc(services)
+  const { auth, schema, events, feeds, preferences, updates } = composeServices()
+  registerAuthIpc(auth)
+  registerSchemaIpc(schema)
+  registerEventsIpc(events, { ...auth, ...schema })
+  registerFeedsIpc(feeds)
+  registerPreferencesIpc(preferences)
   registerShellIpc()
-  registerUpdateIpc(services)
+  registerUpdateIpc(updates)
   // The span a launch opens on is read from these two, and restoring the session is what
   // starts that first load, so they have to be in place before it runs. The feeds are drawn
   // over that span too, before Anytype has been asked anything.
-  await Promise.all([services.loadCalendarView.execute(), services.loadWeekStart.execute()])
-  services.showFeedsForSpan()
+  await Promise.all([preferences.calendarView.load(), preferences.weekStart.load()])
+  feeds.showFeedsForSpan()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([
-    services.restoreAuthSession.execute(),
-    services.loadSchemaSelection.execute(),
-    services.loadTheme.execute(),
-    services.loadLanguage.execute(),
-    services.loadWeekNumbers.execute(),
-    services.loadCalendarVisibility.execute(),
-    services.loadTimeFormat.execute(),
+    auth.restoreAuthSession.execute(),
+    schema.loadSchemaSelection.execute(),
+    preferences.theme.load(),
+    preferences.language.load(),
+    preferences.weekNumbers.load(),
+    preferences.calendarVisibility.load(),
+    preferences.timeFormat.load(),
     // Only the copies cached at the last read: the network is asked once a window is open.
-    services.loadFeeds.execute()
+    feeds.loadFeeds.execute()
   ])
 
   app.on('browser-window-created', (_, window) => {
@@ -95,8 +83,8 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
-  startUpdates(services.checkForUpdate)
-  void services.refreshFeeds.execute()
+  startUpdates(updates.checkForUpdate)
+  void feeds.refreshFeeds.execute()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

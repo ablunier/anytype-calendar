@@ -1,27 +1,35 @@
 # apps/desktop structure
 
 Standard electron-vite three-process layout:
-- `src/main` — Electron main process and the **composition root**. `composition.ts` is
-  the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
-  needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
+- `src/main` — Electron main process and the **composition root**. Adapters are chosen
+  only in the per-context modules (`auth/compose-auth.ts`, `schema/compose-schema.ts`,
+  `events/compose-events.ts`, `feeds/compose-feeds.ts`), each switching once on what
+  `anytype/compose-anytype.ts` returns: `{ kind: 'fake' }` under
+  `ANYTYPE_CALENDAR_FAKE_AUTH=1`, or `{ kind: 'real', client }`. `composition.ts` calls them
+  all, builds the `app-config.json` they share, and must run after `app` is ready
+  (`safeStorage` needs that). It returns `{ auth, schema, events, feeds, preferences, updates }`,
+  each group's type inferred from its compose function, and each `register*Ipc` takes only its
+  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
   through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
   warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
-  which the composition root adapts from auth's credential repository; events reads which
+  which `compose-auth.ts` adapts from auth's credential repository as `apiKeys`; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location, the colour-by property and the panel's only where the last schema
   sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
   `field` the space lacks; a saved From or To that sync saw the type without reads as the type's
   own dates, as the renderer draws it, since a filter on it would match nothing), and places a
-  span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
-  where the contexts are linked: entering `connected` syncs the schema and loads the span on
-  screen, and leaving it resets both (a session that stays connected — `access-checked`
-  replacing its access — reads nothing again); a successful schema sync and every saved
-  selection reload that span; and a window gaining focus re-runs both, at most once per 30 s
+  span in the machine's time zone (`LocalEventsTimeZone`). The contexts are linked in
+  `context-links.ts`, which imports neither Electron nor Node core and is tested in the `main`
+  project: entering `connected` syncs the schema and loads the span on screen, and leaving it
+  resets both (a session that stays connected — `access-checked` replacing its access — reads
+  nothing again); a successful schema sync and every saved selection reload that span, and a
+  sync rekeys the selection; an `unauthorized` schema or span failure signs out while connected
+  (`outdated` and `unreachable` keep the key); and a window gaining focus re-runs both, at most once per 30 s
   (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
   connected key reaches (`verifyApiKey`, which always asks `whoami` afresh, so a grant changed
   in Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
@@ -134,7 +142,7 @@ Standard electron-vite three-process layout:
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
     (`objectTypeKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
-    the `calendarVisibility` section (`main/calendar-visibility/`), as are the spaces folded in the tree
+    the `calendarVisibility` section (`main/preferences/calendar-visibility.ts`), as are the spaces folded in the tree
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
     not the last one pushed, so two toggles in a row both count. The mini month follows the span on
@@ -142,22 +150,26 @@ Standard electron-vite three-process layout:
     clicked day asks main for `spanFor(span.kind, date)`; it marks no days that hold objects.
     The theme toggle lives in the
     calendar's top bar only; other screens follow the system theme until it is used.
+    Each of these preferences is one `preference({ section, initial, parse })`
+    (`main/preferences/preference.ts`): a store, a load and a save over its section of
+    `app-config.json`, served by `registerPreferenceIpc`. A parser returns `undefined` for what is
+    not a value, so `null` can be one; a load falls back to the initial value.
     The week-numbers preference (Settings → Calendar, off by default; ISO weeks) is saved like the
-    theme, in the `weekNumbers` section of `app-config.json` (`main/week-numbers/`). The month grid
+    theme, in the `weekNumbers` section of `app-config.json` (`main/preferences/week-numbers.ts`). The month grid
     draws it in a gutter beside each week row, never as a column of it: bars are positioned as
     `100% / 7` of that row. The first day of the week (Settings → Calendar, Monday by default) is
-    saved the same way, in the `weekStart` section (`main/week-start/`), as an index with
+    saved the same way, in the `weekStart` section (`main/preferences/week-start.ts`), as an index with
     Monday 0 and Sunday 6; the grid, its headers and its weekend shading follow it, and a row's
     week number is that of its Thursday.
     The time format (Settings → Calendar, 24-hour by default) is saved likewise, in the `timeFormat`
-    section (`main/time-format/`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
+    section (`main/preferences/time-format.ts`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
     `formatTime` (`lib/calendar.ts`) draws them, reading the format from `TimeFormatContext`.
     The view a launch opens on (Settings → Calendar, the month by default) is saved the same
-    way, in the `calendarView` section (`main/calendar-view/`) as `'month' | 'week' | 'day'` —
+    way, in the `calendarView` section (`main/preferences/calendar-view.ts`) as `'month' | 'week' | 'day'` —
     the same three names an `EventsSpan`'s `kind` uses, so there is one vocabulary for them.
     The app is localized into English, Spanish and Galician (`react-i18next`, resources under
     `renderer/src/i18n/locales/`). The language (Settings → Calendar) follows the OS language
-    by default: `LanguageSnapshot` (`main/language/`, saved in the `language` section of
+    by default: `LanguageSnapshot` (`main/preferences/language.ts`, saved in the `language` section of
     `app-config.json`) is `'en' | 'es' | 'gl' | null`, where `null` — the initial value, and
     "System default" in the Select — means "follow the OS", the same shape `ThemeSnapshot`
     uses for the OS theme. Unlike the theme, which reads `prefers-color-scheme` in CSS,
