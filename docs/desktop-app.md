@@ -17,11 +17,13 @@ Standard electron-vite three-process layout:
   sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
   `field` the space lacks; a saved From or To that sync saw the type without reads as the type's
   own dates, as the renderer draws it, since a filter on it would match nothing), and places a
-  span in the machine's time zone (`LocalEventsTimeZone`). The composition root is also
-  where the contexts are linked: entering `connected` syncs the schema and loads the span on
-  screen, and leaving it resets both (a session that stays connected — `access-checked`
-  replacing its access — reads nothing again); a successful schema sync and every saved
-  selection reload that span; and a window gaining focus re-runs both, at most once per 30 s
+  span in the machine's time zone (`LocalEventsTimeZone`). The contexts are linked in
+  `context-links.ts`, which imports neither Electron nor Node core and is tested in the `main`
+  project: entering `connected` syncs the schema and loads the span on screen, and leaving it
+  resets both (a session that stays connected — `access-checked` replacing its access — reads
+  nothing again); a successful schema sync and every saved selection reload that span, and a
+  sync rekeys the selection; an `unauthorized` schema or span failure signs out while connected
+  (`outdated` and `unreachable` keep the key); and a window gaining focus re-runs both, at most once per 30 s
   (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
   connected key reaches (`verifyApiKey`, which always asks `whoami` afresh, so a grant changed
   in Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
