@@ -1,16 +1,20 @@
 # apps/desktop structure
 
 Standard electron-vite three-process layout:
-- `src/main` — Electron main process and the **composition root**. `composition.ts` is
-  the only place adapters are chosen, and must run after `app` is ready (`safeStorage`
-  needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
+- `src/main` — Electron main process and the **composition root**. Adapters are chosen
+  only in the per-context modules (`auth/compose-auth.ts`, `schema/compose-schema.ts`,
+  `events/compose-events.ts`, `feeds/compose-feeds.ts`), each switching once on what
+  `anytype/compose-anytype.ts` returns: `{ kind: 'fake' }` under
+  `ANYTYPE_CALENDAR_FAKE_AUTH=1`, or `{ kind: 'real', client }`. `composition.ts` calls them
+  all, builds the `app-config.json` they share, and must run after `app` is ready
+  (`safeStorage` needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
   through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
   warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
-  which the composition root adapts from auth's credential repository; events reads which
+  which `compose-auth.ts` adapts from auth's credential repository as `apiKeys`; events reads which
   types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
   store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
   first; Done, Location, the colour-by property and the panel's only where the last schema
