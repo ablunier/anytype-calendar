@@ -110,3 +110,11 @@ explicitly, so the binary and Linux packages are named after the product rather 
 package. Squirrel's id is also written out in `squirrelAppUserModelId`
 (`src/main/squirrel-startup.ts`): the running app must claim the AppUserModelID Squirrel
 gives its shortcuts, so renaming the package means updating that constant.
+
+## The packaged app ships no `node_modules`
+
+Main and preload bundle every dependency (`externalizeDeps: false` in
+`electron.vite.config.ts`), and `forge.config.js` packages only `out/`, `resources/` and
+`package.json`. npm workspaces hoist `node_modules` out of `apps/desktop`, so Forge could
+not assemble them anyway. A dependency that cannot be bundled (a native module) would
+need that revisited.
