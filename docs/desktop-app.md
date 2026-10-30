@@ -7,7 +7,9 @@ Standard electron-vite three-process layout:
   `anytype/compose-anytype.ts` returns: `{ kind: 'fake' }` under
   `ANYTYPE_CALENDAR_FAKE_AUTH=1`, or `{ kind: 'real', client }`. `composition.ts` calls them
   all, builds the `app-config.json` they share, and must run after `app` is ready
-  (`safeStorage` needs that). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
+  (`safeStorage` needs that). It returns `{ auth, schema, events, feeds, preferences, updates }`,
+  each group's type inferred from its compose function, and each `register*Ipc` takes only its
+  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
   through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
   the key in `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
