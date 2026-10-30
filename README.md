@@ -155,6 +155,10 @@ packages/<context>       One bounded context per package (currently: auth, schem
 packages/anytype-v1      The v1 routes the app still reads, and the probe that picks v1 or v2 per key
 packages/kernel          Shared use-case plumbing (DispatchGuard) any context's application layer can import
 tools/arch-lint          Isolated dependency-cruiser install (see its README for why)
+docs/architecture.md     Contexts, layers, import rules and hand wiring in full
+docs/desktop-app.md      The main process, IPC and renderer in full
+docs/anytype-api.md      The Anytype API behaviour the adapters rely on
+docs/releasing.md        What the release workflow and the update checks do
 docs/deps-notes.md       Why several dependencies are pinned where they are
 ```
 
