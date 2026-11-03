@@ -56,70 +56,79 @@ export function MiniMonth({
         </div>
       </div>
 
-      <div role="grid" aria-label={monthLabel(shown.year, shown.month, i18n.language)} className="flex flex-col">
-        <div role="row" className="flex">
-          {showWeekNumbers ? <span aria-hidden className="w-24 shrink-0" /> : null}
-          <div className="grid flex-1 grid-cols-7">
-            {weekdaysFrom(weekStart, i18n.language).map((weekday, column) => (
-              <span
-                key={column}
-                role="columnheader"
+      <table
+        // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA in HTML allows role="grid" on a table, as the APG's date pickers use it.
+        role="grid"
+        aria-label={monthLabel(shown.year, shown.month, i18n.language)}
+        className="flex flex-col"
+      >
+        <thead className="block">
+          <tr className={['grid grid-cols-7', showWeekNumbers ? 'ml-24' : ''].join(' ')}>
+            {weekdaysFrom(weekStart, i18n.language).map((weekday) => (
+              <th
+                key={weekday}
+                scope="col"
                 aria-label={weekday}
                 className="py-4 text-center type-overline text-micro text-ink-tertiary"
               >
                 {weekday.slice(0, 2)}
-              </span>
+              </th>
             ))}
-          </div>
-        </div>
+          </tr>
+        </thead>
 
-        {weeks.map((week) => (
-          <div key={week[0]?.date} role="row" className="flex">
-            {showWeekNumbers ? (
-              <span
-                aria-hidden
-                className="flex h-24 w-24 shrink-0 items-center justify-center type-numeral text-micro text-ink-tertiary"
-              >
-                {isoWeekNumber(week[(10 - weekStart) % 7]?.date ?? '')}
-              </span>
-            ) : null}
-            <div className="grid flex-1 grid-cols-7">
+        <tbody className="flex flex-col">
+          {weeks.map((week) => (
+            <tr key={week[0]?.date} className={['relative grid grid-cols-7', showWeekNumbers ? 'ml-24' : ''].join(' ')}>
+              {showWeekNumbers ? (
+                <td
+                  aria-hidden
+                  className="absolute top-0 right-full flex h-24 w-24 items-center justify-center type-numeral text-micro text-ink-tertiary"
+                >
+                  {isoWeekNumber(week[(10 - weekStart) % 7]?.date ?? '')}
+                </td>
+              ) : null}
               {week.map(({ date, day, outside }) => {
                 const isToday = date === today
                 const inSpan = first <= date && date <= last
                 const disabled = min !== undefined && date < min
                 return (
-                  <button
+                  // biome-ignore lint/a11y/useFocusableInteractive: focus goes to the button the cell holds.
+                  <td
                     key={date}
-                    type="button"
+                    // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA in HTML allows gridcell on a td of a role="grid" table.
                     role="gridcell"
-                    aria-label={longDate(date, i18n.language)}
-                    aria-current={isToday ? 'date' : undefined}
                     aria-selected={inSpan}
-                    disabled={disabled}
-                    onClick={() => onSelectDate(date)}
-                    className={[
-                      'h-24 border-0 type-numeral text-micro transition duration-fast ease-standard',
-                      disabled
-                        ? 'cursor-not-allowed bg-transparent text-ink-muted opacity-50'
-                        : isToday
-                          ? 'bg-surface-accent text-ink-inverse'
-                          : inSpan
-                            ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'
-                            : [
-                                'bg-transparent hover:bg-surface-hover',
-                                outside ? 'text-ink-muted' : 'text-ink-body',
-                              ].join(' '),
-                    ].join(' ')}
                   >
-                    {day}
-                  </button>
+                    <button
+                      type="button"
+                      aria-label={longDate(date, i18n.language)}
+                      aria-current={isToday ? 'date' : undefined}
+                      disabled={disabled}
+                      onClick={() => onSelectDate(date)}
+                      className={[
+                        'block h-24 w-full border-0 type-numeral text-micro transition duration-fast ease-standard',
+                        disabled
+                          ? 'cursor-not-allowed bg-transparent text-ink-muted opacity-50'
+                          : isToday
+                            ? 'bg-surface-accent text-ink-inverse'
+                            : inSpan
+                              ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'
+                              : [
+                                  'bg-transparent hover:bg-surface-hover',
+                                  outside ? 'text-ink-muted' : 'text-ink-body',
+                                ].join(' '),
+                      ].join(' ')}
+                    >
+                      {day}
+                    </button>
+                  </td>
                 )
               })}
-            </div>
-          </div>
-        ))}
-      </div>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   )
 }

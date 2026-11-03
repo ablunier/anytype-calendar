@@ -10,7 +10,7 @@ const MAX_NAME_LENGTH = 4096
 
 export function toRescheduleRequest(value: unknown): EventsRescheduleRequest | null {
   const fields = fieldsOf(value)
-  const change = toEventsReschedule(fields['change'])
+  const change = toEventsReschedule(fields.change)
   const { spaceId, id } = fields
   return isId(spaceId) && isId(id) && change ? { spaceId, id, change } : null
 }
@@ -18,7 +18,7 @@ export function toRescheduleRequest(value: unknown): EventsRescheduleRequest | n
 /** `collectionId` is not checked against the sync: Anytype answers an unknown one with 404. */
 export function toCreateRequest(value: unknown): EventsCreateRequest | null {
   const fields = fieldsOf(value)
-  const at = toEventsSlot(fields['at'])
+  const at = toEventsSlot(fields.at)
   const { spaceId, typeKey, name, collectionId } = fields
   const named = typeof name === 'string' && name.length <= MAX_NAME_LENGTH
   if (!isId(spaceId) || !isId(typeKey) || !named || !at) return null

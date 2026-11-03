@@ -54,7 +54,8 @@ export function MonthDayCell({
   /* The cell is deliberately left unpositioned: a bar has to reach across the columns after
    * this one, so it resolves against the week row. The lane stack reserves its height here. */
   return (
-    <div
+    <td
+      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA in HTML allows gridcell on a td of a role="grid" table.
       role="gridcell"
       data-day={interactive ? cell.day : undefined}
       aria-selected={interactive ? isSelected : undefined}
@@ -124,6 +125,6 @@ export function MonthDayCell({
           />
         )
       })}
-    </div>
+    </td>
   )
 }

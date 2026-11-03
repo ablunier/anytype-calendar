@@ -50,7 +50,8 @@ function setup(routes: Record<string, Reply | Reply[]>) {
     const replies = routes[route]
     if (!replies) return { status: NO_ROUTE.status, text: async () => NO_ROUTE.text }
     const list = Array.isArray(replies) ? replies : [replies]
-    const n = (served[route] = (served[route] ?? 0) + 1)
+    const n = (served[route] ?? 0) + 1
+    served[route] = n
     const reply = list[Math.min(n, list.length) - 1] as Reply
     return { status: reply.status, text: async () => reply.text }
   }

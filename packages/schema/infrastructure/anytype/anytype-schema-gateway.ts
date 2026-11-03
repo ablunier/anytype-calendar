@@ -287,12 +287,12 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     const rows = listed.value.items.map((item) => {
       const id = nonEmpty(item.id)
       if (id === undefined) throw malformed('collections')
-      const lastModified = Date.parse(nonEmpty(item.properties?.['last_modified_date']) ?? '')
+      const lastModified = Date.parse(nonEmpty(item.properties?.last_modified_date) ?? '')
       return {
         id,
         name: nonEmpty(item.name) ?? '',
         lastModified: Number.isNaN(lastModified) ? null : lastModified,
-        backlinks: toIds(item.properties?.['backlinks']),
+        backlinks: toIds(item.properties?.backlinks),
       }
     })
 
@@ -306,7 +306,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
     await eachAtMost(TYPE_READS_AT_ONCE, linking, async (id) => {
       const document = await api.objects.get(spaceId, id, { include: 'properties' })
       if (document.ok) {
-        const name = nonEmpty(document.body?.properties?.['name'])
+        const name = nonEmpty(document.body?.properties?.name)
         if (name !== undefined) names.set(id, name)
         return
       }

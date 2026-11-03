@@ -5,23 +5,24 @@ import { feedEventsFor, feedSourceKey, feedsFor, mergedEvents, movedOrder } from
 
 const at = (date: string, time = '00:00'): number => new Date(`${date}T${time}`).getTime()
 
+const holidays: FeedsSnapshot['subscriptions'][number] = {
+  id: 'a1',
+  name: 'Holidays',
+  colour: 'teal',
+  host: 'calendar.google.com',
+  status: { readAt: at('2026-09-10', '11:00'), reading: false, error: null },
+}
+
+const team: FeedsSnapshot['subscriptions'][number] = {
+  id: 'b2',
+  name: 'Team',
+  colour: 'purple',
+  host: 'example.com',
+  status: { readAt: null, reading: false, error: { failure: 'http', status: 404, at: at('2026-09-10', '12:00') } },
+}
+
 const snapshot: FeedsSnapshot = {
-  subscriptions: [
-    {
-      id: 'a1',
-      name: 'Holidays',
-      colour: 'teal',
-      host: 'calendar.google.com',
-      status: { readAt: at('2026-09-10', '11:00'), reading: false, error: null },
-    },
-    {
-      id: 'b2',
-      name: 'Team',
-      colour: 'purple',
-      host: 'example.com',
-      status: { readAt: null, reading: false, error: { failure: 'http', status: 404, at: at('2026-09-10', '12:00') } },
-    },
-  ],
+  subscriptions: [holidays, team],
   window: { start: at('2026-08-25'), end: at('2026-10-08') - 1 },
   events: [
     { id: 'h1', feedId: 'a1', rank: 0, title: 'Holiday', start: at('2026-09-11'), end: null, allDay: true },
@@ -69,8 +70,8 @@ describe('feedsFor', () => {
     const unread: FeedsSnapshot = {
       ...snapshot,
       subscriptions: [
-        { ...snapshot.subscriptions[0]!, status: { readAt: null, reading: false, error: null } },
-        { ...snapshot.subscriptions[1]!, status: { readAt: null, reading: true, error: null } },
+        { ...holidays, status: { readAt: null, reading: false, error: null } },
+        { ...team, status: { readAt: null, reading: true, error: null } },
       ],
     }
     expect(feedsFor(unread, 0).map(({ status }) => status.state)).toEqual(['offline', 'syncing'])

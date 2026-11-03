@@ -1,7 +1,7 @@
+import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
-import { resolve } from 'path'
 
 // The workspace packages are consumed from source rather than from their dist/ output,
 // so `dev` and `build` never require a prior `tsc -b` and edits inside packages/ trigger

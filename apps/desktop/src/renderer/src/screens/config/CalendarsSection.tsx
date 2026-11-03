@@ -5,7 +5,7 @@ import { movedOrder } from '@renderer/lib/feeds'
 import { hueOf } from '@renderer/lib/schema'
 import type { FeedSource } from '@renderer/types'
 import type { FeedsAddResult, FeedsEditRequest, FeedsEditResult } from '@shared/ipc'
-import { type DragEvent, useEffect, useRef, useState } from 'react'
+import { type DragEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface CalendarsSectionProps {
@@ -330,25 +330,30 @@ interface ColourPickerProps {
 /** The ten hues types are drawn in, one of which a subscription takes. */
 function ColourPicker({ colour, onChange }: ColourPickerProps): React.JSX.Element {
   const { t } = useTranslation()
+  const name = useId()
   return (
     <fieldset className="m-0 flex flex-col gap-6 border-0 p-0">
       <legend className="mb-6 type-ui text-small text-ink-secondary">{t('config.colour')}</legend>
-      <div role="radiogroup" className="flex flex-wrap gap-6">
+      <div className="flex flex-wrap gap-6">
         {FEEDS_COLOURS.map((option) => (
-          <button
+          <label
             key={option}
-            type="button"
-            role="radio"
-            aria-checked={option === colour}
-            aria-label={t(`feeds.colours.${option}`)}
-            onClick={() => onChange(option)}
             className={[
-              'flex size-24 items-center justify-center rounded-pill border-2',
+              'relative flex size-24 cursor-default items-center justify-center rounded-pill border-2',
+              'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring',
               option === colour ? 'border-line-accent' : 'border-transparent',
             ].join(' ')}
           >
+            <input
+              type="radio"
+              name={name}
+              checked={option === colour}
+              aria-label={t(`feeds.colours.${option}`)}
+              onChange={() => onChange(option)}
+              className="sr-only"
+            />
             <span className={['size-16 rounded-pill', catBg[hueOf(option)]].join(' ')} />
-          </button>
+          </label>
         ))}
       </div>
     </fieldset>

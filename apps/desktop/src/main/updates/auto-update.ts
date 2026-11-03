@@ -15,7 +15,7 @@ const CHECK_TIMEOUT_MS = 15_000
  * version to compare against, unless ANYTYPE_CALENDAR_UPDATE_CHECK=1 asks it to check anyway.
  */
 export function startUpdates(checkForUpdate: CheckForUpdate): void {
-  const forced = process.env['ANYTYPE_CALENDAR_UPDATE_CHECK'] === '1'
+  const forced = process.env.ANYTYPE_CALENDAR_UPDATE_CHECK === '1'
   if (!app.isPackaged && !forced) return
 
   if (process.platform === 'win32' && !forced) {

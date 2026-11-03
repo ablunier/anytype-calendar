@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises'
 import {
   LoadSchemaSelection,
   RekeySchemaSelection,
@@ -13,7 +14,6 @@ import {
   InMemorySchemaGateway,
   JsonFileSchemaSelectionRepository,
 } from '@anytype-calendar/schema/infrastructure'
-import { setTimeout as sleep } from 'timers/promises'
 import type { Anytype } from '../anytype/compose-anytype'
 import type { AppConfigStore } from '../app-config-file'
 import { selectionFileAt } from './selection-storage'

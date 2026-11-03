@@ -1,5 +1,5 @@
+import { join } from 'node:path'
 import { app } from 'electron'
-import { join } from 'path'
 import { composeAnytype } from './anytype/compose-anytype'
 import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'

@@ -39,7 +39,9 @@ test('returns what was saved, encrypted at rest', async () => {
   await repository.save(credential)
 
   await expect(repository.load()).resolves.toEqual(credential)
-  expect(new TextDecoder().decode(stored()!)).not.toContain(credential.apiKey)
+  const sealed = stored()
+  expect(sealed).not.toBeNull()
+  expect(new TextDecoder().decode(sealed ?? undefined)).not.toContain(credential.apiKey)
 })
 
 test('a later save replaces the stored credential', async () => {

@@ -1,3 +1,6 @@
+import { randomBytes } from 'node:crypto'
+import { join } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import {
   AuthSessionStore,
   CheckAuthAccess,
@@ -17,10 +20,7 @@ import {
   InMemoryAuthGateway,
   InMemoryCredentialRepository,
 } from '@anytype-calendar/auth/infrastructure'
-import { randomBytes } from 'crypto'
 import { app, safeStorage } from 'electron'
-import { join } from 'path'
-import { setTimeout as sleep } from 'timers/promises'
 import type { Anytype } from '../anytype/compose-anytype'
 import { credentialFileAt, safeStorageCipher } from './credential-storage'
 

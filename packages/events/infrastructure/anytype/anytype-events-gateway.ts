@@ -107,21 +107,18 @@ export class AnytypeEventsGateway implements EventsGateway {
         const search = {
           filters: [{ property: ID_PROPERTY_KEY, condition: 'in', value: batch } satisfies AnytypeFilter],
         }
-        const rows = linkedRows(await listAll((paging) => api.search.inSpace(spaceId, search, paging)))
-        return rows && rows.flatMap((row) => toLinked(row.id, row.name, false))
+        const response = await listAll((paging) => api.search.inSpace(spaceId, search, paging))
+        return linkedObjects(response, (row) => toLinked(row.id, row.name, false))
       }),
       memberIds.length === 0
         ? []
         : (async () => {
             const wanted = new Set(memberIds)
-            const rows = linkedRows(await listAll((paging) => api.members.list(spaceId, paging)))
-            return (
-              rows &&
-              rows.flatMap((row) => {
-                const id = typeof row.identity === 'string' ? `${MEMBER_ID_PREFIX}${row.identity}` : undefined
-                return id !== undefined && wanted.has(id) ? toLinked(id, row.name, true) : []
-              })
-            )
+            const response = await listAll((paging) => api.members.list(spaceId, paging))
+            return linkedObjects(response, (row) => {
+              const id = typeof row.identity === 'string' ? `${MEMBER_ID_PREFIX}${row.identity}` : undefined
+              return id !== undefined && wanted.has(id) ? toLinked(id, row.name, true) : []
+            })
           })(),
     ])
     if (reads.some((read) => read === null)) return { ok: false, failure: 'unauthorized' }
@@ -165,11 +162,14 @@ function fieldsOf({ from, to, done, location, colourBy, panel = [] }: EventsSour
 }
 
 /**
- * The rows of a read of linked objects or members; none for a space that is gone or no longer
- * granted, or a build without the route, and null for a refused key.
+ * None for a space that is gone or no longer granted, or a build without the route, and null
+ * for a refused key.
  */
-function linkedRows<Row>(response: AnytypeResult<{ data: Row[] }>): Row[] | null {
-  if (response.ok) return response.body.data
+function linkedObjects<Row>(
+  response: AnytypeResult<{ data: Row[] }>,
+  toObjects: (row: Row) => EventsLinkedObject[],
+): EventsLinkedObject[] | null {
+  if (response.ok) return response.body.data.flatMap(toObjects)
   if (response.status === UNAUTHORIZED) return null
   if (response.unsupported || GONE_STATUSES.has(response.status)) return []
   throw new Error(`Anytype answered ${response.status} when asked for linked objects`)

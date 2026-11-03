@@ -3,6 +3,7 @@ import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { type SourceVisibility, visibilityOf } from '@renderer/lib/visibility'
 import type { CategoryHue, FeedSource, ObjectType, Space } from '@renderer/types'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface SourceTreeProps {
@@ -128,24 +129,38 @@ interface ToggleRowProps {
   strong?: boolean
 }
 
-/** One button for the whole row, so the target is as wide as the sidebar. */
+/**
+ * One label for the whole row, so the target is as wide as the sidebar. The native checkbox
+ * shows `mixed` only through `indeterminate`, which has no attribute, and a click clears it.
+ */
 function ToggleRow({ state, name, marker, hue, onToggle, strong = false }: ToggleRowProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = state !== 'hidden'
+  const input = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (input.current) input.current.indeterminate = state === 'mixed'
+  })
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={state === 'mixed' ? 'mixed' : state === 'shown'}
-      aria-label={t(state === 'hidden' ? 'calendar.sidebar.show' : 'calendar.sidebar.hide', { name })}
-      onClick={onToggle}
-      className="group flex w-full items-center gap-8 rounded-6 border-0 bg-transparent px-4 py-2 text-left hover:bg-surface-hover"
+    <label
+      className={[
+        'relative flex w-full cursor-default items-center gap-8 rounded-6 px-4 py-2 select-none',
+        'hover:bg-surface-hover',
+        'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus-ring',
+      ].join(' ')}
     >
+      <input
+        ref={input}
+        type="checkbox"
+        checked={state === 'shown'}
+        aria-label={t(state === 'hidden' ? 'calendar.sidebar.show' : 'calendar.sidebar.hide', { name })}
+        onChange={onToggle}
+        className="peer sr-only"
+      />
       <span
         aria-hidden
         className={[
           'flex size-16 shrink-0 items-center justify-center rounded-4 border',
-          'group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-focus-ring',
+          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus-ring',
           on ? `border-transparent ${hue ? catBg[hue] : 'bg-surface-accent'}` : 'border-line-strong bg-surface-card',
         ].join(' ')}
       >
@@ -161,6 +176,6 @@ function ToggleRow({ state, name, marker, hue, onToggle, strong = false }: Toggl
       >
         {name}
       </span>
-    </button>
+    </label>
   )
 }

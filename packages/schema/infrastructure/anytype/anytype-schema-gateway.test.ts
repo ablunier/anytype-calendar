@@ -35,7 +35,8 @@ function setup(routes: Record<string, Reply | Reply[]>, files: Record<string, Fi
       const route = routes[path]
       if (!route) return { status: 404, text: async () => '404 page not found' }
       const replies = Array.isArray(route) ? route : [route]
-      const n = (served[path] = (served[path] ?? 0) + 1)
+      const n = (served[path] ?? 0) + 1
+      served[path] = n
       const reply = replies[Math.min(n, replies.length) - 1] as Reply
       return { status: reply.status, text: async () => JSON.stringify(reply.body) }
     },
@@ -533,6 +534,7 @@ describe('listQueries', () => {
   const document: Reply = {
     status: 200,
     body: {
+      // biome-ignore lint/style/useNamingConvention: the JSON Schema keyword
       $schema: 'https://schemas.anytype.io/anyblock/2.0/object.schema.json',
       formatVersion: '2.0',
       id: QUERY_ID,

@@ -1,5 +1,5 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'fs/promises'
-import { dirname } from 'path'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 
 export interface AtomicFile {
   /** Null when there is no file. */

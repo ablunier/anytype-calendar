@@ -357,11 +357,11 @@ function wallOf(format: Intl.DateTimeFormat, instant: number): number {
   const parts: Record<string, number> = {}
   for (const { type, value } of format.formatToParts(instant)) parts[type] = Number(value)
   return Date.UTC(
-    parts['year'] ?? 1970,
-    (parts['month'] ?? 1) - 1,
-    parts['day'] ?? 1,
-    parts['hour'] ?? 0,
-    parts['minute'] ?? 0,
-    parts['second'] ?? 0,
+    parts.year ?? 1970,
+    (parts.month ?? 1) - 1,
+    parts.day ?? 1,
+    parts.hour ?? 0,
+    parts.minute ?? 0,
+    parts.second ?? 0,
   )
 }

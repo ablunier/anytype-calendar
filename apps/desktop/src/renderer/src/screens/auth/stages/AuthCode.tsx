@@ -2,7 +2,7 @@ import { Button } from '@renderer/components/ui'
 import { useSecondsUntil } from '@renderer/hooks/useSecondsUntil'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
 import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface AuthCodeProps {
@@ -29,6 +29,8 @@ export function AuthCode({ challengeId, expiresAt, onCancel, onVerify }: AuthCod
   const secondsLeft = useSecondsUntil(expiresAt)
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  // The stage asks for nothing but the code, and is only reached by asking for one.
+  useEffect(() => inputRef.current?.focus(), [])
 
   return (
     <>
@@ -43,7 +45,6 @@ export function AuthCode({ challengeId, expiresAt, onCancel, onVerify }: AuthCod
         value={code}
         inputMode="numeric"
         autoComplete="one-time-code"
-        autoFocus
         maxLength={4}
         onChange={(event) => {
           const next = event.target.value.replace(/\D/g, '').slice(0, 4)

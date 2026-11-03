@@ -60,8 +60,8 @@ function DetailValue({ detail, space }: { detail: EventDetail; space: string }):
     case 'options':
       return (
         <div className="flex flex-wrap gap-4">
-          {detail.options.map((option, index) => (
-            <Tag key={`${option.name}-${index}`} category={option.category}>
+          {keyedByName(detail.options).map(({ key, item: option }) => (
+            <Tag key={key} category={option.category}>
               {option.name}
             </Tag>
           ))}
@@ -90,6 +90,16 @@ function DetailValue({ detail, space }: { detail: EventDetail; space: string }):
   }
 }
 
+/** Options carry no id and two may share a name, so a repeat is told apart by its count. */
+function keyedByName<T extends { name: string }>(items: T[]): { key: string; item: T }[] {
+  const seen = new Map<string, number>()
+  return items.map((item) => {
+    const count = seen.get(item.name) ?? 0
+    seen.set(item.name, count + 1)
+    return { key: count === 0 ? item.name : `${item.name}#${count}`, item }
+  })
+}
+
 /** Four lines at most until asked for the rest; the toggle shows only when there is more. */
 function ClampedText({ children }: { children: ReactNode }): React.JSX.Element {
   const { t } = useTranslation()
@@ -97,10 +107,11 @@ function ClampedText({ children }: { children: ReactNode }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const [clamped, setClamped] = useState(false)
 
+  // On every render: the overflow follows the children as laid out, which no dependency names.
   useLayoutEffect(() => {
     const paragraph = ref.current
     if (paragraph && !expanded) setClamped(paragraph.scrollHeight > paragraph.clientHeight)
-  }, [children, expanded])
+  })
 
   return (
     <div className="flex flex-col items-start gap-2">

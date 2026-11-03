@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from 'node:timers/promises'
 import type { AnytypeClient } from '@ablunier/anytype-client'
 import {
   CompleteEventsObject,
@@ -25,7 +26,6 @@ import {
   InMemoryEventsGateway,
   LocalEventsTimeZone,
 } from '@anytype-calendar/events/infrastructure'
-import { setTimeout as sleep } from 'timers/promises'
 import type { Anytype } from '../anytype/compose-anytype'
 
 export interface EventsDeps {

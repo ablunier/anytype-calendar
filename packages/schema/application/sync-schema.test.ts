@@ -148,7 +148,7 @@ test('reads every space with its dated types', async () => {
             },
           ],
           queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: VIEWS }],
-          collections: COLLECTIONS['sp_personal'],
+          collections: COLLECTIONS.sp_personal,
         },
         { id: 'sp_empty', name: 'Empty', types: [], queries: [], collections: [] },
       ],

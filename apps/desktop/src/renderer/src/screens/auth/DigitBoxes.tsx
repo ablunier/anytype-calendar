@@ -10,8 +10,8 @@ export interface DigitBoxesProps {
 const CELLS = [0, 1, 2, 3]
 
 /**
- * Presentational only — the real input lives in AuthCode, which owns the keystrokes. The
- * boxes are marked aria-hidden so a screen reader reads the field's own value once rather
+ * Presentational only — the real input lives in AuthCode, which owns the keystrokes. Each
+ * box is marked aria-hidden so a screen reader reads the field's own value once rather
  * than four disconnected characters; `onDigitClick`, when passed, just moves the real
  * input's caret so a mouse user can click back into an earlier box to fix it, and
  * `activeIndex` reflects where that caret actually landed.
@@ -24,13 +24,14 @@ export function DigitBoxes({
   onDigitClick,
 }: DigitBoxesProps): React.JSX.Element {
   return (
-    <div className="flex gap-8" aria-hidden>
+    <div className="flex gap-8">
       {CELLS.map((index) => {
         const char = value[index]
         const active = !muted && !invalid && index === activeIndex
         return (
           <div
             key={index}
+            aria-hidden
             onClick={onDigitClick ? () => onDigitClick(index) : undefined}
             className={[
               'flex h-64 flex-1 items-center justify-center rounded-control border bg-surface-card',

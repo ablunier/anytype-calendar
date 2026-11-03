@@ -54,8 +54,8 @@ test('returns what was saved, in order, with each address sealed at rest', async
 test('leaves out an entry whose address cannot be opened, keeping the others', async () => {
   const { repository, stored } = setup()
   await repository.save([holidays, family])
-  const broken = JSON.parse(stored() ?? '') as { subscriptions: { url: string }[] }
-  broken.subscriptions[0]!.url = 'not sealed'
+  const broken = JSON.parse(stored() ?? '') as { subscriptions: [{ url: string }, ...unknown[]] }
+  broken.subscriptions[0].url = 'not sealed'
   await expect(setup(JSON.stringify(broken)).repository.load()).resolves.toEqual([family])
 })
 

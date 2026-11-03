@@ -86,7 +86,15 @@ function DetailToggle({ checked, label, onChange }: DetailToggleProps): React.JS
   const text = <span className="type-ui text-small text-ink-body">{label}</span>
   if (!onChange) {
     return (
-      <div role="switch" aria-checked={checked} aria-readonly aria-label={label} className="flex items-center gap-10">
+      // Focusable though it cannot change, so a keyboard user can still come upon its state.
+      <div
+        role="switch"
+        tabIndex={0}
+        aria-checked={checked}
+        aria-readonly
+        aria-label={label}
+        className="flex items-center gap-10 rounded-control"
+      >
         {track}
         {text}
       </div>

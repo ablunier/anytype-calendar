@@ -1,7 +1,7 @@
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { FeedsCacheDirectory, FeedsSubscriptionFile, FeedsUrlCipher } from '@anytype-calendar/feeds/infrastructure'
 import { safeStorage } from 'electron'
-import { mkdir, readFile, rename, rm, writeFile } from 'fs/promises'
-import { join } from 'path'
 import { atomicFileAt } from '../atomic-file'
 
 /** Only usable once the app is ready. Sealed bytes are kept as Base64, which JSON can hold. */

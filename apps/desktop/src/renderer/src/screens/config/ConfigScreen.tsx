@@ -15,7 +15,7 @@ import type {
   TypePicks,
 } from '@renderer/types'
 import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AboutSection } from './AboutSection'
 import { CalendarsSection, type CalendarsSectionProps } from './CalendarsSection'
@@ -107,13 +107,16 @@ function Settings({
   const selection = useTypeSelection(types, initial)
   const [saveFailed, setSaveFailed] = useState(false)
 
-  const save = (picks: TypePicks): void => {
-    // Saves land in order, and each carries every pick, so the last to settle has the say.
-    onSave(picks).then(
-      () => setSaveFailed(false),
-      () => setSaveFailed(true),
-    )
-  }
+  const save = useCallback(
+    (picks: TypePicks): void => {
+      // Saves land in order, and each carries every pick, so the last to settle has the say.
+      onSave(picks).then(
+        () => setSaveFailed(false),
+        () => setSaveFailed(true),
+      )
+    },
+    [onSave],
+  )
 
   /* Every change is saved as it is made. Keyed on the picks object rather than on a first-run
    * flag, so StrictMode running the effect twice on mount saves nothing. */
@@ -122,7 +125,7 @@ function Settings({
     if (selection.picks === sent.current) return
     sent.current = selection.picks
     save(selection.picks)
-  }, [selection.picks])
+  }, [selection.picks, save])
 
   const read = sync.hasResult
   const syncing = sync.state === 'syncing'

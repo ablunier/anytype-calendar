@@ -43,23 +43,19 @@ export interface IconProps {
  */
 export function Icon({ name, size = 16, title, className, style }: IconProps): React.JSX.Element {
   const url = iconUrls[name]
-  return (
-    <span
-      role={title ? 'img' : undefined}
-      aria-label={title}
-      aria-hidden={title ? undefined : true}
-      className={`inline-block shrink-0 bg-current ${sizeClass[size]} ${className ?? ''}`}
-      style={{
-        WebkitMaskImage: `url("${url}")`,
-        maskImage: `url("${url}")`,
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskPosition: 'center',
-        maskPosition: 'center',
-        WebkitMaskSize: 'contain',
-        maskSize: 'contain',
-        ...style,
-      }}
-    />
-  )
+  const glyph = {
+    className: `inline-block shrink-0 bg-current ${sizeClass[size]} ${className ?? ''}`,
+    style: {
+      WebkitMaskImage: `url("${url}")`,
+      maskImage: `url("${url}")`,
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskPosition: 'center',
+      maskPosition: 'center',
+      WebkitMaskSize: 'contain',
+      maskSize: 'contain',
+      ...style,
+    },
+  }
+  return title ? <span role="img" aria-label={title} {...glyph} /> : <span aria-hidden {...glyph} />
 }

@@ -79,17 +79,15 @@ export function Dialog({
   if (!open) return null
 
   return (
-    <div
-      onClick={onClose}
-      className="animate-scrim fixed inset-0 z-60 flex items-center justify-center bg-overlay-scrim p-24"
-    >
+    <div className="animate-scrim fixed inset-0 z-60 flex items-center justify-center bg-overlay-scrim p-24">
+      {/* A pointer's way out, layered under the sheet; Escape is the keyboard's. */}
+      <div aria-hidden onClick={onClose} className="absolute inset-0 -z-1" />
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
         aria-describedby={description ? `${id}-description` : undefined}
-        onClick={(event) => event.stopPropagation()}
         className={[
           'animate-sheet flex max-h-full max-w-full flex-col overflow-hidden rounded-sheet border border-line-subtle',
           'bg-surface-raised shadow-3',

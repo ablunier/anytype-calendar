@@ -170,7 +170,7 @@ export function Combobox({
       </div>
       {open && place
         ? createPortal(
-            <ul
+            <div
               id={listId}
               role="listbox"
               aria-label={label ?? ariaLabel}
@@ -183,7 +183,8 @@ export function Combobox({
               ].join(' ')}
             >
               {options.map((option, index) => (
-                <li
+                // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/useFocusableInteractive: focus stays in the field, whose keys move through the options by aria-activedescendant.
+                <div
                   key={option.value}
                   id={optionId(index)}
                   role="option"
@@ -202,14 +203,10 @@ export function Combobox({
                   {option.value === value ? (
                     <Icon name="check" size={14} className="ml-auto shrink-0 text-ink-accent" />
                   ) : null}
-                </li>
+                </div>
               ))}
-              {matched ? null : (
-                <li role="presentation" className="type-ui px-10 py-6 text-small text-ink-tertiary">
-                  {noMatchText}
-                </li>
-              )}
-            </ul>,
+              {matched ? null : <div className="type-ui px-10 py-6 text-small text-ink-tertiary">{noMatchText}</div>}
+            </div>,
             document.body,
           )
         : null}

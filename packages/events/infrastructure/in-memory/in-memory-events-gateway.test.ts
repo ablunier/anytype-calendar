@@ -46,11 +46,25 @@ const PROJECTS: EventsSource = {
   includesTime: false,
 }
 
+const TASK: InMemoryEventsObject = {
+  id: 'o1',
+  spaceId: 'sp_1',
+  typeKey: 'task',
+  title: 'Task',
+  dates: { due_date: 1_000 },
+}
+const RANGE: InMemoryEventsObject = {
+  id: 'o4',
+  spaceId: 'sp_1',
+  typeKey: 'project',
+  title: 'Range',
+  dates: { start_date: 1_000, due_date: 5_000 },
+}
 const OBJECTS: InMemoryEventsObject[] = [
-  { id: 'o1', spaceId: 'sp_1', typeKey: 'task', title: 'Task', dates: { due_date: 1_000 } },
+  TASK,
   { id: 'o2', spaceId: 'sp_2', typeKey: 'task', title: 'Elsewhere', dates: { due_date: 1_000 } },
   { id: 'o3', spaceId: 'sp_1', typeKey: 'task', title: 'Undated', dates: {} },
-  { id: 'o4', spaceId: 'sp_1', typeKey: 'project', title: 'Range', dates: { start_date: 1_000, due_date: 5_000 } },
+  RANGE,
   { id: 'o5', spaceId: 'sp_1', typeKey: 'project', title: 'Open', dates: { start_date: 2_000 } },
 ]
 
@@ -88,7 +102,7 @@ test('carries the To value of a range, and null where it is missing', async () =
 
 test('carries Done, Location and the colour-by option only where the source names them', async () => {
   const detailed: InMemoryEventsObject = {
-    ...OBJECTS[0]!,
+    ...TASK,
     done: true,
     location: 'Home',
     options: { priority: 'High' },
@@ -119,7 +133,7 @@ test("answers a query with its type's objects its view keeps, reading the first 
     },
     zone: UTC,
     now: () => NOW,
-    objects: [OBJECTS[0]!, { ...OBJECTS[0]!, id: 'o6', title: 'Finished', done: true }, OBJECTS[3]!],
+    objects: [TASK, { ...TASK, id: 'o6', title: 'Finished', done: true }, RANGE],
     queries: [
       {
         id: 'q_open',
@@ -173,10 +187,10 @@ test('seeds a range running into the next month, and one running in from the las
   const book = sample.find(({ title }) => title === 'The Dawn of Everything')
   const project = sample.find(({ title }) => title === 'Onboarding revamp')
 
-  expect(book?.dates['start_date']).toBeLessThanOrEqual(window.end)
-  expect(book?.dates['finish_date']).toBeGreaterThan(window.end)
-  expect(project?.dates['start_date']).toBeLessThan(window.start)
-  expect(project?.dates['due_date']).toBeGreaterThanOrEqual(window.start)
+  expect(book?.dates.start_date).toBeLessThanOrEqual(window.end)
+  expect(book?.dates.finish_date).toBeGreaterThan(window.end)
+  expect(project?.dates.start_date).toBeLessThan(window.start)
+  expect(project?.dates.due_date).toBeGreaterThanOrEqual(window.start)
 })
 
 test('seeds something in the months after the year turns', () => {
@@ -191,7 +205,7 @@ test('seeds something in the months after the year turns', () => {
 test('seeds timed dates at their time of day', () => {
   const sample = inMemoryEventsSample(DECEMBER, UTC)
   const notes = sample.find(({ title }) => title === 'Draft API notes')
-  expect(notes?.dates['due_date']).toBe(Date.UTC(2026, 11, 3, 14, 30))
+  expect(notes?.dates.due_date).toBe(Date.UTC(2026, 11, 3, 14, 30))
 })
 
 test('gives every seeded object its own id', () => {
@@ -223,7 +237,7 @@ test('moves, ticks and creates objects, which the next read answers', async () =
   const tasks = await gateway.listObjects('k', { ...TASKS, done: 'done' }, window)
   expect(tasks.ok && tasks.value[0]).toMatchObject({ id: 'o1', done: true })
   // The objects it was given are its own copies.
-  expect(OBJECTS[0]?.done).toBeUndefined()
+  expect(TASK.done).toBeUndefined()
 })
 
 test('drops a date that is cleared, leaving the others', async () => {
