@@ -350,6 +350,10 @@ function ColourPicker({ colour, onChange }: ColourPickerProps): React.JSX.Elemen
               checked={option === colour}
               aria-label={t(`feeds.colours.${option}`)}
               onChange={() => onChange(option)}
+              // A radio's Enter submits its form; picking a colour is not finishing the form.
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') event.preventDefault()
+              }}
               className="sr-only"
             />
             <span className={['size-16 rounded-pill', catBg[hueOf(option)]].join(' ')} />
