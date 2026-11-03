@@ -9,7 +9,7 @@ import {
   timeOfMinute,
 } from '@renderer/lib/time-grid'
 import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
-import { type CSSProperties, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type PointerEvent, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
@@ -97,15 +97,13 @@ export function TimeGrid({
   /* Opened at the hour worth seeing rather than at midnight: where the day is now, or a
    * working morning when today is not among these days. Only on mount and when the days
    * change — never on a reload, which would yank the view back under the user, nor as the
-   * clock moves, which is why the clock is read through a ref. */
-  const clock = useRef({ today, nowMinute })
-  clock.current = { today, nowMinute }
-  useEffect(() => {
-    const now = clock.current
-    const hour = days.some((day) => day.date === now.today) ? Math.max(0, now.nowMinute / 60 - 1) : DEFAULT_SCROLL_HOUR
+   * clock moves, which is why the clock is read in an effect event. */
+  const scrollToNow = useEffectEvent((shown: DayColumn[]) => {
+    const hour = shown.some((day) => day.date === today) ? Math.max(0, nowMinute / 60 - 1) : DEFAULT_SCROLL_HOUR
     const row = scroller.current?.querySelector('[data-hour]')
     if (row) scroller.current?.scrollTo({ top: hour * row.getBoundingClientRect().height })
-  }, [days])
+  })
+  useEffect(() => scrollToNow(days), [days])
 
   const placement = press?.dragging
     ? draggedPlacement({
