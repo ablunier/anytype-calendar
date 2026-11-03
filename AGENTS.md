@@ -42,7 +42,7 @@ Run from the repo root. CI runs typecheck, tests and `lint:arch`.
 
 ## Key Conventions
 
-- Contexts never import each other; `apps/desktop/src/main/composition.ts` wires them.
+- Contexts never import each other; `apps/desktop/src/main/composition.ts` wires them, through one `compose-*.ts` module per context and `context-links.ts`.
 - From outside a context, import only `@anytype-calendar/<context>/<layer>`.
 - `domain` imports nothing; `application` imports its domain and `kernel`; `infrastructure` imports its domain and `@ablunier/anytype-client`.
 - `feeds/infrastructure` imports only its domain and `ical.js`.

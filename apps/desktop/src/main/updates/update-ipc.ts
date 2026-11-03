@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { IpcChannel, type UpdateSnapshot } from '@shared/ipc'
-import type { AppServices } from '../composition'
+import type { Updates } from './compose-updates'
 import type { UpdateNotice } from './update-notice-store'
 
 /** The release page's URL stays in main, so the renderer can open nothing but that page. */
@@ -8,7 +8,7 @@ function snapshotOf({ current, available, dismissed }: UpdateNotice): UpdateSnap
   return { current, available: available?.version ?? null, dismissed }
 }
 
-export function registerUpdateIpc({ updateNotice, dismissUpdateNotice }: AppServices): void {
+export function registerUpdateIpc({ updateNotice, dismissUpdateNotice }: Updates): void {
   ipcMain.handle(IpcChannel.updateGet, () => snapshotOf(updateNotice.get()))
   ipcMain.handle(IpcChannel.updateDismiss, () => dismissUpdateNotice.execute())
   ipcMain.handle(IpcChannel.updateOpenRelease, async () => {
