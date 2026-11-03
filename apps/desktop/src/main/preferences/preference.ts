@@ -29,28 +29,35 @@ export class PreferenceStore<T> {
   }
 }
 
-export interface PreferenceOptions<T> {
+/** `Saved` narrows `State` when the state holds something no one may save, such as a missing theme. */
+export interface PreferenceOptions<State, Saved extends State> {
   config: AppConfigStore
   section: string
   /** Held until a load, and whenever the saved value is missing or not one. */
-  initial: T
+  initial: State
   /** Undefined for anything that is not a value, so `null` can be one. */
-  parse: (value: unknown) => T | undefined
-  equals?: (a: T, b: T) => boolean
+  parse: (value: unknown) => Saved | undefined
+  equals?: (a: State, b: State) => boolean
 }
 
-export interface Preference<T> {
-  state: PreferenceStore<T>
-  parse: (value: unknown) => T | undefined
+export interface Preference<State, Saved extends State = State> {
+  state: PreferenceStore<State>
+  parse: (value: unknown) => Saved | undefined
   load(): Promise<void>
-  save(value: T): Promise<void>
+  save(value: Saved): Promise<void>
 }
 
 /**
  * One setting kept in its own section of the app config file. A save needs no queue of its
  * own: every read and write of the file already goes through one.
  */
-export function preference<T>({ config, section, initial, parse, equals }: PreferenceOptions<T>): Preference<T> {
+export function preference<State, Saved extends State = State>({
+  config,
+  section,
+  initial,
+  parse,
+  equals
+}: PreferenceOptions<State, Saved>): Preference<State, Saved> {
   const state = new PreferenceStore(initial, equals)
   return {
     state,

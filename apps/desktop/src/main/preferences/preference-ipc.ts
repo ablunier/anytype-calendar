@@ -9,7 +9,10 @@ export interface PreferenceChannels {
   changed: string
 }
 
-export function registerPreferenceIpc<T>({ state, parse, save }: Preference<T>, channels: PreferenceChannels): void {
+export function registerPreferenceIpc<State, Saved extends State>(
+  { state, parse, save }: Preference<State, Saved>,
+  channels: PreferenceChannels
+): void {
   ipcMain.handle(channels.get, () => state.get())
   ipcMain.handle(channels.save, (_event, value: unknown) => {
     // Renderer input is untrusted, and this one is written to disk.
