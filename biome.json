@@ -6,7 +6,18 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "!tools", "!**/out", "!**/dist"]
+    "includes": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.css",
+      "**/*.json",
+      "**/*.jsonc",
+      "!tools",
+      "!**/out",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/package-lock.json"
+    ]
   },
   "formatter": {
     "indentStyle": "space",
@@ -23,6 +34,24 @@
       "arrowParentheses": "always"
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/tsconfig*.json"],
+      "json": {
+        "parser": {
+          "allowComments": true
+        }
+      }
+    }
+  ],
   "assist": {
     "actions": {
       "source": {
