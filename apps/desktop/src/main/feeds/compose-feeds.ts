@@ -44,9 +44,9 @@ export interface FeedsDeps {
 export type Feeds = ReturnType<typeof composeFeeds>
 
 /**
- * Feeds need nothing of Anytype: they are read, and kept, whether or not it is connected. Only
- * the fake account gets its own files, like the credential, so a sample feed added in fake
- * mode never shows against the real one.
+ * Feeds need nothing of Anytype: they are read, and kept, whether or not it is connected. The
+ * fake account gets its own files, like the credential, so a sample feed added in fake mode
+ * never shows against the real one.
  */
 export function composeFeeds({ anytype, shownWindow }: FeedsDeps) {
   const fake = anytype.kind === 'fake'

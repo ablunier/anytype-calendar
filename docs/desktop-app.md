@@ -9,27 +9,29 @@ Standard electron-vite three-process layout:
   all, builds the `app-config.json` they share, and must run after `app` is ready
   (`safeStorage` needs that). It returns `{ auth, schema, events, feeds, preferences, updates }`,
   each group's type inferred from its compose function, and each `register*Ipc` takes only its
-  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus). Auth uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs
-  through v2 (the user then picks the spaces and read/write access in Anytype) — and keeps
-  the key in `<userData>/credential.bin`, encrypted with `safeStorage`
+  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus). Auth
+  uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs through v2 (the user
+  then picks the spaces and read/write access in Anytype) — and keeps the key in
+  `<userData>/credential.bin`, encrypted with `safeStorage`
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
   warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
   each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
-  which `compose-auth.ts` adapts from auth's credential repository as `apiKeys`; events reads which
-  types go on the calendar through `EventsSourceSelection`, adapted from schema's selection
-  store (`events/event-sources.ts`: only the chosen types and queries of chosen spaces, types
-  first; Done, Location, the colour-by property and the panel's only where the last schema
-  sync saw the type — for a query, the type it runs over — with them, since Anytype refuses a search
-  `field` the space lacks; a saved From or To that sync saw the type without reads as the type's
-  own dates, as the renderer draws it, since a filter on it would match nothing), and places a
-  span in the machine's time zone (`LocalEventsTimeZone`). The contexts are linked in
-  `context-links.ts`, which imports neither Electron nor Node core and is tested in the `main`
-  project: entering `connected` syncs the schema and loads the span on screen, and leaving it
-  resets both (a session that stays connected — `access-checked` replacing its access — reads
-  nothing again); a successful schema sync and every saved selection reload that span, and a
-  sync rekeys the selection; an `unauthorized` schema or span failure signs out while connected
-  (`outdated` and `unreachable` keep the key); and a window gaining focus re-runs both, at most once per 30 s
+  which `compose-auth.ts` adapts from auth's credential repository as `apiKeys`; events reads
+  which types go on the calendar through `EventsSourceSelection`, adapted from schema's
+  selection store (`events/event-sources.ts`: only the chosen types and queries of chosen
+  spaces, types first; Done, Location, the colour-by property and the panel's only where the
+  last schema sync saw the type — for a query, the type it runs over — with them, since Anytype
+  refuses a search `field` the space lacks; a saved From or To that sync saw the type without
+  reads as the type's own dates, as the renderer draws it, since a filter on it would match
+  nothing), and places a span in the machine's time zone (`LocalEventsTimeZone`). The contexts
+  are linked in `context-links.ts`, which imports neither Electron nor Node core and is tested
+  in the `main` project: entering `connected` syncs the schema and loads the span on screen,
+  and leaving it resets both (a session that stays connected — `access-checked` replacing its
+  access — reads nothing again); a successful schema sync and every saved selection reload that
+  span, and a sync rekeys the selection; an `unauthorized` schema or span failure signs out
+  while connected (`outdated` and `unreachable` keep the key); and a window gaining focus
+  re-runs both, at most once per 30 s
   (`events/events-ipc.ts`), along with `CheckAuthAccess`. That use case asks Anytype what the
   connected key reaches (`verifyApiKey`, which always asks `whoami` afresh, so a grant changed
   in Anytype shows): it fills in `access` for a key restored at launch, where it starts `null`,
