@@ -46,13 +46,13 @@ export function SpaceTypesCard({
           on ? 'border-b border-line-hairline pb-8' : ''
         ].join(' ')}
       >
+        <SpaceMonogram space={space} />
+        {/* Space name is the checkbox label so clicking it toggles (#31). */}
         <Checkbox
           checked={on}
           onChange={() => selection.toggleSpace(space.key)}
-          ariaLabel={t('common.showSpace', { name: space.name })}
+          label={space.name}
         />
-        <SpaceMonogram space={space} />
-        <h3 className="type-ui text-base text-ink-primary">{space.name}</h3>
         <div className="flex-1" />
         {!on ? (
           <span className="type-numeral text-tiny text-ink-tertiary">
