@@ -1,4 +1,4 @@
-import { eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
+import { dayLabel, eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
 import {
   draggedPlacement,
   layOutDayColumn,
@@ -258,6 +258,17 @@ export function TimeGrid({
             aria-label={t(days.length > 1 ? 'calendar.grid.week' : 'calendar.grid.day')}
             className="block min-w-0 flex-1"
           >
+            {/* The visible headers are buttons pinned above, outside the table; these name the
+                columns for a screen reader, and the whole date, which the buttons abbreviate. */}
+            <thead className="sr-only">
+              <tr>
+                {days.map((day) => (
+                  <th key={day.date} scope="col">
+                    {dayLabel(day.date, i18n.language)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody className="block">
               <tr className="grid-days grid" style={{ '--days': days.length } as CSSProperties}>
                 {days.map((day, index) => (
