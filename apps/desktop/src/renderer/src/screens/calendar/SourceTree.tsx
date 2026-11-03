@@ -154,13 +154,12 @@ function ToggleRow({ state, name, marker, hue, onToggle, strong = false }: Toggl
         checked={state === 'shown'}
         aria-label={t(state === 'hidden' ? 'calendar.sidebar.show' : 'calendar.sidebar.hide', { name })}
         onChange={onToggle}
-        className="peer sr-only"
+        className="sr-only"
       />
       <span
         aria-hidden
         className={[
           'flex size-16 shrink-0 items-center justify-center rounded-4 border',
-          'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus-ring',
           on ? `border-transparent ${hue ? catBg[hue] : 'bg-surface-accent'}` : 'border-line-strong bg-surface-card',
         ].join(' ')}
       >
