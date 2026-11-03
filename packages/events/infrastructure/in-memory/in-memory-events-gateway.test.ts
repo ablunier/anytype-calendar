@@ -1,13 +1,13 @@
 import { expect, test } from 'vitest'
 import {
-  overlapsEventsWindow,
-  shiftEventsMonth,
   type EventsMonth,
   type EventsSource,
   type EventsTimeZone,
-  type EventsWindow
+  type EventsWindow,
+  overlapsEventsWindow,
+  shiftEventsMonth,
 } from '../../domain'
-import { InMemoryEventsGateway, inMemoryEventsSample, type InMemoryEventsObject } from './in-memory-events-gateway'
+import { InMemoryEventsGateway, type InMemoryEventsObject, inMemoryEventsSample } from './in-memory-events-gateway'
 
 const UTC: EventsTimeZone = {
   startOfDay: ({ year, month, day }) => Date.UTC(year, month, day),
@@ -15,7 +15,7 @@ const UTC: EventsTimeZone = {
   dayOf: (instant) => {
     const date = new Date(instant)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
+  },
 }
 
 const NOW = Date.UTC(2026, 11, 14, 9)
@@ -26,7 +26,7 @@ const DECEMBER = { year: 2026, month: 11 }
  * against. */
 const monthWindow = ({ year, month }: EventsMonth): EventsWindow => ({
   start: Date.UTC(year, month, 1),
-  end: Date.UTC(year, month + 1, 1) - 1
+  end: Date.UTC(year, month + 1, 1) - 1,
 })
 
 const TASKS: EventsSource = {
@@ -35,7 +35,7 @@ const TASKS: EventsSource = {
   typeKey: 'task',
   from: 'due_date',
   to: null,
-  includesTime: false
+  includesTime: false,
 }
 const PROJECTS: EventsSource = {
   kind: 'type',
@@ -43,7 +43,7 @@ const PROJECTS: EventsSource = {
   typeKey: 'project',
   from: 'start_date',
   to: 'due_date',
-  includesTime: false
+  includesTime: false,
 }
 
 const OBJECTS: InMemoryEventsObject[] = [
@@ -51,7 +51,7 @@ const OBJECTS: InMemoryEventsObject[] = [
   { id: 'o2', spaceId: 'sp_2', typeKey: 'task', title: 'Elsewhere', dates: { due_date: 1_000 } },
   { id: 'o3', spaceId: 'sp_1', typeKey: 'task', title: 'Undated', dates: {} },
   { id: 'o4', spaceId: 'sp_1', typeKey: 'project', title: 'Range', dates: { start_date: 1_000, due_date: 5_000 } },
-  { id: 'o5', spaceId: 'sp_1', typeKey: 'project', title: 'Open', dates: { start_date: 2_000 } }
+  { id: 'o5', spaceId: 'sp_1', typeKey: 'project', title: 'Open', dates: { start_date: 2_000 } },
 ]
 
 function setup(objects?: InMemoryEventsObject[]) {
@@ -63,7 +63,7 @@ function setup(objects?: InMemoryEventsObject[]) {
     zone: UTC,
     now: () => NOW,
     requestLatencyMs: 50,
-    ...(objects ? { objects } : {})
+    ...(objects ? { objects } : {}),
   })
   return { gateway, sleeps }
 }
@@ -72,7 +72,7 @@ test("answers with the source's dated objects after the simulated latency", asyn
   const { gateway, sleeps } = setup(OBJECTS)
   await expect(gateway.listObjects('ak_any', TASKS)).resolves.toEqual({
     ok: true,
-    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null }]
+    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null }],
   })
   expect(sleeps).toEqual([50])
 })
@@ -82,7 +82,7 @@ test('carries the To value of a range, and null where it is missing', async () =
   const result = await gateway.listObjects('ak_any', PROJECTS)
   expect(result.ok && result.value).toEqual([
     { id: 'o4', title: 'Range', start: 1_000, end: 5_000 },
-    { id: 'o5', title: 'Open', start: 2_000, end: null }
+    { id: 'o5', title: 'Open', start: 2_000, end: null },
   ])
 })
 
@@ -91,23 +91,23 @@ test('carries Done, Location and the colour-by option only where the source name
     ...OBJECTS[0]!,
     done: true,
     location: 'Home',
-    options: { priority: 'High' }
+    options: { priority: 'High' },
   }
   const { gateway } = setup([detailed])
   const source: EventsSource = {
     ...TASKS,
     done: 'done',
     location: 'location',
-    colourBy: { key: 'priority', options: [] }
+    colourBy: { key: 'priority', options: [] },
   }
 
   await expect(gateway.listObjects('ak_any', source)).resolves.toEqual({
     ok: true,
-    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null, done: true, location: 'Home', option: 'High' }]
+    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null, done: true, location: 'Home', option: 'High' }],
   })
   await expect(gateway.listObjects('ak_any', TASKS)).resolves.toEqual({
     ok: true,
-    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null }]
+    value: [{ id: 'o1', title: 'Task', start: 1_000, end: null }],
   })
 })
 
@@ -127,10 +127,10 @@ test("answers a query with its type's objects its view keeps, reading the first 
         typeKey: 'task',
         views: [
           { id: 'v_open', openOnly: true },
-          { id: 'v_all', openOnly: false }
-        ]
-      }
-    ]
+          { id: 'v_all', openOnly: false },
+        ],
+      },
+    ],
   })
   const query = (viewId: string | null, queryId = 'q_open'): EventsSource => ({
     kind: 'query',
@@ -139,7 +139,7 @@ test("answers a query with its type's objects its view keeps, reading the first 
     viewId,
     from: 'due_date',
     to: null,
-    includesTime: false
+    includesTime: false,
   })
   const ids = async (source: EventsSource): Promise<string[]> => {
     const result = await gateway.listObjects('ak_any', source)
@@ -161,7 +161,7 @@ test('seeds the design sample around the current month by default', async () => 
     typeKey: 'task',
     from: 'due_date',
     to: null,
-    includesTime: false
+    includesTime: false,
   })
   const inDecember = tasks.ok ? tasks.value.filter((ref) => overlapsEventsWindow(ref, window)) : []
   expect(inDecember.map(({ title }) => title)).toContain('Reply to Iris')
@@ -183,7 +183,7 @@ test('seeds something in the months after the year turns', () => {
   const sample = inMemoryEventsSample(DECEMBER, UTC)
   const january = monthWindow(shiftEventsMonth(DECEMBER, 1))
   const inJanuary = sample.filter(({ dates }) =>
-    Object.values(dates).some((instant) => instant >= january.start && instant <= january.end)
+    Object.values(dates).some((instant) => instant >= january.start && instant <= january.end),
   )
   expect(inJanuary.length).toBeGreaterThan(0)
 })
@@ -203,20 +203,22 @@ test('moves, ticks and creates objects, which the next read answers', async () =
   const { gateway } = setup(OBJECTS)
   const window = { start: 0, end: 10_000 }
 
-  await expect(gateway.reschedule('k', { spaceId: 'sp_1', id: 'o4' }, { start_date: 3_000, due_date: 6_000 })).resolves.toEqual({
+  await expect(
+    gateway.reschedule('k', { spaceId: 'sp_1', id: 'o4' }, { start_date: 3_000, due_date: 6_000 }),
+  ).resolves.toEqual({
     ok: true,
-    value: null
+    value: null,
   })
   await gateway.setDone('k', { spaceId: 'sp_1', id: 'o1' }, 'done', true)
   await expect(
-    gateway.create('k', { spaceId: 'sp_1', typeKey: 'project', name: 'New', dates: { start_date: 4_000 } })
+    gateway.create('k', { spaceId: 'sp_1', typeKey: 'project', name: 'New', dates: { start_date: 4_000 } }),
   ).resolves.toEqual({ ok: true, value: { id: 'obj_new_1' } })
 
   const projects = await gateway.listObjects('k', PROJECTS, window)
   expect(projects.ok && projects.value).toEqual([
     { id: 'o4', title: 'Range', start: 3_000, end: 6_000 },
     { id: 'o5', title: 'Open', start: 2_000, end: null },
-    { id: 'obj_new_1', title: 'New', start: 4_000, end: null }
+    { id: 'obj_new_1', title: 'New', start: 4_000, end: null },
   ])
   const tasks = await gateway.listObjects('k', { ...TASKS, done: 'done' }, window)
   expect(tasks.ok && tasks.value[0]).toMatchObject({ id: 'o1', done: true })
@@ -235,11 +237,12 @@ test('refuses to write an object it does not have', async () => {
   const { gateway } = setup(OBJECTS)
   await expect(gateway.setDone('k', { spaceId: 'sp_2', id: 'o1' }, 'done', true)).resolves.toMatchObject({
     ok: false,
-    failure: 'rejected'
+    failure: 'rejected',
   })
-  await expect(
-    gateway.addToCollection('k', { spaceId: 'sp_2', collectionId: 'col_1' }, 'o1')
-  ).resolves.toMatchObject({ ok: false, failure: 'rejected' })
+  await expect(gateway.addToCollection('k', { spaceId: 'sp_2', collectionId: 'col_1' }, 'o1')).resolves.toMatchObject({
+    ok: false,
+    failure: 'rejected',
+  })
   expect(gateway.collectionItems('sp_2', 'col_1')).toEqual([])
 })
 
@@ -261,9 +264,9 @@ test('carries the panel properties the source names, and names what they link to
       typeKey: 'task',
       title: 'Task',
       dates: { due_date: 1_000 },
-      values: { notes: 'Bring the keys', project: ['o2', 'participant-A8mara'], cost: 'free' }
+      values: { notes: 'Bring the keys', project: ['o2', 'participant-A8mara'], cost: 'free' },
     },
-    { id: 'o2', spaceId: 'sp_personal', typeKey: 'project', title: 'Launch', dates: {} }
+    { id: 'o2', spaceId: 'sp_personal', typeKey: 'project', title: 'Launch', dates: {} },
   ])
   const source: EventsSource = {
     ...TASKS,
@@ -271,8 +274,8 @@ test('carries the panel properties the source names, and names what they link to
     panel: [
       { key: 'notes', format: 'text' },
       { key: 'project', format: 'objects' },
-      { key: 'cost', format: 'number' }
-    ]
+      { key: 'cost', format: 'number' },
+    ],
   }
 
   const objects = await gateway.listObjects('ak', source)
@@ -280,20 +283,27 @@ test('carries the panel properties the source names, and names what they link to
 
   expect(objects.ok && objects.value[0]?.details).toEqual([
     { key: 'notes', format: 'text', value: 'Bring the keys' },
-    { key: 'project', format: 'objects', ids: ['o2', 'participant-A8mara'] }
+    { key: 'project', format: 'objects', ids: ['o2', 'participant-A8mara'] },
   ])
   expect(linked).toEqual({
     ok: true,
     value: [
       { id: 'o2', name: 'Launch', member: false },
-      { id: 'participant-A8mara', name: 'Mara', member: true }
-    ]
+      { id: 'participant-A8mara', name: 'Mara', member: true },
+    ],
   })
 })
 
 test('reads and ticks Done by the checkbox the source names', async () => {
   const { gateway } = setup([
-    { id: 'o1', spaceId: 'sp_1', typeKey: 'task', title: 'Task', dates: { due_date: 1_000 }, values: { finished: true } }
+    {
+      id: 'o1',
+      spaceId: 'sp_1',
+      typeKey: 'task',
+      title: 'Task',
+      dates: { due_date: 1_000 },
+      values: { finished: true },
+    },
   ])
   const source: EventsSource = { ...TASKS, done: 'finished' }
 

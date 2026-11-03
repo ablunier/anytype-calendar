@@ -3,8 +3,8 @@
  * zone, keyed to their subscription with `feedSourceKey`. */
 
 import type { FeedsEvent, FeedsSubscriptionView } from '@anytype-calendar/feeds/domain'
-import type { FeedsSnapshot } from '@shared/ipc'
 import type { CalendarEvent, FeedSource, FeedStatus } from '@renderer/types'
+import type { FeedsSnapshot } from '@shared/ipc'
 import { localDate, localTime } from './events'
 import { elapsedSince, hueOf } from './schema'
 
@@ -22,7 +22,7 @@ export function feedsFor(snapshot: FeedsSnapshot, now: number): FeedSource[] {
     category: hueOf(colour),
     colour,
     host,
-    status: statusFor(status, now)
+    status: statusFor(status, now),
   }))
 }
 
@@ -47,8 +47,7 @@ export function feedEventsFor(snapshot: FeedsSnapshot): CalendarEvent[] {
 export function mergedEvents(anytype: CalendarEvent[], feeds: CalendarEvent[]): CalendarEvent[] {
   if (feeds.length === 0) return anytype
   return [...anytype, ...feeds].sort(
-    (a, b) =>
-      compare(a.date, b.date) || Number(!a.allDay) - Number(!b.allDay) || compare(a.time ?? '', b.time ?? '')
+    (a, b) => compare(a.date, b.date) || Number(!a.allDay) - Number(!b.allDay) || compare(a.time ?? '', b.time ?? ''),
   )
 }
 
@@ -59,14 +58,15 @@ function compare(a: string, b: string): number {
 function statusFor({ readAt, reading, error }: FeedsSubscriptionView['status'], now: number): FeedStatus {
   const status: FeedStatus = { state: reading ? 'syncing' : error ? 'error' : readAt === null ? 'offline' : 'synced' }
   if (readAt !== null) status.elapsed = elapsedSince(readAt, now)
-  if (error) status.failure = error.failure === 'http' ? { failure: 'http', status: error.status } : { failure: error.failure }
+  if (error)
+    status.failure = error.failure === 'http' ? { failure: 'http', status: error.status } : { failure: error.failure }
   return status
 }
 
 /** An occurrence's id is unique within its feed only, so the key is made of both. */
 function calendarEventFor(
   { id, feedId, rank, title, start, end, allDay, location, description, url }: FeedsEvent,
-  { name, colour }: FeedsSubscriptionView
+  { name, colour }: FeedsSubscriptionView,
 ): CalendarEvent {
   return {
     id: `${feedSourceKey(feedId)}:${id}`,
@@ -85,8 +85,8 @@ function calendarEventFor(
     feed: {
       calendar: name,
       ...(description === undefined ? {} : { description }),
-      ...(url === undefined ? {} : { url })
-    }
+      ...(url === undefined ? {} : { url }),
+    },
   }
 }
 

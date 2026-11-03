@@ -5,7 +5,7 @@ describe('adding', () => {
   test('keeps the address and the name, and nothing else', () => {
     expect(toFeedsAddRequest({ url: 'webcal://example.com/a.ics', name: '', extra: 1 })).toEqual({
       url: 'webcal://example.com/a.ics',
-      name: ''
+      name: '',
     })
   })
 
@@ -13,7 +13,7 @@ describe('adding', () => {
     expect(toFeedsAddRequest({ url: 'https://example.com/a.ics', name: '', colour: 'lime' })).toEqual({
       url: 'https://example.com/a.ics',
       name: '',
-      colour: 'lime'
+      colour: 'lime',
     })
     expect(toFeedsAddRequest({ url: 'https://example.com/a.ics', name: '', colour: 'chartreuse' })).toBeNull()
   })
@@ -31,7 +31,7 @@ describe('editing', () => {
     expect(toFeedsEditRequest({ id: 'a1', name: ' Family ', colour: 'pink' })).toEqual({
       id: 'a1',
       name: 'Family',
-      colour: 'pink'
+      colour: 'pink',
     })
     expect(toFeedsEditRequest({ id: 'a1', colour: 'teal' })).toEqual({ id: 'a1', colour: 'teal' })
   })
@@ -39,7 +39,7 @@ describe('editing', () => {
   test('keeps an address to move it to', () => {
     expect(toFeedsEditRequest({ id: 'a1', url: 'webcal://example.com/b.ics' })).toEqual({
       id: 'a1',
-      url: 'webcal://example.com/b.ics'
+      url: 'webcal://example.com/b.ics',
     })
     expect(toFeedsEditRequest({ id: 'a1', url: 42 })).toBeNull()
   })

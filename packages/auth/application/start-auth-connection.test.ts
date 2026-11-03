@@ -20,15 +20,15 @@ function setup() {
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: true,
       apiKey: 'unused',
-      access: { grant: null }
-    }))
+      access: { grant: null },
+    })),
   }
   const store = new AuthSessionStore()
   const startAuthConnection = new StartAuthConnection({
     gateway,
     store,
     appName: 'Test app',
-    now: () => START
+    now: () => START,
   })
   const stepBackAuthConnection = new StepBackAuthConnection(store)
   return { gateway, store, startAuthConnection, stepBackAuthConnection }
@@ -41,7 +41,7 @@ describe('startConnection', () => {
     expect(gateway.createChallenge).toHaveBeenCalledExactlyOnceWith('Test app')
     expect(store.get()).toEqual({
       phase: 'awaiting-code',
-      challenge: { id: 'ch_1', expiresAt: START + AUTH_CHALLENGE_LIFETIME_MS }
+      challenge: { id: 'ch_1', expiresAt: START + AUTH_CHALLENGE_LIFETIME_MS },
     })
   })
 

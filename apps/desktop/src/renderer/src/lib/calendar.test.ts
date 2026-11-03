@@ -1,18 +1,17 @@
-import { describe, expect, test } from 'vitest'
 import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import { describe, expect, test } from 'vitest'
 import {
   addDays,
-  daysBetween,
-  formatTime,
-  parseTime,
   buildMonthGrid,
   buildWeek,
   dateLabel,
-  dayLabel,
   dateOptions,
+  dayLabel,
+  daysBetween,
   eventHue,
   eventsOnDay,
   formatNumber,
+  formatTime,
   indexBy,
   isoDate,
   isoWeekNumber,
@@ -22,6 +21,7 @@ import {
   monthLabel,
   offeredMapping,
   offersDates,
+  parseTime,
   queriesInSpace,
   shortDate,
   spacesByKeys,
@@ -29,7 +29,7 @@ import {
   weekdayNames,
   weekdaysFrom,
   weekLabel,
-  withDates
+  withDates,
 } from './calendar'
 
 const TASK: ObjectType = {
@@ -40,14 +40,14 @@ const TASK: ObjectType = {
   icon: 'calendar',
   props: [
     { key: 'due_date', label: 'Due date' },
-    { key: 'start_date', label: 'Start date' }
+    { key: 'start_date', label: 'Start date' },
   ],
   selects: [{ key: 'priority', label: 'Priority' }],
   checkboxes: [{ key: 'done', label: 'Done' }],
   texts: [{ key: 'location', label: 'Location' }],
   panelProps: [
     { key: 'location', label: 'Location', format: 'text' },
-    { key: 'project', label: 'Project', format: 'objects' }
+    { key: 'project', label: 'Project', format: 'objects' },
   ],
   from: 'due_date',
   to: null,
@@ -55,7 +55,7 @@ const TASK: ObjectType = {
   colourBy: null,
   panel: [],
   done: 'done',
-  location: null
+  location: null,
 }
 
 /** A mapping's fields beyond its dates and colour, as a type starts with them. */
@@ -68,7 +68,7 @@ describe('buildMonthGrid', () => {
     expect(grid.slice(0, 3)).toEqual([
       { day: 29, date: '2024-01-29', outside: true },
       { day: 30, date: '2024-01-30', outside: true },
-      { day: 31, date: '2024-01-31', outside: true }
+      { day: 31, date: '2024-01-31', outside: true },
     ])
     expect(grid[3]).toEqual({ day: 1, date: '2024-02-01', outside: false })
     expect(grid.at(-1)).toEqual({ day: 3, date: '2024-03-03', outside: true })
@@ -84,7 +84,7 @@ describe('buildMonthGrid', () => {
       { day: 2, outside: true },
       { day: 3, outside: true },
       { day: 4, outside: true },
-      { day: 5, outside: true }
+      { day: 5, outside: true },
     ])
     expect(grid).toHaveLength(35)
   })
@@ -132,7 +132,7 @@ describe('weekdayNames', () => {
       'Thursday',
       'Friday',
       'Saturday',
-      'Sunday'
+      'Sunday',
     ])
     expect(weekdayNames('es', 'long')[0]).toBe('lunes')
     expect(weekdayNames('gl', 'long')[0]).toBe('luns')
@@ -158,13 +158,13 @@ describe('eventsOnDay', () => {
     ...base,
     id: '2',
     date: '2026-09-05',
-    until: '2026-09-08'
+    until: '2026-09-08',
   }
   const intoOctober: CalendarEvent = {
     ...base,
     id: '3',
     date: '2026-09-29',
-    until: '2026-10-02'
+    until: '2026-10-02',
   }
 
   test('matches a single-day event only on its day', () => {
@@ -191,7 +191,7 @@ describe('eventsOnDay', () => {
       ...base,
       id: '4',
       date: '2026-09-05',
-      until: '2026-09-05'
+      until: '2026-09-05',
     }
     expect(eventsOnDay([sameDay], '2026-09-05')).toEqual([sameDay])
   })
@@ -255,7 +255,7 @@ describe('typesInSpace and queriesInSpace', () => {
   const query: ObjectType = {
     ...TASK,
     key: 'sp_1:query:q',
-    query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
+    query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] },
   }
 
   test("split the given space's types from its queries", () => {
@@ -276,7 +276,9 @@ describe('dateLabel', () => {
 
 describe('offersDates', () => {
   test('true for a from-only mapping the type still has', () => {
-    expect(offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null, view: null, ...NO_DETAILS })).toBe(true)
+    expect(
+      offersDates(TASK, { from: 'due_date', to: null, includesTime: false, colourBy: null, view: null, ...NO_DETAILS }),
+    ).toBe(true)
   })
 
   test('true for a range whose both ends the type still has', () => {
@@ -286,14 +288,22 @@ describe('offersDates', () => {
         to: 'start_date',
         includesTime: false,
         colourBy: null,
-        view: null, ...NO_DETAILS
-      })
+        view: null,
+        ...NO_DETAILS,
+      }),
     ).toBe(true)
   })
 
   test('false when the from property is gone', () => {
     expect(
-      offersDates(TASK, { from: 'gone_date', to: null, includesTime: false, colourBy: null, view: null, ...NO_DETAILS })
+      offersDates(TASK, {
+        from: 'gone_date',
+        to: null,
+        includesTime: false,
+        colourBy: null,
+        view: null,
+        ...NO_DETAILS,
+      }),
     ).toBe(false)
   })
 
@@ -304,8 +314,9 @@ describe('offersDates', () => {
         to: 'gone_date',
         includesTime: false,
         colourBy: null,
-        view: null, ...NO_DETAILS
-      })
+        view: null,
+        ...NO_DETAILS,
+      }),
     ).toBe(false)
   })
 })
@@ -326,7 +337,10 @@ describe('offeredMapping', () => {
   })
 
   test("keeps a view the query has, and reads the query's first once it is gone", () => {
-    const query: ObjectType = { ...TASK, query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] } }
+    const query: ObjectType = {
+      ...TASK,
+      query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] },
+    }
     const viewed = { ...mapping, view: 'v_all', ...NO_DETAILS }
     expect(offeredMapping(query, viewed)).toBe(viewed)
     expect(offeredMapping(query, { ...viewed, view: 'v_gone', ...NO_DETAILS })).toEqual(mapping)
@@ -343,7 +357,7 @@ describe('offeredMapping of Done, Location and the panel', () => {
     view: null,
     panel: ['project', 'location'],
     done: 'done',
-    location: 'location'
+    location: 'location',
   }
 
   test('is the mapping itself when the type has them all', () => {
@@ -354,14 +368,14 @@ describe('offeredMapping of Done, Location and the panel', () => {
     expect(offeredMapping(TASK, { ...mapping, done: 'gone', location: 'gone' })).toEqual({
       ...mapping,
       done: null,
-      location: null
+      location: null,
     })
   })
 
   test('leaves out of the panel the properties that are gone, keeping the order of the rest', () => {
     expect(offeredMapping(TASK, { ...mapping, panel: ['gone', 'project', 'location'] })?.panel).toEqual([
       'project',
-      'location'
+      'location',
     ])
   })
 })
@@ -370,7 +384,7 @@ describe('mappingIn', () => {
   const query: ObjectType = {
     ...TASK,
     key: 'sp_1:query:q',
-    query: { typeKey: TASK.key, typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] }
+    query: { typeKey: TASK.key, typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] },
   }
   const picked = {
     from: 'start_date',
@@ -380,7 +394,7 @@ describe('mappingIn', () => {
     view: null,
     panel: ['project'],
     done: null,
-    location: 'location'
+    location: 'location',
   }
 
   test("is the type's entry, or its own mapping", () => {
@@ -393,7 +407,7 @@ describe('mappingIn', () => {
       view: null,
       panel: [],
       done: 'done',
-      location: null
+      location: null,
     })
   })
 
@@ -402,7 +416,7 @@ describe('mappingIn', () => {
       ...mappingIn({}, query),
       panel: ['project'],
       done: null,
-      location: 'location'
+      location: 'location',
     })
   })
 })
@@ -423,7 +437,7 @@ describe('eventHue', () => {
     rank: 0,
     date: '2026-09-01',
     allDay: true,
-    details: []
+    details: [],
   }
 
   test("is the event's own hue, else its type's, else neutral", () => {
@@ -438,14 +452,21 @@ describe('withDates', () => {
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {
-      'sp_1:task': { from: 'start_date', to: 'due_date', includesTime: true, colourBy: 'priority', view: null, ...NO_DETAILS }
+      'sp_1:task': {
+        from: 'start_date',
+        to: 'due_date',
+        includesTime: true,
+        colourBy: 'priority',
+        view: null,
+        ...NO_DETAILS,
+      },
     })
     expect(task).toEqual({
       ...TASK,
       from: 'start_date',
       to: 'due_date',
       includesTime: true,
-      colourBy: 'priority'
+      colourBy: 'priority',
     })
     expect(project).toBe(other)
   })
@@ -455,7 +476,7 @@ describe('dateOptions', () => {
   test('maps each date property to an option', () => {
     expect(dateOptions(TASK)).toEqual([
       { value: 'due_date', label: 'Due date' },
-      { value: 'start_date', label: 'Start date' }
+      { value: 'start_date', label: 'Start date' },
     ])
   })
 })
@@ -545,7 +566,7 @@ describe('buildWeek', () => {
       '2026-09-24',
       '2026-09-25',
       '2026-09-26',
-      '2026-09-27'
+      '2026-09-27',
     ])
     expect(buildWeek('2026-09-23', 6)[0]?.date).toBe('2026-09-20')
   })
@@ -558,7 +579,7 @@ describe('buildWeek', () => {
       '2026-10-01',
       '2026-10-02',
       '2026-10-03',
-      '2026-10-04'
+      '2026-10-04',
     ])
     expect(buildWeek('2027-01-01', 0)[0]?.date).toBe('2026-12-28')
   })
@@ -576,8 +597,7 @@ describe('dayLabel', () => {
 
 describe('weekLabel', () => {
   // Intl separates a range with thin spaces around the dash, which are not worth asserting.
-  const label = (start: string, end: string): string =>
-    weekLabel(start, end, 'en').replace(/\s+/g, ' ')
+  const label = (start: string, end: string): string => weekLabel(start, end, 'en').replace(/\s+/g, ' ')
 
   test('names the month once for a week inside one', () => {
     expect(label('2026-09-21', '2026-09-27')).toBe('Sep 21 – 27, 2026')

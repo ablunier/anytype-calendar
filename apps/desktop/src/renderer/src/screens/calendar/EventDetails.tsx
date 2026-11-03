@@ -1,15 +1,15 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, EventDetail, IconName, ObjectType } from '@renderer/types'
 import { Icon, Tag } from '@renderer/components/ui'
 import { formatNumber, panelLabel } from '@renderer/lib/calendar'
+import type { CalendarEvent, EventDetail, IconName, ObjectType } from '@renderer/types'
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ICONS: Record<EventDetail['kind'], IconName> = {
   text: 'file-text',
   number: 'list',
   link: 'link',
   options: 'tag',
-  objects: 'layers'
+  objects: 'layers',
 }
 
 const LINK_CLASS =
@@ -46,9 +46,7 @@ function DetailValue({ detail, space }: { detail: EventDetail; space: string }):
     case 'text':
       return <ClampedText>{detail.text}</ClampedText>
     case 'number':
-      return (
-        <span className="type-numeral text-small text-ink-body">{formatNumber(detail.value, i18n.language)}</span>
-      )
+      return <span className="type-numeral text-small text-ink-body">{formatNumber(detail.value, i18n.language)}</span>
     case 'link':
       return (
         <button
@@ -110,7 +108,7 @@ function ClampedText({ children }: { children: ReactNode }): React.JSX.Element {
         ref={ref}
         className={[
           'type-body text-small text-pretty break-words whitespace-pre-line text-ink-body',
-          expanded ? '' : 'line-clamp-4'
+          expanded ? '' : 'line-clamp-4',
         ].join(' ')}
       >
         {children}

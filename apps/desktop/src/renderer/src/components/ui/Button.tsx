@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import type { IconName } from '@renderer/types'
+import type { ReactNode } from 'react'
 import { Icon, type IconSize } from './Icon'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'quiet'
@@ -7,20 +7,17 @@ export type ButtonSize = 'sm' | 'md' | 'lg'
 
 /* Design rule: one primary per view; secondary is the workhorse. */
 const variantClass: Record<ButtonVariant, string> = {
-  primary:
-    'bg-surface-accent text-ink-inverse border-transparent shadow-1 hover:not-disabled:bg-surface-accent-hover',
-  secondary:
-    'bg-surface-card text-ink-body border-line-default shadow-1 hover:not-disabled:bg-stone-050',
+  primary: 'bg-surface-accent text-ink-inverse border-transparent shadow-1 hover:not-disabled:bg-surface-accent-hover',
+  secondary: 'bg-surface-card text-ink-body border-line-default shadow-1 hover:not-disabled:bg-stone-050',
   danger: 'bg-clay-500 text-ink-inverse border-transparent shadow-1 hover:not-disabled:bg-clay-600',
   ghost: 'bg-transparent text-ink-body border-transparent hover:not-disabled:bg-surface-hover',
-  quiet:
-    'bg-transparent text-ink-accent border-transparent hover:not-disabled:bg-surface-accent-soft'
+  quiet: 'bg-transparent text-ink-accent border-transparent hover:not-disabled:bg-surface-accent-soft',
 }
 
 const sizeClass: Record<ButtonSize, string> = {
   sm: 'h-control-sm px-10 text-tiny',
   md: 'h-control-md px-12 text-small',
-  lg: 'h-control-lg px-16 text-base'
+  lg: 'h-control-lg px-16 text-base',
 }
 
 const glyphSize: Record<ButtonSize, IconSize> = { sm: 12, md: 14, lg: 16 }
@@ -56,7 +53,7 @@ export function Button({
   form,
   className,
   ariaLabel,
-  onClick
+  onClick,
 }: ButtonProps): React.JSX.Element {
   return (
     <button
@@ -72,7 +69,7 @@ export function Button({
         sizeClass[size],
         variantClass[variant],
         fullWidth ? 'flex w-full' : '',
-        className ?? ''
+        className ?? '',
       ].join(' ')}
     >
       {loading ? (

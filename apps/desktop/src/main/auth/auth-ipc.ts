@@ -1,5 +1,5 @@
-import { BrowserWindow, clipboard, ipcMain } from 'electron'
 import { IpcChannel } from '@shared/ipc'
+import { BrowserWindow, clipboard, ipcMain } from 'electron'
 import type { Auth } from './compose-auth'
 
 export function registerAuthIpc({
@@ -10,7 +10,7 @@ export function registerAuthIpc({
   submitAuthApiKey,
   stepBackAuthConnection,
   signOutOfAuth,
-  copyAuthApiKey
+  copyAuthApiKey,
 }: Auth): void {
   ipcMain.handle(IpcChannel.sessionGet, () => authSession.get())
   ipcMain.handle(IpcChannel.authStart, () => startAuthConnection.execute())
@@ -26,9 +26,7 @@ export function registerAuthIpc({
   })
   ipcMain.handle(IpcChannel.authStepBack, () => stepBackAuthConnection.execute())
   ipcMain.handle(IpcChannel.authSignOut, () => signOutOfAuth.execute())
-  ipcMain.handle(IpcChannel.authCopyKey, () =>
-    copyAuthApiKey.execute((apiKey) => clipboard.writeText(apiKey))
-  )
+  ipcMain.handle(IpcChannel.authCopyKey, () => copyAuthApiKey.execute((apiKey) => clipboard.writeText(apiKey)))
 
   authSession.subscribe((session) => {
     for (const window of BrowserWindow.getAllWindows()) {

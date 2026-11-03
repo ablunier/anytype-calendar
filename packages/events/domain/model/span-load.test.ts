@@ -1,11 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { EventsDatedObject } from './dated-object'
-import {
-  nextEventsSpanLoad,
-  shownEventsSpan,
-  type EventsSpanLoad,
-  type EventsSpanResult
-} from './span-load'
+import { type EventsSpanLoad, type EventsSpanResult, nextEventsSpanLoad, shownEventsSpan } from './span-load'
 
 const MARCH = { kind: 'month', year: 2026, month: 2 } as const
 const APRIL = { kind: 'month', year: 2026, month: 3 } as const
@@ -17,7 +12,7 @@ const OBJECT: EventsDatedObject = {
   title: 'Ship it',
   start: 1_000,
   end: null,
-  allDay: false
+  allDay: false,
 }
 
 const LAST: EventsSpanResult = { span: MARCH, objects: [OBJECT], loadedAt: 1_000 }
@@ -36,12 +31,12 @@ describe('load-started', () => {
     expect(nextEventsSpanLoad(loaded, { type: 'load-started', span: APRIL })).toEqual({
       phase: 'loading',
       span: APRIL,
-      last: LAST
+      last: LAST,
     })
     expect(nextEventsSpanLoad({ ...failed, last: LAST }, { type: 'load-started', span: APRIL })).toEqual({
       phase: 'loading',
       span: APRIL,
-      last: LAST
+      last: LAST,
     })
   })
 
@@ -57,8 +52,8 @@ describe('load-succeeded', () => {
     expect(
       nextEventsSpanLoad(
         { phase: 'loading', span: APRIL, last: LAST },
-        { type: 'load-succeeded', objects: [], at: 5_000 }
-      )
+        { type: 'load-succeeded', objects: [], at: 5_000 },
+      ),
     ).toEqual({ phase: 'loaded', last: { span: APRIL, objects: [], loadedAt: 5_000 } })
   })
 
@@ -74,8 +69,8 @@ describe('load-failed', () => {
     expect(
       nextEventsSpanLoad(
         { phase: 'loading', span: APRIL, last: LAST },
-        { type: 'load-failed', failure: 'unauthorized', at: 5_000 }
-      )
+        { type: 'load-failed', failure: 'unauthorized', at: 5_000 },
+      ),
     ).toEqual({ phase: 'failed', span: APRIL, failure: 'unauthorized', at: 5_000, last: LAST })
   })
 
@@ -84,15 +79,13 @@ describe('load-failed', () => {
       phase: 'failed',
       span: MARCH,
       failure: 'unreachable',
-      at: 5_000
+      at: 5_000,
     })
   })
 
   test('is ignored outside a load', () => {
     for (const state of [idle, loaded, failed]) {
-      expect(nextEventsSpanLoad(state, { type: 'load-failed', failure: 'unreachable', at: 5_000 })).toBe(
-        state
-      )
+      expect(nextEventsSpanLoad(state, { type: 'load-failed', failure: 'unreachable', at: 5_000 })).toBe(state)
     }
   })
 })

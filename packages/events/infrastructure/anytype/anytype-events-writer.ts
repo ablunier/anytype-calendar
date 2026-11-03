@@ -5,7 +5,7 @@ import type {
   EventsNewObject,
   EventsObjectTarget,
   EventsWriteResult,
-  EventsWriter
+  EventsWriter,
 } from '../../domain'
 
 const UNAUTHORIZED = 401
@@ -42,7 +42,7 @@ export class AnytypeEventsWriter implements EventsWriter {
 
   async create(
     apiKey: string,
-    { spaceId, typeKey, name, dates }: EventsNewObject
+    { spaceId, typeKey, name, dates }: EventsNewObject,
   ): Promise<EventsWriteResult<{ id: string }>> {
     const response = await this.#client
       .withApiKey(apiKey)
@@ -56,7 +56,7 @@ export class AnytypeEventsWriter implements EventsWriter {
   async addToCollection(
     apiKey: string,
     { spaceId, collectionId }: EventsCollectionTarget,
-    objectId: string
+    objectId: string,
   ): Promise<EventsWriteResult> {
     const response = await this.#client
       .withApiKey(apiKey)
@@ -67,11 +67,9 @@ export class AnytypeEventsWriter implements EventsWriter {
   async #setProperties(
     apiKey: string,
     { spaceId, id }: EventsObjectTarget,
-    set: Record<string, unknown>
+    set: Record<string, unknown>,
   ): Promise<EventsWriteResult> {
-    const response = await this.#client
-      .withApiKey(apiKey)
-      .objects.update(spaceId, id, [{ op: 'set_properties', set }])
+    const response = await this.#client.withApiKey(apiKey).objects.update(spaceId, id, [{ op: 'set_properties', set }])
     return response.ok ? { ok: true, value: null } : refusal(response)
   }
 }
@@ -91,7 +89,7 @@ function refusal({ status, error, unsupported }: AnytypeFailure): EventsWriteRes
 
 function rfc3339Dates(dates: EventsDateChanges): Record<string, string | null> {
   return Object.fromEntries(
-    Object.entries(dates).map(([key, instant]) => [key, instant === null ? null : rfc3339(instant)])
+    Object.entries(dates).map(([key, instant]) => [key, instant === null ? null : rfc3339(instant)]),
   )
 }
 

@@ -1,5 +1,4 @@
 import {
-  shiftEventsMonth,
   type EventsCollectionTarget,
   type EventsDateChanges,
   type EventsDetailRef,
@@ -14,7 +13,8 @@ import {
   type EventsSource,
   type EventsTimeZone,
   type EventsWriteResult,
-  type EventsWriter
+  type EventsWriter,
+  shiftEventsMonth,
 } from '../../domain'
 
 export interface InMemoryEventsObject {
@@ -73,14 +73,14 @@ export const IN_MEMORY_EVENTS_QUERIES: InMemoryEventsQuery[] = [
     typeKey: 'task',
     views: [
       { id: 'v_open', openOnly: true },
-      { id: 'v_all', openOnly: false }
-    ]
-  }
+      { id: 'v_all', openOnly: false },
+    ],
+  },
 ]
 
 export const IN_MEMORY_EVENTS_MEMBERS: InMemoryEventsMember[] = [
   { spaceId: 'sp_personal', identity: 'A8mara', name: 'Mara' },
-  { spaceId: 'sp_personal', identity: 'A8sofia', name: 'Sofia' }
+  { spaceId: 'sp_personal', identity: 'A8sofia', name: 'Sofia' },
 ]
 
 /** Anytype's own Done and Location, which the sample keeps as fields of their own. */
@@ -99,13 +99,7 @@ interface SeedDate {
 /** `id` stands in for the one made up from the seed's place, for objects others link to. */
 type SeedDetails = Partial<Pick<InMemoryEventsObject, 'id' | 'done' | 'location' | 'options' | 'values'>>
 
-type Seed = [
-  title: string,
-  spaceId: string,
-  typeKey: string,
-  dates: Record<string, SeedDate>,
-  details?: SeedDetails
-]
+type Seed = [title: string, spaceId: string, typeKey: string, dates: Record<string, SeedDate>, details?: SeedDetails]
 
 const at = (month: number, day: number, time?: string): SeedDate =>
   time === undefined ? { month, day } : { month, day, time }
@@ -116,13 +110,13 @@ const meeting = (
   start: string,
   end: string,
   month = 0,
-  details: SeedDetails = {}
+  details: SeedDetails = {},
 ): Seed => [
   title,
   'sp_personal',
   'meeting',
   { start_date: at(month, day, start), end_date: at(month, day, end) },
-  details
+  details,
 ]
 
 const priority = (name: string, values?: Record<string, unknown>): SeedDetails =>
@@ -139,8 +133,8 @@ const SEEDS: Seed[] = [
       attendees: ['participant-A8mara', 'obj_iris'],
       url: 'https://meet.example.com/weekly',
       description: 'Walk through the board, then pick the three things that matter this week.',
-      tag: ['Work']
-    }
+      tag: ['Work'],
+    },
   }),
   ['Draft API notes', 'sp_personal', 'task', { due_date: at(0, 3, '14:30') }, { done: true }],
   ['Docs sprint', 'sp_studio', 'project', { start_date: at(0, 4), due_date: at(0, 6) }, { id: 'obj_docs_sprint' }],
@@ -153,11 +147,11 @@ const SEEDS: Seed[] = [
     'task',
     { due_date: at(0, 9, '13:00') },
     // A deleted option is served by its object id.
-    priority('High', { linked_projects: ['obj_launch_week'], tag: ['Urgent', 'bafyreideletedoption'] })
+    priority('High', { linked_projects: ['obj_launch_week'], tag: ['Urgent', 'bafyreideletedoption'] }),
   ],
   meeting('Sync with Mara', 10, '11:00', '11:45', 0, {
     location: 'Café Central',
-    values: { venue: 'Café Central, upstairs', attendees: ['participant-A8mara'] }
+    values: { venue: 'Café Central, upstairs', attendees: ['participant-A8mara'] },
   }),
   ['Field notes: local-first', 'sp_personal', 'task', { due_date: at(0, 10) }],
   ['Ship changelog', 'sp_studio', 'task', { due_date: at(0, 11, '15:00') }, priority('Medium')],
@@ -171,7 +165,7 @@ const SEEDS: Seed[] = [
     'sp_reading',
     'book',
     { start_date: at(0, 14), finish_date: at(0, 21) },
-    { values: { finished: true, pages: 445, tag: ['Home'] } }
+    { values: { finished: true, pages: 445, tag: ['Home'] } },
   ],
   meeting('Weekly planning', 16, '10:00', '10:30'),
   [
@@ -179,19 +173,19 @@ const SEEDS: Seed[] = [
     'sp_personal',
     'contact',
     { birthday: at(0, 17) },
-    { id: 'obj_iris', values: { email: 'iris@example.com', phone: '+34 600 000 000' } }
+    { id: 'obj_iris', values: { email: 'iris@example.com', phone: '+34 600 000 000' } },
   ],
   [
     'Sync API contract',
     'sp_studio',
     'task',
     { due_date: at(0, 18, '09:00') },
-    priority('High', { linked_projects: ['obj_docs_sprint', 'obj_launch_week'] })
+    priority('High', { linked_projects: ['obj_docs_sprint', 'obj_launch_week'] }),
   ],
   ['File taxes', 'sp_archive', 'task', { due_date: at(0, 19) }],
   ['Quarter close', 'sp_studio', 'project', { start_date: at(0, 20), due_date: at(0, 21) }],
   meeting('Interview: Sofia', 23, '11:30', '12:15', 0, {
-    values: { attendees: ['participant-A8sofia', 'participant-A8mara'], venue: '' }
+    values: { attendees: ['participant-A8sofia', 'participant-A8mara'], venue: '' },
   }),
   ['Prune stale objects', 'sp_studio', 'task', { due_date: at(0, 24, '15:00') }],
   ['Weekly digest draft', 'sp_personal', 'task', { due_date: at(0, 26, '09:30') }],
@@ -216,9 +210,9 @@ const SEEDS: Seed[] = [
       'sp_studio',
       'invoice',
       { issued_on: at(month, 1), due_date: at(month, 25, '09:00') },
-      { values: { amount: 1250.5, email: 'billing@example.com' } }
-    ]
-  )
+      { values: { amount: 1250.5, email: 'billing@example.com' } },
+    ],
+  ),
 ]
 
 /** Seeded around `month`, so the fake account always has something to show wherever it runs. */
@@ -227,11 +221,9 @@ export function inMemoryEventsSample(month: EventsMonth, zone: EventsTimeZone): 
     spaceId,
     typeKey,
     title,
-    dates: Object.fromEntries(
-      Object.entries(dates).map(([key, seed]) => [key, instantOf(seed, month, zone)])
-    ),
+    dates: Object.fromEntries(Object.entries(dates).map(([key, seed]) => [key, instantOf(seed, month, zone)])),
     ...details,
-    id: details.id ?? `obj_${index + 1}`
+    id: details.id ?? `obj_${index + 1}`,
   }))
 }
 
@@ -256,7 +248,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     objects,
     queries = IN_MEMORY_EVENTS_QUERIES,
     members = IN_MEMORY_EVENTS_MEMBERS,
-    requestLatencyMs = 300
+    requestLatencyMs = 300,
   }: InMemoryEventsGatewayOptions) {
     this.#sleep = sleep
     // Copied, since writes change them.
@@ -270,10 +262,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
    * Returns every object of the source with a From value, as the port allows. A query, or a
    * view of one, it does not know holds nothing, as a gone one does in Anytype.
    */
-  async listObjects(
-    _apiKey: string,
-    source: EventsSource
-  ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
+  async listObjects(_apiKey: string, source: EventsSource): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     await this.#sleep(this.#requestLatencyMs)
     const { spaceId, from, to, done, location, colourBy, panel = [] } = source
     const read = this.#read(source)
@@ -286,7 +275,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
         id: object.id,
         title: object.title,
         start,
-        end: to === null ? null : (object.dates[to] ?? null)
+        end: to === null ? null : (object.dates[to] ?? null),
       }
       if (done !== undefined) ref.done = isDone(object, done)
       const place = location === undefined ? undefined : locationOf(object, location)
@@ -304,7 +293,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   async listLinkedObjects(
     _apiKey: string,
     spaceId: string,
-    ids: readonly string[]
+    ids: readonly string[],
   ): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
     await this.#sleep(this.#requestLatencyMs)
     const wanted = new Set(ids)
@@ -317,11 +306,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     return { ok: true, value: [...objects, ...members] }
   }
 
-  async reschedule(
-    _apiKey: string,
-    target: EventsObjectTarget,
-    dates: EventsDateChanges
-  ): Promise<EventsWriteResult> {
+  async reschedule(_apiKey: string, target: EventsObjectTarget, dates: EventsDateChanges): Promise<EventsWriteResult> {
     await this.#sleep(this.#requestLatencyMs)
     const object = this.#find(target)
     if (!object) return GONE
@@ -336,7 +321,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
 
   async create(
     _apiKey: string,
-    { spaceId, typeKey, name, dates }: EventsNewObject
+    { spaceId, typeKey, name, dates }: EventsNewObject,
   ): Promise<EventsWriteResult<{ id: string }>> {
     await this.#sleep(this.#requestLatencyMs)
     const id = `obj_new_${++this.#created}`
@@ -348,7 +333,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
   async addToCollection(
     _apiKey: string,
     { spaceId, collectionId }: EventsCollectionTarget,
-    objectId: string
+    objectId: string,
   ): Promise<EventsWriteResult> {
     await this.#sleep(this.#requestLatencyMs)
     if (!this.#find({ spaceId, id: objectId })) return GONE
@@ -361,12 +346,7 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
     return [...(this.#collections.get(`${spaceId}/${collectionId}`) ?? [])]
   }
 
-  async setDone(
-    _apiKey: string,
-    target: EventsObjectTarget,
-    key: string,
-    done: boolean
-  ): Promise<EventsWriteResult> {
+  async setDone(_apiKey: string, target: EventsObjectTarget, key: string, done: boolean): Promise<EventsWriteResult> {
     await this.#sleep(this.#requestLatencyMs)
     const object = this.#find(target)
     if (!object) return GONE
@@ -381,11 +361,8 @@ export class InMemoryEventsGateway implements EventsGateway, EventsWriter {
 
   #read(source: EventsSource): { typeKey: string; openOnly: boolean } | null {
     if (source.kind === 'type') return { typeKey: source.typeKey, openOnly: false }
-    const query = this.#queries.find(
-      ({ id, spaceId }) => id === source.queryId && spaceId === source.spaceId
-    )
-    const view =
-      source.viewId === null ? query?.views[0] : query?.views.find(({ id }) => id === source.viewId)
+    const query = this.#queries.find(({ id, spaceId }) => id === source.queryId && spaceId === source.spaceId)
+    const view = source.viewId === null ? query?.views[0] : query?.views.find(({ id }) => id === source.viewId)
     return query && view ? { typeKey: query.typeKey, openOnly: view.openOnly } : null
   }
 }

@@ -1,9 +1,9 @@
 import {
+  type FeedsSubscription,
+  type FeedsSubscriptionRepository,
   isFeedsColour,
   toFeedsName,
   toFeedsUrl,
-  type FeedsSubscription,
-  type FeedsSubscriptionRepository
 } from '../../domain'
 
 /** Backed by the OS keychain in the app (Electron safeStorage), sealing to text a JSON file can hold. */
@@ -65,7 +65,7 @@ export class EncryptedFileFeedsSubscriptionRepository implements FeedsSubscripti
       id,
       name,
       colour,
-      url: this.#cipher.seal(url)
+      url: this.#cipher.seal(url),
     }))
     await this.#file.write(JSON.stringify({ version: VERSION, subscriptions: sealed }, null, 2))
   }

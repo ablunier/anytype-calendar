@@ -11,7 +11,7 @@ function setup(options: Partial<InMemoryAuthGatewayOptions> = {}) {
     },
     log: (message) => logs.push(message),
     randomId: () => `id${++ids}`,
-    ...options
+    ...options,
   })
   return { gateway, slept, logs }
 }
@@ -27,9 +27,7 @@ describe('createChallenge', () => {
     const { gateway, slept, logs } = setup()
 
     await expect(gateway.createChallenge('Calendar')).resolves.toEqual({ ok: true, challengeId: 'ch_id1' })
-    expect(logs).toEqual([
-      '[in-memory anytype] "Calendar" asks to connect — challenge ch_id1, code 2749'
-    ])
+    expect(logs).toEqual(['[in-memory anytype] "Calendar" asks to connect — challenge ch_id1, code 2749'])
     expect(slept).toEqual([300])
   })
 })
@@ -42,7 +40,7 @@ describe('exchangeCode', () => {
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toEqual({
       ok: true,
       apiKey: 'ak_mock_id2',
-      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } },
     })
     expect(slept).toEqual([300, 1_200])
   })
@@ -53,7 +51,7 @@ describe('exchangeCode', () => {
 
     await expect(gateway.exchangeCode(challengeId, '1111')).resolves.toEqual({
       ok: false,
-      failure: 'invalid-code'
+      failure: 'invalid-code',
     })
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toMatchObject({ ok: true })
   })
@@ -65,7 +63,7 @@ describe('exchangeCode', () => {
 
     await expect(gateway.exchangeCode(challengeId, '2749')).resolves.toEqual({
       ok: false,
-      failure: 'invalid-code'
+      failure: 'invalid-code',
     })
   })
 
@@ -73,7 +71,7 @@ describe('exchangeCode', () => {
     const { gateway } = setup()
     await expect(gateway.exchangeCode('ch_unknown', '2749')).resolves.toEqual({
       ok: false,
-      failure: 'invalid-code'
+      failure: 'invalid-code',
     })
   })
 
@@ -93,7 +91,7 @@ describe('verifyApiKey', () => {
 
     await expect(gateway.verifyApiKey('ak_fake_2749')).resolves.toEqual({
       ok: true,
-      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } },
     })
     expect(slept).toEqual([1_200])
   })
@@ -108,7 +106,7 @@ describe('verifyApiKey', () => {
 
     await expect(gateway.verifyApiKey('ak_wrong')).resolves.toEqual({
       ok: false,
-      failure: 'invalid-key'
+      failure: 'invalid-key',
     })
   })
 

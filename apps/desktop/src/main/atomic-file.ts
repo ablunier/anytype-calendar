@@ -23,6 +23,6 @@ export function atomicFileAt(path: string, mode: number): AtomicFile {
       await writeFile(staging, bytes, { mode })
       await rename(staging, path)
     },
-    remove: () => rm(path, { force: true })
+    remove: () => rm(path, { force: true }),
   }
 }

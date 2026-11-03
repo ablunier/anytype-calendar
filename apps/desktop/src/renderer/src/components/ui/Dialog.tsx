@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react'
+import { type ReactNode, useCallback, useEffect, useId, useRef } from 'react'
 import { IconButton } from './IconButton'
 
 export type DialogWidth = 'default' | 'wide'
 
 const widthClass: Record<DialogWidth, string> = {
   default: 'w-440',
-  wide: 'w-460'
+  wide: 'w-460',
 }
 
 const FOCUSABLE =
@@ -33,7 +33,7 @@ export function Dialog({
   description,
   children,
   footer,
-  width = 'default'
+  width = 'default',
 }: DialogProps): React.JSX.Element | null {
   const id = useId()
   const sheetRef = useRef<HTMLDivElement>(null)
@@ -93,7 +93,7 @@ export function Dialog({
         className={[
           'animate-sheet flex max-h-full max-w-full flex-col overflow-hidden rounded-sheet border border-line-subtle',
           'bg-surface-raised shadow-3',
-          widthClass[width]
+          widthClass[width],
         ].join(' ')}
       >
         <div className="flex shrink-0 items-start gap-12 px-20 pt-20 pb-12">

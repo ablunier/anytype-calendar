@@ -7,11 +7,7 @@ import type { EventsDay, EventsSpan, EventsSpanKind } from '@anytype-calendar/ev
  *
  * `weekStart` is the user's first day of the week, Monday 0 to Sunday 6.
  */
-export function defaultEventsSpan(
-  view: EventsSpanKind,
-  today: EventsDay,
-  weekStart: number
-): EventsSpan {
+export function defaultEventsSpan(view: EventsSpanKind, today: EventsDay, weekStart: number): EventsSpan {
   switch (view) {
     case 'month':
       return { kind: 'month', year: today.year, month: today.month }

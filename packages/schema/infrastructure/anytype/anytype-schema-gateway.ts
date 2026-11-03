@@ -1,5 +1,4 @@
 import {
-  listAll,
   type AnytypeApi,
   type AnytypeClient,
   type AnytypeFailure,
@@ -9,7 +8,8 @@ import {
   type AnytypePaging,
   type AnytypePropertyDefinition,
   type AnytypeResult,
-  type AnytypeTypeDocument
+  type AnytypeTypeDocument,
+  listAll,
 } from '@ablunier/anytype-client'
 import type {
   SchemaCollection,
@@ -20,7 +20,7 @@ import type {
   SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
-  SchemaTypeRef
+  SchemaTypeRef,
 } from '../../domain'
 
 /** A type list row carries no properties, so each type is read on its own, this many at once. */
@@ -44,7 +44,7 @@ const SYSTEM_KEY_SPELLINGS: Readonly<Record<string, string>> = {
   lastModifiedDate: 'last_modified_date',
   createdDate: 'created_date',
   addedDate: 'added_date',
-  lastMessageDate: 'last_message_date'
+  lastMessageDate: 'last_message_date',
 }
 
 const BAD_REQUEST = 400
@@ -91,7 +91,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
         const fileId = nonEmpty(item.icon_image)
         const icon = fileId === undefined ? undefined : await this.#spaceIcon(api, id, fileId)
         return icon === undefined ? space : { ...space, icon }
-      })
+      }),
     )
     const hasNotGrantedSpaces = result.value.pages.some((page) => page.has_not_granted_spaces === true)
     return { ok: true, value: { spaces, hasNotGrantedSpaces } }
@@ -100,7 +100,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
   async listSelectOptions(
     apiKey: string,
     spaceId: string,
-    propertyKey: string
+    propertyKey: string,
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
     const api = this.#client.withApiKey(apiKey)
     const result = await this.#listAll((paging) => api.properties.listOptions(spaceId, propertyKey, paging), 'options')
@@ -111,7 +111,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
         const name = nonEmpty(item.name)
         const color = nonEmpty(item.color)
         return name !== undefined && color !== undefined ? [{ name, color }] : []
-      })
+      }),
     }
   }
 
@@ -166,7 +166,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
       value: own.map((type) => {
         const more = fromTemplates.value.get(type.key)
         return more ? { ...type, properties: [...type.properties, ...more] } : type
-      })
+      }),
     }
   }
 
@@ -179,11 +179,13 @@ export class AnytypeSchemaGateway implements SchemaGateway {
   async #templateProperties(
     api: AnytypeApi,
     spaceId: string,
-    types: readonly SchemaTypeRef[]
+    types: readonly SchemaTypeRef[],
   ): Promise<SchemaGatewayResult<Map<string, SchemaProperty[]>>> {
     const listed = await this.#listAll((paging) => api.templates.list(spaceId, {}, paging), 'templates')
     if (!listed.ok) return listed
-    const ownKeys = new Map(types.map(({ key, properties }) => [key, new Set(properties.map((property) => property.key))]))
+    const ownKeys = new Map(
+      types.map(({ key, properties }) => [key, new Set(properties.map((property) => property.key))]),
+    )
     const templates = listed.value.items.flatMap((item) => {
       const id = nonEmpty(item.id)
       const typeKey = nonEmpty(item.template_for)
@@ -218,15 +220,17 @@ export class AnytypeSchemaGateway implements SchemaGateway {
       properties.value.items.flatMap((item): [string, SchemaProperty][] => {
         const key = nonEmpty(item.key)
         const format = nonEmpty(item.format)
-        return key !== undefined && format !== undefined ? [[key, { key, name: nonEmpty(item.name) ?? '', format }]] : []
-      })
+        return key !== undefined && format !== undefined
+          ? [[key, { key, name: nonEmpty(item.name) ?? '', format }]]
+          : []
+      }),
     )
     return {
       ok: true,
       value: new Map(
         // A block may name a property the space no longer has.
-        [...added].map(([typeKey, keys]) => [typeKey, [...keys].flatMap((key) => byKey.get(key) ?? [])])
-      )
+        [...added].map(([typeKey, keys]) => [typeKey, [...keys].flatMap((key) => byKey.get(key) ?? [])]),
+      ),
     }
   }
 
@@ -288,7 +292,7 @@ export class AnytypeSchemaGateway implements SchemaGateway {
         id,
         name: nonEmpty(item.name) ?? '',
         lastModified: Number.isNaN(lastModified) ? null : lastModified,
-        backlinks: toIds(item.properties?.['backlinks'])
+        backlinks: toIds(item.properties?.['backlinks']),
       }
     })
 
@@ -314,14 +318,14 @@ export class AnytypeSchemaGateway implements SchemaGateway {
       ok: true,
       value: rows.map(({ backlinks, ...collection }) => ({
         ...collection,
-        backlinks: repeated(collection.name) ? backlinks.flatMap((id) => names.get(id) ?? []) : []
-      }))
+        backlinks: repeated(collection.name) ? backlinks.flatMap((id) => names.get(id) ?? []) : [],
+      })),
     }
   }
 
   async #listAll<Page extends AnytypePage<unknown>>(
     page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<Page>>,
-    what: string
+    what: string,
   ): Promise<SchemaGatewayResult<Listing<Page>>> {
     const response = await listAll(page)
     if (response.ok) return { ok: true, value: { items: response.body.data, pages: response.body.pages } }
@@ -391,7 +395,7 @@ function toType(key: string, document: AnytypeTypeDocument | null): SchemaTypeRe
     key,
     name: nonEmpty(document?.properties?.name) ?? '',
     icon: toIcon(document?.icon),
-    properties: definitions.map(toProperty)
+    properties: definitions.map(toProperty),
   }
   return formerKey === key ? type : { ...type, formerKey }
 }
@@ -424,7 +428,7 @@ function toIcon(icon: AnytypeIcon | null | undefined): SchemaTypeIcon | null {
 async function eachAtMost<T>(
   limit: number,
   items: readonly T[],
-  work: (item: T, index: number) => Promise<void>
+  work: (item: T, index: number) => Promise<void>,
 ): Promise<void> {
   let next = 0
   const worker = async (): Promise<void> => {

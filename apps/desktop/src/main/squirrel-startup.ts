@@ -17,10 +17,7 @@ export function handleSquirrelEvent(): boolean {
 
   const updateShortcuts = (flag: string): void => {
     const updateExe = join(dirname(process.execPath), '..', 'Update.exe')
-    spawn(updateExe, [`${flag}=${basename(process.execPath)}`], { detached: true }).on(
-      'close',
-      () => app.quit()
-    )
+    spawn(updateExe, [`${flag}=${basename(process.execPath)}`], { detached: true }).on('close', () => app.quit())
   }
 
   switch (process.argv[1]) {

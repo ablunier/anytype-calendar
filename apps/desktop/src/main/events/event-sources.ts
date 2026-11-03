@@ -5,7 +5,7 @@ import type {
   SchemaSpace,
   SchemaSync,
   SchemaType,
-  SchemaTypeChoice
+  SchemaTypeChoice,
 } from '@anytype-calendar/schema/domain'
 
 /**
@@ -26,8 +26,7 @@ export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSy
   if (selection.phase === 'unset') return []
   const { spaceIds, types, queries } = selection.selection
   const synced = sync.phase === 'idle' ? undefined : sync.last
-  const spaceOf = (spaceId: string): SchemaSpace | undefined =>
-    synced?.spaces.find(({ id }) => id === spaceId)
+  const spaceOf = (spaceId: string): SchemaSpace | undefined => synced?.spaces.find(({ id }) => id === spaceId)
 
   const typeSources = types
     .filter((choice) => spaceIds.includes(choice.spaceId))
@@ -53,7 +52,7 @@ export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSy
 /** The type's own dates are the renderer's `defaultMapping`: its first date, single and all-day. */
 function datesOf(
   { from, to, includesTime }: SchemaTypeChoice | SchemaQueryChoice,
-  type: SchemaType | undefined
+  type: SchemaType | undefined,
 ): Pick<EventsSource, 'from' | 'to' | 'includesTime'> {
   const has = (key: string): boolean => type?.dateProperties.some((property) => property.key === key) === true
   const first = type?.dateProperties[0]
@@ -64,7 +63,7 @@ function datesOf(
 function withDetails(
   source: EventsSource,
   type: SchemaType,
-  { colourBy, panel, done, location }: SchemaTypeChoice | SchemaQueryChoice
+  { colourBy, panel, done, location }: SchemaTypeChoice | SchemaQueryChoice,
 ): EventsSource {
   const detailed = { ...source }
   const checkbox = type.checkboxProperties.find(({ key }) => key === done)
@@ -76,14 +75,14 @@ function withDetails(
     detailed.panel = shown.map(({ key, format, options }) =>
       options === undefined
         ? { key, format }
-        : { key, format, options: options.map(({ name, color }) => ({ name, color })) }
+        : { key, format, options: options.map(({ name, color }) => ({ name, color })) },
     )
   }
   const select = type.selectProperties.find(({ key }) => key === colourBy)
   if (select) {
     detailed.colourBy = {
       key: select.key,
-      options: select.options.map(({ name, color }) => ({ name, color }))
+      options: select.options.map(({ name, color }) => ({ name, color })),
     }
   }
   return detailed

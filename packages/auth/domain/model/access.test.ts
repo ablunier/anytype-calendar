@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { authAccessCanWrite, sameAuthAccess, type AuthAccess } from './access'
+import { type AuthAccess, authAccessCanWrite, sameAuthAccess } from './access'
 
 const grant = { allSpaces: false, spaceIds: ['sp_1', 'sp_2'], permission: 'read' as const }
 

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
 import { indexBy, mappingIn, offeredMapping } from '@renderer/lib/calendar'
+import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
+import { useMemo, useState } from 'react'
 
 export interface TypeSelection {
   spaceKeys: string[]
@@ -48,7 +48,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
 
   const activeTypes = useMemo(
     () => types.filter((type) => spaceKeys.includes(type.space) && typeKeys.includes(type.key)),
-    [types, spaceKeys, typeKeys]
+    [types, spaceKeys, typeKeys],
   )
 
   const update = (key: string, change: (mapping: DateMapping) => DateMapping): void => {
@@ -56,7 +56,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     if (!type) return
     setPicks((current) => ({
       ...current,
-      dates: { ...current.dates, [key]: change(mappingIn(current.dates, type)) }
+      dates: { ...current.dates, [key]: change(mappingIn(current.dates, type)) },
     }))
   }
 
@@ -66,10 +66,8 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     activeTypes,
     picks,
     mappingFor: (type) => mappingIn(dates, type),
-    toggleSpace: (key) =>
-      setPicks((current) => ({ ...current, spaceKeys: toggle(current.spaceKeys, key) })),
-    toggleType: (key) =>
-      setPicks((current) => ({ ...current, typeKeys: toggle(current.typeKeys, key) })),
+    toggleSpace: (key) => setPicks((current) => ({ ...current, spaceKeys: toggle(current.spaceKeys, key) })),
+    toggleType: (key) => setPicks((current) => ({ ...current, typeKeys: toggle(current.typeKeys, key) })),
     // A range from a date to itself is not a selection main accepts, so it becomes one date.
     setFrom: (key, value) =>
       update(key, (mapping) => ({ ...mapping, from: value, to: mapping.to === value ? null : mapping.to })),
@@ -79,7 +77,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     setView: (key, value) => update(key, (mapping) => ({ ...mapping, view: value })),
     setPanel: (key, value) => update(key, (mapping) => ({ ...mapping, panel: value })),
     setDone: (key, value) => update(key, (mapping) => ({ ...mapping, done: value })),
-    setLocation: (key, value) => update(key, (mapping) => ({ ...mapping, location: value }))
+    setLocation: (key, value) => update(key, (mapping) => ({ ...mapping, location: value })),
   }
 }
 

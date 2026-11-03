@@ -10,6 +10,6 @@ export function selectionFileAt(store: AppConfigStore): SchemaSelectionFile {
       const value = await store.readSection(SECTION)
       return value === null ? null : JSON.stringify(value)
     },
-    write: (text) => store.writeSection(SECTION, JSON.parse(text))
+    write: (text) => store.writeSection(SECTION, JSON.parse(text)),
   }
 }

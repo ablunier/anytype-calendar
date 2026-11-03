@@ -1,11 +1,11 @@
-import { safeStorage } from 'electron'
 import type { CredentialCipher, CredentialFile } from '@anytype-calendar/auth/infrastructure'
+import { safeStorage } from 'electron'
 import { atomicFileAt } from '../atomic-file'
 
 /** Only usable once the app is ready. */
 export const safeStorageCipher: CredentialCipher = {
   encrypt: (plain) => safeStorage.encryptString(plain),
-  decrypt: (sealed) => safeStorage.decryptString(Buffer.from(sealed))
+  decrypt: (sealed) => safeStorage.decryptString(Buffer.from(sealed)),
 }
 
 export function credentialFileAt(path: string): CredentialFile {

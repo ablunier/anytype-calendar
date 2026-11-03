@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { describe, expect, test } from 'vitest'
 import type { EventsSource } from '../../domain'
 import { AnytypeEventsGateway } from './anytype-events-gateway'
 
@@ -16,7 +16,7 @@ const APPOINTMENTS: EventsSource = {
   typeKey: 'appointment',
   from: 'data',
   to: null,
-  includesTime: true
+  includesTime: true,
 }
 const PROJECTS: EventsSource = {
   kind: 'type',
@@ -24,7 +24,7 @@ const PROJECTS: EventsSource = {
   typeKey: 'project',
   from: 'start_date',
   to: 'finish_date',
-  includesTime: false
+  includesTime: false,
 }
 
 /** September 2026 two hours ahead of UTC. */
@@ -41,7 +41,7 @@ function setup(...replies: (Reply | { status: number; text: string })[]) {
       if (!reply) throw new Error('no reply scripted')
       const text = 'text' in reply ? reply.text : JSON.stringify(reply.body)
       return { status: reply.status, text: async () => text }
-    }
+    },
   })
   const warnings: string[] = []
   const warn = (message: string): void => {
@@ -52,7 +52,7 @@ function setup(...replies: (Reply | { status: number; text: string })[]) {
 
 const page = (data: unknown[], hasMore = false): Reply => ({
   status: 200,
-  body: { data, total: data.length, offset: 0, limit: 1000, has_more: hasMore }
+  body: { data, total: data.length, offset: 0, limit: 1000, has_more: hasMore },
 })
 
 /** Shaped like a real v2 search row: only the fields asked for, an empty date left out. */
@@ -60,12 +60,12 @@ const row = (id: string, name: string, properties: Record<string, unknown>) => (
   id,
   name,
   type: 'appointment',
-  properties
+  properties,
 })
 
 const v2Error = (status: number, code: string): Reply => ({
   status,
-  body: { status, code, message: code, issues: [] }
+  body: { status, code, message: code, issues: [] },
 })
 
 describe('a single date', () => {
@@ -74,7 +74,7 @@ describe('a single date', () => {
 
     await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).resolves.toEqual({
       ok: true,
-      value: [{ id: 'obj_1', title: 'Padel', start: Date.parse('2026-09-26T09:00:00Z'), end: null }]
+      value: [{ id: 'obj_1', title: 'Padel', start: Date.parse('2026-09-26T09:00:00Z'), end: null }],
     })
     expect(calls[0]?.url).toBe(`${BASE}/v2/spaces/${SPACE_ID}/search?offset=0&limit=1000`)
     expect(calls[0]?.init.method).toBe('POST')
@@ -84,9 +84,9 @@ describe('a single date', () => {
         { property: 'type', condition: 'equal', value: 'appointment' },
         { property: 'data', condition: 'not_empty' },
         { property: 'data', condition: 'greater_or_equal', value: START_SECONDS },
-        { property: 'data', condition: 'less_or_equal', value: END_SECONDS }
+        { property: 'data', condition: 'less_or_equal', value: END_SECONDS },
       ],
-      fields: ['data']
+      fields: ['data'],
     })
   })
 })
@@ -94,9 +94,7 @@ describe('a single date', () => {
 describe('a range', () => {
   test('searches for a From before the window ends and a To or From after it starts', async () => {
     const { gateway, calls } = setup(
-      page([
-        row('obj_1', 'Beta 1', { start_date: '2026-09-08T22:00:00Z', finish_date: '2026-09-15T22:00:00Z' })
-      ])
+      page([row('obj_1', 'Beta 1', { start_date: '2026-09-08T22:00:00Z', finish_date: '2026-09-15T22:00:00Z' })]),
     )
 
     await expect(gateway.listObjects(API_KEY, PROJECTS, WINDOW)).resolves.toEqual({
@@ -106,9 +104,9 @@ describe('a range', () => {
           id: 'obj_1',
           title: 'Beta 1',
           start: Date.parse('2026-09-08T22:00:00Z'),
-          end: Date.parse('2026-09-15T22:00:00Z')
-        }
-      ]
+          end: Date.parse('2026-09-15T22:00:00Z'),
+        },
+      ],
     })
     expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
       filters: [
@@ -119,11 +117,11 @@ describe('a range', () => {
           operator: 'or',
           filters: [
             { property: 'finish_date', condition: 'greater_or_equal', value: START_SECONDS },
-            { property: 'start_date', condition: 'greater_or_equal', value: START_SECONDS }
-          ]
-        }
+            { property: 'start_date', condition: 'greater_or_equal', value: START_SECONDS },
+          ],
+        },
       ],
-      fields: ['start_date', 'finish_date']
+      fields: ['start_date', 'finish_date'],
     })
   })
 
@@ -134,9 +132,7 @@ describe('a range', () => {
   })
 
   test('carries a null end for a To served as null', async () => {
-    const { gateway } = setup(
-      page([row('obj_1', 'Open', { start_date: '2026-09-03T22:00:00Z', finish_date: null })])
-    )
+    const { gateway } = setup(page([row('obj_1', 'Open', { start_date: '2026-09-03T22:00:00Z', finish_date: null })]))
     const result = await gateway.listObjects(API_KEY, PROJECTS, WINDOW)
     expect(result.ok && result.value[0]?.end).toBeNull()
   })
@@ -149,7 +145,7 @@ describe('Done, Location and colour', () => {
     from: 'due_date',
     done: 'done',
     location: 'location',
-    colourBy: { key: '6aaa4502', options: [{ name: 'P4', color: 'grey' }] }
+    colourBy: { key: '6aaa4502', options: [{ name: 'P4', color: 'grey' }] },
   }
 
   test('asks for them only where the source names them', async () => {
@@ -169,10 +165,10 @@ describe('Done, Location and colour', () => {
           due_date: '2027-06-01T13:45:00Z',
           done: true,
           location: 'Clinic',
-          '6aaa4502': ['P4']
+          '6aaa4502': ['P4'],
         }),
-        row('obj_2', 'Cancel subscription', { due_date: '2027-06-02T10:00:00Z' })
-      ])
+        row('obj_2', 'Cancel subscription', { due_date: '2027-06-02T10:00:00Z' }),
+      ]),
     )
 
     const result = await gateway.listObjects(API_KEY, TASKS, WINDOW)
@@ -185,9 +181,9 @@ describe('Done, Location and colour', () => {
         end: null,
         done: true,
         location: 'Clinic',
-        option: 'P4'
+        option: 'P4',
       },
-      { id: 'obj_2', title: 'Cancel subscription', start: Date.parse('2027-06-02T10:00:00Z'), end: null, done: false }
+      { id: 'obj_2', title: 'Cancel subscription', start: Date.parse('2027-06-02T10:00:00Z'), end: null, done: false },
     ])
   })
 
@@ -212,8 +208,8 @@ describe('panel properties', () => {
       { key: 'site', format: 'url' },
       { key: 'mail', format: 'email' },
       { key: 'phone', format: 'phone' },
-      { key: 'contacts', format: 'objects' }
-    ]
+      { key: 'contacts', format: 'objects' },
+    ],
   }
   const detailsOf = async (properties: Record<string, unknown>) => {
     const { gateway } = setup(page([row('obj_1', 'Acme', { applied: '2026-09-10T10:00:00Z', ...properties })]))
@@ -233,7 +229,7 @@ describe('panel properties', () => {
       'site',
       'mail',
       'phone',
-      'contacts'
+      'contacts',
     ])
   })
 
@@ -253,8 +249,8 @@ describe('panel properties', () => {
         site: 'https://acme.example',
         mail: 'jobs@acme.example',
         phone: '+34 600 000 000',
-        contacts: ['obj_2', 'participant-A8x']
-      })
+        contacts: ['obj_2', 'participant-A8x'],
+      }),
     ).resolves.toEqual([
       { key: 'salary', format: 'text', value: '40–50k' },
       { key: 'openings', format: 'number', value: 2 },
@@ -263,26 +259,26 @@ describe('panel properties', () => {
       { key: 'site', format: 'url', value: 'https://acme.example' },
       { key: 'mail', format: 'email', value: 'jobs@acme.example' },
       { key: 'phone', format: 'phone', value: '+34 600 000 000' },
-      { key: 'contacts', format: 'objects', ids: ['obj_2', 'participant-A8x'] }
+      { key: 'contacts', format: 'objects', ids: ['obj_2', 'participant-A8x'] },
     ])
   })
 
   test('reads a value left out, null, empty or an empty list as none', async () => {
     await expect(
-      detailsOf({ salary: '', openings: null, status: [], tags: null, site: null, contacts: [] })
+      detailsOf({ salary: '', openings: null, status: [], tags: null, site: null, contacts: [] }),
     ).resolves.toBeUndefined()
   })
 
   test('drops a value of another shape than its format', async () => {
     await expect(
-      detailsOf({ salary: 40, openings: '2', status: [3], site: ['https://acme.example'], contacts: { id: 'x' } })
+      detailsOf({ salary: 40, openings: '2', status: [3], site: ['https://acme.example'], contacts: { id: 'x' } }),
     ).resolves.toBeUndefined()
   })
 
   test('reads a bare option name or id as a list of one', async () => {
     await expect(detailsOf({ status: 'Applied', contacts: 'obj_2' })).resolves.toEqual([
       { key: 'status', format: 'select', names: ['Applied'] },
-      { key: 'contacts', format: 'objects', ids: ['obj_2'] }
+      { key: 'contacts', format: 'objects', ids: ['obj_2'] },
     ])
   })
 })
@@ -294,22 +290,27 @@ describe('listLinkedObjects', () => {
     id: `participant-${identity}`,
     name,
     role: 'editor',
-    identity
+    identity,
   })
 
   test('searches the space for the objects by id, and names them', async () => {
-    const { gateway, calls } = setup(page([{ id: 'obj_1', name: 'Acme' }, { id: 'obj_2', name: '' }]))
+    const { gateway, calls } = setup(
+      page([
+        { id: 'obj_1', name: 'Acme' },
+        { id: 'obj_2', name: '' },
+      ]),
+    )
 
     await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['obj_1', 'obj_2', 'obj_gone'])).resolves.toEqual({
       ok: true,
       value: [
         { id: 'obj_1', name: 'Acme', member: false },
-        { id: 'obj_2', name: '', member: false }
-      ]
+        { id: 'obj_2', name: '', member: false },
+      ],
     })
     expect(calls.map(({ url }) => url)).toEqual([SEARCH])
     expect(JSON.parse(calls[0]?.init.body ?? '')).toEqual({
-      filters: [{ property: 'id', condition: 'in', value: ['obj_1', 'obj_2', 'obj_gone'] }]
+      filters: [{ property: 'id', condition: 'in', value: ['obj_1', 'obj_2', 'obj_gone'] }],
     })
   })
 
@@ -323,10 +324,12 @@ describe('listLinkedObjects', () => {
   test("matches members, which no search finds, on the space's members' identity", async () => {
     const { gateway, calls } = setup(page([member('A8x', 'Mara'), member('A8y', 'Sofia')]))
 
-    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x', 'participant-A8z'])).resolves.toEqual({
-      ok: true,
-      value: [{ id: 'participant-A8x', name: 'Mara', member: true }]
-    })
+    await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x', 'participant-A8z'])).resolves.toEqual(
+      {
+        ok: true,
+        value: [{ id: 'participant-A8x', name: 'Mara', member: true }],
+      },
+    )
     expect(calls.map(({ url }) => url)).toEqual([MEMBERS])
   })
 
@@ -339,20 +342,20 @@ describe('listLinkedObjects', () => {
       ok: true,
       value: [
         { id: 'obj_1', name: 'Acme', member: false },
-        { id: 'participant-A8x', name: 'Mara', member: true }
-      ]
+        { id: 'participant-A8x', name: 'Mara', member: true },
+      ],
     })
     expect(calls.map(({ url }) => url)).toEqual([SEARCH, MEMBERS])
   })
 
   test.each([
     ['a space that is gone or not granted', v2Error(403, 'space_not_granted')],
-    ['a build without the route', { status: 404, text: '404 page not found' }]
+    ['a build without the route', { status: 404, text: '404 page not found' }],
   ])('names nothing in %s', async (_, reply) => {
     const { gateway } = setup(reply)
     await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['participant-A8x'])).resolves.toEqual({
       ok: true,
-      value: []
+      value: [],
     })
   })
 
@@ -360,7 +363,7 @@ describe('listLinkedObjects', () => {
     const { gateway } = setup(v2Error(401, 'unauthorized'))
     await expect(gateway.listLinkedObjects(API_KEY, SPACE_ID, ['obj_1'])).resolves.toEqual({
       ok: false,
-      failure: 'unauthorized'
+      failure: 'unauthorized',
     })
   })
 
@@ -373,7 +376,7 @@ describe('listLinkedObjects', () => {
 test('follows the pages until Anytype has no more', async () => {
   const { gateway, calls } = setup(
     page([row('obj_1', 'One', { data: '2026-09-01T08:00:00Z' })], true),
-    page([row('obj_2', 'Two', { data: '2026-09-02T08:00:00Z' })])
+    page([row('obj_2', 'Two', { data: '2026-09-02T08:00:00Z' })]),
   )
 
   const result = await gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)
@@ -391,7 +394,7 @@ test('stops at an empty page even if it claims more', async () => {
 
 test('leaves out objects with no From value, and titles a nameless one as empty', async () => {
   const { gateway } = setup(
-    page([{ id: 'obj_1', properties: { data: '2026-09-01T08:00:00Z' } }, row('obj_2', 'Undated', {})])
+    page([{ id: 'obj_1', properties: { data: '2026-09-01T08:00:00Z' } }, row('obj_2', 'Undated', {})]),
   )
   const result = await gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)
   expect(result.ok && result.value.map(({ id, title }) => [id, title])).toEqual([['obj_1', '']])
@@ -400,18 +403,18 @@ test('leaves out objects with no From value, and titles a nameless one as empty'
 test('resolves a refused key as unauthorized', async () => {
   const { gateway } = setup({
     status: 401,
-    body: { object: 'error', status: 401, code: 'unauthorized', message: 'invalid api key' }
+    body: { object: 'error', status: 401, code: 'unauthorized', message: 'invalid api key' },
   })
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).resolves.toEqual({
     ok: false,
-    failure: 'unauthorized'
+    failure: 'unauthorized',
   })
 })
 
 test.each([
   ['a property or type the space does not have', v2Error(400, 'validation_failed')],
   ['a space the key was not granted', v2Error(403, 'space_not_granted')],
-  ['a space that is not open', v2Error(404, 'not_found')]
+  ['a space that is not open', v2Error(404, 'not_found')],
 ])('resolves no objects for %s', async (_, reply) => {
   const { gateway } = setup(reply)
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).resolves.toEqual({ ok: true, value: [] })
@@ -426,7 +429,7 @@ test('resolves an Anytype without the v2 route as outdated', async () => {
   const { gateway } = setup({ status: 404, text: '404 page not found' })
   await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).resolves.toEqual({
     ok: false,
-    failure: 'outdated'
+    failure: 'outdated',
   })
 })
 
@@ -440,14 +443,14 @@ describe('a query', () => {
     from: 'due_date',
     to: null,
     includesTime: true,
-    done: 'done'
+    done: 'done',
   }
   const OBJECTS = `${BASE}/v2/spaces/${SPACE_ID}/queries/${QUERY_ID}/objects`
 
   // As a real account answered, September 2026: an object with no due date has no properties.
   const answer = page([
     { id: 'obj_1', name: 'Cancelar LinkedIn premium', type: 'task' },
-    { id: 'obj_2', name: 'Cita en alergoloxía', type: 'task', properties: { due_date: '2027-06-01T13:45:00Z' } }
+    { id: 'obj_2', name: 'Cita en alergoloxía', type: 'task', properties: { due_date: '2027-06-01T13:45:00Z' } },
   ])
 
   test('reads the query through its view, asking for the fields only, whatever the window', async () => {
@@ -461,9 +464,9 @@ describe('a query', () => {
           title: 'Cita en alergoloxía',
           start: Date.parse('2027-06-01T13:45:00Z'),
           end: null,
-          done: false
-        }
-      ]
+          done: false,
+        },
+      ],
     })
     expect(calls[0]?.url).toBe(`${OBJECTS}?view=63194&fields=due_date,done&offset=0&limit=1000`)
     expect(calls[0]?.init.method).toBe('GET')
@@ -478,7 +481,7 @@ describe('a query', () => {
   test('follows the pages until Anytype has no more', async () => {
     const { gateway, calls } = setup(
       page([row('obj_1', 'A', { due_date: '2026-09-02T10:00:00Z' })], true),
-      page([row('obj_2', 'B', { due_date: '2026-09-03T10:00:00Z' })])
+      page([row('obj_2', 'B', { due_date: '2026-09-03T10:00:00Z' })]),
     )
     const result = await gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)
     expect(result.ok && result.value.map(({ id }) => id)).toEqual(['obj_1', 'obj_2'])
@@ -488,7 +491,7 @@ describe('a query', () => {
   test.each([
     ['a query or view that is gone', v2Error(404, 'not_found')],
     ['a field the space does not have', v2Error(400, 'validation_failed')],
-    ['a space outside the grant', v2Error(403, 'space_not_granted')]
+    ['a space outside the grant', v2Error(403, 'space_not_granted')],
   ])('reads %s as no objects', async (_, reply) => {
     const { gateway } = setup(reply)
     await expect(gateway.listObjects(API_KEY, OPEN_TASKS, WINDOW)).resolves.toEqual({ ok: true, value: [] })
@@ -496,7 +499,7 @@ describe('a query', () => {
 
   const warned = (path: string, message: string): Reply => ({
     status: 200,
-    body: { data: [], total: 0, offset: 0, limit: 1000, has_more: false, warnings: [{ path, message, hint: 'x' }] }
+    body: { data: [], total: 0, offset: 0, limit: 1000, has_more: false, warnings: [{ path, message, hint: 'x' }] },
   })
 
   test('tells what Anytype warned about, once however often the query is read', async () => {
@@ -519,7 +522,7 @@ describe('malformed answers', () => {
   test.each([
     ['an object has no id', page([{ name: 'No id', properties: {} }])],
     ['a date is not a string', page([row('obj_1', 'Bad', { data: 42 })])],
-    ['a date does not parse', page([row('obj_1', 'Bad', { data: 'next tuesday' })])]
+    ['a date does not parse', page([row('obj_1', 'Bad', { data: 'next tuesday' })])],
   ])('rejects when %s', async (_, reply) => {
     const { gateway } = setup(reply)
     await expect(gateway.listObjects(API_KEY, APPOINTMENTS, WINDOW)).rejects.toThrow('objects')

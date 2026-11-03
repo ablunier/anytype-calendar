@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
-import type { ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
 import { dateOptions, viewOptions } from '@renderer/lib/calendar'
+import type { ObjectType } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 
 export interface TypeCardProps {
   type: ObjectType
@@ -35,7 +35,7 @@ export function TypeCard({
   onFromChange,
   onToChange,
   onIncludesTimeChange,
-  onViewChange
+  onViewChange,
 }: TypeCardProps): React.JSX.Element {
   const { t } = useTranslation()
   /** An empty value can never be a property key. */
@@ -44,9 +44,7 @@ export function TypeCard({
     <div
       className={[
         'rounded-card border transition duration-base ease-standard',
-        checked
-          ? 'border-line-accent bg-surface-selected shadow-none'
-          : 'border-line-subtle bg-surface-card shadow-1'
+        checked ? 'border-line-accent bg-surface-selected shadow-none' : 'border-line-subtle bg-surface-card shadow-1',
       ].join(' ')}
     >
       <div className="flex items-center gap-12 p-12">

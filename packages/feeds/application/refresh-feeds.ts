@@ -1,10 +1,10 @@
 import {
-  feedsFetchFailureOf,
   type FeedsCache,
   type FeedsCalendarParser,
   type FeedsGateway,
   type FeedsReadFailure,
-  type FeedsSubscription
+  type FeedsSubscription,
+  feedsFetchFailureOf,
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
 
@@ -39,9 +39,7 @@ export class RefreshFeeds {
 
   /** Every subscription, or only those of `ids`. */
   async execute(ids?: readonly string[]): Promise<void> {
-    const targets = this.#store
-      .subscriptions()
-      .filter(({ id }) => ids === undefined || ids.includes(id))
+    const targets = this.#store.subscriptions().filter(({ id }) => ids === undefined || ids.includes(id))
     await Promise.all(targets.map((subscription) => this.#read(subscription)))
   }
 
@@ -73,7 +71,7 @@ export class RefreshFeeds {
 
   #fail(id: string, failure: FeedsReadFailure): void {
     this.#store.update(id, {
-      status: { ...this.#store.status(id), reading: false, error: { ...failure, at: this.#now() } }
+      status: { ...this.#store.status(id), reading: false, error: { ...failure, at: this.#now() } },
     })
   }
 }

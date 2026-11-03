@@ -1,5 +1,5 @@
-import { ipcMain, shell } from 'electron'
 import { IpcChannel } from '@shared/ipc'
+import { ipcMain, shell } from 'electron'
 import { isOpenableLink } from './links'
 
 export function registerShellIpc(): void {

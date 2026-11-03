@@ -7,7 +7,7 @@ import {
   rescheduleEventsDatedObject,
   toEventsReschedule,
   toEventsSlot,
-  withEventsEdits
+  withEventsEdits,
 } from './edit'
 import type { EventsTypeSource } from './source'
 import type { EventsSpanLoad } from './span-load'
@@ -32,7 +32,7 @@ const ZONE: EventsTimeZone = {
   dayOf: (instant) => {
     const date = new Date(instant + (instant < SPRING ? 1 : 2) * HOUR_MS)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
+  },
 }
 
 const march = (day: number) => ({ year: 2026, month: 2, day })
@@ -49,7 +49,7 @@ const object = (fields: Partial<EventsDatedObject>): EventsDatedObject => ({
   start: local(28, 10),
   end: local(28, 11),
   allDay: false,
-  ...fields
+  ...fields,
 })
 
 describe('moving a timed object', () => {
@@ -57,7 +57,7 @@ describe('moving a timed object', () => {
     const moved = rescheduleEventsDatedObject(
       object({}),
       { kind: 'move', start: { day: march(29), minute: 10 * 60 } },
-      ZONE
+      ZONE,
     )
     expect(moved).toMatchObject({ start: local(29, 10), end: local(29, 11) })
     expect(moved?.start).toBe(Date.UTC(2026, 2, 29, 8))
@@ -66,11 +66,11 @@ describe('moving a timed object', () => {
   test('keeps its time of day when moved to a slot with no minute, whichever way the clocks went', () => {
     const springDay = object({ start: local(29, 10), end: null })
     expect(
-      rescheduleEventsDatedObject(springDay, { kind: 'move', start: { day: march(30), minute: null } }, ZONE)
+      rescheduleEventsDatedObject(springDay, { kind: 'move', start: { day: march(30), minute: null } }, ZONE),
     ).toMatchObject({ start: local(30, 10), end: null })
 
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'move', start: { day: march(29), minute: null } }, ZONE)
+      rescheduleEventsDatedObject(object({}), { kind: 'move', start: { day: march(29), minute: null } }, ZONE),
     ).toMatchObject({ start: local(29, 10), end: local(29, 11) })
   })
 })
@@ -79,14 +79,14 @@ describe('moving an all-day object', () => {
   test('writes the first instant of the new day, and keeps how many days a range covers', () => {
     const range = object({ allDay: true, start: local(27), end: local(29) })
     expect(
-      rescheduleEventsDatedObject(range, { kind: 'move', start: { day: march(28), minute: null } }, ZONE)
+      rescheduleEventsDatedObject(range, { kind: 'move', start: { day: march(28), minute: null } }, ZONE),
     ).toMatchObject({ start: local(28), end: local(30) })
   })
 
   test('drops whatever time of day a date carried, and ignores a minute', () => {
     const odd = object({ allDay: true, start: local(27, 13, 20), end: null })
     expect(
-      rescheduleEventsDatedObject(odd, { kind: 'move', start: { day: march(2), minute: 600 } }, ZONE)
+      rescheduleEventsDatedObject(odd, { kind: 'move', start: { day: march(2), minute: 600 } }, ZONE),
     ).toMatchObject({ start: local(2), end: null })
   })
 })
@@ -94,41 +94,41 @@ describe('moving an all-day object', () => {
 describe('resizing', () => {
   test('moves the To date alone', () => {
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 12 * 60 + 15 } }, ZONE)
+      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 12 * 60 + 15 } }, ZONE),
     ).toMatchObject({ start: local(28, 10), end: local(28, 12, 15) })
     expect(
       rescheduleEventsDatedObject(
         object({ allDay: true, start: local(27), end: null }),
         { kind: 'resize', end: { day: march(30), minute: null } },
-        ZONE
-      )
+        ZONE,
+      ),
     ).toMatchObject({ start: local(27), end: local(30) })
   })
 
   test('refuses a To before the From', () => {
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE)
+      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
     ).toBeNull()
   })
 
   test('gives a timed object with no To one, measured from its From, across a change of the clocks', () => {
     const moment = object({ start: local(28, 10), end: null })
     expect(
-      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(29), minute: 11 * 60 } }, ZONE)
+      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(29), minute: 11 * 60 } }, ZONE),
     ).toMatchObject({ start: local(28, 10), end: local(29, 11) })
     // No minute keeps the From's time of day, though 29 March is 23 hours long.
     const kept = rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(29), minute: null } }, ZONE)
     expect(kept).toMatchObject({ end: local(29, 10) })
     expect(kept?.end).toBe(Date.UTC(2026, 2, 29, 8))
     expect(
-      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE)
+      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
     ).toBeNull()
   })
 
   test('gives an all-day object with no To one on the first instant of its day, across a change of the clocks', () => {
     const day = object({ allDay: true, start: local(28), end: null })
     expect(
-      rescheduleEventsDatedObject(day, { kind: 'resize', end: { day: march(28), minute: null } }, ZONE)
+      rescheduleEventsDatedObject(day, { kind: 'resize', end: { day: march(28), minute: null } }, ZONE),
     ).toMatchObject({ start: local(28), end: local(28) })
     const after = rescheduleEventsDatedObject(day, { kind: 'resize', end: { day: march(30), minute: 600 } }, ZONE)
     expect(after).toMatchObject({ end: local(30) })
@@ -140,10 +140,14 @@ describe('clearing the To date', () => {
   test('leaves the object its From alone, timed or all-day', () => {
     expect(rescheduleEventsDatedObject(object({}), { kind: 'clear-end' }, ZONE)).toMatchObject({
       start: local(28, 10),
-      end: null
+      end: null,
     })
     expect(
-      rescheduleEventsDatedObject(object({ allDay: true, start: local(27), end: local(29) }), { kind: 'clear-end' }, ZONE)
+      rescheduleEventsDatedObject(
+        object({ allDay: true, start: local(27), end: local(29) }),
+        { kind: 'clear-end' },
+        ZONE,
+      ),
     ).toMatchObject({ start: local(27), end: null })
   })
 })
@@ -163,26 +167,27 @@ describe('a new object', () => {
     typeKey: 'meeting',
     from: 'start_date',
     to: 'end_date',
-    includesTime: true
+    includesTime: true,
   }
 
   test('is timed at the slot, or at nine when it names no minute, and lasts an hour where it has a To', () => {
     expect(newEventsObjectDates(source, { day: march(29), minute: 14 * 60 + 30 }, ZONE)).toEqual({
       start_date: local(29, 14, 30),
-      end_date: local(29, 15, 30)
+      end_date: local(29, 15, 30),
     })
     expect(newEventsObjectDates(source, { day: march(29), minute: null }, ZONE)).toEqual({
       start_date: local(29, 9),
-      end_date: local(29, 10)
+      end_date: local(29, 10),
     })
   })
 
   test('is placed on the day alone where its dates carry no time, and fills only the dates it has', () => {
-    expect(
-      newEventsObjectDates({ ...source, includesTime: false }, { day: march(29), minute: 600 }, ZONE)
-    ).toEqual({ start_date: local(29), end_date: local(29) })
+    expect(newEventsObjectDates({ ...source, includesTime: false }, { day: march(29), minute: 600 }, ZONE)).toEqual({
+      start_date: local(29),
+      end_date: local(29),
+    })
     expect(newEventsObjectDates({ ...source, to: null }, { day: march(29), minute: 600 }, ZONE)).toEqual({
-      start_date: local(29, 10)
+      start_date: local(29, 10),
     })
   })
 })
@@ -214,7 +219,7 @@ describe('drawing the edits in flight', () => {
   const review = object({ id: 'obj_2', title: 'Review', start: local(28, 12), end: null })
   const loaded: EventsSpanLoad = {
     phase: 'loaded',
-    last: { span: { kind: 'month', year: 2026, month: 2 }, objects: [standup, review], loadedAt: 0 }
+    last: { span: { kind: 'month', year: 2026, month: 2 }, objects: [standup, review], loadedAt: 0 },
   }
 
   test('draws each edited object in place of the one it edits, in order, the latest edit winning', () => {
@@ -228,7 +233,7 @@ describe('drawing the edits in flight', () => {
     const query = object({ source: { kind: 'query', queryId: 'q_1' }, rank: 1, start: local(30, 9), end: null })
     const both: EventsSpanLoad = {
       phase: 'loaded',
-      last: { span: { kind: 'month', year: 2026, month: 2 }, objects: [standup, query], loadedAt: 0 }
+      last: { span: { kind: 'month', year: 2026, month: 2 }, objects: [standup, query], loadedAt: 0 },
     }
     const moved = object({ start: local(29, 10) })
     const shown = withEventsEdits(both, [moved])

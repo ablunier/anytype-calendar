@@ -1,5 +1,5 @@
-import { join } from 'path'
 import { app } from 'electron'
+import { join } from 'path'
 import { composeAnytype } from './anytype/compose-anytype'
 import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
@@ -28,8 +28,8 @@ export function composeServices() {
   const appConfig = appConfigStore(
     atomicFileAt(
       join(app.getPath('userData'), anytype.kind === 'fake' ? 'app-config-fake.json' : 'app-config.json'),
-      0o644
-    )
+      0o644,
+    ),
   )
   const preferences = composePreferences(appConfig)
 
@@ -40,7 +40,7 @@ export function composeServices() {
     // Adapts schema's stores to the selection port events declares.
     sources: { current: () => eventsSourcesFor(schema.schemaSelection.get(), schema.schemaState.get()) },
     defaultSpan: (today) =>
-      defaultEventsSpan(preferences.calendarView.state.get(), today, preferences.weekStart.state.get())
+      defaultEventsSpan(preferences.calendarView.state.get(), today, preferences.weekStart.state.get()),
   })
   const feeds = composeFeeds({ anytype, shownWindow: events.shownWindow })
   const updates = composeUpdates(appConfig)

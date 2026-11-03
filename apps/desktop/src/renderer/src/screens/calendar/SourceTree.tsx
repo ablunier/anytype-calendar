@@ -1,9 +1,9 @@
-import { useTranslation } from 'react-i18next'
-import type { CategoryHue, FeedSource, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
-import { visibilityOf, type SourceVisibility } from '@renderer/lib/visibility'
+import { type SourceVisibility, visibilityOf } from '@renderer/lib/visibility'
+import type { CategoryHue, FeedSource, ObjectType, Space } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 
 export interface SourceTreeProps {
   /** In the order Settings lists them. A space none of whose sources are chosen is left out. */
@@ -28,7 +28,7 @@ export function SourceTree({
   hidden,
   collapsedSpaces,
   onSetShown,
-  onToggleSpaceCollapsed
+  onToggleSpaceCollapsed,
 }: SourceTreeProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
@@ -53,7 +53,7 @@ export function SourceTree({
                 type="button"
                 aria-expanded={!folded}
                 aria-label={t(folded ? 'calendar.sidebar.expandSpace' : 'calendar.sidebar.collapseSpace', {
-                  name: space.name
+                  name: space.name,
                 })}
                 onClick={() => onToggleSpaceCollapsed(space.key)}
                 className="flex size-20 shrink-0 items-center justify-center rounded-4 border-0 bg-transparent p-0 text-ink-tertiary hover:bg-surface-hover"
@@ -70,7 +70,9 @@ export function SourceTree({
                       <ToggleRow
                         state={sourceState}
                         name={source.label}
-                        marker={<Icon name={source.icon} size={16} className={`shrink-0 ${catText[source.category]}`} />}
+                        marker={
+                          <Icon name={source.icon} size={16} className={`shrink-0 ${catText[source.category]}`} />
+                        }
                         hue={source.category}
                         onToggle={() => onSetShown([source.key], sourceState === 'hidden')}
                       />
@@ -144,7 +146,7 @@ function ToggleRow({ state, name, marker, hue, onToggle, strong = false }: Toggl
         className={[
           'flex size-16 shrink-0 items-center justify-center rounded-4 border',
           'group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-focus-ring',
-          on ? `border-transparent ${hue ? catBg[hue] : 'bg-surface-accent'}` : 'border-line-strong bg-surface-card'
+          on ? `border-transparent ${hue ? catBg[hue] : 'bg-surface-accent'}` : 'border-line-strong bg-surface-card',
         ].join(' ')}
       >
         {on ? <Icon name={state === 'mixed' ? 'minus' : 'check'} size={11} className="text-stone-000" /> : null}
@@ -154,7 +156,7 @@ function ToggleRow({ state, name, marker, hue, onToggle, strong = false }: Toggl
         className={[
           'min-w-0 flex-1 truncate',
           strong ? 'type-ui text-small text-ink-primary' : 'type-caption text-small text-ink-secondary',
-          on ? '' : 'opacity-60'
+          on ? '' : 'opacity-60',
         ].join(' ')}
       >
         {name}

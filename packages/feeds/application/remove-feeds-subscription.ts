@@ -20,7 +20,7 @@ export class RemoveFeedsSubscription {
     await this.#save.execute((current) =>
       current.some((subscription) => subscription.id === id)
         ? current.filter((subscription) => subscription.id !== id)
-        : current
+        : current,
     )
     await this.#cache.remove(id).catch(() => undefined)
   }

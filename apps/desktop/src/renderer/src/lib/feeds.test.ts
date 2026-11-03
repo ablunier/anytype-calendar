@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest'
-import type { FeedsSnapshot } from '@shared/ipc'
 import type { CalendarEvent } from '@renderer/types'
-import { feedEventsFor, feedsFor, feedSourceKey, mergedEvents, movedOrder } from './feeds'
+import type { FeedsSnapshot } from '@shared/ipc'
+import { describe, expect, test } from 'vitest'
+import { feedEventsFor, feedSourceKey, feedsFor, mergedEvents, movedOrder } from './feeds'
 
 const at = (date: string, time = '00:00'): number => new Date(`${date}T${time}`).getTime()
 
@@ -12,15 +12,15 @@ const snapshot: FeedsSnapshot = {
       name: 'Holidays',
       colour: 'teal',
       host: 'calendar.google.com',
-      status: { readAt: at('2026-09-10', '11:00'), reading: false, error: null }
+      status: { readAt: at('2026-09-10', '11:00'), reading: false, error: null },
     },
     {
       id: 'b2',
       name: 'Team',
       colour: 'purple',
       host: 'example.com',
-      status: { readAt: null, reading: false, error: { failure: 'http', status: 404, at: at('2026-09-10', '12:00') } }
-    }
+      status: { readAt: null, reading: false, error: { failure: 'http', status: 404, at: at('2026-09-10', '12:00') } },
+    },
   ],
   window: { start: at('2026-08-25'), end: at('2026-10-08') - 1 },
   events: [
@@ -35,10 +35,10 @@ const snapshot: FeedsSnapshot = {
       allDay: false,
       location: 'Room 2',
       description: 'Notes',
-      url: 'https://example.com/sync'
+      url: 'https://example.com/sync',
     },
-    { id: 'gone', feedId: 'zz', rank: 2, title: 'Orphan', start: at('2026-09-14'), end: null, allDay: true }
-  ]
+    { id: 'gone', feedId: 'zz', rank: 2, title: 'Orphan', start: at('2026-09-14'), end: null, allDay: true },
+  ],
 }
 
 describe('feedsFor', () => {
@@ -51,7 +51,7 @@ describe('feedsFor', () => {
         category: 'teal',
         colour: 'teal',
         host: 'calendar.google.com',
-        status: { state: 'synced', elapsed: { key: 'minutesAgo', count: 5 } }
+        status: { state: 'synced', elapsed: { key: 'minutesAgo', count: 5 } },
       },
       {
         key: 'feed:b2',
@@ -60,8 +60,8 @@ describe('feedsFor', () => {
         category: 'plum',
         colour: 'purple',
         host: 'example.com',
-        status: { state: 'error', failure: { failure: 'http', status: 404 } }
-      }
+        status: { state: 'error', failure: { failure: 'http', status: 404 } },
+      },
     ])
   })
 
@@ -70,8 +70,8 @@ describe('feedsFor', () => {
       ...snapshot,
       subscriptions: [
         { ...snapshot.subscriptions[0]!, status: { readAt: null, reading: false, error: null } },
-        { ...snapshot.subscriptions[1]!, status: { readAt: null, reading: true, error: null } }
-      ]
+        { ...snapshot.subscriptions[1]!, status: { readAt: null, reading: true, error: null } },
+      ],
     }
     expect(feedsFor(unread, 0).map(({ status }) => status.state)).toEqual(['offline', 'syncing'])
   })
@@ -90,7 +90,7 @@ describe('feedEventsFor', () => {
         allDay: true,
         category: 'teal',
         details: [],
-        feed: { calendar: 'Holidays' }
+        feed: { calendar: 'Holidays' },
       },
       {
         id: 'feed:b2:m1#1',
@@ -106,8 +106,8 @@ describe('feedEventsFor', () => {
         location: 'Room 2',
         category: 'plum',
         details: [],
-        feed: { calendar: 'Team', description: 'Notes', url: 'https://example.com/sync' }
-      }
+        feed: { calendar: 'Team', description: 'Notes', url: 'https://example.com/sync' },
+      },
     ])
   })
 })
@@ -122,12 +122,21 @@ describe('mergedEvents', () => {
     date,
     allDay: time === undefined,
     details: [],
-    ...(time === undefined ? {} : { time })
+    ...(time === undefined ? {} : { time }),
   })
 
   test('orders both by day, all-day first, then by time, Anytype’s first when they tie', () => {
-    const anytype = [event('a-allday', '2026-09-14'), event('a-9', '2026-09-14', '09:00'), event('a-next', '2026-09-15', '08:00')]
-    const feeds = [event('f-earlier', '2026-09-13', '18:00'), event('f-allday', '2026-09-14'), event('f-9', '2026-09-14', '09:00'), event('f-8', '2026-09-14', '08:00')]
+    const anytype = [
+      event('a-allday', '2026-09-14'),
+      event('a-9', '2026-09-14', '09:00'),
+      event('a-next', '2026-09-15', '08:00'),
+    ]
+    const feeds = [
+      event('f-earlier', '2026-09-13', '18:00'),
+      event('f-allday', '2026-09-14'),
+      event('f-9', '2026-09-14', '09:00'),
+      event('f-8', '2026-09-14', '08:00'),
+    ]
     expect(mergedEvents(anytype, feeds).map(({ id }) => id)).toEqual([
       'f-earlier',
       'a-allday',
@@ -135,7 +144,7 @@ describe('mergedEvents', () => {
       'f-8',
       'a-9',
       'f-9',
-      'a-next'
+      'a-next',
     ])
   })
 

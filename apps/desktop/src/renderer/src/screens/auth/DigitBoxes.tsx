@@ -21,7 +21,7 @@ export function DigitBoxes({
   invalid = false,
   muted = false,
   activeIndex = value.length,
-  onDigitClick
+  onDigitClick,
 }: DigitBoxesProps): React.JSX.Element {
   return (
     <div className="flex gap-8" aria-hidden>
@@ -38,15 +38,11 @@ export function DigitBoxes({
               invalid ? 'border-clay-500 text-ink-danger' : 'text-ink-primary',
               !invalid && active ? 'border-moss-500 shadow-focus' : '',
               !invalid && !active ? 'border-line-default' : '',
-              muted ? 'opacity-55' : ''
+              muted ? 'opacity-55' : '',
             ].join(' ')}
           >
             {char ??
-              (active ? (
-                <span className="h-30 w-px bg-moss-500" />
-              ) : (
-                <span className="text-ink-tertiary">·</span>
-              ))}
+              (active ? <span className="h-30 w-px bg-moss-500" /> : <span className="text-ink-tertiary">·</span>)}
           </div>
         )
       })}

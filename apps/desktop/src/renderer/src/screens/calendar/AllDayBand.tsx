@@ -1,8 +1,8 @@
-import type { CSSProperties } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
+import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
+import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
 import { grabbedDate, useDayDrag } from './useDayDrag'
 
@@ -31,7 +31,7 @@ export function AllDayBand({
   typesByKey,
   onOpenEvent,
   onMoveEvent,
-  onCreate
+  onCreate,
 }: AllDayBandProps): React.JSX.Element {
   const { t } = useTranslation()
   // One bar per object, so an object covering several of these days is laid out once.
@@ -44,10 +44,7 @@ export function AllDayBand({
       <span className="flex w-hour-gutter shrink-0 items-start justify-end pt-6 pr-6 type-caption text-micro text-ink-muted">
         {t('calendar.allDay')}
       </span>
-      <div
-        className="grid-days relative grid min-w-0 flex-1 py-2"
-        style={{ '--days': days.length } as CSSProperties}
-      >
+      <div className="grid-days relative grid min-w-0 flex-1 py-2" style={{ '--days': days.length } as CSSProperties}>
         {days.map((day, index) => (
           <div
             key={day.date}
@@ -56,7 +53,7 @@ export function AllDayBand({
             className={[
               'min-h-20',
               index === 0 ? '' : 'border-l border-grid-line',
-              drag.overDate === day.date ? 'bg-surface-accent-soft' : ''
+              drag.overDate === day.date ? 'bg-surface-accent-soft' : '',
             ].join(' ')}
           >
             {/* Reserves the row's height: the bars themselves are out of the flow. */}
@@ -81,14 +78,12 @@ export function AllDayBand({
                       drag.start(
                         segment.event,
                         grabbedDate(event, days[segment.column]?.date ?? '', segment.span),
-                        event
+                        event,
                       ),
-                    onDragEnd: drag.end
+                    onDragEnd: drag.end,
                   }
                 : {})}
-              onClick={() =>
-                onOpenEvent(segment.event, days[segment.column]?.date ?? days[0]?.date ?? '')
-              }
+              onClick={() => onOpenEvent(segment.event, days[segment.column]?.date ?? days[0]?.date ?? '')}
             />
           )
         })}

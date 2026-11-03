@@ -1,6 +1,3 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
 import { eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
 import {
   draggedPlacement,
@@ -8,9 +5,12 @@ import {
   MINUTES_PER_DAY,
   SNAP_MINUTES,
   splitDayEvents,
+  type TimedSegment,
   timeOfMinute,
-  type TimedSegment
 } from '@renderer/lib/time-grid'
+import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
+import { type CSSProperties, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
 import { TimeGutter } from './TimeGutter'
@@ -82,7 +82,7 @@ export function TimeGrid({
   onOpenEvent,
   onMoveEvent,
   onResizeEvent,
-  onCreate
+  onCreate,
 }: TimeGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const scroller = useRef<HTMLDivElement>(null)
@@ -113,7 +113,7 @@ export function TimeGrid({
         endMinute: press.segment.endMinute,
         minutes: (press.dy / press.hourPx) * 60,
         days: Math.round(press.dx / press.dayPx),
-        dayCount: days.length
+        dayCount: days.length,
       })
     : null
 
@@ -183,7 +183,7 @@ export function TimeGrid({
       dayPx: root.getBoundingClientRect().width / days.length,
       dx: 0,
       dy: 0,
-      dragging: false
+      dragging: false,
     })
   }
 
@@ -222,7 +222,7 @@ export function TimeGrid({
                         'flex flex-col items-center gap-2 py-6 type-caption text-tiny',
                         index === 0 ? '' : 'border-l border-grid-line',
                         isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : '',
-                        isToday ? 'text-ink-primary' : 'text-ink-secondary'
+                        isToday ? 'text-ink-primary' : 'text-ink-secondary',
                       ].join(' ')}
                     >
                       <span>{weekdays[weekdayIndex(weekStart, index)]}</span>
@@ -231,7 +231,7 @@ export function TimeGrid({
                           'flex h-18 min-w-18 items-center justify-center rounded-4 px-4',
                           'font-mono text-tiny tabular-nums',
                           isToday ? 'bg-today-ink text-stone-000' : '',
-                          selectedDate === day.date && !isToday ? 'bg-surface-selected' : ''
+                          selectedDate === day.date && !isToday ? 'bg-surface-selected' : '',
                         ].join(' ')}
                       >
                         {dayNumber(day.date)}
@@ -280,7 +280,7 @@ export function TimeGrid({
                 className={[
                   'day-canvas',
                   index === 0 ? '' : 'border-l border-grid-line',
-                  isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card'
+                  isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card',
                 ].join(' ')}
               >
                 {HOURS.map((hour) => (
@@ -319,7 +319,7 @@ export function TimeGrid({
                       startMinute: placement.startMinute,
                       endMinute: placement.endMinute,
                       column: 0,
-                      columns: 1
+                      columns: 1,
                     }}
                     title={press.segment.event.title || t('common.untitled')}
                     category={eventHue(press.segment.event, typesByKey.get(press.segment.event.type))}

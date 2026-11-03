@@ -1,5 +1,5 @@
-import { BrowserWindow, ipcMain } from 'electron'
 import { IpcChannel } from '@shared/ipc'
+import { BrowserWindow, ipcMain } from 'electron'
 import type { Preferences } from './compose-preferences'
 import type { Preference } from './preference'
 
@@ -11,7 +11,7 @@ export interface PreferenceChannels {
 
 export function registerPreferenceIpc<State, Saved extends State>(
   { state, parse, save }: Preference<State, Saved>,
-  channels: PreferenceChannels
+  channels: PreferenceChannels,
 ): void {
   ipcMain.handle(channels.get, () => state.get())
   ipcMain.handle(channels.save, (_event, value: unknown) => {
@@ -30,36 +30,36 @@ export function registerPreferencesIpc(preferences: Preferences): void {
   registerPreferenceIpc(preferences.theme, {
     get: IpcChannel.themeGet,
     save: IpcChannel.themeSave,
-    changed: IpcChannel.themeChanged
+    changed: IpcChannel.themeChanged,
   })
   registerPreferenceIpc(preferences.language, {
     get: IpcChannel.languageGet,
     save: IpcChannel.languageSave,
-    changed: IpcChannel.languageChanged
+    changed: IpcChannel.languageChanged,
   })
   registerPreferenceIpc(preferences.weekNumbers, {
     get: IpcChannel.weekNumbersGet,
     save: IpcChannel.weekNumbersSave,
-    changed: IpcChannel.weekNumbersChanged
+    changed: IpcChannel.weekNumbersChanged,
   })
   registerPreferenceIpc(preferences.calendarVisibility, {
     get: IpcChannel.calendarVisibilityGet,
     save: IpcChannel.calendarVisibilitySave,
-    changed: IpcChannel.calendarVisibilityChanged
+    changed: IpcChannel.calendarVisibilityChanged,
   })
   registerPreferenceIpc(preferences.weekStart, {
     get: IpcChannel.weekStartGet,
     save: IpcChannel.weekStartSave,
-    changed: IpcChannel.weekStartChanged
+    changed: IpcChannel.weekStartChanged,
   })
   registerPreferenceIpc(preferences.timeFormat, {
     get: IpcChannel.timeFormatGet,
     save: IpcChannel.timeFormatSave,
-    changed: IpcChannel.timeFormatChanged
+    changed: IpcChannel.timeFormatChanged,
   })
   registerPreferenceIpc(preferences.calendarView, {
     get: IpcChannel.calendarViewGet,
     save: IpcChannel.calendarViewSave,
-    changed: IpcChannel.calendarViewChanged
+    changed: IpcChannel.calendarViewChanged,
   })
 }

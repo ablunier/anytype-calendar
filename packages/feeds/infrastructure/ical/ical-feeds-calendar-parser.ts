@@ -1,11 +1,11 @@
 import ICAL from 'ical.js'
 import {
-  overlapsFeedsWindow,
   type FeedsCalendar,
   type FeedsCalendarParser,
   type FeedsOccurrence,
   type FeedsTimeZone,
-  type FeedsWindow
+  type FeedsWindow,
+  overlapsFeedsWindow,
 } from '../../domain'
 
 type IcalComponent = InstanceType<typeof ICAL.Component>
@@ -136,7 +136,7 @@ class IcalFeedsCalendar implements FeedsCalendar {
         `${id}#${recursAt}`,
         exception,
         exception.endDate,
-        tzidOf(exception.component, 'dtend')
+        tzidOf(exception.component, 'dtend'),
       )
       if (occurrence && overlapsFeedsWindow(occurrence, window)) into.push(occurrence)
     }
@@ -151,7 +151,7 @@ class IcalFeedsCalendar implements FeedsCalendar {
     item: IcalEvent,
     endDate: IcalTime | null,
     endTzid: string | null,
-    startDate: IcalTime | null = item.startDate
+    startDate: IcalTime | null = item.startDate,
   ): FeedsOccurrence | null {
     if (!startDate) return null
     const component = item.component
@@ -203,7 +203,7 @@ function seriesOf(vevents: IcalComponent[]): FeedsSeries[] {
     overrides.delete(uid)
     return {
       id: uid !== '' && counts.get(uid) === 1 ? uid : `${uid}~${index}`,
-      event: new ICAL.Event(component, { exceptions, strictExceptions: true })
+      event: new ICAL.Event(component, { exceptions, strictExceptions: true }),
     }
   })
   for (const [uid, components] of overrides) {
@@ -341,7 +341,7 @@ class Instants {
           day: 'numeric',
           hour: 'numeric',
           minute: 'numeric',
-          second: 'numeric'
+          second: 'numeric',
         })
       } catch {
         format = null
@@ -362,6 +362,6 @@ function wallOf(format: Intl.DateTimeFormat, instant: number): number {
     parts['day'] ?? 1,
     parts['hour'] ?? 0,
     parts['minute'] ?? 0,
-    parts['second'] ?? 0
+    parts['second'] ?? 0,
   )
 }

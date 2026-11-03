@@ -1,13 +1,13 @@
 import {
-  feedsFetchFailureOf,
-  toFeedsUrl,
   type FeedsCache,
   type FeedsCalendar,
   type FeedsCalendarParser,
   type FeedsColour,
   type FeedsEditOutcome,
   type FeedsGateway,
-  type FeedsSubscription
+  type FeedsSubscription,
+  feedsFetchFailureOf,
+  toFeedsUrl,
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
 import type { SaveFeedsSubscriptions } from './save-feeds-subscriptions'
@@ -69,12 +69,12 @@ export class EditFeedsSubscription {
     const change: Partial<FeedsSubscription> = {
       ...(name === undefined ? {} : { name }),
       ...(colour === undefined ? {} : { colour }),
-      ...(moved === null ? {} : { url: moved.url })
+      ...(moved === null ? {} : { url: moved.url }),
     }
     await this.#save.execute((current) =>
       current.some((subscription) => subscription.id === id)
         ? current.map((subscription) => (subscription.id === id ? { ...subscription, ...change } : subscription))
-        : current
+        : current,
     )
     if (moved !== null && this.#store.subscription(id)) {
       const readAt = this.#now()

@@ -19,7 +19,7 @@ describe('sync-started', () => {
     expect(nextSchemaSync(synced, { type: 'sync-started' })).toEqual({ phase: 'syncing', last: LAST })
     expect(nextSchemaSync({ ...failed, last: LAST }, { type: 'sync-started' })).toEqual({
       phase: 'syncing',
-      last: LAST
+      last: LAST,
     })
   })
 
@@ -37,14 +37,16 @@ describe('sync-succeeded', () => {
     expect(
       nextSchemaSync(
         { phase: 'syncing', last: LAST },
-        { type: 'sync-succeeded', spaces: [], hasNotGrantedSpaces: true, at: 5_000 }
-      )
+        { type: 'sync-succeeded', spaces: [], hasNotGrantedSpaces: true, at: 5_000 },
+      ),
     ).toEqual({ phase: 'synced', last: { spaces: [], hasNotGrantedSpaces: true, syncedAt: 5_000 } })
   })
 
   test('is ignored outside a sync', () => {
     for (const state of [idle, synced, failed]) {
-      expect(nextSchemaSync(state, { type: 'sync-succeeded', spaces: SPACES, hasNotGrantedSpaces: false, at: 5_000 })).toBe(state)
+      expect(
+        nextSchemaSync(state, { type: 'sync-succeeded', spaces: SPACES, hasNotGrantedSpaces: false, at: 5_000 }),
+      ).toBe(state)
     }
   })
 })
@@ -52,24 +54,21 @@ describe('sync-succeeded', () => {
 describe('sync-failed', () => {
   test('records the failure and keeps the previous result', () => {
     expect(
-      nextSchemaSync(
-        { phase: 'syncing', last: LAST },
-        { type: 'sync-failed', failure: 'unauthorized', at: 5_000 }
-      )
+      nextSchemaSync({ phase: 'syncing', last: LAST }, { type: 'sync-failed', failure: 'unauthorized', at: 5_000 }),
     ).toEqual({ phase: 'failed', failure: 'unauthorized', at: 5_000, last: LAST })
   })
 
   test('carries no result when nothing was synced yet', () => {
-    expect(
-      nextSchemaSync(syncing, { type: 'sync-failed', failure: 'unreachable', at: 5_000 })
-    ).toEqual({ phase: 'failed', failure: 'unreachable', at: 5_000 })
+    expect(nextSchemaSync(syncing, { type: 'sync-failed', failure: 'unreachable', at: 5_000 })).toEqual({
+      phase: 'failed',
+      failure: 'unreachable',
+      at: 5_000,
+    })
   })
 
   test('is ignored outside a sync', () => {
     for (const state of [idle, synced, failed]) {
-      expect(nextSchemaSync(state, { type: 'sync-failed', failure: 'unreachable', at: 5_000 })).toBe(
-        state
-      )
+      expect(nextSchemaSync(state, { type: 'sync-failed', failure: 'unreachable', at: 5_000 })).toBe(state)
     }
   })
 })

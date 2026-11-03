@@ -1,11 +1,11 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
-  nextAuthSession,
   type AuthEvent,
   type AuthGateway,
   type AuthSession,
   type AuthVerifyResult,
-  type CredentialRepository
+  type CredentialRepository,
+  nextAuthSession,
 } from '../domain'
 import type { AuthSessionStore } from './session-store'
 

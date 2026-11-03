@@ -6,7 +6,7 @@ export interface FeedsWindow {
 
 export function overlapsFeedsWindow(
   { start, end }: { start: number; end: number | null },
-  window: FeedsWindow
+  window: FeedsWindow,
 ): boolean {
   return start <= window.end && (end ?? start) >= window.start
 }

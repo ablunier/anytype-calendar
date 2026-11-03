@@ -1,12 +1,12 @@
-import { useTranslation } from 'react-i18next'
-import type { CalendarView, IconName } from '@renderer/types'
 import { Icon } from '@renderer/components/ui'
+import type { CalendarView, IconName } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 
 /** Shortest span first, so the three read as one scale widening to the right. */
 const VIEWS: { view: CalendarView; icon: IconName }[] = [
   { view: 'day', icon: 'calendar' },
   { view: 'week', icon: 'columns-3' },
-  { view: 'month', icon: 'calendar-days' }
+  { view: 'month', icon: 'calendar-days' },
 ]
 
 export interface ViewSwitcherProps {
@@ -35,9 +35,7 @@ export function ViewSwitcher({ view, onChange }: ViewSwitcherProps): React.JSX.E
             className={[
               'flex h-control-sm items-center gap-6 rounded-6 px-10 type-caption text-tiny',
               'transition-colors duration-fast ease-standard',
-              selected
-                ? 'bg-surface-card text-ink-primary shadow-1'
-                : 'text-ink-secondary hover:text-ink-body'
+              selected ? 'bg-surface-card text-ink-primary shadow-1' : 'text-ink-secondary hover:text-ink-body',
             ].join(' ')}
           >
             <Icon name={icon} size={12} />

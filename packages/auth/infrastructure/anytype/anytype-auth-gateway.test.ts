@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { describe, expect, test } from 'vitest'
 import { AnytypeAuthGateway } from './anytype-auth-gateway'
 
 type Reply = { status: number; text: string }
@@ -12,7 +12,7 @@ const AUTH_FAILURE = {
   object: 'error',
   status: 500,
   code: 'internal_server_error',
-  message: 'failed to authenticate user'
+  message: 'failed to authenticate user',
 }
 
 /** A key the user paired for two spaces, read-only, as `whoami?ids=full&spaces=true` describes it. */
@@ -24,20 +24,20 @@ const RESTRICTED = json(200, {
     permission: 'read',
     spaces: [
       { id: 'bafy1.repl1', name: 'Work', permission: 'read' },
-      { id: 'bafy2.repl2', name: 'Home', permission: 'read' }
-    ]
+      { id: 'bafy2.repl2', name: 'Home', permission: 'read' },
+    ],
   },
-  key_status: 'scoped'
+  key_status: 'scoped',
 })
 /** A key issued before grants: the real Anytype answers this for one. */
 const LEGACY = json(200, {
   grant: { scoped: false, restricted: false, all_spaces: false, permission: null, spaces: [] },
-  key_status: 'legacy'
+  key_status: 'legacy',
 })
 const RESTRICTED_GRANT = {
   allSpaces: false,
   spaceIds: ['bafy1.repl1', 'bafy2.repl2'],
-  permission: 'read'
+  permission: 'read',
 }
 
 /** Replies by method and path; a list of replies is served in turn. Any other route has none. */
@@ -80,7 +80,7 @@ describe('createChallenge', () => {
 
   test('rejects on an error status', async () => {
     const { gateway } = setup({
-      'POST /v2/auth/challenges': json(500, { ...AUTH_FAILURE, message: 'failed to create a new challenge' })
+      'POST /v2/auth/challenges': json(500, { ...AUTH_FAILURE, message: 'failed to create a new challenge' }),
     })
     await expect(gateway.createChallenge('Calendar')).rejects.toThrow('500')
   })
@@ -90,13 +90,13 @@ describe('exchangeCode', () => {
   test('exchanges the challenge and code for the key, and asks what the new key reaches', async () => {
     const { gateway, calls, routes } = setup({
       'POST /v2/auth/api_keys': json(201, { api_key: 'anytype_key', grant: null }),
-      'GET /v2/auth/whoami': RESTRICTED
+      'GET /v2/auth/whoami': RESTRICTED,
     })
 
     await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toEqual({
       ok: true,
       apiKey: 'anytype_key',
-      access: { grant: RESTRICTED_GRANT }
+      access: { grant: RESTRICTED_GRANT },
     })
     expect(calls[0]?.init.body).toBe('{"challenge_id":"ch_1","code":"2749"}')
     expect(routes()).toEqual(['POST /v2/auth/api_keys', 'GET /v2/auth/whoami'])
@@ -106,13 +106,13 @@ describe('exchangeCode', () => {
     const { gateway } = setup({
       'POST /v2/auth/api_keys': json(201, {
         api_key: 'anytype_key',
-        grant: { all_spaces: false, space_ids: ['bafy1.repl1'], permission: 'readwrite' }
+        grant: { all_spaces: false, space_ids: ['bafy1.repl1'], permission: 'readwrite' },
       }),
-      'GET /v2/auth/whoami': json(500, { status: 500, code: 'internal', message: 'x' })
+      'GET /v2/auth/whoami': json(500, { status: 500, code: 'internal', message: 'x' }),
     })
 
     await expect(gateway.exchangeCode('ch_1', '2749')).resolves.toMatchObject({
-      access: { grant: { allSpaces: false, spaceIds: ['bafy1.repl1'], permission: 'readwrite' } }
+      access: { grant: { allSpaces: false, spaceIds: ['bafy1.repl1'], permission: 'readwrite' } },
     })
   })
 
@@ -156,13 +156,13 @@ describe('verifyApiKey', () => {
           all_spaces: true,
           permission: 'readwrite',
           space_count: 1,
-          spaces: [{ id: 'bafy1.repl1', name: 'Work', permission: 'readwrite' }]
-        }
-      })
+          spaces: [{ id: 'bafy1.repl1', name: 'Work', permission: 'readwrite' }],
+        },
+      }),
     })
     await expect(gateway.verifyApiKey('ak')).resolves.toEqual({
       ok: true,
-      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } }
+      access: { grant: { allSpaces: true, spaceIds: [], permission: 'readwrite' } },
     })
   })
 

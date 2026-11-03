@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest'
 import {
-  EncryptedFileCredentialRepository,
   type CredentialCipher,
-  type CredentialFile
+  type CredentialFile,
+  EncryptedFileCredentialRepository,
 } from './encrypted-file-credential-repository'
 
 const credential = { apiKey: 'ak_secret_4c19', issuedAt: 42 }
@@ -10,7 +10,7 @@ const credential = { apiKey: 'ak_secret_4c19', issuedAt: 42 }
 /** Reversible, and far enough from plaintext that the key never shows in the bytes. */
 const cipher: CredentialCipher = {
   encrypt: (plain) => Uint8Array.from(plain, (char) => char.charCodeAt(0) ^ 0x5a),
-  decrypt: (sealed) => String.fromCharCode(...sealed.map((byte) => byte ^ 0x5a))
+  decrypt: (sealed) => String.fromCharCode(...sealed.map((byte) => byte ^ 0x5a)),
 }
 
 function setup(initial: Uint8Array | null = null) {
@@ -22,11 +22,11 @@ function setup(initial: Uint8Array | null = null) {
     },
     remove: async () => {
       bytes = null
-    }
+    },
   }
   return {
     repository: new EncryptedFileCredentialRepository({ cipher, file }),
-    stored: () => bytes
+    stored: () => bytes,
   }
 }
 
@@ -65,9 +65,9 @@ test('a file that cannot be decrypted loads as no credential', async () => {
       ...cipher,
       decrypt: () => {
         throw new Error('Error while decrypting the ciphertext provided to safeStorage.decryptString.')
-      }
+      },
     },
-    file: { read: async () => new Uint8Array([1, 2, 3]), write: async () => {}, remove: async () => {} }
+    file: { read: async () => new Uint8Array([1, 2, 3]), write: async () => {}, remove: async () => {} },
   })
 
   await expect(repository.load()).resolves.toBeNull()
@@ -81,8 +81,8 @@ test('a file that cannot be read loads as no credential', async () => {
         throw new Error('EACCES')
       },
       write: async () => {},
-      remove: async () => {}
-    }
+      remove: async () => {},
+    },
   })
 
   await expect(repository.load()).resolves.toBeNull()
@@ -93,7 +93,7 @@ test.each([
   ['not an object', '"ak_secret_4c19"'],
   ['missing the key', '{"issuedAt":42}'],
   ['an empty key', '{"apiKey":"","issuedAt":42}'],
-  ['a non-numeric issue time', '{"apiKey":"ak_secret_4c19","issuedAt":"42"}']
+  ['a non-numeric issue time', '{"apiKey":"ak_secret_4c19","issuedAt":"42"}'],
 ])('a file holding %s loads as no credential', async (_label, plain) => {
   await expect(setup(cipher.encrypt(plain)).repository.load()).resolves.toBeNull()
 })

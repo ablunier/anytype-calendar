@@ -33,7 +33,7 @@ export class CheckForUpdate {
     this.#store.set({
       current,
       available: newer ? latest : null,
-      dismissed: newer && dismissed === latest.version
+      dismissed: newer && dismissed === latest.version,
     })
   }
 }

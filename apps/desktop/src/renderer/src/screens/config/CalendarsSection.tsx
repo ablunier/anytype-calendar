@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import { FEEDS_COLOURS, isFeedsColour, nextFeedsColour, type FeedsColour } from '@anytype-calendar/feeds/domain'
-import type { FeedsAddResult, FeedsEditRequest, FeedsEditResult } from '@shared/ipc'
-import type { FeedSource } from '@renderer/types'
+import { FEEDS_COLOURS, type FeedsColour, isFeedsColour, nextFeedsColour } from '@anytype-calendar/feeds/domain'
 import { Button, Card, catBg, Icon, IconButton, Input } from '@renderer/components/ui'
 import { feedFailureText, feedStatusText } from '@renderer/lib/feed-text'
 import { movedOrder } from '@renderer/lib/feeds'
 import { hueOf } from '@renderer/lib/schema'
+import type { FeedSource } from '@renderer/types'
+import type { FeedsAddResult, FeedsEditRequest, FeedsEditResult } from '@shared/ipc'
+import { type DragEvent, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface CalendarsSectionProps {
   /** In the user's order: the sidebar's, and the order events sharing a slot are drawn in. */
@@ -35,7 +35,7 @@ export function CalendarsSection({
   onRemove,
   onReorder,
   onRefresh,
-  focusAdd = false
+  focusAdd = false,
 }: CalendarsSectionProps): React.JSX.Element {
   const { t } = useTranslation()
   const [failed, setFailed] = useState(false)
@@ -43,7 +43,7 @@ export function CalendarsSection({
   const run = (change: Promise<void>): void => {
     change.then(
       () => setFailed(false),
-      () => setFailed(true)
+      () => setFailed(true),
     )
   }
 
@@ -66,7 +66,15 @@ export function CalendarsSection({
     setOrder(null)
   }
   const move = (index: number, delta: number): void =>
-    run(onReorder(movedOrder(feeds.map(({ id }) => id), index, index + delta)))
+    run(
+      onReorder(
+        movedOrder(
+          feeds.map(({ id }) => id),
+          index,
+          index + delta,
+        ),
+      ),
+    )
 
   return (
     <section>
@@ -153,7 +161,7 @@ function FeedRow({
   onMoveUp,
   onMoveDown,
   onEdit,
-  onRemove
+  onRemove,
 }: FeedRowProps): React.JSX.Element {
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
@@ -185,7 +193,7 @@ function FeedRow({
       onDragEnd={onDragEnd}
       className={[
         'flex items-center gap-10 rounded-8 px-8 py-6 hover:bg-surface-hover',
-        lifted ? 'opacity-50' : ''
+        lifted ? 'opacity-50' : '',
       ].join(' ')}
     >
       <Icon name="ellipsis" size={14} className="shrink-0 cursor-grab text-ink-tertiary" />
@@ -193,10 +201,7 @@ function FeedRow({
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate type-ui text-small text-ink-primary">{feed.name}</span>
         <span
-          className={[
-            'truncate type-caption text-tiny',
-            failed ? 'text-ink-danger' : 'text-ink-tertiary'
-          ].join(' ')}
+          className={['truncate type-caption text-tiny', failed ? 'text-ink-danger' : 'text-ink-tertiary'].join(' ')}
         >
           {feed.host} · {feedStatusText(t, feed.status)}
         </span>
@@ -227,7 +232,12 @@ function FeedRow({
             disabled={last}
             onClick={onMoveDown}
           />
-          <IconButton size="sm" icon="pencil" label={t('feeds.edit', { name: feed.name })} onClick={() => setEditing(true)} />
+          <IconButton
+            size="sm"
+            icon="pencil"
+            label={t('feeds.edit', { name: feed.name })}
+            onClick={() => setEditing(true)}
+          />
           <IconButton
             size="sm"
             icon="trash"
@@ -265,7 +275,7 @@ function FeedEditor({ feed, onCancel, onSave }: FeedEditorProps): React.JSX.Elem
         id: feed.id,
         name: name.trim(),
         ...(colour === feed.colour ? {} : { colour }),
-        ...(url.trim() === '' ? {} : { url })
+        ...(url.trim() === '' ? {} : { url }),
       })
       if (!result.ok) setError(feedFailureText(t, result))
     } catch {
@@ -334,7 +344,7 @@ function ColourPicker({ colour, onChange }: ColourPickerProps): React.JSX.Elemen
             onClick={() => onChange(option)}
             className={[
               'flex size-24 items-center justify-center rounded-pill border-2',
-              option === colour ? 'border-line-accent' : 'border-transparent'
+              option === colour ? 'border-line-accent' : 'border-transparent',
             ].join(' ')}
           >
             <span className={['size-16 rounded-pill', catBg[hueOf(option)]].join(' ')} />
@@ -410,7 +420,14 @@ function AddFeedForm({ onAdd, taken, focus }: AddFeedFormProps): React.JSX.Eleme
       <Input label={t('feeds.nameOptional')} value={name} onChange={setName} placeholder={t('feeds.namePlaceholder')} />
       <ColourPicker colour={colour} onChange={setPicked} />
       <div className="flex justify-end">
-        <Button variant="secondary" size="sm" type="submit" iconLeft="plus" loading={adding} disabled={url.trim() === ''}>
+        <Button
+          variant="secondary"
+          size="sm"
+          type="submit"
+          iconLeft="plus"
+          loading={adding}
+          disabled={url.trim() === ''}
+        >
           {t('feeds.add')}
         </Button>
       </div>

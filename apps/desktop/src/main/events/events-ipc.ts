@@ -1,7 +1,7 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
 import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
-import { toEventsSpan, type EventsEditOutcome } from '@anytype-calendar/events/domain'
+import { type EventsEditOutcome, toEventsSpan } from '@anytype-calendar/events/domain'
 import { IpcChannel } from '@shared/ipc'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import type { Auth } from '../auth/compose-auth'
 import type { Schema } from '../schema/compose-schema'
 import type { Events } from './compose-events'
@@ -13,14 +13,15 @@ export type EventsIpcLinks = Pick<Auth, 'authSession' | 'checkAuthAccess'> & Pic
 
 export function registerEventsIpc(
   { eventsState, loadEventsSpan, rescheduleEventsObject, createEventsObject, completeEventsObject }: Events,
-  { authSession, checkAuthAccess, schemaSync }: EventsIpcLinks
+  { authSession, checkAuthAccess, schemaSync }: EventsIpcLinks,
 ): void {
   const connected = (): boolean => authSession.get().phase === 'connected'
 
   /* The renderer hides every edit a session cannot make, but it is not trusted to: a key
    * granted read only would have Anytype refuse the write anyway, after the object had been
    * drawn moved. */
-  const edit = <T>(parse: (value: unknown) => T | null, run: (request: T) => Promise<EventsEditOutcome>) =>
+  const edit =
+    <T>(parse: (value: unknown) => T | null, run: (request: T) => Promise<EventsEditOutcome>) =>
     (_event: unknown, value: unknown): Promise<EventsEditOutcome> => {
       const request = parse(value)
       if (!request) throw new TypeError('not an edit request')
@@ -32,12 +33,15 @@ export function registerEventsIpc(
     }
   ipcMain.handle(
     IpcChannel.eventsReschedule,
-    edit(toRescheduleRequest, (request) => rescheduleEventsObject.execute(request))
+    edit(toRescheduleRequest, (request) => rescheduleEventsObject.execute(request)),
   )
-  ipcMain.handle(IpcChannel.eventsCreate, edit(toCreateRequest, (request) => createEventsObject.execute(request)))
+  ipcMain.handle(
+    IpcChannel.eventsCreate,
+    edit(toCreateRequest, (request) => createEventsObject.execute(request)),
+  )
   ipcMain.handle(
     IpcChannel.eventsSetDone,
-    edit(toSetDoneRequest, (request) => completeEventsObject.execute(request))
+    edit(toSetDoneRequest, (request) => completeEventsObject.execute(request)),
   )
 
   ipcMain.handle(IpcChannel.eventsGet, () => eventsState.shown())
@@ -66,7 +70,7 @@ export function registerEventsIpc(
     },
     FOCUS_REFRESH_INTERVAL_MS,
     Date.now,
-    Date.now()
+    Date.now(),
   )
   app.on('browser-window-focus', () => {
     if (connected()) refresh()

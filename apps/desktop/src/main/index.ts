@@ -1,6 +1,7 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
+import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import icon from '../../resources/icon.png?asset'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
@@ -11,7 +12,6 @@ import { registerShellIpc } from './shell/shell-ipc'
 import { handleSquirrelEvent, squirrelAppUserModelId } from './squirrel-startup'
 import { startUpdates } from './updates/auto-update'
 import { registerUpdateIpc } from './updates/update-ipc'
-import icon from '../../resources/icon.png?asset'
 
 const isSquirrelEvent = handleSquirrelEvent()
 
@@ -26,8 +26,8 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
+      sandbox: false,
+    },
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -75,7 +75,7 @@ app.whenReady().then(async () => {
     preferences.calendarVisibility.load(),
     preferences.timeFormat.load(),
     // Only the copies cached at the last read: the network is asked once a window is open.
-    feeds.loadFeeds.execute()
+    feeds.loadFeeds.execute(),
   ])
 
   app.on('browser-window-created', (_, window) => {
@@ -86,7 +86,7 @@ app.whenReady().then(async () => {
   startUpdates(updates.checkForUpdate)
   void feeds.refreshFeeds.execute()
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })

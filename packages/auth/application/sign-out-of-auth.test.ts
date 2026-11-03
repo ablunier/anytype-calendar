@@ -16,8 +16,8 @@ function setup(initialCredential: AuthCredential | null = null) {
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: true,
       apiKey: API_KEY,
-      access: { grant: null }
-    }))
+      access: { grant: null },
+    })),
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),
@@ -26,7 +26,7 @@ function setup(initialCredential: AuthCredential | null = null) {
     }),
     clear: vi.fn<CredentialRepository['clear']>(async () => {
       credential = null
-    })
+    }),
   }
   const store = new AuthSessionStore()
   const startAuthConnection = new StartAuthConnection({ gateway, store, appName: 'Test app' })

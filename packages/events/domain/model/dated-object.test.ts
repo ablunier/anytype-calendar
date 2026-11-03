@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import {
   compareEventsDatedObjects,
+  type EventsDatedObject,
   overlapsEventsWindow,
   toEventsDatedObject,
-  type EventsDatedObject
 } from './dated-object'
 import type { EventsSource } from './source'
 
@@ -16,7 +16,7 @@ const ALL_DAY_SOURCE: EventsSource = {
   typeKey: 'project',
   from: 'start_date',
   to: 'due_date',
-  includesTime: false
+  includesTime: false,
 }
 const TIMED_SOURCE: EventsSource = { ...ALL_DAY_SOURCE, includesTime: true }
 
@@ -33,7 +33,7 @@ describe('toEventsDatedObject', () => {
       start,
       end,
       allDay: true,
-      details: []
+      details: [],
     })
   })
 
@@ -45,11 +45,11 @@ describe('toEventsDatedObject', () => {
       viewId: '63194',
       from: 'due_date',
       to: null,
-      includesTime: false
+      includesTime: false,
     }
     expect(toEventsDatedObject({ id: 'o', title: '', start: 1, end: null }, source, 0).source).toEqual({
       kind: 'query',
-      queryId: 'bafyquery'
+      queryId: 'bafyquery',
     })
   })
 
@@ -66,7 +66,7 @@ describe('toEventsDatedObject', () => {
   test("colours it by its option's colour", () => {
     const source: EventsSource = {
       ...ALL_DAY_SOURCE,
-      colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] }
+      colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] },
     }
     const ref = (option: string) => ({ id: 'o', title: '', start: 1, end: null, option })
     expect(toEventsDatedObject(ref('P1'), source, 0).colour).toBe('red')
@@ -88,10 +88,7 @@ describe('toEventsDatedObject', () => {
 
   test('drops an end before the start, keeping the object on its start', () => {
     const start = 10_000
-    const object = toEventsDatedObject(
-      { id: 'o', title: '', start, end: start - DAY_MS },
-      ALL_DAY_SOURCE
-    )
+    const object = toEventsDatedObject({ id: 'o', title: '', start, end: start - DAY_MS }, ALL_DAY_SOURCE)
     expect(object).toMatchObject({ start, end: null, allDay: true })
   })
 
@@ -116,16 +113,13 @@ describe('overlapsEventsWindow', () => {
     ['a range starting on the last instant', { start: 2_000, end: 3_000 }, true],
     ['a range spanning the whole window', { start: 0, end: 5_000 }, true],
     ['a range inside', { start: 1_200, end: 1_800 }, true],
-    ['a range wholly after', { start: 2_001, end: 3_000 }, false]
+    ['a range wholly after', { start: 2_001, end: 3_000 }, false],
   ])('%s', (_, object, expected) => {
     expect(overlapsEventsWindow(object, window)).toBe(expected)
   })
 
   test('an object whose end was dropped overlaps by its start alone', () => {
-    const object = toEventsDatedObject(
-      { id: 'o', title: '', start: 2_500, end: 1_500 },
-      ALL_DAY_SOURCE
-    )
+    const object = toEventsDatedObject({ id: 'o', title: '', start: 2_500, end: 1_500 }, ALL_DAY_SOURCE)
     expect(overlapsEventsWindow(object, window)).toBe(false)
   })
 })
@@ -139,7 +133,7 @@ describe('compareEventsDatedObjects', () => {
     title,
     start,
     end: null,
-    allDay: false
+    allDay: false,
   })
 
   test('orders by start, then title, then id', () => {
@@ -147,7 +141,7 @@ describe('compareEventsDatedObjects', () => {
       object('c', 'Beta', 2),
       object('b', 'Alpha', 2),
       object('z', 'Zed', 1),
-      object('a', 'Alpha', 2)
+      object('a', 'Alpha', 2),
     ].sort(compareEventsDatedObjects)
     expect(sorted.map(({ id }) => id)).toEqual(['z', 'a', 'b', 'c'])
   })

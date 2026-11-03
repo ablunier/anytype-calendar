@@ -1,15 +1,9 @@
+import { IconButton } from '@renderer/components/ui'
+import { buildMonthGrid, isoWeekNumber, longDate, monthLabel, weekdaysFrom } from '@renderer/lib/calendar'
+import { shiftSpan } from '@renderer/lib/events'
+import type { CalendarMonth } from '@renderer/types'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CalendarMonth } from '@renderer/types'
-import { IconButton } from '@renderer/components/ui'
-import {
-  buildMonthGrid,
-  isoWeekNumber,
-  longDate,
-  monthLabel,
-  weekdaysFrom
-} from '@renderer/lib/calendar'
-import { shiftSpan } from '@renderer/lib/events'
 
 export interface MiniMonthProps {
   label: string
@@ -41,7 +35,7 @@ export function MiniMonth({
   weekStart,
   showWeekNumbers,
   min,
-  onSelectDate
+  onSelectDate,
 }: MiniMonthProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const [shown, setShown] = useState<CalendarMonth>(() => monthOfDate(opensOn))
@@ -55,9 +49,7 @@ export function MiniMonth({
   return (
     <section aria-label={label} className="flex shrink-0 flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h2 className="type-ui text-small text-ink-primary">
-          {monthLabel(shown.year, shown.month, i18n.language)}
-        </h2>
+        <h2 className="type-ui text-small text-ink-primary">{monthLabel(shown.year, shown.month, i18n.language)}</h2>
         <div className="flex items-center gap-2">
           <IconButton size="sm" icon="chevron-left" label={t('calendar.nav.prev.month')} onClick={() => step(-1)} />
           <IconButton size="sm" icon="chevron-right" label={t('calendar.nav.next.month')} onClick={() => step(1)} />
@@ -111,13 +103,13 @@ export function MiniMonth({
                       disabled
                         ? 'cursor-not-allowed bg-transparent text-ink-muted opacity-50'
                         : isToday
-                        ? 'bg-surface-accent text-ink-inverse'
-                        : inSpan
-                          ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'
-                          : [
-                              'bg-transparent hover:bg-surface-hover',
-                              outside ? 'text-ink-muted' : 'text-ink-body'
-                            ].join(' ')
+                          ? 'bg-surface-accent text-ink-inverse'
+                          : inSpan
+                            ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'
+                            : [
+                                'bg-transparent hover:bg-surface-hover',
+                                outside ? 'text-ink-muted' : 'text-ink-body',
+                              ].join(' '),
                     ].join(' ')}
                   >
                     {day}

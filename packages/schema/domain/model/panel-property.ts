@@ -2,15 +2,7 @@ import type { SchemaProperty } from './date-property'
 import type { SchemaSelectOption } from './select-property'
 
 /** The formats the detail panel can draw a property in. */
-export type SchemaPanelFormat =
-  | 'text'
-  | 'number'
-  | 'select'
-  | 'multi_select'
-  | 'url'
-  | 'email'
-  | 'phone'
-  | 'objects'
+export type SchemaPanelFormat = 'text' | 'number' | 'select' | 'multi_select' | 'url' | 'email' | 'phone' | 'objects'
 
 const PANEL_FORMATS: ReadonlySet<string> = new Set<SchemaPanelFormat>([
   'text',
@@ -20,7 +12,7 @@ const PANEL_FORMATS: ReadonlySet<string> = new Set<SchemaPanelFormat>([
   'url',
   'email',
   'phone',
-  'objects'
+  'objects',
 ])
 
 /**
@@ -51,14 +43,14 @@ export interface SchemaNamedProperty {
  */
 export function panelProperties(properties: readonly SchemaProperty[]): Omit<SchemaPanelProperty, 'options'>[] {
   return properties.flatMap(({ key, name, format, hidden }) =>
-    hidden === true || DRAWN_KEYS.has(key) || !isPanelFormat(format) ? [] : [{ key, name, format }]
+    hidden === true || DRAWN_KEYS.has(key) || !isPanelFormat(format) ? [] : [{ key, name, format }],
   )
 }
 
 /** In the order given; the object's name is never one, since the panel draws it as its title. */
 export function namedProperties(properties: readonly SchemaProperty[], format: string): SchemaNamedProperty[] {
   return properties.flatMap(({ key, name, format: own }) =>
-    own !== format || DRAWN_KEYS.has(key) ? [] : [{ key, name }]
+    own !== format || DRAWN_KEYS.has(key) ? [] : [{ key, name }],
   )
 }
 

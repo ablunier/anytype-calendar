@@ -1,4 +1,4 @@
-import { withEventsEdits, type EventsDatedObject, type EventsSpanLoad } from '../domain'
+import { type EventsDatedObject, type EventsSpanLoad, withEventsEdits } from '../domain'
 
 export type EventsSpanListener = (shown: EventsSpanLoad) => void
 

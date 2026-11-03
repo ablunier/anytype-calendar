@@ -1,7 +1,3 @@
-import { randomBytes } from 'crypto'
-import { join } from 'path'
-import { setTimeout as sleep } from 'timers/promises'
-import { app, safeStorage } from 'electron'
 import {
   AddFeedsSubscription,
   EditFeedsSubscription,
@@ -11,14 +7,9 @@ import {
   RemoveFeedsSubscription,
   ReorderFeedsSubscriptions,
   SaveFeedsSubscriptions,
-  ShowFeedsWindow
+  ShowFeedsWindow,
 } from '@anytype-calendar/feeds/application'
-import type {
-  FeedsCache,
-  FeedsGateway,
-  FeedsSubscriptionRepository,
-  FeedsWindow
-} from '@anytype-calendar/feeds/domain'
+import type { FeedsCache, FeedsGateway, FeedsSubscriptionRepository, FeedsWindow } from '@anytype-calendar/feeds/domain'
 import {
   EncryptedFileFeedsSubscriptionRepository,
   FileFeedsCache,
@@ -27,8 +18,12 @@ import {
   InMemoryFeedsCache,
   InMemoryFeedsGateway,
   InMemoryFeedsSubscriptionRepository,
-  LocalFeedsTimeZone
+  LocalFeedsTimeZone,
 } from '@anytype-calendar/feeds/infrastructure'
+import { randomBytes } from 'crypto'
+import { app, safeStorage } from 'electron'
+import { join } from 'path'
+import { setTimeout as sleep } from 'timers/promises'
 import type { Anytype } from '../anytype/compose-anytype'
 import { cacheDirectoryAt, safeStorageUrlCipher, subscriptionFileAt } from './feeds-storage'
 
@@ -66,19 +61,19 @@ export function composeFeeds({ anytype, shownWindow }: FeedsDeps) {
       cache,
       store: feedsState,
       save,
-      newId: () => randomBytes(8).toString('hex')
+      newId: () => randomBytes(8).toString('hex'),
     }),
     editFeedsSubscription: new EditFeedsSubscription({ gateway, parser, cache, store: feedsState, save }),
     removeFeedsSubscription: new RemoveFeedsSubscription({ save, cache }),
     reorderFeedsSubscriptions: new ReorderFeedsSubscriptions(save),
     // Expanding the copies in memory is all moving to another span takes: no feed is read again.
-    showFeedsForSpan: (): void => showFeedsWindow.execute(shownWindow())
+    showFeedsForSpan: (): void => showFeedsWindow.execute(shownWindow()),
   }
 }
 
 function httpFeedsGateway(): FeedsGateway {
   return new HttpFeedsGateway((url, init) =>
-    fetch(url, { ...init, signal: AbortSignal.timeout(FEED_REQUEST_TIMEOUT_MS) })
+    fetch(url, { ...init, signal: AbortSignal.timeout(FEED_REQUEST_TIMEOUT_MS) }),
   )
 }
 
@@ -105,8 +100,8 @@ function feedsStorageFor(name: string): { repository: FeedsSubscriptionRepositor
   return {
     repository: new EncryptedFileFeedsSubscriptionRepository({
       cipher: safeStorageUrlCipher,
-      file: subscriptionFileAt(join(userData, `${name}.json`))
+      file: subscriptionFileAt(join(userData, `${name}.json`)),
     }),
-    cache: new FileFeedsCache(cacheDirectoryAt(join(userData, `${name}-cache`)))
+    cache: new FileFeedsCache(cacheDirectoryAt(join(userData, `${name}-cache`))),
   }
 }

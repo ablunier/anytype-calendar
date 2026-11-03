@@ -1,5 +1,5 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
-import { nextEventsSpanLoad, type EventsSpanLoad, type EventsSpanLoadEvent } from '../domain'
+import { type EventsSpanLoad, type EventsSpanLoadEvent, nextEventsSpanLoad } from '../domain'
 import type { EventsSpanStore } from './events-span-store'
 
 export class ResetEventsSpan {

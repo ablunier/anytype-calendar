@@ -1,5 +1,5 @@
-import { sameAuthAccess, type AuthAccess } from './access'
-import { isChallengeExpired, isWellFormedAuthCode, type AuthChallenge } from './challenge'
+import { type AuthAccess, sameAuthAccess } from './access'
+import { type AuthChallenge, isChallengeExpired, isWellFormedAuthCode } from './challenge'
 import type { ApiKeyInfo } from './credential'
 
 export type AuthFailure =
@@ -84,9 +84,7 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
     }
 
     case 'exchange-succeeded':
-      return session.phase === 'verifying'
-        ? { phase: 'connected', key: event.key, access: event.access }
-        : session
+      return session.phase === 'verifying' ? { phase: 'connected', key: event.key, access: event.access } : session
 
     case 'exchange-failed':
       return session.phase === 'verifying'
@@ -100,40 +98,29 @@ export function nextAuthSession(session: AuthSession, event: AuthEvent): AuthSes
       return session.phase === 'entering-key' ? { phase: 'verifying-key' } : session
 
     case 'key-verified':
-      return session.phase === 'verifying-key'
-        ? { phase: 'connected', key: event.key, access: event.access }
-        : session
+      return session.phase === 'verifying-key' ? { phase: 'connected', key: event.key, access: event.access } : session
 
     case 'key-rejected':
-      return session.phase === 'verifying-key'
-        ? { phase: 'failed', failure: event.failure, enteredKey: true }
-        : session
+      return session.phase === 'verifying-key' ? { phase: 'failed', failure: event.failure, enteredKey: true } : session
 
     case 'stepped-back':
       return stepBack(session)
 
     case 'restored':
-      return session.phase === 'signed-out'
-        ? { phase: 'connected', key: event.key, access: null }
-        : session
+      return session.phase === 'signed-out' ? { phase: 'connected', key: event.key, access: null } : session
 
     case 'signed-out':
       return session.phase === 'connected' ? { phase: 'signed-out' } : session
 
     case 'access-checked':
-      return session.phase === 'connected' &&
-        (session.access === null || !sameAuthAccess(session.access, event.access))
+      return session.phase === 'connected' && (session.access === null || !sameAuthAccess(session.access, event.access))
         ? { ...session, access: event.access }
         : session
   }
 }
 
 function canOpenChallenge(session: AuthSession): boolean {
-  return (
-    session.phase === 'signed-out' ||
-    session.phase === 'awaiting-code' ||
-    session.phase === 'failed'
-  )
+  return session.phase === 'signed-out' || session.phase === 'awaiting-code' || session.phase === 'failed'
 }
 
 function stepBack(session: AuthSession): AuthSession {

@@ -11,6 +11,6 @@ export function composeUpdates(appConfig: AppConfigStore) {
   return {
     updateNotice,
     checkForUpdate: new CheckForUpdate({ config: appConfig, store: updateNotice, fetchLatest: fetchLatestRelease }),
-    dismissUpdateNotice: new DismissUpdateNotice({ config: appConfig, store: updateNotice })
+    dismissUpdateNotice: new DismissUpdateNotice({ config: appConfig, store: updateNotice }),
   }
 }

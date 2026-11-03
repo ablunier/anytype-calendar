@@ -1,10 +1,10 @@
-import type { CSSProperties, KeyboardEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
+import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import type { CSSProperties, KeyboardEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
-import { grabbedDate, type DayDrag } from './useDayDrag'
+import { type DayDrag, grabbedDate } from './useDayDrag'
 
 export interface MonthDayCellProps {
   cell: MonthCell
@@ -43,7 +43,7 @@ export function MonthDayCell({
   onKeyDown,
   onOpenEvent,
   drag,
-  onCreate
+  onCreate,
 }: MonthDayCellProps): React.JSX.Element {
   const { t } = useTranslation()
   /* Outside days belong to the adjacent month: they carry their objects, so a range crosses
@@ -72,12 +72,12 @@ export function MonthDayCell({
         drag?.overDate === cell.date
           ? 'bg-surface-accent-soft'
           : isSelected
-          ? 'bg-surface-selected'
-          : isToday
-            ? 'bg-today-wash'
-            : cell.outside || isWeekend
-              ? 'bg-surface-rail'
-              : 'bg-surface-card'
+            ? 'bg-surface-selected'
+            : isToday
+              ? 'bg-today-wash'
+              : cell.outside || isWeekend
+                ? 'bg-surface-rail'
+                : 'bg-surface-card',
       ].join(' ')}
     >
       <div className="flex items-center justify-between gap-4">
@@ -86,20 +86,14 @@ export function MonthDayCell({
           className={[
             'inline-flex h-18 min-w-18 items-center justify-center rounded-4 px-4',
             'font-mono text-tiny tabular-nums',
-            isToday
-              ? 'bg-today-ink text-stone-000'
-              : cell.outside
-                ? 'text-ink-tertiary'
-                : 'text-ink-secondary'
+            isToday ? 'bg-today-ink text-stone-000' : cell.outside ? 'text-ink-tertiary' : 'text-ink-secondary',
           ].join(' ')}
         >
           {cell.day}
         </time>
       </div>
 
-      {lanes > 0 ? (
-        <div className="lane-stack" style={{ '--lanes': lanes } as CSSProperties} />
-      ) : null}
+      {lanes > 0 ? <div className="lane-stack" style={{ '--lanes': lanes } as CSSProperties} /> : null}
 
       {hidden > 0 ? (
         <span className="pl-2 type-caption text-micro text-ink-tertiary">
@@ -123,7 +117,7 @@ export function MonthDayCell({
               ? {
                   onDragStart: (event: React.DragEvent) =>
                     drag.start(segment.event, grabbedDate(event, cell.date, segment.span), event),
-                  onDragEnd: drag.end
+                  onDragEnd: drag.end,
                 }
               : {})}
             onClick={() => onOpenEvent(segment.event)}

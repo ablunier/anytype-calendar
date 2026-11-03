@@ -17,7 +17,7 @@ export type Anytype = { kind: 'fake' } | { kind: 'real'; client: AnytypeClient }
 export function composeAnytype(): Anytype {
   if (process.env['ANYTYPE_CALENDAR_FAKE_AUTH'] === '1') return { kind: 'fake' }
   const client = new AnytypeClient({
-    fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) })
+    fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(ANYTYPE_REQUEST_TIMEOUT_MS) }),
   })
   return { kind: 'real', client }
 }

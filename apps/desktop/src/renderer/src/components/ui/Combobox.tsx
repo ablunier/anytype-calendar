@@ -1,7 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
-import { fieldHeight, type FieldSize } from './Input'
+import { type FieldSize, fieldHeight } from './Input'
 
 export interface ComboboxOption {
   value: string
@@ -47,7 +47,7 @@ export function Combobox({
   label,
   ariaLabel,
   size = 'md',
-  className
+  className,
 }: ComboboxProps): React.JSX.Element {
   const id = useId()
   const listId = `${id}-list`
@@ -140,7 +140,7 @@ export function Combobox({
           'relative flex items-center gap-6 rounded-control border border-line-default bg-surface-card pl-10 pr-28',
           'transition duration-fast ease-standard',
           'focus-within:border-line-accent focus-within:shadow-focus',
-          fieldHeight[size]
+          fieldHeight[size],
         ].join(' ')}
       >
         <input
@@ -166,11 +166,7 @@ export function Combobox({
         {!open && selected?.detail ? (
           <span className="type-ui max-w-1/2 shrink-0 truncate text-small text-ink-tertiary">{selected.detail}</span>
         ) : null}
-        <Icon
-          name="chevron-down"
-          size={14}
-          className="pointer-events-none absolute right-8 text-ink-tertiary"
-        />
+        <Icon name="chevron-down" size={14} className="pointer-events-none absolute right-8 text-ink-tertiary" />
       </div>
       {open && place
         ? createPortal(
@@ -183,7 +179,7 @@ export function Combobox({
               style={{ top: place.top, left: place.left, width: place.width }}
               className={[
                 'fixed z-70 flex max-h-240 flex-col overflow-y-auto rounded-control border border-line-subtle',
-                'bg-surface-raised py-4 shadow-2'
+                'bg-surface-raised py-4 shadow-2',
               ].join(' ')}
             >
               {options.map((option, index) => (
@@ -196,7 +192,7 @@ export function Combobox({
                   onClick={() => pick(option)}
                   className={[
                     'type-ui flex cursor-pointer items-center gap-6 px-10 py-6 text-small text-ink-body',
-                    index === active ? 'bg-surface-hover' : ''
+                    index === active ? 'bg-surface-hover' : '',
                   ].join(' ')}
                 >
                   <span className="min-w-0 truncate">
@@ -214,7 +210,7 @@ export function Combobox({
                 </li>
               )}
             </ul>,
-            document.body
+            document.body,
           )
         : null}
     </div>

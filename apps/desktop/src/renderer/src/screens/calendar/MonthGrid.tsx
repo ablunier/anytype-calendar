@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
+import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MonthDayCell } from './MonthDayCell'
 import { useDayDrag } from './useDayDrag'
 
@@ -66,7 +66,7 @@ export function MonthGrid({
   onSelectDay,
   onOpenEvent,
   onMoveEvent,
-  onCreate
+  onCreate,
 }: MonthGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLDivElement>(null)
@@ -100,7 +100,7 @@ export function MonthGrid({
       Home: () => moveFocus(1 - focusedDay),
       End: () => moveFocus(lastDay - focusedDay),
       Enter: () => onSelectDay(day),
-      ' ': () => onSelectDay(day)
+      ' ': () => onSelectDay(day),
     }
     const action = actions[event.key]
     if (!action) return
@@ -109,12 +109,7 @@ export function MonthGrid({
   }
 
   return (
-    <div
-      ref={gridRef}
-      role="grid"
-      aria-label={t('calendar.grid.month')}
-      className="flex min-h-0 flex-1 flex-col"
-    >
+    <div ref={gridRef} role="grid" aria-label={t('calendar.grid.month')} className="flex min-h-0 flex-1 flex-col">
       <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
         {showWeekNumbers ? <span aria-hidden className="week-number-gutter shrink-0" /> : null}
         <div className="grid flex-1 grid-week">
@@ -124,7 +119,7 @@ export function MonthGrid({
               role="columnheader"
               className={[
                 'px-8 py-6 type-overline text-micro',
-                isWeekendColumn(weekStart, index) ? 'text-ink-tertiary' : 'text-ink-secondary'
+                isWeekendColumn(weekStart, index) ? 'text-ink-tertiary' : 'text-ink-secondary',
               ].join(' ')}
             >
               {weekday}

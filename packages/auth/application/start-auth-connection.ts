@@ -1,11 +1,11 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
-  createAuthChallenge,
-  nextAuthSession,
   type AuthChallengeResult,
   type AuthEvent,
   type AuthGateway,
-  type AuthSession
+  type AuthSession,
+  createAuthChallenge,
+  nextAuthSession,
 } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
@@ -54,7 +54,7 @@ export class StartAuthConnection {
     }
     this.#guard.dispatch({
       type: 'challenge-issued',
-      challenge: createAuthChallenge(result.challengeId, this.#now())
+      challenge: createAuthChallenge(result.challengeId, this.#now()),
     })
   }
 }

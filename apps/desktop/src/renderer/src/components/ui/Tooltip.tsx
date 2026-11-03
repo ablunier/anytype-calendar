@@ -6,20 +6,20 @@ export type TooltipAlign = 'center' | 'end'
 const sideClass: Record<TooltipSide, Record<TooltipAlign, string>> = {
   top: {
     center: 'bottom-full left-1/2 mb-6 -translate-x-1/2',
-    end: 'bottom-full right-0 mb-6'
+    end: 'bottom-full right-0 mb-6',
   },
   bottom: {
     center: 'top-full left-1/2 mt-6 -translate-x-1/2',
-    end: 'top-full right-0 mt-6'
+    end: 'top-full right-0 mt-6',
   },
   left: {
     center: 'right-full top-1/2 mr-6 -translate-y-1/2',
-    end: 'right-full bottom-0 mr-6'
+    end: 'right-full bottom-0 mr-6',
   },
   right: {
     center: 'left-full top-1/2 ml-6 -translate-y-1/2',
-    end: 'left-full bottom-0 ml-6'
-  }
+    end: 'left-full bottom-0 ml-6',
+  },
 }
 
 export interface TooltipProps {
@@ -40,7 +40,7 @@ export function Tooltip({
   label,
   side = 'top',
   align = 'center',
-  shortcut
+  shortcut,
 }: TooltipProps): React.JSX.Element {
   return (
     <span className="group relative inline-flex">
@@ -52,7 +52,7 @@ export function Tooltip({
           'rounded-6 bg-stone-800 px-8 py-4 type-caption text-tiny text-stone-025 shadow-2',
           'opacity-0 transition-opacity duration-fast ease-standard delay-140',
           'group-hover:opacity-100 group-focus-within:opacity-100',
-          sideClass[side][align]
+          sideClass[side][align],
         ].join(' ')}
       >
         {label}

@@ -1,9 +1,9 @@
-import { useId, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui'
 import { useSecondsUntil } from '@renderer/hooks/useSecondsUntil'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
 import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
+import { useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface AuthCodeProps {
   challengeId: string
@@ -22,12 +22,7 @@ function formatCountdown(seconds: number): string {
  * (visually hidden) text input owns the value, so the field is focusable, labelled, and
  * works with paste, IME and assistive tech; DigitBoxes just draws it.
  */
-export function AuthCode({
-  challengeId,
-  expiresAt,
-  onCancel,
-  onVerify
-}: AuthCodeProps): React.JSX.Element {
+export function AuthCode({ challengeId, expiresAt, onCancel, onVerify }: AuthCodeProps): React.JSX.Element {
   const { t } = useTranslation()
   const [code, setCode] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -83,9 +78,7 @@ export function AuthCode({
           <span className="type-numeral text-tiny text-ink-secondary">{challengeId}</span>
         </div>
         <span className="type-numeral text-tiny text-ink-tertiary">
-          {secondsLeft > 0
-            ? t('auth.code.expiresIn', { time: formatCountdown(secondsLeft) })
-            : t('auth.code.expired')}
+          {secondsLeft > 0 ? t('auth.code.expiresIn', { time: formatCountdown(secondsLeft) }) : t('auth.code.expired')}
         </span>
       </div>
 
@@ -93,13 +86,7 @@ export function AuthCode({
         <Button variant="secondary" size="lg" onClick={onCancel}>
           {t('common.cancel')}
         </Button>
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={code.length < 4}
-          onClick={() => onVerify(code)}
-        >
+        <Button variant="primary" size="lg" fullWidth disabled={code.length < 4} onClick={() => onVerify(code)}>
           {t('auth.code.verify')}
         </Button>
       </div>
