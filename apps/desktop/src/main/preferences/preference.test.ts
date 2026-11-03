@@ -90,6 +90,16 @@ describe('preference', () => {
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
+  test('holds and announces nothing when the write fails', async () => {
+    const failing: AtomicFile = { ...fakeFile(), write: () => Promise.reject(new Error('disk full')) }
+    const colour = preference({ config: appConfigStore(failing), section: 'colour', initial: 'red', parse: toColour })
+    const listener = vi.fn()
+    colour.state.subscribe(listener)
+    await expect(colour.save('blue')).rejects.toThrow('disk full')
+    expect(colour.state.get()).toBe('red')
+    expect(listener).not.toHaveBeenCalled()
+  })
+
   test('keeps the other sections untouched', async () => {
     const { config, colour } = setup()
     await config.writeSection('theme', 'dark')
