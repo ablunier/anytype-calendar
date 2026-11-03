@@ -4,7 +4,7 @@ import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
-import { grabbedDate, useDayDrag } from './useDayDrag'
+import { grabbedDate, type CalendarDrag } from './useCalendarDrag'
 
 /** A band has room to grow, unlike a month cell, so nothing is hidden behind a `+N more`. */
 const BAND_LANES = 8
@@ -15,8 +15,8 @@ export interface AllDayBandProps {
   eventsByDay: CalendarEvent[][]
   typesByKey: Map<string, ObjectType>
   onOpenEvent: (event: CalendarEvent, date: string) => void
-  /** `date` is the day its first day lands on. Left off where objects cannot be moved. */
-  onMoveEvent?: (event: CalendarEvent, date: string) => void
+  /** Null where objects cannot be moved. */
+  drag: CalendarDrag | null
   onCreate: (date: string) => void
 }
 
@@ -30,14 +30,13 @@ export function AllDayBand({
   eventsByDay,
   typesByKey,
   onOpenEvent,
-  onMoveEvent,
+  drag,
   onCreate
 }: AllDayBandProps): React.JSX.Element {
   const { t } = useTranslation()
   // One bar per object, so an object covering several of these days is laid out once.
   const events = [...new Map(eventsByDay.flat().map((event) => [event.id, event])).values()]
   const layout = layOutWeek(events, days, BAND_LANES)
-  const drag = useDayDrag((event, date) => onMoveEvent?.(event, date))
 
   return (
     <div className="flex shrink-0 border-b border-grid-line-strong bg-surface-card">
@@ -52,11 +51,11 @@ export function AllDayBand({
           <div
             key={day.date}
             onDoubleClick={() => onCreate(day.date)}
-            {...(onMoveEvent ? drag.targetFor(day.date) : {})}
+            {...drag?.dayTarget(day.date)}
             className={[
               'min-h-20',
               index === 0 ? '' : 'border-l border-grid-line',
-              drag.overDate === day.date ? 'bg-surface-accent-soft' : ''
+              drag?.overDate === day.date ? 'bg-surface-accent-soft' : ''
             ].join(' ')}
           >
             {/* Reserves the row's height: the bars themselves are out of the flow. */}
@@ -74,13 +73,19 @@ export function AllDayBand({
               allDay={segment.event.allDay}
               time={segment.continuesBefore ? undefined : segment.event.time}
               {...(segment.event.done === undefined ? {} : { done: segment.event.done })}
-              lifted={drag.draggingId === segment.event.id}
-              {...(onMoveEvent && !segment.event.feed
+              lifted={drag?.draggingId === segment.event.id}
+              {...(drag && !segment.event.feed
                 ? {
                     onDragStart: (event: React.DragEvent) =>
                       drag.start(
-                        segment.event,
-                        grabbedDate(event, days[segment.column]?.date ?? '', segment.span),
+                        {
+                          kind: 'move',
+                          event: segment.event,
+                          grab: {
+                            at: 'day',
+                            date: grabbedDate(event, days[segment.column]?.date ?? '', segment.span)
+                          }
+                        },
                         event
                       ),
                     onDragEnd: drag.end

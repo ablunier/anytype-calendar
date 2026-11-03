@@ -4,7 +4,7 @@ import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import { EventChip } from './EventChip'
-import { grabbedDate, type DayDrag } from './useDayDrag'
+import { grabbedDate, type CalendarDrag } from './useCalendarDrag'
 
 export interface MonthDayCellProps {
   cell: MonthCell
@@ -24,7 +24,7 @@ export interface MonthDayCellProps {
   onKeyDown: (event: KeyboardEvent) => void
   onOpenEvent: (event: CalendarEvent) => void
   /** Null where objects cannot be moved. */
-  drag: DayDrag | null
+  drag: CalendarDrag | null
   onCreate: () => void
 }
 
@@ -64,7 +64,7 @@ export function MonthDayCell({
       onFocus={interactive ? onFocus : undefined}
       onKeyDown={interactive ? onKeyDown : undefined}
       onDoubleClick={onCreate}
-      {...drag?.targetFor(cell.date)}
+      {...drag?.dayTarget(cell.date)}
       className={[
         'flex min-h-daycell flex-col gap-4 border-r border-b border-grid-line p-6',
         'transition-colors duration-fast ease-standard',
@@ -122,7 +122,14 @@ export function MonthDayCell({
             {...(drag && !segment.event.feed
               ? {
                   onDragStart: (event: React.DragEvent) =>
-                    drag.start(segment.event, grabbedDate(event, cell.date, segment.span), event),
+                    drag.start(
+                      {
+                        kind: 'move',
+                        event: segment.event,
+                        grab: { at: 'day', date: grabbedDate(event, cell.date, segment.span) }
+                      },
+                      event
+                    ),
                   onDragEnd: drag.end
                 }
               : {})}

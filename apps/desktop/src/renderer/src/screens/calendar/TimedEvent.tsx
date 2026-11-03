@@ -1,4 +1,4 @@
-import type { CSSProperties, PointerEvent } from 'react'
+import type { CSSProperties, DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CategoryHue } from '@renderer/types'
 import type { TimedSegment } from '@renderer/lib/time-grid'
@@ -20,7 +20,8 @@ export interface TimedEventProps {
    * Given where it can be dragged: by its body to move it, and by its bottom edge to resize
    * it, which `resizable` offers. Left off where it cannot.
    */
-  onDragStart?: (pointer: PointerEvent, mode: 'move' | 'resize') => void
+  onDragStart?: (drag: DragEvent, mode: 'move' | 'resize') => void
+  onDragEnd?: () => void
   resizable?: boolean
   /** Being dragged: drawn faint, where it was. */
   lifted?: boolean
@@ -32,7 +33,7 @@ export interface TimedEventProps {
 /**
  * A real <button>, like EventChip, so it is tabbable and fires on Enter and Space. It is
  * placed over the day's canvas by the minutes it covers, so its height is its duration.
- * TimeGrid drives any drag of it: this only says where one began.
+ * TimeGrid drives any drag of it: this only says where one began, and that it ended.
  */
 export function TimedEvent({
   segment,
@@ -41,6 +42,7 @@ export function TimedEvent({
   time,
   done = false,
   onDragStart,
+  onDragEnd,
   resizable = false,
   lifted = false,
   preview = false,
@@ -62,9 +64,9 @@ export function TimedEvent({
         onClick()
       }}
       onDoubleClick={(clicked) => clicked.stopPropagation()}
-      onPointerDown={(pointer) => {
-        if (onDragStart && pointer.button === 0) onDragStart(pointer, 'move')
-      }}
+      draggable={onDragStart !== undefined}
+      onDragStart={(drag) => onDragStart?.(drag, 'move')}
+      onDragEnd={onDragEnd}
       style={
         {
           '--start-minute': startMinute,
@@ -84,7 +86,7 @@ export function TimedEvent({
         catBorder[category],
         lifted ? 'opacity-40' : done ? 'opacity-55' : '',
         preview ? 'pointer-events-none z-10 shadow-2' : '',
-        onDragStart ? 'cursor-grab touch-none' : ''
+        onDragStart ? 'cursor-grab' : ''
       ].join(' ')}
     >
       <span className="shrink-0 font-mono text-micro tracking-mono opacity-85">
@@ -97,11 +99,11 @@ export function TimedEvent({
         <span
           aria-hidden
           className="absolute inset-x-0 bottom-0 h-6 cursor-ns-resize"
-          onPointerDown={(pointer) => {
-            if (pointer.button !== 0) return
+          draggable
+          onDragStart={(drag) => {
             // The body's own handler would take it for a move.
-            pointer.stopPropagation()
-            onDragStart(pointer, 'resize')
+            drag.stopPropagation()
+            onDragStart(drag, 'resize')
           }}
         />
       ) : null}
