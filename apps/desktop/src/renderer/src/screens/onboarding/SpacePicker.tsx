@@ -24,20 +24,16 @@ export function SpacePicker({ spaces, types, selectedKeys, onToggle }: SpacePick
               key={space.key}
               className={['flex h-row items-center gap-10 rounded-6 px-8', on ? 'bg-surface-selected' : ''].join(' ')}
             >
-              <Checkbox
-                checked={on}
-                onChange={() => onToggle(space.key)}
-                ariaLabel={t('common.showSpace', { name: space.name })}
-              />
-              <SpaceMonogram space={space} />
-              <span
-                className={[
-                  'min-w-0 flex-1 truncate type-ui text-small',
-                  on ? 'text-ink-accent' : 'text-ink-body',
-                ].join(' ')}
-              >
-                {space.name}
-              </span>
+              {/* The name is the checkbox label, so clicking it toggles (#31). */}
+              <div className="min-w-0 flex-1">
+                <Checkbox
+                  checked={on}
+                  onChange={() => onToggle(space.key)}
+                  leading={<SpaceMonogram space={space} />}
+                  label={space.name}
+                  labelClassName={on ? 'text-small text-ink-accent' : 'text-small text-ink-body'}
+                />
+              </div>
               <span className="type-numeral text-tiny text-ink-tertiary">{typesInSpace(types, space.key).length}</span>
             </li>
           )

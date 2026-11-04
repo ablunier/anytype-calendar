@@ -36,13 +36,16 @@ export function SpaceTypesCard({ space, types, queries, selection }: SpaceTypesC
   return (
     <Card className={on ? '' : 'opacity-72'}>
       <div className={['flex items-center gap-10', on ? 'border-b border-line-hairline pb-8' : ''].join(' ')}>
-        <Checkbox
-          checked={on}
-          onChange={() => selection.toggleSpace(space.key)}
-          ariaLabel={t('common.showSpace', { name: space.name })}
-        />
-        <SpaceMonogram space={space} />
-        <h3 className="type-ui text-base text-ink-primary">{space.name}</h3>
+        {/* The name is the checkbox label, so clicking it toggles (#31). */}
+        <h3 className="min-w-0">
+          <Checkbox
+            checked={on}
+            onChange={() => selection.toggleSpace(space.key)}
+            leading={<SpaceMonogram space={space} />}
+            label={space.name}
+            labelClassName="text-base text-ink-primary"
+          />
+        </h3>
         <div className="flex-1" />
         {!on ? (
           <span className="type-numeral text-tiny text-ink-tertiary">
