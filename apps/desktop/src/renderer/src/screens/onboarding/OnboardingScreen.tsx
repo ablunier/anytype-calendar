@@ -1,12 +1,12 @@
-import { useTranslation } from 'react-i18next'
-import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
 import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
+import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, EmptyState } from '@renderer/components/ui'
 import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
-import { Wordmark } from '@renderer/components/app/Wordmark'
+import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { SpacePicker } from './SpacePicker'
 import { TypeCard } from './TypeCard'
 
@@ -32,7 +32,7 @@ export function OnboardingScreen({
   initial,
   onRetrySync,
   onContinue,
-  onSkip
+  onSkip,
 }: OnboardingScreenProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
@@ -69,11 +69,7 @@ export function OnboardingScreen({
               }
             />
           ) : (
-            <EmptyState
-              icon="loader-circle"
-              title={t('common.reading')}
-              description={t('common.readingDescription')}
-            />
+            <EmptyState icon="loader-circle" title={t('common.reading')} description={t('common.readingDescription')} />
           )}
         </main>
       )}
@@ -91,14 +87,7 @@ interface PickerProps {
 }
 
 /** Mounted only once the account has been read, so the selection starts from real types. */
-function Picker({
-  spaces,
-  hasNotGrantedSpaces,
-  types,
-  initial,
-  onContinue,
-  onSkip
-}: PickerProps): React.JSX.Element {
+function Picker({ spaces, hasNotGrantedSpaces, types, initial, onContinue, onSkip }: PickerProps): React.JSX.Element {
   const { t } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const chosenSpaces = spaces.filter((space) => selection.spaceKeys.includes(space.key))
@@ -159,22 +148,14 @@ function Picker({
                       </span>
                     </div>
                     {spaceTypes.length === 0 ? (
-                      <p className="type-body text-small text-ink-tertiary">
-                        {t('common.noDatedType')}
-                      </p>
+                      <p className="type-body text-small text-ink-tertiary">{t('common.noDatedType')}</p>
                     ) : (
-                      <div className="grid grid-cols-2 items-start gap-10">
-                        {spaceTypes.map(card)}
-                      </div>
+                      <div className="grid grid-cols-2 items-start gap-10">{spaceTypes.map(card)}</div>
                     )}
                     {spaceQueries.length > 0 ? (
                       <>
-                        <h3 className="mt-12 mb-8 type-caption text-tiny text-ink-tertiary">
-                          {t('common.queries')}
-                        </h3>
-                        <div className="grid grid-cols-2 items-start gap-10">
-                          {spaceQueries.map(card)}
-                        </div>
+                        <h3 className="mt-12 mb-8 type-caption text-tiny text-ink-tertiary">{t('common.queries')}</h3>
+                        <div className="grid grid-cols-2 items-start gap-10">{spaceQueries.map(card)}</div>
                       </>
                     ) : null}
                   </section>
@@ -198,12 +179,7 @@ function Picker({
         <Button variant="ghost" size="md" onClick={onSkip}>
           {t('onboarding.skipForNow')}
         </Button>
-        <Button
-          variant="primary"
-          size="md"
-          iconRight="chevron-right"
-          onClick={() => onContinue(selection.picks)}
-        >
+        <Button variant="primary" size="md" iconRight="chevron-right" onClick={() => onContinue(selection.picks)}>
           {t('onboarding.continue')}
         </Button>
       </footer>

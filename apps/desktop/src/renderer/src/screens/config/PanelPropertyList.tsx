@@ -1,7 +1,7 @@
+import { Checkbox, IconButton } from '@renderer/components/ui'
+import type { ObjectType, PanelProperty } from '@renderer/types'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ObjectType, PanelProperty } from '@renderer/types'
-import { Checkbox, IconButton } from '@renderer/components/ui'
 
 export interface PanelPropertyListProps {
   type: ObjectType
@@ -47,7 +47,7 @@ export function PanelPropertyList({ type, panel, onChange }: PanelPropertyListPr
       className={[
         'flex items-center gap-8 rounded-control px-8 py-6',
         index === null ? '' : 'cursor-grab hover:bg-surface-hover',
-        dragged === index && index !== null ? 'opacity-45' : ''
+        dragged === index && index !== null ? 'opacity-45' : '',
       ].join(' ')}
     >
       <div className="min-w-0 flex-1">

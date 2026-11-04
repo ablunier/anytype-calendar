@@ -1,20 +1,20 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type DragEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
-import { eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
+import { dayLabel, eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
 import {
   layOutDayColumn,
-  minuteAt,
   MINUTES_PER_DAY,
+  minuteAt,
   SNAP_MINUTES,
   splitDayEvents,
+  type TimedSegment,
   timeOfMinute,
-  type TimedSegment
 } from '@renderer/lib/time-grid'
+import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
+import { type CSSProperties, type DragEvent, useEffect, useEffectEvent, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
 import { TimeGutter } from './TimeGutter'
-import { timedLanding, type CalendarDrag } from './useCalendarDrag'
+import { type CalendarDrag, timedLanding } from './useCalendarDrag'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
@@ -61,24 +61,24 @@ export function TimeGrid({
   onSelectDay,
   onOpenEvent,
   drag,
-  onCreate
+  onCreate,
 }: TimeGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const scroller = useRef<HTMLDivElement>(null)
 
   const split = useMemo(() => days.map((day) => splitDayEvents(events, day.date)), [days, events])
   const weekdays = weekdayNames(i18n.language, 'short')
-  const todayColumn = days.findIndex((day) => day.date === today)
 
   /* Opened at the hour worth seeing rather than at midnight: where the day is now, or a
    * working morning when today is not among these days. Only on mount and when the days
-   * change — never on a reload, which would yank the view back under the user. */
-  useEffect(() => {
-    const hour = todayColumn === -1 ? DEFAULT_SCROLL_HOUR : Math.max(0, nowMinute / 60 - 1)
+   * change — never on a reload, which would yank the view back under the user, nor as the
+   * clock moves, which is why the clock is read in an effect event. */
+  const scrollToNow = useEffectEvent((shown: DayColumn[]) => {
+    const hour = shown.some((day) => day.date === today) ? Math.max(0, nowMinute / 60 - 1) : DEFAULT_SCROLL_HOUR
     const row = scroller.current?.querySelector('[data-hour]')
     if (row) scroller.current?.scrollTo({ top: hour * row.getBoundingClientRect().height })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the current minute must not re-scroll
-  }, [days])
+  })
+  useEffect(() => scrollToNow(days), [days])
 
   const dragged = drag?.dragged ?? null
   const landing = timedLanding(dragged, drag?.over ?? null)
@@ -110,25 +110,20 @@ export function TimeGrid({
           {days.length > 1 ? (
             <div className="flex border-b border-grid-line">
               <span className="w-hour-gutter shrink-0" />
-              <div
-                role="row"
-                className="grid-days grid min-w-0 flex-1"
-                style={{ '--days': days.length } as CSSProperties}
-              >
+              <div className="grid-days grid min-w-0 flex-1" style={{ '--days': days.length } as CSSProperties}>
                 {days.map((day, index) => {
                   const isToday = day.date === today
                   return (
                     <button
                       key={day.date}
                       type="button"
-                      role="columnheader"
                       aria-current={isToday ? 'date' : undefined}
                       onClick={() => onSelectDay(day.date)}
                       className={[
                         'flex flex-col items-center gap-2 py-6 type-caption text-tiny',
                         index === 0 ? '' : 'border-l border-grid-line',
                         isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : '',
-                        isToday ? 'text-ink-primary' : 'text-ink-secondary'
+                        isToday ? 'text-ink-primary' : 'text-ink-secondary',
                       ].join(' ')}
                     >
                       <span>{weekdays[weekdayIndex(weekStart, index)]}</span>
@@ -137,7 +132,7 @@ export function TimeGrid({
                           'flex h-18 min-w-18 items-center justify-center rounded-4 px-4',
                           'font-mono text-tiny tabular-nums',
                           isToday ? 'bg-today-ink text-stone-000' : '',
-                          selectedDate === day.date && !isToday ? 'bg-surface-selected' : ''
+                          selectedDate === day.date && !isToday ? 'bg-surface-selected' : '',
                         ].join(' ')}
                       >
                         {dayNumber(day.date)}
@@ -161,88 +156,109 @@ export function TimeGrid({
 
         <div className="flex">
           <TimeGutter />
-          <div
-            role="grid"
+          {/* A table, not a grid: no arrow keys move between its days, as a grid's would. */}
+          <table
             aria-label={t(days.length > 1 ? 'calendar.grid.week' : 'calendar.grid.day')}
-            className="grid-days grid min-w-0 flex-1"
-            style={{ '--days': days.length } as CSSProperties}
+            className="block min-w-0 flex-1"
           >
-            {days.map((day, index) => (
-              <div
-                key={day.date}
-                role="gridcell"
-                onClick={() => onSelectDay(day.date)}
-                onDoubleClick={(click) => {
-                  const { top, height } = click.currentTarget.getBoundingClientRect()
-                  const minute = minuteAt(click.clientY - top, height)
-                  const snapped = Math.floor(minute / SNAP_MINUTES) * SNAP_MINUTES
-                  onCreate({ date: day.date, minute: Math.min(Math.max(snapped, 0), MINUTES_PER_DAY - SNAP_MINUTES) })
-                }}
-                {...drag?.timeTarget(day.date)}
-                className={[
-                  'day-canvas',
-                  index === 0 ? '' : 'border-l border-grid-line',
-                  isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card'
-                ].join(' ')}
-              >
-                {HOURS.map((hour) => (
-                  <div
-                    key={hour}
-                    data-hour={hour}
-                    className={['hour-row', hour === 0 ? '' : 'border-t border-grid-line'].join(' ')}
-                  />
+            {/* The visible headers are buttons pinned above, outside the table; these name the
+                columns for a screen reader, and the whole date, which the buttons abbreviate. */}
+            <thead className="sr-only">
+              <tr>
+                {days.map((day) => (
+                  <th key={day.date} scope="col">
+                    {dayLabel(day.date, i18n.language)}
+                  </th>
                 ))}
-
-                {layOutDayColumn(split[index]?.timed ?? []).map((segment) => {
-                  const { event } = segment
-                  const type = typesByKey.get(event.type)
-                  return (
-                    <TimedEvent
-                      key={event.id}
-                      segment={segment}
-                      title={event.title || t('common.untitled')}
-                      category={eventHue(event, type)}
-                      {...(event.done === undefined ? {} : { done: event.done })}
-                      {...(drag && !event.feed
-                        ? { onDragStart: startDrag(segment), onDragEnd: drag.end }
-                        : {})}
-                      // Only a type with a To date has an end to pull; a feed's event has no type.
-                      resizable={Boolean(type?.to)}
-                      lifted={drag?.draggingId === event.id}
-                      onClick={() => onOpenEvent(event, day.date)}
-                    />
-                  )
-                })}
-
-                {dragged && landing?.date === day.date ? (
-                  <TimedEvent
-                    segment={{
-                      event: dragged.event,
-                      startMinute: landing.startMinute,
-                      endMinute: landing.endMinute,
-                      column: 0,
-                      columns: 1
-                    }}
-                    title={dragged.event.title || t('common.untitled')}
-                    category={eventHue(dragged.event, typesByKey.get(dragged.event.type))}
-                    time={timeOfMinute(landing.startMinute)}
-                    preview
-                    onClick={() => {}}
-                  />
-                ) : null}
-
-                {day.date === today && nowMinute < MINUTES_PER_DAY ? (
-                  <div
-                    aria-hidden
-                    className="now-line border-t border-today-ink"
-                    style={{ '--minute': nowMinute } as CSSProperties}
+              </tr>
+            </thead>
+            <tbody className="block">
+              <tr className="grid-days grid" style={{ '--days': days.length } as CSSProperties}>
+                {days.map((day, index) => (
+                  <td
+                    key={day.date}
+                    className={[
+                      'day-canvas',
+                      index === 0 ? '' : 'border-l border-grid-line',
+                      isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card',
+                    ].join(' ')}
                   >
-                    <span className="absolute -top-3 -left-3 size-6 rounded-pill bg-today-ink" />
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
+                    {/* The pointer's target for the empty day, under the objects drawn after it. */}
+                    {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only target; the day's header button selects it for the keyboard. */}
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: as above, and creating is the event form's job. */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0"
+                      onClick={() => onSelectDay(day.date)}
+                      onDoubleClick={(click) => {
+                        const { top, height } = click.currentTarget.getBoundingClientRect()
+                        const minute = minuteAt(click.clientY - top, height)
+                        const snapped = Math.floor(minute / SNAP_MINUTES) * SNAP_MINUTES
+                        onCreate({
+                          date: day.date,
+                          minute: Math.min(Math.max(snapped, 0), MINUTES_PER_DAY - SNAP_MINUTES),
+                        })
+                      }}
+                      {...drag?.timeTarget(day.date)}
+                    />
+                    {HOURS.map((hour) => (
+                      <div
+                        key={hour}
+                        data-hour={hour}
+                        className={['hour-row', hour === 0 ? '' : 'border-t border-grid-line'].join(' ')}
+                      />
+                    ))}
+
+                    {layOutDayColumn(split[index]?.timed ?? []).map((segment) => {
+                      const { event } = segment
+                      const type = typesByKey.get(event.type)
+                      return (
+                        <TimedEvent
+                          key={event.id}
+                          segment={segment}
+                          title={event.title || t('common.untitled')}
+                          category={eventHue(event, type)}
+                          {...(event.done === undefined ? {} : { done: event.done })}
+                          {...(drag && !event.feed ? { onDragStart: startDrag(segment), onDragEnd: drag.end } : {})}
+                          // Only a type with a To date has an end to pull; a feed's event has no type.
+                          resizable={Boolean(type?.to)}
+                          lifted={drag?.draggingId === event.id}
+                          onClick={() => onOpenEvent(event, day.date)}
+                        />
+                      )
+                    })}
+
+                    {dragged && landing?.date === day.date ? (
+                      <TimedEvent
+                        segment={{
+                          event: dragged.event,
+                          startMinute: landing.startMinute,
+                          endMinute: landing.endMinute,
+                          column: 0,
+                          columns: 1,
+                        }}
+                        title={dragged.event.title || t('common.untitled')}
+                        category={eventHue(dragged.event, typesByKey.get(dragged.event.type))}
+                        time={timeOfMinute(landing.startMinute)}
+                        preview
+                        onClick={() => {}}
+                      />
+                    ) : null}
+
+                    {day.date === today && nowMinute < MINUTES_PER_DAY ? (
+                      <div
+                        aria-hidden
+                        className="now-line pointer-events-none border-t border-today-ink"
+                        style={{ '--minute': nowMinute } as CSSProperties}
+                      >
+                        <span className="absolute -top-3 -left-3 size-6 rounded-pill bg-today-ink" />
+                      </div>
+                    ) : null}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

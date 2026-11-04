@@ -4,17 +4,16 @@
 
 import {
   DEFAULT_EVENTS_DURATION_MINUTES,
-  eventsSourceHasEnd,
-  sameEventsSpan,
-  shownEventsSpan,
   type EventsDatedObject,
   type EventsDetail,
   type EventsReschedule,
   type EventsSlot,
   type EventsSpan,
-  type EventsSpanResult
+  type EventsSpanResult,
+  eventsSourceHasEnd,
+  sameEventsSpan,
+  shownEventsSpan,
 } from '@anytype-calendar/events/domain'
-import type { EventsCreateRequest, EventsRescheduleRequest, EventsSnapshot } from '@shared/ipc'
 import type {
   CalendarEvent,
   CalendarMonth,
@@ -22,8 +21,9 @@ import type {
   CalendarView,
   EventDetail,
   ObjectType,
-  SyncView
+  SyncView,
 } from '@renderer/types'
+import type { EventsCreateRequest, EventsRescheduleRequest, EventsSnapshot } from '@shared/ipc'
 import { addDays, buildWeek, isoDate } from './calendar'
 import { anytypeTypeKeyOf, elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
 import { minutesOf } from './time-grid'
@@ -124,13 +124,13 @@ export function spanStatusFor(snapshot: EventsSnapshot, span: EventsSpan, now: n
       return {
         state: 'synced',
         detail: { kind: 'elapsed', elapsed: elapsedSince(snapshot.last.loadedAt, now) },
-        hasResult
+        hasResult,
       }
     case 'failed':
       return {
         state: 'error',
         detail: { kind: snapshot.failure },
-        hasResult
+        hasResult,
       }
   }
 }
@@ -179,7 +179,7 @@ export function addEndRequestFor(event: CalendarEvent): EventsRescheduleRequest 
   const minute = minutesOf(event.time) + DEFAULT_EVENTS_DURATION_MINUTES
   return resizeRequestFor(event, {
     date: addDays(event.date, Math.floor(minute / MINUTES_PER_DAY)),
-    minute: minute % MINUTES_PER_DAY
+    minute: minute % MINUTES_PER_DAY,
   })
 }
 
@@ -200,7 +200,7 @@ export function createRequestFor(
   type: ObjectType,
   name: string,
   slot: CalendarSlot,
-  collectionId: string | null = null
+  collectionId: string | null = null,
 ): EventsCreateRequest {
   const request = { spaceId: type.space, typeKey: anytypeTypeKeyOf(type), name, at: eventsSlotOf(slot) }
   return collectionId === null ? request : { ...request, collectionId }
@@ -233,15 +233,12 @@ function calendarEventFor({
   done,
   location,
   colour,
-  details
+  details,
 }: EventsDatedObject): CalendarEvent {
   return {
     id,
     title,
-    type:
-      source.kind === 'type'
-        ? objectTypeKey(spaceId, source.typeKey)
-        : querySourceKey(spaceId, source.queryId),
+    type: source.kind === 'type' ? objectTypeKey(spaceId, source.typeKey) : querySourceKey(spaceId, source.queryId),
     space: spaceId,
     rank,
     date: localDate(start),
@@ -251,7 +248,7 @@ function calendarEventFor({
     ...(done === undefined ? {} : { done }),
     ...(location === undefined ? {} : { location }),
     ...(colour === undefined ? {} : { category: hueOf(colour) }),
-    details: details.map(eventDetailFor)
+    details: details.map(eventDetailFor),
   }
 }
 
@@ -266,7 +263,7 @@ function eventDetailFor(detail: EventsDetail): EventDetail {
       return {
         key,
         kind: 'options',
-        options: detail.options.map(({ name, color }) => ({ name, category: hueOf(color) }))
+        options: detail.options.map(({ name, color }) => ({ name, category: hueOf(color) })),
       }
     case 'objects':
       return { key, kind: 'objects', objects: detail.objects.map(({ id, name, member }) => ({ id, name, member })) }

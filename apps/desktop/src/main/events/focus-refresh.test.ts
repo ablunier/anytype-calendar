@@ -10,7 +10,7 @@ function setup(lastRun?: number) {
     run,
     advance: (ms: number) => {
       time += ms
-    }
+    },
   }
 }
 

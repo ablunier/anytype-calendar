@@ -1,13 +1,6 @@
-import { describe, expect, test } from 'vitest'
 import type { CalendarEvent, ObjectType, TypePicks } from '@renderer/types'
-import {
-  allHidden,
-  prunedHidden,
-  sourcesOnCalendar,
-  visibilityOf,
-  visibleEvents,
-  withVisibility
-} from './visibility'
+import { describe, expect, test } from 'vitest'
+import { allHidden, prunedHidden, sourcesOnCalendar, visibilityOf, visibleEvents, withVisibility } from './visibility'
 
 const event = (id: string, type: string, rank: number, date = '2026-09-03'): CalendarEvent => ({
   id,
@@ -17,7 +10,7 @@ const event = (id: string, type: string, rank: number, date = '2026-09-03'): Cal
   rank,
   date,
   allDay: true,
-  details: []
+  details: [],
 })
 
 const TASK = 'sp_1:task'
@@ -41,7 +34,7 @@ describe('visibleEvents', () => {
     expect(visibleEvents([asQuery, asType], new Set())).toEqual([asType])
   })
 
-  test("draws it as the query places it once the type is hidden", () => {
+  test('draws it as the query places it once the type is hidden', () => {
     const asType = event('shared', TASK, 0, '2026-09-20')
     const asQuery = event('shared', OPEN, 1, '2026-09-03')
     expect(visibleEvents([asQuery, asType], new Set([TASK]))).toEqual([asQuery])

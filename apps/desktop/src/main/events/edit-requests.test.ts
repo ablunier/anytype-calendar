@@ -10,14 +10,14 @@ describe('a reschedule', () => {
         spaceId: 'sp_1',
         id: 'obj_1',
         change: { kind: 'move', start: { day, minute: 600 } },
-        extra: true
-      })
+        extra: true,
+      }),
     ).toEqual({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'move', start: { day, minute: 600 } } })
   })
 
   test('takes a cleared To, with nothing but its kind', () => {
     expect(
-      toRescheduleRequest({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'clear-end', end: { day, minute: 600 } } })
+      toRescheduleRequest({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'clear-end', end: { day, minute: 600 } } }),
     ).toEqual({ spaceId: 'sp_1', id: 'obj_1', change: { kind: 'clear-end' } })
   })
 
@@ -39,7 +39,7 @@ describe('a creation', () => {
 
   test('refuses a name longer than Anytype takes, or no slot', () => {
     expect(
-      toCreateRequest({ spaceId: 'sp_1', typeKey: 'meeting', name: 'x'.repeat(4097), at: { day, minute: null } })
+      toCreateRequest({ spaceId: 'sp_1', typeKey: 'meeting', name: 'x'.repeat(4097), at: { day, minute: null } }),
     ).toBeNull()
     expect(toCreateRequest({ spaceId: 'sp_1', typeKey: 'meeting', name: 'x' })).toBeNull()
     expect(toCreateRequest({ spaceId: 'sp_1', name: 'x', at: { day, minute: null } })).toBeNull()
@@ -59,7 +59,7 @@ describe('setting Done', () => {
     expect(toSetDoneRequest({ spaceId: 'sp_1', id: 'obj_1', done: false })).toEqual({
       spaceId: 'sp_1',
       id: 'obj_1',
-      done: false
+      done: false,
     })
     expect(toSetDoneRequest({ spaceId: 'sp_1', id: 'obj_1', done: 'yes' })).toBeNull()
   })

@@ -6,7 +6,7 @@ export type IconButtonSize = 'sm' | 'md' | 'lg'
 const boxClass: Record<IconButtonSize, string> = {
   sm: 'size-24',
   md: 'size-28',
-  lg: 'size-control-md'
+  lg: 'size-control-md',
 }
 
 const glyphSize: Record<IconButtonSize, IconSize> = { sm: 14, md: 16, lg: 18 }
@@ -31,7 +31,7 @@ export function IconButton({
   active = false,
   disabled = false,
   className,
-  onClick
+  onClick,
 }: IconButtonProps): React.JSX.Element {
   return (
     <button
@@ -48,7 +48,7 @@ export function IconButton({
         variant === 'outline' ? 'border-line-default bg-surface-card' : 'border-transparent',
         active ? 'bg-surface-active text-ink-primary' : 'text-ink-secondary',
         active ? '' : 'hover:not-disabled:bg-surface-hover',
-        className ?? ''
+        className ?? '',
       ].join(' ')}
     >
       <Icon name={icon} size={glyphSize[size]} />

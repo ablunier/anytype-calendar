@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { DateMapping, ObjectType } from '@renderer/types'
 import { Button, Checkbox, Dialog, Select } from '@renderer/components/ui'
 import { colourOptions, dateOptions, doneOptions, locationOptions, viewOptions } from '@renderer/lib/calendar'
+import type { DateMapping, ObjectType } from '@renderer/types'
+import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PanelPropertyList } from './PanelPropertyList'
 
 export interface TypeSettingsDialogProps {
@@ -33,7 +33,7 @@ export function TypeSettingsDialog({
   onViewChange,
   onPanelChange,
   onDoneChange,
-  onLocationChange
+  onLocationChange,
 }: TypeSettingsDialogProps): React.JSX.Element {
   const { t } = useTranslation()
   /** An empty value can never be a property key. */

@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { Icon } from './Icon'
-import { fieldHeight, type FieldSize } from './Input'
+import { type FieldSize, fieldHeight } from './Input'
 
 /** A bare string is both the value and what is shown. */
 export type SelectOption = string | { value: string; label: string }
@@ -26,7 +26,7 @@ export function Select({
   ariaLabel,
   size = 'md',
   disabled = false,
-  className
+  className,
 }: SelectProps): React.JSX.Element {
   const id = useId()
   return (
@@ -44,7 +44,7 @@ export function Select({
           'transition duration-fast ease-standard',
           'focus-within:border-line-accent focus-within:shadow-focus',
           fieldHeight[size],
-          disabled ? 'bg-surface-sunken' : 'bg-surface-card'
+          disabled ? 'bg-surface-sunken' : 'bg-surface-card',
         ].join(' ')}
       >
         <select
@@ -56,12 +56,11 @@ export function Select({
           className={[
             'h-full min-w-0 flex-1 appearance-none border-0 bg-transparent pl-10 pr-28 outline-none',
             'type-ui text-small text-ink-body',
-            disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+            disabled ? 'cursor-not-allowed' : 'cursor-pointer',
           ].join(' ')}
         >
           {options.map((option) => {
-            const { value, label } =
-              typeof option === 'string' ? { value: option, label: option } : option
+            const { value, label } = typeof option === 'string' ? { value: option, label: option } : option
             return (
               <option key={value} value={value}>
                 {label}
@@ -69,11 +68,7 @@ export function Select({
             )
           })}
         </select>
-        <Icon
-          name="chevron-down"
-          size={14}
-          className="pointer-events-none absolute right-8 text-ink-tertiary"
-        />
+        <Icon name="chevron-down" size={14} className="pointer-events-none absolute right-8 text-ink-tertiary" />
       </div>
     </div>
   )

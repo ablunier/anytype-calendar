@@ -1,13 +1,5 @@
 /** The formats the detail panel draws a property in. */
-export type EventsDetailFormat =
-  | 'text'
-  | 'number'
-  | 'select'
-  | 'multi_select'
-  | 'url'
-  | 'email'
-  | 'phone'
-  | 'objects'
+export type EventsDetailFormat = 'text' | 'number' | 'select' | 'multi_select' | 'url' | 'email' | 'phone' | 'objects'
 
 /** `color` is Anytype's own colour name. */
 export interface EventsOption {
@@ -58,7 +50,7 @@ export function linkedEventsIds(refs: readonly EventsDetailRef[]): string[] {
 export function toEventsDetails(
   refs: readonly EventsDetailRef[],
   panel: readonly EventsPanelProperty[],
-  linked: (id: string) => EventsLinkedObject | undefined
+  linked: (id: string) => EventsLinkedObject | undefined,
 ): EventsDetail[] {
   return panel.flatMap(({ key, format, options = [] }): EventsDetail[] => {
     const ref = refs.find((candidate) => candidate.key === key && candidate.format === format)

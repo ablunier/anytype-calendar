@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
-import type { CategoryHue } from '@renderer/types'
 import { catBg, Icon } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
+import type { CategoryHue } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 
 export interface EventRowProps {
   title: string
@@ -22,7 +22,7 @@ export function EventRow({
   done = false,
   external = false,
   selected = false,
-  onClick
+  onClick,
 }: EventRowProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
@@ -33,13 +33,13 @@ export function EventRow({
       className={[
         'flex min-h-40 w-full items-center gap-10 rounded-8 px-10 py-6 text-left',
         'transition-colors duration-fast ease-standard',
-        selected ? 'bg-surface-selected' : 'hover:bg-surface-hover'
+        selected ? 'bg-surface-selected' : 'hover:bg-surface-hover',
       ].join(' ')}
     >
       <span
         className={[
           'w-64 shrink-0 font-mono text-tiny tabular-nums',
-          time ? 'text-ink-secondary' : 'text-ink-tertiary'
+          time ? 'text-ink-secondary' : 'text-ink-tertiary',
         ].join(' ')}
       >
         {time ? formatTime(time, timeFormat, i18n.language) : t('calendar.eventRow.allDay')}
@@ -48,7 +48,7 @@ export function EventRow({
       <span
         className={[
           'min-w-0 flex-1 truncate type-body text-small text-ink-body',
-          done ? 'line-through opacity-60' : ''
+          done ? 'line-through opacity-60' : '',
         ].join(' ')}
       >
         {title}

@@ -1,12 +1,12 @@
-import { useId, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
-import type { CalendarSlot, Collection, CollectionHint, ObjectType, Space } from '@renderer/types'
-import { Button, Combobox, Dialog, Input, Select, type ComboboxOption } from '@renderer/components/ui'
+import { Button, Combobox, type ComboboxOption, Dialog, Input, Select } from '@renderer/components/ui'
 import { longDate } from '@renderer/lib/calendar'
 import { localDate } from '@renderer/lib/events'
 import { collectionChoices, collectionPicksFor } from '@renderer/lib/schema'
 import { timeOfMinute } from '@renderer/lib/time-grid'
+import type { CalendarSlot, Collection, CollectionHint, ObjectType, Space } from '@renderer/types'
+import type { TFunction } from 'i18next'
+import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /** Where a new timed object starts when the slot it was asked for names no time: a month cell. */
 const DEFAULT_MINUTE = 9 * 60
@@ -38,7 +38,7 @@ export function CreateEventDialog({
   spacesByKey,
   collectionsBySpace,
   onClose,
-  onCreate
+  onCreate,
 }: CreateEventDialogProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const formId = useId()
@@ -86,12 +86,7 @@ export function CreateEventDialog({
           void submit()
         }}
       >
-        <Input
-          label={t('calendar.create.name')}
-          placeholder={t('common.untitled')}
-          value={name}
-          onChange={setName}
-        />
+        <Input label={t('calendar.create.name')} placeholder={t('common.untitled')} value={name} onChange={setName} />
         <Select
           label={t('calendar.create.type')}
           value={type?.key ?? ''}
@@ -105,9 +100,9 @@ export function CreateEventDialog({
               spaceCount > 1
                 ? t('calendar.create.typeInSpace', {
                     type: option.label,
-                    space: spacesByKey.get(option.space)?.name ?? ''
+                    space: spacesByKey.get(option.space)?.name ?? '',
                   })
-                : option.label
+                : option.label,
           }))}
         />
         {choices.length > 0 ? (
@@ -124,8 +119,8 @@ export function CreateEventDialog({
                     : {
                         value: pick.collection.key,
                         label: pick.collection.name || t('common.untitled'),
-                        detail: hintText(t, pick.hint, i18n.language) ?? undefined
-                      }
+                        detail: hintText(t, pick.hint, i18n.language) ?? undefined,
+                      },
               )
             }
           />

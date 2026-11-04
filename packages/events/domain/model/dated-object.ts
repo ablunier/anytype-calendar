@@ -1,7 +1,7 @@
 import type { EventsObjectRef } from '../gateways/events-gateway'
-import { toEventsDetails, type EventsDetail, type EventsLinkedObject } from './detail'
+import { type EventsDetail, type EventsLinkedObject, toEventsDetails } from './detail'
+import { type EventsSource, type EventsSourceKey, eventsSourceKey } from './source'
 import type { EventsWindow } from './window'
-import { eventsSourceKey, type EventsSource, type EventsSourceKey } from './source'
 
 export interface EventsDatedObject {
   /** Anytype's object id. */
@@ -43,7 +43,7 @@ export function toEventsDatedObject(
   { id, title, start, end, done, location, option, details = [] }: EventsObjectRef,
   source: EventsSource,
   rank: number,
-  linked: (id: string) => EventsLinkedObject | undefined = () => undefined
+  linked: (id: string) => EventsLinkedObject | undefined = () => undefined,
 ): EventsDatedObject {
   const { spaceId, includesTime, colourBy, panel = [] } = source
   const kept = end !== null && end >= start ? end : null
@@ -56,19 +56,18 @@ export function toEventsDatedObject(
     start,
     end: kept,
     allDay: !includesTime,
-    details: toEventsDetails(details, panel, linked)
+    details: toEventsDetails(details, panel, linked),
   }
   if (done !== undefined) object.done = done
   if (location !== undefined && location !== '') object.location = location
-  const colour =
-    option === undefined ? undefined : colourBy?.options.find(({ name }) => name === option)?.color
+  const colour = option === undefined ? undefined : colourBy?.options.find(({ name }) => name === option)?.color
   if (colour !== undefined) object.colour = colour
   return object
 }
 
 export function overlapsEventsWindow(
   { start, end }: Pick<EventsDatedObject, 'start' | 'end'>,
-  window: EventsWindow
+  window: EventsWindow,
 ): boolean {
   return start <= window.end && (end ?? start) >= window.start
 }

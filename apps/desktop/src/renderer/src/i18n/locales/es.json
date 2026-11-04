@@ -5,7 +5,6 @@
     "tryAgain": "Reintentar",
     "untitled": "Sin título",
     "none": "Ninguna",
-    "showSpace": "Mostrar el espacio {{name}}",
     "showTypeObjects": "Mostrar objetos de {{label}} en el calendario",
     "fromDate": "Fecha de inicio",
     "toDateOptional": "Fecha de fin (opcional)",

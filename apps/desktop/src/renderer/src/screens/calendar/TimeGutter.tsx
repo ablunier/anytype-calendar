@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
+import { useTranslation } from 'react-i18next'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 

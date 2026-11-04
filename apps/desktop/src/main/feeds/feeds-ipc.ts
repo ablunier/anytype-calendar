@@ -1,5 +1,5 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
 import { IpcChannel } from '@shared/ipc'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { FOCUS_REFRESH_INTERVAL_MS, throttled } from '../events/focus-refresh'
 import type { Feeds } from './compose-feeds'
 import { isFeedsId, toFeedsAddRequest, toFeedsEditRequest, toFeedsOrder } from './feeds-requests'
@@ -21,7 +21,7 @@ export function registerFeedsIpc({
   editFeedsSubscription,
   removeFeedsSubscription,
   reorderFeedsSubscriptions,
-  refreshFeeds
+  refreshFeeds,
 }: Feeds): void {
   ipcMain.handle(IpcChannel.feedsGet, () => feedsState.get())
   ipcMain.handle(IpcChannel.feedsAdd, (_event, value: unknown) => {

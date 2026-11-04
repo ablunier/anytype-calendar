@@ -1,5 +1,5 @@
-import { useId } from 'react'
 import type { CategoryHue } from '@renderer/types'
+import { useId } from 'react'
 import { catBg } from './category'
 import { Icon } from './Icon'
 
@@ -8,6 +8,10 @@ export interface CheckboxProps {
   onChange: (checked: boolean) => void
   /** When omitted, pass `ariaLabel` so the control is still named. */
   label?: string
+  /** Sits between the box and the label text, inside the label so a click on it toggles too. */
+  leading?: React.ReactNode
+  /** Replaces the label text's default tone and size. */
+  labelClassName?: string
   description?: string
   ariaLabel?: string
   /** Fills the box with a category hue instead of the accent. */
@@ -24,10 +28,12 @@ export function Checkbox({
   checked,
   onChange,
   label,
+  leading,
+  labelClassName = 'text-small text-ink-body',
   description,
   ariaLabel,
   swatch,
-  disabled = false
+  disabled = false,
 }: CheckboxProps): React.JSX.Element {
   const id = useId()
   const fill = swatch ? catBg[swatch] : 'bg-surface-accent'
@@ -39,9 +45,9 @@ export function Checkbox({
      * beside the intended one on checkbox-dense screens like Settings. */
     <div
       className={[
-        'relative flex gap-8',
+        'relative flex min-w-0 gap-8',
         description ? 'items-start' : 'items-center',
-        disabled ? 'opacity-45' : ''
+        disabled ? 'opacity-45' : '',
       ].join(' ')}
     >
       <input
@@ -63,7 +69,7 @@ export function Checkbox({
           disabled ? 'cursor-not-allowed' : 'cursor-pointer',
           checked ? `border-transparent ${fill}` : 'border-line-strong bg-surface-card',
           'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
-          'peer-focus-visible:outline-focus-ring'
+          'peer-focus-visible:outline-focus-ring',
         ].join(' ')}
       >
         {checked ? <Icon name="check" size={11} className="text-stone-000" /> : null}
@@ -71,14 +77,13 @@ export function Checkbox({
       {label ? (
         <label
           htmlFor={id}
-          className={['flex flex-col gap-2', disabled ? 'cursor-not-allowed' : 'cursor-pointer'].join(
-            ' '
-          )}
+          className={['flex min-w-0 items-center gap-10', disabled ? 'cursor-not-allowed' : 'cursor-pointer'].join(' ')}
         >
-          <span className="type-ui text-small text-ink-body">{label}</span>
-          {description ? (
-            <span className="type-caption text-tiny text-ink-tertiary">{description}</span>
-          ) : null}
+          {leading}
+          <span className="flex min-w-0 flex-col gap-2">
+            <span className={['truncate type-ui', labelClassName].join(' ')}>{label}</span>
+            {description ? <span className="type-caption text-tiny text-ink-tertiary">{description}</span> : null}
+          </span>
         </label>
       ) : null}
     </div>

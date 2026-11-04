@@ -17,7 +17,7 @@ export const SCHEMA_SYSTEM_DATE_KEYS: ReadonlySet<string> = new Set([
   'last_modified_date',
   'last_opened_date',
   'added_date',
-  'last_message_date'
+  'last_message_date',
 ])
 
 export interface SchemaDateProperty {

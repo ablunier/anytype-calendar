@@ -16,11 +16,11 @@ describe('defaultEventsSpan', () => {
   test("opens a week view on the user's own first day of the week", () => {
     expect(defaultEventsSpan('week', TODAY, 0)).toEqual({
       kind: 'week',
-      start: { year: 2026, month: 8, day: 21 }
+      start: { year: 2026, month: 8, day: 21 },
     })
     expect(defaultEventsSpan('week', TODAY, 6)).toEqual({
       kind: 'week',
-      start: { year: 2026, month: 8, day: 20 }
+      start: { year: 2026, month: 8, day: 20 },
     })
   })
 
@@ -32,11 +32,11 @@ describe('defaultEventsSpan', () => {
   test('reaches back into the previous month, and the previous year', () => {
     expect(defaultEventsSpan('week', { year: 2026, month: 9, day: 1 }, 0)).toEqual({
       kind: 'week',
-      start: { year: 2026, month: 8, day: 28 }
+      start: { year: 2026, month: 8, day: 28 },
     })
     expect(defaultEventsSpan('week', { year: 2027, month: 0, day: 1 }, 0)).toEqual({
       kind: 'week',
-      start: { year: 2026, month: 11, day: 28 }
+      start: { year: 2026, month: 11, day: 28 },
     })
   })
 })

@@ -1,11 +1,11 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import {
-  IpcChannel,
   type CalendarApi,
   type CalendarViewSnapshot,
+  type CalendarVisibilitySnapshot,
   type EventsSnapshot,
   type FeedsSnapshot,
+  IpcChannel,
   type LanguageSnapshot,
   type SchemaSelectionSnapshot,
   type SchemaSnapshot,
@@ -13,10 +13,10 @@ import {
   type ThemeSnapshot,
   type TimeFormatSnapshot,
   type UpdateSnapshot,
-  type CalendarVisibilitySnapshot,
   type WeekNumbersSnapshot,
-  type WeekStartSnapshot
+  type WeekStartSnapshot,
 } from '@shared/ipc'
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
 
 const api: CalendarApi = {
   session: {
@@ -27,7 +27,7 @@ const api: CalendarApi = {
       return () => {
         ipcRenderer.removeListener(IpcChannel.sessionChanged, forward)
       }
-    }
+    },
   },
   auth: {
     start: () => ipcRenderer.invoke(IpcChannel.authStart),
@@ -36,7 +36,7 @@ const api: CalendarApi = {
     submitApiKey: (apiKey) => ipcRenderer.invoke(IpcChannel.authSubmitApiKey, apiKey),
     stepBack: () => ipcRenderer.invoke(IpcChannel.authStepBack),
     signOut: () => ipcRenderer.invoke(IpcChannel.authSignOut),
-    copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey)
+    copyKey: () => ipcRenderer.invoke(IpcChannel.authCopyKey),
   },
   schema: {
     get: () => ipcRenderer.invoke(IpcChannel.schemaGet),
@@ -47,19 +47,18 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.schemaChanged, forward)
       }
     },
-    sync: () => ipcRenderer.invoke(IpcChannel.schemaSync)
+    sync: () => ipcRenderer.invoke(IpcChannel.schemaSync),
   },
   schemaSelection: {
     get: () => ipcRenderer.invoke(IpcChannel.schemaSelectionGet),
     onChange: (listener) => {
-      const forward = (_event: IpcRendererEvent, state: SchemaSelectionSnapshot): void =>
-        listener(state)
+      const forward = (_event: IpcRendererEvent, state: SchemaSelectionSnapshot): void => listener(state)
       ipcRenderer.on(IpcChannel.schemaSelectionChanged, forward)
       return () => {
         ipcRenderer.removeListener(IpcChannel.schemaSelectionChanged, forward)
       }
     },
-    save: (selection) => ipcRenderer.invoke(IpcChannel.schemaSelectionSave, selection)
+    save: (selection) => ipcRenderer.invoke(IpcChannel.schemaSelectionSave, selection),
   },
   events: {
     get: () => ipcRenderer.invoke(IpcChannel.eventsGet),
@@ -73,7 +72,7 @@ const api: CalendarApi = {
     showSpan: (span) => ipcRenderer.invoke(IpcChannel.eventsShowSpan, span),
     reschedule: (request) => ipcRenderer.invoke(IpcChannel.eventsReschedule, request),
     create: (request) => ipcRenderer.invoke(IpcChannel.eventsCreate, request),
-    setDone: (request) => ipcRenderer.invoke(IpcChannel.eventsSetDone, request)
+    setDone: (request) => ipcRenderer.invoke(IpcChannel.eventsSetDone, request),
   },
   feeds: {
     get: () => ipcRenderer.invoke(IpcChannel.feedsGet),
@@ -88,7 +87,7 @@ const api: CalendarApi = {
     edit: (request) => ipcRenderer.invoke(IpcChannel.feedsEdit, request),
     remove: (id) => ipcRenderer.invoke(IpcChannel.feedsRemove, id),
     reorder: (ids) => ipcRenderer.invoke(IpcChannel.feedsReorder, ids),
-    refresh: () => ipcRenderer.invoke(IpcChannel.feedsRefresh)
+    refresh: () => ipcRenderer.invoke(IpcChannel.feedsRefresh),
   },
   theme: {
     get: () => ipcRenderer.invoke(IpcChannel.themeGet),
@@ -99,7 +98,7 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.themeChanged, forward)
       }
     },
-    save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme)
+    save: (theme) => ipcRenderer.invoke(IpcChannel.themeSave, theme),
   },
   language: {
     get: () => ipcRenderer.invoke(IpcChannel.languageGet),
@@ -110,31 +109,29 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.languageChanged, forward)
       }
     },
-    save: (language) => ipcRenderer.invoke(IpcChannel.languageSave, language)
+    save: (language) => ipcRenderer.invoke(IpcChannel.languageSave, language),
   },
   weekNumbers: {
     get: () => ipcRenderer.invoke(IpcChannel.weekNumbersGet),
     onChange: (listener) => {
-      const forward = (_event: IpcRendererEvent, shown: WeekNumbersSnapshot): void =>
-        listener(shown)
+      const forward = (_event: IpcRendererEvent, shown: WeekNumbersSnapshot): void => listener(shown)
       ipcRenderer.on(IpcChannel.weekNumbersChanged, forward)
       return () => {
         ipcRenderer.removeListener(IpcChannel.weekNumbersChanged, forward)
       }
     },
-    save: (shown) => ipcRenderer.invoke(IpcChannel.weekNumbersSave, shown)
+    save: (shown) => ipcRenderer.invoke(IpcChannel.weekNumbersSave, shown),
   },
   calendarVisibility: {
     get: () => ipcRenderer.invoke(IpcChannel.calendarVisibilityGet),
     onChange: (listener) => {
-      const forward = (_event: IpcRendererEvent, visibility: CalendarVisibilitySnapshot): void =>
-        listener(visibility)
+      const forward = (_event: IpcRendererEvent, visibility: CalendarVisibilitySnapshot): void => listener(visibility)
       ipcRenderer.on(IpcChannel.calendarVisibilityChanged, forward)
       return () => {
         ipcRenderer.removeListener(IpcChannel.calendarVisibilityChanged, forward)
       }
     },
-    save: (visibility) => ipcRenderer.invoke(IpcChannel.calendarVisibilitySave, visibility)
+    save: (visibility) => ipcRenderer.invoke(IpcChannel.calendarVisibilitySave, visibility),
   },
   weekStart: {
     get: () => ipcRenderer.invoke(IpcChannel.weekStartGet),
@@ -145,19 +142,18 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.weekStartChanged, forward)
       }
     },
-    save: (day) => ipcRenderer.invoke(IpcChannel.weekStartSave, day)
+    save: (day) => ipcRenderer.invoke(IpcChannel.weekStartSave, day),
   },
   timeFormat: {
     get: () => ipcRenderer.invoke(IpcChannel.timeFormatGet),
     onChange: (listener) => {
-      const forward = (_event: IpcRendererEvent, format: TimeFormatSnapshot): void =>
-        listener(format)
+      const forward = (_event: IpcRendererEvent, format: TimeFormatSnapshot): void => listener(format)
       ipcRenderer.on(IpcChannel.timeFormatChanged, forward)
       return () => {
         ipcRenderer.removeListener(IpcChannel.timeFormatChanged, forward)
       }
     },
-    save: (format) => ipcRenderer.invoke(IpcChannel.timeFormatSave, format)
+    save: (format) => ipcRenderer.invoke(IpcChannel.timeFormatSave, format),
   },
   calendarView: {
     get: () => ipcRenderer.invoke(IpcChannel.calendarViewGet),
@@ -168,7 +164,7 @@ const api: CalendarApi = {
         ipcRenderer.removeListener(IpcChannel.calendarViewChanged, forward)
       }
     },
-    save: (view) => ipcRenderer.invoke(IpcChannel.calendarViewSave, view)
+    save: (view) => ipcRenderer.invoke(IpcChannel.calendarViewSave, view),
   },
   update: {
     get: () => ipcRenderer.invoke(IpcChannel.updateGet),
@@ -180,13 +176,12 @@ const api: CalendarApi = {
       }
     },
     dismiss: () => ipcRenderer.invoke(IpcChannel.updateDismiss),
-    openRelease: () => ipcRenderer.invoke(IpcChannel.updateOpenRelease)
+    openRelease: () => ipcRenderer.invoke(IpcChannel.updateOpenRelease),
   },
   shell: {
-    openObject: (objectId, spaceId) =>
-      ipcRenderer.invoke(IpcChannel.shellOpenObject, objectId, spaceId),
-    openLink: (link) => ipcRenderer.invoke(IpcChannel.shellOpenLink, link)
-  }
+    openObject: (objectId, spaceId) => ipcRenderer.invoke(IpcChannel.shellOpenObject, objectId, spaceId),
+    openLink: (link) => ipcRenderer.invoke(IpcChannel.shellOpenLink, link),
+  },
 }
 
 if (process.contextIsolated) {

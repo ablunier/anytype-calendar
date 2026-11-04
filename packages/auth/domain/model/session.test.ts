@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import type { AuthAccess } from './access'
 import { createAuthChallenge } from './challenge'
 import type { ApiKeyInfo } from './credential'
-import { nextAuthSession, type AuthEvent, type AuthSession } from './session'
+import { type AuthEvent, type AuthSession, nextAuthSession } from './session'
 
 /** Frozen so a transition that mutates its input throws instead of corrupting other cases. */
 function deepFreeze<T>(value: T): T {
@@ -31,7 +31,7 @@ const sessions = deepFreeze({
   failedKey: { phase: 'failed', failure: 'invalid-key', enteredKey: true },
   connected: { phase: 'connected', key, access },
   /** Restored at launch, before Anytype has been asked. */
-  connectedUnchecked: { phase: 'connected', key, access: null }
+  connectedUnchecked: { phase: 'connected', key, access: null },
 } satisfies Record<string, AuthSession>)
 
 const events = deepFreeze({
@@ -48,7 +48,7 @@ const events = deepFreeze({
   steppedBack: { type: 'stepped-back' },
   restored: { type: 'restored', key },
   signedOut: { type: 'signed-out' },
-  accessChecked: { type: 'access-checked', access: narrowed }
+  accessChecked: { type: 'access-checked', access: narrowed },
 } satisfies Record<string, AuthEvent>)
 
 type SessionName = keyof typeof sessions
@@ -97,14 +97,14 @@ const transitions: Array<[SessionName, EventName, AuthSession]> = [
   ['connectedUnchecked', 'signedOut', { phase: 'signed-out' }],
 
   ['connected', 'accessChecked', { phase: 'connected', key, access: narrowed }],
-  ['connectedUnchecked', 'accessChecked', { phase: 'connected', key, access: narrowed }]
+  ['connectedUnchecked', 'accessChecked', { phase: 'connected', key, access: narrowed }],
 ]
 
 const listed = new Set(transitions.map(([session, event]) => `${session}/${event}`))
 const ignored = (Object.keys(sessions) as SessionName[]).flatMap((session) =>
   (Object.keys(events) as EventName[])
     .filter((event) => !listed.has(`${session}/${event}`))
-    .map((event): [SessionName, EventName] => [session, event])
+    .map((event): [SessionName, EventName] => [session, event]),
 )
 
 describe('nextAuthSession', () => {
@@ -117,9 +117,7 @@ describe('nextAuthSession', () => {
   })
 
   test('covers every phase × event pair', () => {
-    expect(transitions.length + ignored.length).toBe(
-      Object.keys(sessions).length * Object.keys(events).length
-    )
+    expect(transitions.length + ignored.length).toBe(Object.keys(sessions).length * Object.keys(events).length)
   })
 
   describe('submitting a code', () => {
@@ -128,7 +126,7 @@ describe('nextAuthSession', () => {
       expect(nextAuthSession(sessions.awaitingCode, late)).toEqual({
         phase: 'failed',
         failure: 'expired',
-        attempt
+        attempt,
       })
     })
 
@@ -152,7 +150,7 @@ describe('nextAuthSession', () => {
     const expired = nextAuthSession(sessions.awaitingCode, {
       type: 'code-submitted',
       code: '2749',
-      at: challenge.expiresAt
+      at: challenge.expiresAt,
     })
     expect(nextAuthSession(expired, { type: 'stepped-back' })).toEqual(sessions.awaitingCode)
   })

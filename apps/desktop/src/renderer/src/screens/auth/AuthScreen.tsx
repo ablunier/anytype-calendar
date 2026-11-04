@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import type { AuthStage, AuthView, Space, SyncView } from '@renderer/types'
 import { Button, Card } from '@renderer/components/ui'
+import type { AuthStage, AuthView, Space, SyncView } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { AuthShell } from './AuthShell'
 import { AuthApiKey } from './stages/AuthApiKey'
 import { AuthCode } from './stages/AuthCode'
@@ -33,7 +33,7 @@ export function AuthScreen({
   onSubmitApiKey,
   onStepBack,
   onRetrySync,
-  onContinue
+  onContinue,
 }: AuthScreenProps): React.JSX.Element {
   return (
     <AuthShell>
@@ -50,9 +50,7 @@ export function AuthScreen({
           />
         ) : null}
         {view.stage === 'verifying' ? <AuthVerifying code={view.code} onCancel={onStepBack} /> : null}
-        {view.stage === 'entering-key' ? (
-          <AuthApiKey onCancel={onStepBack} onConnect={onSubmitApiKey} />
-        ) : null}
+        {view.stage === 'entering-key' ? <AuthApiKey onCancel={onStepBack} onConnect={onSubmitApiKey} /> : null}
         {view.stage === 'verifying-key' ? <AuthVerifyingKey onCancel={onStepBack} /> : null}
         {view.stage === 'error' ? (
           <AuthError
@@ -89,9 +87,5 @@ function AuthFooter({ stage, onRequestNew }: AuthFooterProps): React.JSX.Element
       </p>
     )
   }
-  return (
-    <p className="mt-16 text-center type-caption text-tiny text-ink-tertiary">
-      {t('auth.footer.privacyNote')}
-    </p>
-  )
+  return <p className="mt-16 text-center type-caption text-tiny text-ink-tertiary">{t('auth.footer.privacyNote')}</p>
 }

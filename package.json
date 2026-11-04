@@ -19,6 +19,8 @@
     "make": "tsc -b && npm -w apps/desktop run make",
     "typecheck": "tsc -b --force",
     "test": "vitest run",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "lint:arch": "npm --prefix tools/arch-lint run cruise",
     "lint:arch:setup": "npm --prefix tools/arch-lint install",
     "clean": "tsc -b --clean && rm -rf apps/desktop/out apps/desktop/dist",
@@ -27,6 +29,7 @@
   "keywords": [],
   "type": "commonjs",
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/node": "^26.5.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",

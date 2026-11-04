@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config'
 // sources, so no build step is needed before `npm test`.
 const workspaceAlias = {
   find: /^@anytype-calendar\/([^/]+)\/(domain|application|infrastructure)$/,
-  replacement: resolve(__dirname, 'packages/$1/$2/index.ts')
+  replacement: resolve(__dirname, 'packages/$1/$2/index.ts'),
 }
 
 // One project per layer kind across all contexts, so `--project domain` runs every
@@ -18,8 +18,8 @@ const layerProject = (layer: 'domain' | 'application' | 'infrastructure') => ({
     // No jsdom or happy-dom is installed anywhere in this repo, so the packages cannot
     // accidentally acquire a DOM.
     environment: 'node' as const,
-    include: [`packages/*/${layer}/**/*.test.ts`]
-  }
+    include: [`packages/*/${layer}/**/*.test.ts`],
+  },
 })
 
 // Mirrors the aliases in apps/desktop/electron.vite.config.ts's `renderer` block, so these
@@ -30,32 +30,29 @@ const rendererProject = {
     alias: [
       { find: '@renderer', replacement: resolve(__dirname, 'apps/desktop/src/renderer/src') },
       { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
-      workspaceAlias
-    ]
+      workspaceAlias,
+    ],
   },
   test: {
     name: 'renderer',
     root: __dirname,
     environment: 'node' as const,
-    include: ['apps/desktop/src/renderer/src/**/*.test.ts']
-  }
+    include: ['apps/desktop/src/renderer/src/**/*.test.ts'],
+  },
 }
 
 // The main process's pure glue — the modules under test import neither Electron nor Node
 // core — with the aliases of electron.vite.config.ts's `main` block.
 const mainProject = {
   resolve: {
-    alias: [
-      { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
-      workspaceAlias
-    ]
+    alias: [{ find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') }, workspaceAlias],
   },
   test: {
     name: 'main',
     root: __dirname,
     environment: 'node' as const,
-    include: ['apps/desktop/src/main/**/*.test.ts']
-  }
+    include: ['apps/desktop/src/main/**/*.test.ts'],
+  },
 }
 
 export default defineConfig({
@@ -67,7 +64,7 @@ export default defineConfig({
       layerProject('application'),
       layerProject('infrastructure'),
       rendererProject,
-      mainProject
-    ]
-  }
+      mainProject,
+    ],
+  },
 })

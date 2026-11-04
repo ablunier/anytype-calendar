@@ -1,10 +1,10 @@
-import type { CSSProperties, DragEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CategoryHue } from '@renderer/types'
-import type { TimedSegment } from '@renderer/lib/time-grid'
 import { catBgSoft, catBorder, catText } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
+import type { TimedSegment } from '@renderer/lib/time-grid'
+import type { CategoryHue } from '@renderer/types'
+import type { CSSProperties, DragEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /** Under roughly half an hour there is only room for one line, so the title takes it. */
 const STACKED_MINUTES = 45
@@ -46,7 +46,7 @@ export function TimedEvent({
   resizable = false,
   lifted = false,
   preview = false,
-  onClick
+  onClick,
 }: TimedEventProps): React.JSX.Element {
   const { i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
@@ -72,7 +72,7 @@ export function TimedEvent({
           '--start-minute': startMinute,
           '--end-minute': endMinute,
           '--column': column,
-          '--columns': columns
+          '--columns': columns,
         } as CSSProperties
       }
       className={[
@@ -86,15 +86,13 @@ export function TimedEvent({
         catBorder[category],
         lifted ? 'opacity-40' : done ? 'opacity-55' : '',
         preview ? 'pointer-events-none z-10 shadow-2' : '',
-        onDragStart ? 'cursor-grab' : ''
+        onDragStart ? 'cursor-grab' : '',
       ].join(' ')}
     >
       <span className="shrink-0 font-mono text-micro tracking-mono opacity-85">
         {shownTime ? formatTime(shownTime, timeFormat, i18n.language) : null}
       </span>
-      <span className={['min-w-0 truncate type-ui text-tiny', done ? 'line-through' : ''].join(' ')}>
-        {title}
-      </span>
+      <span className={['min-w-0 truncate type-ui text-tiny', done ? 'line-through' : ''].join(' ')}>{title}</span>
       {onDragStart && resizable ? (
         <span
           aria-hidden

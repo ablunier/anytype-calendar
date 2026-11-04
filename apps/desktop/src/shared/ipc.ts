@@ -2,24 +2,12 @@ import type { AuthSession } from '@anytype-calendar/auth/domain'
 import type {
   CompleteEventsObjectInput,
   CreateEventsObjectInput,
-  RescheduleEventsObjectInput
+  RescheduleEventsObjectInput,
 } from '@anytype-calendar/events/application'
-import type {
-  EventsEditOutcome,
-  EventsSpan,
-  EventsSpanKind,
-  EventsSpanLoad
-} from '@anytype-calendar/events/domain'
-import type {
-  AddFeedsSubscriptionInput,
-  EditFeedsSubscriptionInput
-} from '@anytype-calendar/feeds/application'
+import type { EventsEditOutcome, EventsSpan, EventsSpanKind, EventsSpanLoad } from '@anytype-calendar/events/domain'
+import type { AddFeedsSubscriptionInput, EditFeedsSubscriptionInput } from '@anytype-calendar/feeds/application'
 import type { FeedsAddOutcome, FeedsEditOutcome, FeedsState } from '@anytype-calendar/feeds/domain'
-import type {
-  SchemaSelection,
-  SchemaSelectionState,
-  SchemaSync
-} from '@anytype-calendar/schema/domain'
+import type { SchemaSelection, SchemaSelectionState, SchemaSync } from '@anytype-calendar/schema/domain'
 
 /** Safe to hand to the renderer: an AuthSession never carries the API key. */
 export type SessionSnapshot = AuthSession
@@ -164,7 +152,7 @@ export const IpcChannel = {
   updateGet: 'update:get',
   updateChanged: 'update:changed',
   updateDismiss: 'update:dismiss',
-  updateOpenRelease: 'update:open-release'
+  updateOpenRelease: 'update:open-release',
 } as const
 
 /** What the preload exposes to the renderer as `window.api`. */

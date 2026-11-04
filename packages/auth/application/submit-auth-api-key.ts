@@ -1,13 +1,13 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
-  describeCredential,
-  nextAuthSession,
   type AuthCredential,
   type AuthEvent,
   type AuthGateway,
   type AuthSession,
   type AuthVerifyResult,
-  type CredentialRepository
+  type CredentialRepository,
+  describeCredential,
+  nextAuthSession,
 } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
@@ -66,7 +66,7 @@ export class SubmitAuthApiKey {
     this.#guard.dispatch({
       type: 'key-verified',
       key: describeCredential(credential),
-      access: result.access
+      access: result.access,
     })
   }
 }

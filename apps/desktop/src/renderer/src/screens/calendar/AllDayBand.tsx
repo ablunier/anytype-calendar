@@ -1,10 +1,10 @@
-import type { CSSProperties } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
 import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
+import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
+import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
-import { grabbedDate, type CalendarDrag } from './useCalendarDrag'
+import { type CalendarDrag, grabbedDate } from './useCalendarDrag'
 
 /** A band has room to grow, unlike a month cell, so nothing is hidden behind a `+N more`. */
 const BAND_LANES = 8
@@ -31,7 +31,7 @@ export function AllDayBand({
   typesByKey,
   onOpenEvent,
   drag,
-  onCreate
+  onCreate,
 }: AllDayBandProps): React.JSX.Element {
   const { t } = useTranslation()
   // One bar per object, so an object covering several of these days is laid out once.
@@ -43,19 +43,19 @@ export function AllDayBand({
       <span className="flex w-hour-gutter shrink-0 items-start justify-end pt-6 pr-6 type-caption text-micro text-ink-muted">
         {t('calendar.allDay')}
       </span>
-      <div
-        className="grid-days relative grid min-w-0 flex-1 py-2"
-        style={{ '--days': days.length } as CSSProperties}
-      >
+      <div className="grid-days relative grid min-w-0 flex-1 py-2" style={{ '--days': days.length } as CSSProperties}>
+        {/* Hidden because they hold nothing to read: they are the pointer's targets behind the
+            bars, to double-click or drop on. */}
         {days.map((day, index) => (
           <div
             key={day.date}
             onDoubleClick={() => onCreate(day.date)}
             {...drag?.dayTarget(day.date)}
+            aria-hidden
             className={[
               'min-h-20',
               index === 0 ? '' : 'border-l border-grid-line',
-              drag?.overDate === day.date ? 'bg-surface-accent-soft' : ''
+              drag?.overDate === day.date ? 'bg-surface-accent-soft' : '',
             ].join(' ')}
           >
             {/* Reserves the row's height: the bars themselves are out of the flow. */}
@@ -83,17 +83,15 @@ export function AllDayBand({
                           event: segment.event,
                           grab: {
                             at: 'day',
-                            date: grabbedDate(event, days[segment.column]?.date ?? '', segment.span)
-                          }
+                            date: grabbedDate(event, days[segment.column]?.date ?? '', segment.span),
+                          },
                         },
-                        event
+                        event,
                       ),
-                    onDragEnd: drag.end
+                    onDragEnd: drag.end,
                   }
                 : {})}
-              onClick={() =>
-                onOpenEvent(segment.event, days[segment.column]?.date ?? days[0]?.date ?? '')
-              }
+              onClick={() => onOpenEvent(segment.event, days[segment.column]?.date ?? days[0]?.date ?? '')}
             />
           )
         })}

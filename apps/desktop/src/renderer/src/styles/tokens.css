@@ -167,8 +167,7 @@
    * These are `font:` shorthands, not font sizes, so they stay out of @theme —
    * Tailwind's --text-* namespace would emit them as font-size. They are consumed
    * through the type-* utilities in index.css instead. */
-  --ds-text-display: var(--ds-fw-semibold) var(--ds-fs-display) / var(--ds-lh-tight)
-    var(--ds-font-display);
+  --ds-text-display: var(--ds-fw-semibold) var(--ds-fs-display) / var(--ds-lh-tight) var(--ds-font-display);
   --ds-text-h1: var(--ds-fw-semibold) var(--ds-fs-h1) / var(--ds-lh-tight) var(--ds-font-display);
   --ds-text-h2: var(--ds-fw-semibold) var(--ds-fs-h2) / var(--ds-lh-snug) var(--ds-font-display);
   --ds-text-h3: var(--ds-fw-semibold) var(--ds-fs-h3) / var(--ds-lh-snug) var(--ds-font-ui);

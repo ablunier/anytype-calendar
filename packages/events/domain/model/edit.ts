@@ -1,7 +1,7 @@
-import type { EventsTimeZone } from '../gateways/time-zone'
 import type { EventsWriteFailure } from '../gateways/events-writer'
+import type { EventsTimeZone } from '../gateways/time-zone'
 import { compareEventsDatedObjects, type EventsDatedObject } from './dated-object'
-import { toEventsDay, type EventsDay } from './month'
+import { type EventsDay, toEventsDay } from './month'
 import type { EventsSource, EventsTypeSource } from './source'
 import type { EventsSpanLoad } from './span-load'
 
@@ -58,8 +58,7 @@ export function toEventsSlot(value: unknown): EventsSlot | null {
   const date = toEventsDay(day)
   if (!date) return null
   if (minute === null) return { day: date, minute }
-  const valid =
-    typeof minute === 'number' && Number.isInteger(minute) && minute >= 0 && minute < MINUTES_PER_DAY
+  const valid = typeof minute === 'number' && Number.isInteger(minute) && minute >= 0 && minute < MINUTES_PER_DAY
   return valid ? { day: date, minute } : null
 }
 
@@ -93,7 +92,7 @@ export function eventsSourceHasEnd({ from, to }: Pick<EventsSource, 'from' | 'to
 export function rescheduleEventsDatedObject(
   object: EventsDatedObject,
   change: EventsReschedule,
-  zone: EventsTimeZone
+  zone: EventsTimeZone,
 ): EventsDatedObject | null {
   const { start, end, allDay } = object
 
@@ -124,7 +123,7 @@ export function rescheduleEventsDatedObject(
 export function newEventsObjectDates(
   { from, to, includesTime }: EventsTypeSource,
   { day, minute }: EventsSlot,
-  zone: EventsTimeZone
+  zone: EventsTimeZone,
 ): Record<string, number> {
   const start = includesTime ? zone.at(day, minute ?? DEFAULT_START_MINUTE) : zone.startOfDay(day)
   if (to === null || to === from) return { [from]: start }
@@ -154,7 +153,7 @@ export function withEventsEdits(load: EventsSpanLoad, edits: readonly EventsDate
 
 export function sameEventsObject(
   a: Pick<EventsDatedObject, 'spaceId' | 'id'>,
-  b: Pick<EventsDatedObject, 'spaceId' | 'id'>
+  b: Pick<EventsDatedObject, 'spaceId' | 'id'>,
 ): boolean {
   return a.spaceId === b.spaceId && a.id === b.id
 }

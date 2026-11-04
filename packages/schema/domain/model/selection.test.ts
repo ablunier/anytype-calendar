@@ -2,10 +2,10 @@ import { describe, expect, test } from 'vitest'
 import {
   EMPTY_SCHEMA_SELECTION,
   rekeySchemaSelection,
-  toSchemaSelection,
   type SchemaQueryChoice,
   type SchemaSelection,
-  type SchemaTypeChoice
+  type SchemaTypeChoice,
+  toSchemaSelection,
 } from './selection'
 import type { SchemaSpace } from './space'
 import type { SchemaType } from './type'
@@ -19,7 +19,7 @@ const TASK: SchemaTypeChoice = {
   colourBy: null,
   panel: [],
   done: 'done',
-  location: null
+  location: null,
 }
 const PROJECT: SchemaTypeChoice = {
   spaceId: 'sp_1',
@@ -30,7 +30,7 @@ const PROJECT: SchemaTypeChoice = {
   colourBy: '6aaa450259c0801cdafc4015',
   panel: ['priority', 'linked_projects'],
   done: null,
-  location: 'venue'
+  location: 'venue',
 }
 
 const OPEN_TASKS: SchemaQueryChoice = {
@@ -43,7 +43,7 @@ const OPEN_TASKS: SchemaQueryChoice = {
   colourBy: null,
   panel: ['priority'],
   done: 'done',
-  location: 'location'
+  location: 'location',
 }
 
 describe('toSchemaSelection', () => {
@@ -61,7 +61,7 @@ describe('toSchemaSelection', () => {
     expect(toSchemaSelection({ spaceIds: ['sp_1'], types: [TASK] })).toEqual({
       spaceIds: ['sp_1'],
       types: [TASK],
-      queries: []
+      queries: [],
     })
   })
 
@@ -70,9 +70,11 @@ describe('toSchemaSelection', () => {
   })
 
   test('keeps only the fields it knows', () => {
-    expect(
-      toSchemaSelection({ spaceIds: [], types: [{ ...TASK, label: 'Task' }], queries: [], extra: true })
-    ).toEqual({ spaceIds: [], types: [TASK], queries: [] })
+    expect(toSchemaSelection({ spaceIds: [], types: [{ ...TASK, label: 'Task' }], queries: [], extra: true })).toEqual({
+      spaceIds: [],
+      types: [TASK],
+      queries: [],
+    })
   })
 
   test('reads a choice saved before colourBy as colouring by nothing', () => {
@@ -80,7 +82,7 @@ describe('toSchemaSelection', () => {
     expect(toSchemaSelection({ spaceIds: [], types: [saved] })).toEqual({
       spaceIds: [],
       types: [{ ...PROJECT, colourBy: null }],
-      queries: []
+      queries: [],
     })
   })
 
@@ -89,7 +91,7 @@ describe('toSchemaSelection', () => {
     expect(toSchemaSelection({ spaceIds: [], types: [saved], queries: [] })).toEqual({
       spaceIds: [],
       types: [{ ...PROJECT, panel: [], done: 'done', location: 'location' }],
-      queries: []
+      queries: [],
     })
   })
 
@@ -102,7 +104,7 @@ describe('toSchemaSelection', () => {
     expect(toSchemaSelection({ spaceIds: ['sp_1', 'sp_1'], types: [] })).toEqual({
       spaceIds: ['sp_1'],
       types: [],
-      queries: []
+      queries: [],
     })
   })
 
@@ -115,7 +117,7 @@ describe('toSchemaSelection', () => {
     const selection = {
       spaceIds: [],
       types: [{ ...TASK, typeKey: 'bafyquery' }],
-      queries: [OPEN_TASKS]
+      queries: [OPEN_TASKS],
     }
     expect(toSchemaSelection(selection)).toEqual(selection)
   })
@@ -150,10 +152,7 @@ describe('toSchemaSelection', () => {
     ['a query with no view', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, viewId: undefined }] }],
     ['a query with an empty view', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, viewId: '' }] }],
     ['a query with no from date', { spaceIds: [], types: [], queries: [{ ...OPEN_TASKS, from: '' }] }],
-    [
-      'a query chosen twice',
-      { spaceIds: [], types: [], queries: [OPEN_TASKS, { ...OPEN_TASKS, viewId: null }] }
-    ]
+    ['a query chosen twice', { spaceIds: [], types: [], queries: [OPEN_TASKS, { ...OPEN_TASKS, viewId: null }] }],
   ])('rejects %s', (_, value) => {
     expect(toSchemaSelection(value)).toBeNull()
   })
@@ -170,12 +169,12 @@ describe('rekeySchemaSelection', () => {
     colourBy: null,
     panel: [],
     done: null,
-    location: null
+    location: null,
   })
   const selectionOf = (...types: SchemaTypeChoice[]): SchemaSelection => ({
     spaceIds: [SPACE],
     types,
-    queries: []
+    queries: [],
   })
   const book: SchemaType = {
     key: '6a67272659c08021576f3127',
@@ -184,12 +183,12 @@ describe('rekeySchemaSelection', () => {
     icon: null,
     dateProperties: [
       { key: 'start_date', name: 'Start date' },
-      { key: '6a6733dc59c08021576f32d2', name: 'Finished' }
+      { key: '6a6733dc59c08021576f32d2', name: 'Finished' },
     ],
     checkboxProperties: [],
     textProperties: [],
     panelProperties: [],
-    selectProperties: []
+    selectProperties: [],
   }
   const task: SchemaType = {
     key: 'task',
@@ -199,7 +198,7 @@ describe('rekeySchemaSelection', () => {
     checkboxProperties: [{ key: 'done', name: 'Done' }],
     textProperties: [],
     panelProperties: [],
-    selectProperties: []
+    selectProperties: [],
   }
   const spaceOf = (...types: SchemaType[]): SchemaSpace[] => [{ id: SPACE, name: 'Personal', types, queries: [] }]
   const spaces = spaceOf(book, task)
@@ -215,7 +214,7 @@ describe('rekeySchemaSelection', () => {
       colourBy: 'status',
       panel: ['shelf', 'author'],
       done: 'read',
-      location: 'shelf'
+      location: 'shelf',
     })
     expect(rekeySchemaSelection(selection, spaces)).toEqual(
       selectionOf({
@@ -223,8 +222,8 @@ describe('rekeySchemaSelection', () => {
         colourBy: 'status',
         panel: ['shelf', 'author'],
         done: 'read',
-        location: 'shelf'
-      })
+        location: 'shelf',
+      }),
     )
   })
 
@@ -241,16 +240,14 @@ describe('rekeySchemaSelection', () => {
 
   test('drops a former-keyed choice of a type already chosen under its current key', () => {
     const current = choice('6a67272659c08021576f3127', 'start_date')
-    expect(rekeySchemaSelection(selectionOf(current, choice('book', 'finished')), spaces)).toEqual(
-      selectionOf(current)
-    )
+    expect(rekeySchemaSelection(selectionOf(current, choice('book', 'finished')), spaces)).toEqual(selectionOf(current))
   })
 
   test('keeps the other fields of a choice', () => {
     const selection = {
       spaceIds: [SPACE, 'x'],
       types: [{ ...choice('book', 'start_date'), includesTime: true }],
-      queries: []
+      queries: [],
     }
     const rekeyed = rekeySchemaSelection(selection, spaces)
     expect(rekeyed.spaceIds).toEqual([SPACE, 'x'])
@@ -268,7 +265,7 @@ describe('rekeySchemaSelection', () => {
       colourBy: null,
       panel: ['status'],
       done: 'read',
-      location: null
+      location: null,
     }
     const selection = { ...selectionOf(choice('book', 'start_date')), queries: [query] }
     expect(rekeySchemaSelection(selection, spaces).queries).toEqual([query])

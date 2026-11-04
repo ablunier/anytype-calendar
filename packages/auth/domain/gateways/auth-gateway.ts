@@ -1,9 +1,7 @@
 import type { AuthAccess } from '../model/access'
 
 /** An Anytype too old to pair with is an expected answer, not an error. */
-export type AuthChallengeResult =
-  | { ok: true; challengeId: string }
-  | { ok: false; failure: 'outdated' }
+export type AuthChallengeResult = { ok: true; challengeId: string } | { ok: false; failure: 'outdated' }
 
 /**
  * A rejected code is an expected answer, not an error, so it is a value; only a transport
@@ -14,9 +12,7 @@ export type AuthExchangeResult =
   | { ok: false; failure: 'invalid-code' | 'expired' | 'outdated' }
 
 /** A key Anytype does not recognise is an expected answer too, not an error. */
-export type AuthVerifyResult =
-  | { ok: true; access: AuthAccess }
-  | { ok: false; failure: 'invalid-key' | 'outdated' }
+export type AuthVerifyResult = { ok: true; access: AuthAccess } | { ok: false; failure: 'invalid-key' | 'outdated' }
 
 /**
  * Every method rejects when Anytype cannot be reached. There is no cancellation — the

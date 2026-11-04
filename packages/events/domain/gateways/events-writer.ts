@@ -39,7 +39,7 @@ export type EventsWriteFailure =
   /** Anytype refused the change itself, e.g. an object that is gone; `message` says why, in its words. */
   | { failure: 'rejected'; message: string }
 
-export type EventsWriteResult<T = null> = ({ ok: true; value: T }) | ({ ok: false } & EventsWriteFailure)
+export type EventsWriteResult<T = null> = { ok: true; value: T } | ({ ok: false } & EventsWriteFailure)
 
 export interface EventsWriter {
   /** Sets each date to its instant, or clears it; dates not named keep theirs. */

@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
 import { Button, Card, Icon } from '@renderer/components/ui'
+import { useTranslation } from 'react-i18next'
 
 export interface AboutSectionProps {
   /** Null until main has answered. */
@@ -9,11 +9,7 @@ export interface AboutSectionProps {
   onOpenRelease: () => void
 }
 
-export function AboutSection({
-  version,
-  updateAvailable,
-  onOpenRelease
-}: AboutSectionProps): React.JSX.Element {
+export function AboutSection({ version, updateAvailable, onOpenRelease }: AboutSectionProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <section>
@@ -23,9 +19,7 @@ export function AboutSection({
           <Icon name="info" size={16} className="text-ink-tertiary" />
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="type-ui text-small text-ink-primary">{t('config.about.version')}</span>
-            <span className="truncate type-numeral text-tiny text-ink-tertiary">
-              {version ?? '…'}
-            </span>
+            <span className="truncate type-numeral text-tiny text-ink-tertiary">{version ?? '…'}</span>
           </div>
           {updateAvailable ? (
             <Button variant="secondary" size="sm" iconLeft="arrow-up-right" onClick={onOpenRelease}>

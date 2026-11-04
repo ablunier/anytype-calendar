@@ -1,7 +1,7 @@
-import { useState, type DragEvent } from 'react'
-import type { CalendarEvent, CalendarSlot } from '@renderer/types'
 import { addDays, daysBetween } from '@renderer/lib/calendar'
 import { minuteAt, movedPlacement, resizedPlacement, type TimedPlacement } from '@renderer/lib/time-grid'
+import type { CalendarEvent, CalendarSlot } from '@renderer/types'
+import { type DragEvent, useState } from 'react'
 
 /**
  * The app's own type rather than `text/plain`: Chromium starts no drag without some data, and
@@ -88,7 +88,7 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
 
   const target = (
     takes: (candidate: CalendarDragged) => boolean,
-    locate: (drag: DragEvent) => CalendarSlot
+    locate: (drag: DragEvent) => CalendarSlot,
   ): CalendarDropTarget => ({
     onDragOver: (drag) => {
       if (!dragged || !takes(dragged)) return
@@ -107,7 +107,7 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
       land(dragged, locate(drag))
       // The source may be gone by now, moved by the edit, and fire no `dragend` of its own.
       end()
-    }
+    },
   })
 
   return {
@@ -125,7 +125,7 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
     dayTarget: (date) =>
       target(
         (candidate) => candidate.kind === 'move' && candidate.grab.at === 'day',
-        () => ({ date, minute: null })
+        () => ({ date, minute: null }),
       ),
     timeTarget: (date) =>
       target(
@@ -133,8 +133,8 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
         (drag) => {
           const { top, height } = drag.currentTarget.getBoundingClientRect()
           return { date, minute: Math.round(minuteAt(drag.clientY - top, height)) }
-        }
-      )
+        },
+      ),
   }
 }
 
@@ -144,7 +144,7 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
  */
 export function timedLanding(
   dragged: CalendarDragged | null,
-  slot: CalendarSlot | null
+  slot: CalendarSlot | null,
 ): ({ date: string } & TimedPlacement) | null {
   if (!dragged || slot?.minute == null) return null
   if (dragged.kind === 'resize') {

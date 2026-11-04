@@ -69,15 +69,7 @@ export interface NamedProperty {
 }
 
 /** How the detail panel draws a property's value. */
-export type PanelFormat =
-  | 'text'
-  | 'number'
-  | 'select'
-  | 'multi_select'
-  | 'url'
-  | 'email'
-  | 'phone'
-  | 'objects'
+export type PanelFormat = 'text' | 'number' | 'select' | 'multi_select' | 'url' | 'email' | 'phone' | 'objects'
 
 /** A property the detail panel can show of a type's objects. */
 export interface PanelProperty {

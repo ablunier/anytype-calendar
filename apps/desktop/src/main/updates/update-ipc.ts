@@ -1,5 +1,5 @@
-import { BrowserWindow, ipcMain, shell } from 'electron'
 import { IpcChannel, type UpdateSnapshot } from '@shared/ipc'
+import { BrowserWindow, ipcMain, shell } from 'electron'
 import type { Updates } from './compose-updates'
 import type { UpdateNotice } from './update-notice-store'
 

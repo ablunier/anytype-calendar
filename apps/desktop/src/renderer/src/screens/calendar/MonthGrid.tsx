@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
+import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MonthDayCell } from './MonthDayCell'
 import type { CalendarDrag } from './useCalendarDrag'
 
@@ -36,8 +36,8 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
 }
 
 /**
- * One role="grid" wrapping a header row of columnheaders and a row per week, which is the
- * structure assistive tech expects — the design renders the weekday strip as a separate
+ * One role="grid" table wrapping a header row of column headers and a row per week, which is
+ * the structure assistive tech expects — the design renders the weekday strip as a separate
  * bar outside the grid, where it would not be announced as the columns' headers.
  *
  * Roving tabindex: exactly one cell is tabbable and the arrow keys move between them, so a
@@ -48,7 +48,8 @@ function chunkWeeks(cells: MonthCell[]): MonthCell[][] {
  * objects too, dimmed but drawn. Each bar is a child of the cell
  * its week's segment starts in, which keeps the grid's rows and cells intact, and is
  * positioned against the week row, whose seven equal columns it needs to span. That is why
- * the week numbers sit beside the row, in a gutter of their own, and not in a column of it.
+ * the week numbers sit beside the row, in a gutter of their own, and not in a column of it:
+ * the row is inset by the gutter, and its number is placed out into it.
  *
  * A bar is moved by dragging it onto another day, whole days at a time; a timed object keeps
  * its time of day. The day of the bar it is held by is the one that lands where it is dropped.
@@ -66,10 +67,10 @@ export function MonthGrid({
   onSelectDay,
   onOpenEvent,
   drag,
-  onCreate
+  onCreate,
 }: MonthGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const gridRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLTableElement>(null)
   const shouldRefocus = useRef(false)
 
   const weeks = useMemo(() => {
@@ -91,83 +92,97 @@ export function MonthGrid({
   }
 
   const handleKeyDown = (event: React.KeyboardEvent, day: number): void => {
-    const actions: Record<string, () => void> = {
-      ArrowRight: () => moveFocus(1),
-      ArrowLeft: () => moveFocus(-1),
-      ArrowDown: () => moveFocus(7),
-      ArrowUp: () => moveFocus(-7),
-      Home: () => moveFocus(1 - focusedDay),
-      End: () => moveFocus(lastDay - focusedDay),
-      Enter: () => onSelectDay(day),
-      ' ': () => onSelectDay(day)
+    switch (event.key) {
+      case 'ArrowRight':
+        moveFocus(1)
+        break
+      case 'ArrowLeft':
+        moveFocus(-1)
+        break
+      case 'ArrowDown':
+        moveFocus(7)
+        break
+      case 'ArrowUp':
+        moveFocus(-7)
+        break
+      case 'Home':
+        moveFocus(1 - focusedDay)
+        break
+      case 'End':
+        moveFocus(lastDay - focusedDay)
+        break
+      case 'Enter':
+      case ' ':
+        onSelectDay(day)
+        break
+      default:
+        return
     }
-    const action = actions[event.key]
-    if (!action) return
     event.preventDefault()
-    action()
   }
 
   return (
-    <div
+    <table
       ref={gridRef}
+      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: ARIA in HTML allows role="grid" on a table, as the APG's data grids use it.
       role="grid"
       aria-label={t('calendar.grid.month')}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <div role="row" className="flex border-b border-grid-line-strong bg-surface-card">
-        {showWeekNumbers ? <span aria-hidden className="week-number-gutter shrink-0" /> : null}
-        <div className="grid flex-1 grid-week">
+      <thead className="block border-b border-grid-line-strong bg-surface-card">
+        <tr className={['grid grid-week', showWeekNumbers ? 'week-number-inset' : ''].join(' ')}>
           {weekdaysFrom(weekStart, i18n.language).map((weekday, index) => (
-            <span
+            <th
               key={weekday}
-              role="columnheader"
+              scope="col"
               className={[
-                'px-8 py-6 type-overline text-micro',
-                isWeekendColumn(weekStart, index) ? 'text-ink-tertiary' : 'text-ink-secondary'
+                'px-8 py-6 text-start type-overline text-micro',
+                isWeekendColumn(weekStart, index) ? 'text-ink-tertiary' : 'text-ink-secondary',
               ].join(' ')}
             >
               {weekday}
-            </span>
+            </th>
           ))}
-        </div>
-      </div>
+        </tr>
+      </thead>
 
-      <div className="flex flex-1 flex-col overflow-auto border-l border-grid-line">
-        {weeks.map(({ week, layout }, weekIndex) => (
-          <div key={weekIndex} className="flex flex-1">
+      <tbody className="flex flex-1 flex-col overflow-auto border-l border-grid-line">
+        {weeks.map(({ week, layout }) => (
+          <tr
+            key={week[0]?.date}
+            className={['relative grid flex-1 grid-week', showWeekNumbers ? 'week-number-inset' : ''].join(' ')}
+          >
             {showWeekNumbers ? (
-              <span
+              <td
                 aria-hidden
-                className="week-number-gutter shrink-0 px-4 py-6 text-center type-numeral text-micro text-ink-tertiary"
+                className="week-number-gutter absolute inset-y-0 right-full px-4 py-6 text-center type-numeral text-micro text-ink-tertiary"
               >
                 {isoWeekNumber(week[(10 - weekStart) % 7].date)}
-              </span>
+              </td>
             ) : null}
-            <div role="row" className="relative grid flex-1 grid-week">
-              {week.map((cell, dayIndex) => (
-                <MonthDayCell
-                  key={cell.date}
-                  cell={cell}
-                  segments={layout.segments.filter((segment) => segment.column === dayIndex)}
-                  lanes={layout.lanes}
-                  hidden={layout.hidden[dayIndex]}
-                  typesByKey={typesByKey}
-                  isToday={!cell.outside && cell.date === today}
-                  isSelected={cell.date === selectedDate}
-                  isWeekend={isWeekendColumn(weekStart, dayIndex)}
-                  tabbable={!cell.outside && cell.day === focusedDay}
-                  onFocus={() => onFocusDay(cell.day)}
-                  onSelect={() => onSelectDay(cell.day)}
-                  onKeyDown={(event) => handleKeyDown(event, cell.day)}
-                  onOpenEvent={(event) => onOpenEvent(event, cell.date)}
-                  drag={drag}
-                  onCreate={() => onCreate(cell.date)}
-                />
-              ))}
-            </div>
-          </div>
+            {week.map((cell, dayIndex) => (
+              <MonthDayCell
+                key={cell.date}
+                cell={cell}
+                segments={layout.segments.filter((segment) => segment.column === dayIndex)}
+                lanes={layout.lanes}
+                hidden={layout.hidden[dayIndex]}
+                typesByKey={typesByKey}
+                isToday={!cell.outside && cell.date === today}
+                isSelected={cell.date === selectedDate}
+                isWeekend={isWeekendColumn(weekStart, dayIndex)}
+                tabbable={!cell.outside && cell.day === focusedDay}
+                onFocus={() => onFocusDay(cell.day)}
+                onSelect={() => onSelectDay(cell.day)}
+                onKeyDown={(event) => handleKeyDown(event, cell.day)}
+                onOpenEvent={(event) => onOpenEvent(event, cell.date)}
+                drag={drag}
+                onCreate={() => onCreate(cell.date)}
+              />
+            ))}
+          </tr>
         ))}
-      </div>
-    </div>
+      </tbody>
+    </table>
   )
 }

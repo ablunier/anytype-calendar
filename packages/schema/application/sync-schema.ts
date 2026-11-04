@@ -3,7 +3,6 @@ import {
   namedProperties,
   nextSchemaSync,
   panelProperties,
-  userDateProperties,
   type SchemaApiKeySource,
   type SchemaGateway,
   type SchemaGatewayResult,
@@ -17,7 +16,8 @@ import {
   type SchemaSync,
   type SchemaSyncEvent,
   type SchemaType,
-  type SchemaTypeRef
+  type SchemaTypeRef,
+  userDateProperties,
 } from '../domain'
 import type { SchemaSyncStore } from './schema-sync-store'
 
@@ -86,11 +86,11 @@ export class SyncSchema {
         const [types, queries, collections] = await Promise.all([
           this.#fetchDatedTypes(apiKey, id),
           this.#gateway.listQueries(apiKey, id).then(accepted),
-          this.#gateway.listCollections(apiKey, id).then(accepted)
+          this.#gateway.listCollections(apiKey, id).then(accepted),
         ])
         const space = { id, name, types, queries: datedQueries(queries, types), collections }
         return icon === undefined ? space : { ...space, icon }
-      })
+      }),
     )
     return { spaces, hasNotGrantedSpaces: listed.hasNotGrantedSpaces }
   }
@@ -103,7 +103,7 @@ export class SyncSchema {
     const options = await this.#fetchSelectOptions(
       apiKey,
       spaceId,
-      refs.flatMap(({ ref }) => ref.properties)
+      refs.flatMap(({ ref }) => ref.properties),
     )
     return refs.map(({ ref: { key, formerKey, name, icon, properties }, dateProperties }) => {
       const type: SchemaType = {
@@ -121,7 +121,7 @@ export class SyncSchema {
           const found = property.format === 'select' ? options.get(property.key) : undefined
           if (!found || found.length === 0) return []
           return [{ key: property.key, name: property.name, options: found }]
-        })
+        }),
       }
       return formerKey === undefined ? type : { ...type, formerKey }
     })
@@ -131,11 +131,11 @@ export class SyncSchema {
   async #fetchSelectOptions(
     apiKey: string,
     spaceId: string,
-    properties: SchemaTypeRef['properties']
+    properties: SchemaTypeRef['properties'],
   ): Promise<Map<string, SchemaSelectOption[]>> {
     const keys = [...new Set(properties.filter(({ format }) => hasOptions(format)).map(({ key }) => key))]
     const lists = await Promise.all(
-      keys.map(async (key) => accepted(await this.#gateway.listSelectOptions(apiKey, spaceId, key)))
+      keys.map(async (key) => accepted(await this.#gateway.listSelectOptions(apiKey, spaceId, key))),
     )
     return new Map(keys.map((key, index) => [key, lists[index] ?? []]))
   }
@@ -150,8 +150,7 @@ function datedQueries(queries: readonly SchemaQueryRef[], types: readonly Schema
   return queries.flatMap(({ id, name, typeKeys, views }) => {
     const [only, ...others] = typeKeys
     if (only === undefined || others.length > 0) return []
-    const type =
-      types.find(({ key }) => key === only) ?? types.find(({ formerKey }) => formerKey === only)
+    const type = types.find(({ key }) => key === only) ?? types.find(({ formerKey }) => formerKey === only)
     return type ? [{ id, name, typeKey: type.key, views }] : []
   })
 }

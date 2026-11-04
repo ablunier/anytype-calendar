@@ -1,6 +1,6 @@
-import { spawn } from 'child_process'
+import { spawn } from 'node:child_process'
+import { basename, dirname, join } from 'node:path'
 import { app } from 'electron'
-import { basename, dirname, join } from 'path'
 
 // Squirrel gives its shortcuts the AppUserModelID com.squirrel.<id>.<exe>, where the id is
 // package.json's name with `-` swapped for `_` and the exe is forge.config.js's
@@ -17,10 +17,7 @@ export function handleSquirrelEvent(): boolean {
 
   const updateShortcuts = (flag: string): void => {
     const updateExe = join(dirname(process.execPath), '..', 'Update.exe')
-    spawn(updateExe, [`${flag}=${basename(process.execPath)}`], { detached: true }).on(
-      'close',
-      () => app.quit()
-    )
+    spawn(updateExe, [`${flag}=${basename(process.execPath)}`], { detached: true }).on('close', () => app.quit())
   }
 
   switch (process.argv[1]) {

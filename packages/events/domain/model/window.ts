@@ -22,7 +22,7 @@ export function eventsSpanWindow(span: EventsSpan, zone: EventsTimeZone): Events
     return between(
       { year, month, day: 1 - MONTH_PADDING_DAYS },
       { year, month: month + 1, day: 1 + MONTH_PADDING_DAYS },
-      zone
+      zone,
     )
   }
   const days = span.kind === 'week' ? 7 : 1

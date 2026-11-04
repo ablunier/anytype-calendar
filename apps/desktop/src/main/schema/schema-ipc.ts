@@ -1,14 +1,9 @@
-import { BrowserWindow, ipcMain } from 'electron'
 import { toSchemaSelection } from '@anytype-calendar/schema/domain'
 import { IpcChannel } from '@shared/ipc'
+import { BrowserWindow, ipcMain } from 'electron'
 import type { Schema } from './compose-schema'
 
-export function registerSchemaIpc({
-  schemaSync,
-  schemaState,
-  schemaSelection,
-  saveSchemaSelection
-}: Schema): void {
+export function registerSchemaIpc({ schemaSync, schemaState, schemaSelection, saveSchemaSelection }: Schema): void {
   ipcMain.handle(IpcChannel.schemaGet, () => schemaState.get())
   ipcMain.handle(IpcChannel.schemaSync, () => schemaSync.execute())
   ipcMain.handle(IpcChannel.schemaSelectionGet, () => schemaSelection.get())

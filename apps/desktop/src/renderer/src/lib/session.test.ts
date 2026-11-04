@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import type { SessionSnapshot } from '@shared/ipc'
+import { describe, expect, test } from 'vitest'
 import { apiAccessFor, apiKeyFor, authViewFor, editAccessFor } from './session'
 
 const CHALLENGE = { id: 'ch_1', expiresAt: 60_000 }
@@ -17,7 +17,7 @@ describe('authViewFor', () => {
     expect(authViewFor(session)).toEqual({
       stage: 'code',
       challengeId: CHALLENGE.id,
-      expiresAt: CHALLENGE.expiresAt
+      expiresAt: CHALLENGE.expiresAt,
     })
   })
 
@@ -42,7 +42,7 @@ describe('authViewFor', () => {
       stage: 'error',
       failure: 'invalid-code',
       code: ATTEMPT.code,
-      origin: 'code'
+      origin: 'code',
     })
   })
 
@@ -52,7 +52,7 @@ describe('authViewFor', () => {
       stage: 'error',
       failure: 'unreachable',
       code: undefined,
-      origin: 'code'
+      origin: 'code',
     })
   })
 
@@ -60,13 +60,13 @@ describe('authViewFor', () => {
     const session: SessionSnapshot = {
       phase: 'failed',
       failure: 'invalid-key',
-      enteredKey: true
+      enteredKey: true,
     }
     expect(authViewFor(session)).toEqual({
       stage: 'error',
       failure: 'invalid-key',
       code: undefined,
-      origin: 'key'
+      origin: 'key',
     })
   })
 
@@ -89,7 +89,7 @@ describe('apiKeyFor', () => {
       { phase: 'verifying', attempt: ATTEMPT },
       { phase: 'entering-key' },
       { phase: 'verifying-key' },
-      { phase: 'failed', failure: 'expired', attempt: ATTEMPT }
+      { phase: 'failed', failure: 'expired', attempt: ATTEMPT },
     ]
     for (const session of sessions) expect(apiKeyFor(session)).toBeNull()
   })
@@ -107,7 +107,7 @@ describe('apiAccessFor', () => {
   test('reads a key with no grant as reaching every space, and able to edit', () => {
     expect(apiAccessFor(connected({ grant: null }))).toEqual({
       spaceCount: null,
-      canEdit: true
+      canEdit: true,
     })
   })
 
@@ -115,7 +115,7 @@ describe('apiAccessFor', () => {
     const grant = { allSpaces: false, spaceIds: ['a', 'b'], permission: 'read' as const }
     expect(apiAccessFor(connected({ grant }))).toEqual({
       spaceCount: 2,
-      canEdit: false
+      canEdit: false,
     })
   })
 
@@ -123,7 +123,7 @@ describe('apiAccessFor', () => {
     const grant = { allSpaces: true, spaceIds: [], permission: 'readwrite' as const }
     expect(apiAccessFor(connected({ grant }))).toEqual({
       spaceCount: null,
-      canEdit: true
+      canEdit: true,
     })
   })
 })
@@ -132,7 +132,7 @@ describe('editAccessFor', () => {
   const connected = (access: Extract<SessionSnapshot, { phase: 'connected' }>['access']): SessionSnapshot => ({
     phase: 'connected',
     key: KEY,
-    access
+    access,
   })
 
   test('can edit through a key granted read/write, or one with no grant of its own', () => {

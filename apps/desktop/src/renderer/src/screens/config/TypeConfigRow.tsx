@@ -1,16 +1,13 @@
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
-import type { DateMapping, ObjectType } from '@renderer/types'
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Button, Checkbox } from '@renderer/components/ui'
 import { dateLabel } from '@renderer/lib/calendar'
+import type { DateMapping, ObjectType } from '@renderer/types'
+import type { TFunction } from 'i18next'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TypeSettingsDialog, type TypeSettingsDialogProps } from './TypeSettingsDialog'
 
-export type TypeSettingsHandlers = Omit<
-  TypeSettingsDialogProps,
-  'type' | 'open' | 'mapping' | 'onClose'
->
+export type TypeSettingsHandlers = Omit<TypeSettingsDialogProps, 'type' | 'open' | 'mapping' | 'onClose'>
 
 export interface TypeConfigRowProps extends TypeSettingsHandlers {
   type: ObjectType
@@ -35,12 +32,7 @@ export function TypeConfigRow({
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   return (
-    <div
-      className={[
-        'flex items-center gap-12 py-10',
-        last ? '' : 'border-b border-line-hairline'
-      ].join(' ')}
-    >
+    <div className={['flex items-center gap-12 py-10', last ? '' : 'border-b border-line-hairline'].join(' ')}>
       <Checkbox
         checked={checked}
         swatch={type.category}
@@ -58,10 +50,9 @@ export function TypeConfigRow({
           ) : null}
         </div>
         <span
-          className={[
-            'truncate type-caption text-tiny',
-            checked ? 'text-ink-secondary' : 'text-ink-tertiary'
-          ].join(' ')}
+          className={['truncate type-caption text-tiny', checked ? 'text-ink-secondary' : 'text-ink-tertiary'].join(
+            ' ',
+          )}
         >
           {summaryOf(type, mapping, t)}
         </span>
@@ -77,13 +68,7 @@ export function TypeConfigRow({
       >
         {t('config.customizeType')}
       </Button>
-      <TypeSettingsDialog
-        type={type}
-        open={open}
-        mapping={mapping}
-        onClose={() => setOpen(false)}
-        {...handlers}
-      />
+      <TypeSettingsDialog type={type} open={open} mapping={mapping} onClose={() => setOpen(false)} {...handlers} />
     </div>
   )
 }
@@ -95,7 +80,7 @@ function summaryOf(type: ObjectType, mapping: DateMapping, t: TFunction): string
     to === null
       ? dateLabel(type, from)
       : t('config.summaryRange', { from: dateLabel(type, from), to: dateLabel(type, to) }),
-    includesTime ? t('config.summaryTimed') : t('config.summaryAllDay')
+    includesTime ? t('config.summaryTimed') : t('config.summaryAllDay'),
   ]
   if (type.query) {
     const viewLabel = type.query.views.find(({ key }) => key === view)?.label ?? type.query.views[0]?.label

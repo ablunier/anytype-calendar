@@ -39,7 +39,7 @@ export interface TimedSegment {
  */
 export function splitDayEvents(
   events: CalendarEvent[],
-  date: string
+  date: string,
 ): { band: CalendarEvent[]; timed: CalendarEvent[] } {
   const band: CalendarEvent[] = []
   const timed: CalendarEvent[] = []
@@ -82,7 +82,7 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
         startMinute,
         endMinute: Math.min(MINUTES_PER_DAY, Math.max(endMinute, startMinute + MIN_SLOT_MINUTES)),
         column: 0,
-        columns: 1
+        columns: 1,
       }
     })
     .sort(byStartThenLength)
@@ -100,9 +100,7 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
 
   for (const segment of segments) {
     if (segment.startMinute >= clusterEnd) closeCluster()
-    const taken = new Set(
-      cluster.filter((other) => other.endMinute > segment.startMinute).map((other) => other.column)
-    )
+    const taken = new Set(cluster.filter((other) => other.endMinute > segment.startMinute).map((other) => other.column))
     let column = 0
     while (taken.has(column)) column++
     cluster.push({ ...segment, column })
@@ -131,7 +129,7 @@ export function movedPlacement(drawn: TimedPlacement, held: number, minute: numb
   const start = Math.min(Math.max(snap(minute - held), 0), LAST_END_MINUTE)
   return {
     startMinute: start,
-    endMinute: Math.min(start + drawn.endMinute - drawn.startMinute, MINUTES_PER_DAY)
+    endMinute: Math.min(start + drawn.endMinute - drawn.startMinute, MINUTES_PER_DAY),
   }
 }
 
@@ -142,7 +140,7 @@ export function movedPlacement(drawn: TimedPlacement, held: number, minute: numb
 export function resizedPlacement(startMinute: number, minute: number): TimedPlacement {
   return {
     startMinute,
-    endMinute: Math.max(Math.min(snap(minute), LAST_END_MINUTE), startMinute + SNAP_MINUTES)
+    endMinute: Math.max(Math.min(snap(minute), LAST_END_MINUTE), startMinute + SNAP_MINUTES),
   }
 }
 

@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
+import { Wordmark } from '@renderer/components/app/Wordmark'
+import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
+import { type TypeSelection, useTypeSelection } from '@renderer/hooks/useTypeSelection'
+import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
+import { syncDetailText } from '@renderer/lib/sync-text'
 import type {
   ApiAccessView,
   ApiKeyView,
@@ -8,15 +12,11 @@ import type {
   ObjectType,
   Space,
   SyncView,
-  TypePicks
+  TypePicks,
 } from '@renderer/types'
-import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
-import { Wordmark } from '@renderer/components/app/Wordmark'
-import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
-import { useTypeSelection, type TypeSelection } from '@renderer/hooks/useTypeSelection'
-import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
-import { syncDetailText } from '@renderer/lib/sync-text'
 import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AboutSection } from './AboutSection'
 import { CalendarsSection, type CalendarsSectionProps } from './CalendarsSection'
 import { SessionSection } from './SessionSection'
@@ -101,19 +101,22 @@ function Settings({
   onOpenRelease,
   feeds,
   feedActions,
-  focusAddFeed = false
+  focusAddFeed = false,
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const selection = useTypeSelection(types, initial)
   const [saveFailed, setSaveFailed] = useState(false)
 
-  const save = (picks: TypePicks): void => {
-    // Saves land in order, and each carries every pick, so the last to settle has the say.
-    onSave(picks).then(
-      () => setSaveFailed(false),
-      () => setSaveFailed(true)
-    )
-  }
+  const save = useCallback(
+    (picks: TypePicks): void => {
+      // Saves land in order, and each carries every pick, so the last to settle has the say.
+      onSave(picks).then(
+        () => setSaveFailed(false),
+        () => setSaveFailed(true),
+      )
+    },
+    [onSave],
+  )
 
   /* Every change is saved as it is made. Keyed on the picks object rather than on a first-run
    * flag, so StrictMode running the effect twice on mount saves nothing. */
@@ -122,7 +125,7 @@ function Settings({
     if (selection.picks === sent.current) return
     sent.current = selection.picks
     save(selection.picks)
-  }, [selection.picks])
+  }, [selection.picks, save])
 
   const read = sync.hasResult
   const syncing = sync.state === 'syncing'
@@ -155,13 +158,7 @@ function Settings({
                     {t('common.spacesCount', { count: spaces.length })}
                   </span>
                 ) : null}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  iconLeft="refresh-cw"
-                  loading={syncing}
-                  onClick={onReread}
-                >
+                <Button variant="ghost" size="sm" iconLeft="refresh-cw" loading={syncing} onClick={onReread}>
                   {t('config.rereadAccount')}
                 </Button>
               </div>
@@ -171,9 +168,7 @@ function Settings({
           <section>
             <div className="mb-10 flex items-baseline gap-8">
               <h2 className="type-heading text-h4 text-ink-primary">{t('config.spacesAndTypes')}</h2>
-              <span className="type-caption text-tiny text-ink-tertiary">
-                {t('config.spacesAndTypesDescription')}
-              </span>
+              <span className="type-caption text-tiny text-ink-tertiary">{t('config.spacesAndTypesDescription')}</span>
             </div>
             {read && hasNotGrantedSpaces ? (
               <div className="mb-12">
@@ -198,15 +193,10 @@ function Settings({
                     icon="circle-alert"
                     title={t('common.readAgain')}
                     description={t('common.spacesUnreadable', {
-                      detail: syncDetailText(t, sync.detail) ?? ''
+                      detail: syncDetailText(t, sync.detail) ?? '',
                     })}
                     action={
-                      <Button
-                        variant="secondary"
-                        size="md"
-                        iconLeft="refresh-cw"
-                        onClick={onReread}
-                      >
+                      <Button variant="secondary" size="md" iconLeft="refresh-cw" onClick={onReread}>
                         {t('common.tryAgain')}
                       </Button>
                     }
@@ -234,7 +224,7 @@ function Settings({
                   { value: '', label: t('config.languageSystem') },
                   { value: 'en', label: 'English' },
                   { value: 'es', label: 'Español' },
-                  { value: 'gl', label: 'Galego' }
+                  { value: 'gl', label: 'Galego' },
                 ]}
                 value={language ?? ''}
                 onChange={(value) => onLanguage(value === '' ? null : (value as 'en' | 'es' | 'gl'))}
@@ -244,7 +234,7 @@ function Settings({
                 options={[
                   { value: 'day', label: t('calendar.view.day') },
                   { value: 'week', label: t('calendar.view.week') },
-                  { value: 'month', label: t('calendar.view.month') }
+                  { value: 'month', label: t('calendar.view.month') },
                 ]}
                 value={calendarView}
                 onChange={(value) => onCalendarView(value as CalendarView)}
@@ -253,7 +243,7 @@ function Settings({
                 label={t('config.firstDayOfWeek')}
                 options={weekdayNames(i18n.language, 'long').map((name, index) => ({
                   value: String(index),
-                  label: name
+                  label: name,
                 }))}
                 value={String(weekStart)}
                 onChange={(value) => onWeekStart(Number(value))}
@@ -262,7 +252,7 @@ function Settings({
                 label={t('config.timeFormat')}
                 options={[
                   { value: '24h', label: t('config.timeFormat24h') },
-                  { value: '12h', label: t('config.timeFormat12h') }
+                  { value: '12h', label: t('config.timeFormat12h') },
                 ]}
                 value={timeFormat}
                 onChange={(value) => onTimeFormat(value === '12h' ? '12h' : '24h')}
@@ -276,18 +266,9 @@ function Settings({
             </Card>
           </section>
 
-          <SessionSection
-            apiKey={apiKey}
-            access={access}
-            onCopyKey={onCopyKey}
-            onSignOut={onSignOut}
-          />
+          <SessionSection apiKey={apiKey} access={access} onCopyKey={onCopyKey} onSignOut={onSignOut} />
 
-          <AboutSection
-            version={appVersion}
-            updateAvailable={updateAvailable}
-            onOpenRelease={onOpenRelease}
-          />
+          <AboutSection version={appVersion} updateAvailable={updateAvailable} onOpenRelease={onOpenRelease} />
         </div>
       </main>
     </div>
@@ -311,7 +292,7 @@ function SpacesAndTypes({
   syncing,
   saveFailed,
   onReread,
-  onRetrySave
+  onRetrySave,
 }: SpacesAndTypesProps): React.JSX.Element {
   const { t } = useTranslation()
   if (spaces.length === 0) {
@@ -323,13 +304,7 @@ function SpacesAndTypes({
           title={t('config.createSpace')}
           description={t('config.createSpaceDescription')}
           action={
-            <Button
-              variant="secondary"
-              size="md"
-              iconLeft="refresh-cw"
-              loading={syncing}
-              onClick={onReread}
-            >
+            <Button variant="secondary" size="md" iconLeft="refresh-cw" loading={syncing} onClick={onReread}>
               {t('config.rereadAccount')}
             </Button>
           }
@@ -354,9 +329,7 @@ function SpacesAndTypes({
       {saveFailed ? (
         <div className="mt-8 flex items-center gap-8">
           <Icon name="circle-alert" size={14} className="text-ink-danger" />
-          <span className="type-caption text-tiny text-ink-danger">
-            {t('config.lastChangeFailed')}
-          </span>
+          <span className="type-caption text-tiny text-ink-danger">{t('config.lastChangeFailed')}</span>
           <Button variant="quiet" size="sm" onClick={onRetrySave}>
             {t('common.tryAgain')}
           </Button>
