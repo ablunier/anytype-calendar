@@ -16,7 +16,7 @@ export const catBg: Record<CategoryHue, string> = {
   plum: 'bg-cat-plum',
   teal: 'bg-cat-teal',
   rose: 'bg-cat-rose',
-  graphite: 'bg-cat-graphite'
+  graphite: 'bg-cat-graphite',
 }
 
 /** Washed category fill — timed chips, tags, type tiles. */
@@ -30,7 +30,7 @@ export const catBgSoft: Record<CategoryHue, string> = {
   plum: 'bg-cat-plum-soft',
   teal: 'bg-cat-teal-soft',
   rose: 'bg-cat-rose-soft',
-  graphite: 'bg-cat-graphite-soft'
+  graphite: 'bg-cat-graphite-soft',
 }
 
 /** Solid category edge — the left rule of a timed object in the week and day views. */
@@ -44,7 +44,7 @@ export const catBorder: Record<CategoryHue, string> = {
   plum: 'border-cat-plum',
   teal: 'border-cat-teal',
   rose: 'border-cat-rose',
-  graphite: 'border-cat-graphite'
+  graphite: 'border-cat-graphite',
 }
 
 /** Category ink — text and icons sitting on a soft fill. */
@@ -58,5 +58,5 @@ export const catText: Record<CategoryHue, string> = {
   plum: 'text-cat-plum',
   teal: 'text-cat-teal',
   rose: 'text-cat-rose',
-  graphite: 'text-cat-graphite'
+  graphite: 'text-cat-graphite',
 }

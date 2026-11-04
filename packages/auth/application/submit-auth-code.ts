@@ -1,13 +1,13 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
-  describeCredential,
-  nextAuthSession,
   type AuthCredential,
   type AuthEvent,
   type AuthExchangeResult,
   type AuthGateway,
   type AuthSession,
-  type CredentialRepository
+  type CredentialRepository,
+  describeCredential,
+  nextAuthSession,
 } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
@@ -70,7 +70,7 @@ export class SubmitAuthCode {
     this.#guard.dispatch({
       type: 'exchange-succeeded',
       key: describeCredential(credential),
-      access: result.access
+      access: result.access,
     })
   }
 }

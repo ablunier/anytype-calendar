@@ -1,4 +1,4 @@
-import { toSchemaSelection, type SchemaSelection, type SchemaSelectionRepository } from '../../domain'
+import { type SchemaSelection, type SchemaSelectionRepository, toSchemaSelection } from '../../domain'
 
 export interface SchemaSelectionFile {
   /** Null when there is no file. */

@@ -1,9 +1,9 @@
-import type { TFunction } from 'i18next'
-import { useTranslation } from 'react-i18next'
-import type { AuthFailureKind } from '@renderer/types'
 import { Button } from '@renderer/components/ui'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
 import { DigitBoxes } from '@renderer/screens/auth/DigitBoxes'
+import type { AuthFailureKind } from '@renderer/types'
+import type { TFunction } from 'i18next'
+import { useTranslation } from 'react-i18next'
 
 export interface AuthErrorProps {
   failure: AuthFailureKind
@@ -27,32 +27,32 @@ function copyFor(t: TFunction, failure: AuthFailureKind): FailureCopy {
       title: t('auth.error.invalidCode.title'),
       body: t('auth.error.invalidCode.body'),
       detail: t('auth.error.invalidCode.detail'),
-      retry: t('auth.error.invalidCode.retry')
+      retry: t('auth.error.invalidCode.retry'),
     },
     expired: {
       title: t('auth.error.expired.title'),
       body: t('auth.error.expired.body'),
       detail: t('auth.error.expired.detail'),
-      retry: t('auth.error.expired.retry')
+      retry: t('auth.error.expired.retry'),
     },
     unreachable: {
       title: t('auth.error.unreachable.title'),
       body: t('auth.error.unreachable.body'),
       detail: t('auth.error.unreachable.detail'),
-      retry: t('auth.error.unreachable.retry')
+      retry: t('auth.error.unreachable.retry'),
     },
     'invalid-key': {
       title: t('auth.error.invalidKey.title'),
       body: t('auth.error.invalidKey.body'),
       detail: t('auth.error.invalidKey.detail'),
-      retry: t('auth.error.invalidKey.retry')
+      retry: t('auth.error.invalidKey.retry'),
     },
     outdated: {
       title: t('auth.error.outdated.title'),
       body: t('auth.error.outdated.body'),
       detail: t('auth.error.outdated.detail'),
-      retry: t('auth.error.outdated.retry')
-    }
+      retry: t('auth.error.outdated.retry'),
+    },
   }
   return table[failure]
 }

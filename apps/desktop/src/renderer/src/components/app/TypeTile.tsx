@@ -1,5 +1,5 @@
-import type { ObjectType } from '@renderer/types'
 import { catBgSoft, catText, Icon } from '@renderer/components/ui'
+import type { ObjectType } from '@renderer/types'
 
 export type TypeTileSize = 'sm' | 'md'
 
@@ -18,7 +18,7 @@ export function TypeTile({ type, size = 'md' }: TypeTileProps): React.JSX.Elemen
         'flex shrink-0 items-center justify-center rounded-8',
         boxClass[size],
         catBgSoft[type.category],
-        catText[type.category]
+        catText[type.category],
       ].join(' ')}
     >
       <Icon name={type.icon} size={16} />

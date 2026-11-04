@@ -4,15 +4,7 @@
  * Recurrence is deliberately absent; overlap is resolved into lanes by `month-layout.ts`.
  */
 
-import type {
-  CalendarEvent,
-  CategoryHue,
-  DateMapping,
-  DayColumn,
-  MonthCell,
-  ObjectType,
-  Space
-} from '@renderer/types'
+import type { CalendarEvent, CategoryHue, DateMapping, DayColumn, MonthCell, ObjectType, Space } from '@renderer/types'
 
 const FIRST_WEEKEND_INDEX = 5
 
@@ -39,25 +31,12 @@ const GALICIAN_CALENDAR = {
     'setembro',
     'outubro',
     'novembro',
-    'decembro'
+    'decembro',
   ],
-  monthsShort: [
-    'xan.',
-    'feb.',
-    'mar.',
-    'abr.',
-    'maio',
-    'xuño',
-    'xul.',
-    'ago.',
-    'set.',
-    'out.',
-    'nov.',
-    'dec.'
-  ],
+  monthsShort: ['xan.', 'feb.', 'mar.', 'abr.', 'maio', 'xuño', 'xul.', 'ago.', 'set.', 'out.', 'nov.', 'dec.'],
   weekdaysLong: ['luns', 'martes', 'mércores', 'xoves', 'venres', 'sábado', 'domingo'],
   weekdaysShort: ['luns', 'mar.', 'mér.', 'xov.', 'ven.', 'sáb.', 'dom.'],
-  meridiem: { am: 'a.m.', pm: 'p.m.' }
+  meridiem: { am: 'a.m.', pm: 'p.m.' },
 }
 
 const localeSupport = new Map<string, boolean>()
@@ -82,9 +61,7 @@ export function weekdayNames(locale: string, style: 'short' | 'long'): string[] 
     return style === 'long' ? GALICIAN_CALENDAR.weekdaysLong : GALICIAN_CALENDAR.weekdaysShort
   }
   const format = new Intl.DateTimeFormat(locale, { weekday: style, timeZone: 'UTC' })
-  return Array.from({ length: 7 }, (_, day) =>
-    format.format(new Date(REFERENCE_MONDAY + day * 86_400_000))
-  )
+  return Array.from({ length: 7 }, (_, day) => format.format(new Date(REFERENCE_MONDAY + day * 86_400_000)))
 }
 
 /** The weekday (Monday is 0) shown in `column` of a week that starts on `weekStart`. */
@@ -114,7 +91,7 @@ export function buildMonthGrid(year: number, month: number, weekStart = 0): Mont
     return {
       day: date.getDate(),
       date: isoDate(date.getFullYear(), date.getMonth(), date.getDate()),
-      outside: date.getMonth() !== month
+      outside: date.getMonth() !== month,
     }
   })
 }
@@ -208,7 +185,7 @@ export function dayLabel(date: string, locale: string): string {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   })
   return format.format(new Date(year, month - 1, day))
 }
@@ -238,7 +215,7 @@ export function weekLabel(start: string, end: string, locale: string): string {
   const format = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
   })
   return format.formatRange(from, to)
 }
@@ -301,7 +278,7 @@ export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapp
     ...(offersView ? {} : { view: null }),
     ...(offersDone ? {} : { done: null }),
     ...(offersLocation ? {} : { location: null }),
-    ...(offersPanel ? {} : { panel: panel.filter((key) => has(type.panelProps, key)) })
+    ...(offersPanel ? {} : { panel: panel.filter((key) => has(type.panelProps, key)) }),
   }
 }
 
@@ -328,7 +305,7 @@ export function withDates(types: ObjectType[], dates: Record<string, DateMapping
           from: mapping.from,
           to: mapping.to,
           includesTime: mapping.includesTime,
-          colourBy: mapping.colourBy
+          colourBy: mapping.colourBy,
         }
       : type
   })
@@ -390,7 +367,7 @@ export function formatTime(time: string, format: '24h' | '12h', locale: string):
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'UTC'
+    timeZone: 'UTC',
   })
   return formatter.format(new Date(Date.UTC(1970, 0, 1, hours, minutes)))
 }

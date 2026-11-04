@@ -6,7 +6,7 @@ describe('stepBack', () => {
   test('returns to signed-out from an open challenge', () => {
     const store = new AuthSessionStore({
       phase: 'awaiting-code',
-      challenge: { id: 'ch_1', expiresAt: 60_000 }
+      challenge: { id: 'ch_1', expiresAt: 60_000 },
     })
     const stepBackAuthConnection = new StepBackAuthConnection(store)
 

@@ -21,9 +21,7 @@ export class SaveFeedsSubscriptions {
   }
 
   /** Returning the list it was given writes nothing. Rejects when it could not be written. */
-  execute(
-    change: (current: readonly FeedsSubscription[]) => readonly FeedsSubscription[]
-  ): Promise<void> {
+  execute(change: (current: readonly FeedsSubscription[]) => readonly FeedsSubscription[]): Promise<void> {
     const run = async (): Promise<void> => {
       const current = this.#store.subscriptions()
       const next = change(current)

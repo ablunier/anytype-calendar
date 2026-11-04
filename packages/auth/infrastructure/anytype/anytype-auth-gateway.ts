@@ -1,11 +1,5 @@
 import type { AnytypeClient } from '@ablunier/anytype-client'
-import type {
-  AuthAccess,
-  AuthChallengeResult,
-  AuthExchangeResult,
-  AuthGateway,
-  AuthVerifyResult
-} from '../../domain'
+import type { AuthAccess, AuthChallengeResult, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 import { grantFromPairing, grantFromWhoami } from './anytype-grant'
 
 /**

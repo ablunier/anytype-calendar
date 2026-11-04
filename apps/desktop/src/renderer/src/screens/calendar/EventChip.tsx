@@ -1,10 +1,10 @@
-import type { CSSProperties, DragEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { CategoryHue } from '@renderer/types'
-import type { EventSegment } from '@renderer/lib/month-layout'
 import { catBg, catBgSoft, catText } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { formatTime } from '@renderer/lib/calendar'
+import type { EventSegment } from '@renderer/lib/month-layout'
+import type { CategoryHue } from '@renderer/types'
+import type { CSSProperties, DragEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface EventChipProps {
   segment: EventSegment
@@ -39,7 +39,7 @@ export function EventChip({
   onDragStart,
   onDragEnd,
   lifted = false,
-  onClick
+  onClick,
 }: EventChipProps): React.JSX.Element {
   const { i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
@@ -65,23 +65,16 @@ export function EventChip({
         continuesAfter ? 'event-span-open-end' : 'rounded-r-chip',
         allDay ? `${catBg[category]} text-stone-000` : `${catBgSoft[category]} ${catText[category]}`,
         lifted ? 'opacity-40' : done ? 'opacity-55' : '',
-        onDragStart ? 'cursor-grab' : ''
+        onDragStart ? 'cursor-grab' : '',
       ].join(' ')}
     >
-      {!allDay ? (
-        <span aria-hidden className={['size-5 shrink-0 rounded-pill', catBg[category]].join(' ')} />
-      ) : null}
+      {!allDay ? <span aria-hidden className={['size-5 shrink-0 rounded-pill', catBg[category]].join(' ')} /> : null}
       {time ? (
         <span className="font-mono text-micro tracking-mono opacity-85">
           {formatTime(time, timeFormat, i18n.language)}
         </span>
       ) : null}
-      <span
-        className={[
-          'min-w-0 flex-1 truncate type-ui text-tiny',
-          done ? 'line-through' : ''
-        ].join(' ')}
-      >
+      <span className={['min-w-0 flex-1 truncate type-ui text-tiny', done ? 'line-through' : ''].join(' ')}>
         {title}
       </span>
     </button>

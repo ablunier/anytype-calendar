@@ -1,5 +1,5 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'fs/promises'
-import { dirname } from 'path'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 
 export interface AtomicFile {
   /** Null when there is no file. */
@@ -23,6 +23,6 @@ export function atomicFileAt(path: string, mode: number): AtomicFile {
       await writeFile(staging, bytes, { mode })
       await rename(staging, path)
     },
-    remove: () => rm(path, { force: true })
+    remove: () => rm(path, { force: true }),
   }
 }

@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
 import i18n from '@renderer/i18n'
-import { resolveLocale, type Locale } from '@renderer/lib/locale'
+import { type Locale, resolveLocale } from '@renderer/lib/locale'
 import type { LanguageSnapshot } from '@shared/ipc'
+import { useEffect } from 'react'
 import { usePushedState } from './usePushedState'
 
 /**

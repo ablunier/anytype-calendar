@@ -83,7 +83,7 @@ export function inMemoryFeedsSample(now: number): string {
     `DTEND;TZID=America/New_York:${floating(thursday, 10)}`,
     'SUMMARY:Call with the New York office',
     'END:VEVENT',
-    'END:VCALENDAR'
+    'END:VCALENDAR',
   ].join('\r\n')
 }
 

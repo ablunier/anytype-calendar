@@ -1,5 +1,5 @@
-import { useRef } from 'react'
 import type { CalendarVisibilitySnapshot } from '@shared/ipc'
+import { useRef } from 'react'
 import { usePushedState } from './usePushedState'
 
 const SHOWING_EVERYTHING: CalendarVisibilitySnapshot = { hidden: [], collapsed: false, collapsedSpaces: [] }
@@ -11,7 +11,7 @@ const SHOWING_EVERYTHING: CalendarVisibilitySnapshot = { hidden: [], collapsed: 
  */
 export function useCalendarVisibility(): [
   CalendarVisibilitySnapshot,
-  (change: (current: CalendarVisibilitySnapshot) => CalendarVisibilitySnapshot) => void
+  (change: (current: CalendarVisibilitySnapshot) => CalendarVisibilitySnapshot) => void,
 ] {
   const visibility = usePushedState(window.api.calendarVisibility) ?? SHOWING_EVERYTHING
   const latest = useRef(visibility)
@@ -22,6 +22,6 @@ export function useCalendarVisibility(): [
       const next = change(latest.current)
       latest.current = next
       void window.api.calendarVisibility.save(next)
-    }
+    },
   ]
 }

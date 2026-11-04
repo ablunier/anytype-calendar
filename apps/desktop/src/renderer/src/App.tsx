@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
-import type { AuthView, CalendarView, ConnectedScreen } from './types'
-import { useCalendarVisibility } from './hooks/useCalendarVisibility'
+import { useMemo, useState } from 'react'
+import { TimeFormatContext } from './hooks/TimeFormatContext'
 import { useCalendarView } from './hooks/useCalendarView'
+import { useCalendarVisibility } from './hooks/useCalendarVisibility'
 import { useEvents } from './hooks/useEvents'
 import { useFeeds } from './hooks/useFeeds'
 import { useLocale } from './hooks/useLocale'
@@ -12,7 +12,6 @@ import { useSchemaSelection } from './hooks/useSchemaSelection'
 import { useSchemaSync } from './hooks/useSchemaSync'
 import { useSession } from './hooks/useSession'
 import { useTheme } from './hooks/useTheme'
-import { TimeFormatContext } from './hooks/TimeFormatContext'
 import { useTimeFormat } from './hooks/useTimeFormat'
 import { useUpdate } from './hooks/useUpdate'
 import { useWeekNumbers } from './hooks/useWeekNumbers'
@@ -26,7 +25,7 @@ import {
   shownSpanFor,
   spanFor,
   spanStatusFor,
-  switchDateFor
+  switchDateFor,
 } from './lib/events'
 import { feedEventsFor, feedsFor, mergedEvents } from './lib/feeds'
 import {
@@ -39,14 +38,15 @@ import {
   spacesFor,
   syncViewFor,
   tracksAnyType,
-  typesFor
+  typesFor,
 } from './lib/schema'
-import { prunedHidden, sourcesOnCalendar, withVisibility } from './lib/visibility'
 import { apiAccessFor, apiKeyFor, authViewFor, editAccessFor } from './lib/session'
+import { prunedHidden, sourcesOnCalendar, withVisibility } from './lib/visibility'
 import { AuthScreen } from './screens/auth/AuthScreen'
-import { ConfigScreen } from './screens/config/ConfigScreen'
 import { CalendarScreen } from './screens/calendar/CalendarScreen'
+import { ConfigScreen } from './screens/config/ConfigScreen'
 import { OnboardingScreen } from './screens/onboarding/OnboardingScreen'
+import type { AuthView, CalendarView, ConnectedScreen } from './types'
 
 /** Often enough for "synced 3 min ago" to stay true, and for today to move soon after midnight. */
 const SYNC_AGE_TICK_MS = 30_000
@@ -100,8 +100,7 @@ function App(): React.JSX.Element | null {
 
   if (!session || !schema || !selection || !events || !feeds) return null
 
-  const authView: AuthView | null =
-    authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
+  const authView: AuthView | null = authViewFor(session) ?? (screen === 'success' ? { stage: 'success' } : null)
   const apiKey = apiKeyFor(session)
 
   if (authView) {
@@ -166,9 +165,7 @@ function App(): React.JSX.Element | null {
         onCalendarView={setCalendarView}
         onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
-        onSave={(picks) =>
-          window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))
-        }
+        onSave={(picks) => window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))}
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
         appVersion={update?.current ?? null}
@@ -180,7 +177,7 @@ function App(): React.JSX.Element | null {
           onEdit: (request) => window.api.feeds.edit(request),
           onRemove: (id) => window.api.feeds.remove(id),
           onReorder: (ids) => window.api.feeds.reorder(ids),
-          onRefresh: () => void window.api.feeds.refresh()
+          onRefresh: () => void window.api.feeds.refresh(),
         }}
         focusAddFeed={addingFeed}
       />
@@ -210,8 +207,8 @@ function App(): React.JSX.Element | null {
       ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
-        [...sources, ...feedSources].map(({ key }) => key)
-      )
+        [...sources, ...feedSources].map(({ key }) => key),
+      ),
     }))
   /* The feeds never wait on Anytype: they are drawn while its read of the span is running, and
    * only a read that failed with nothing to show hides them behind its error. */
@@ -229,7 +226,7 @@ function App(): React.JSX.Element | null {
       ...current,
       collapsedSpaces: current.collapsedSpaces.includes(spaceKey)
         ? current.collapsedSpaces.filter((key) => key !== spaceKey)
-        : [...current.collapsedSpaces, spaceKey]
+        : [...current.collapsedSpaces, spaceKey],
     }))
   return (
     <TimeFormatContext value={timeFormat}>
@@ -260,9 +257,7 @@ function App(): React.JSX.Element | null {
         onSetDone={(request) => window.api.events.setDone(request)}
         onSetSourcesShown={setSourcesShown}
         onToggleSpaceCollapsed={toggleSpaceCollapsed}
-        onToggleSidebar={() =>
-          updateVisibility((current) => ({ ...current, collapsed: !current.collapsed }))
-        }
+        onToggleSidebar={() => updateVisibility((current) => ({ ...current, collapsed: !current.collapsed }))}
         onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart))}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => {

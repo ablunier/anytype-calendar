@@ -47,9 +47,7 @@ export interface SchemaQueryRef {
  * error, so it is a value; only a transport breakdown or a response Anytype should never give
  * rejects the promise.
  */
-export type SchemaGatewayResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; failure: 'unauthorized' | 'outdated' }
+export type SchemaGatewayResult<T> = { ok: true; value: T } | { ok: false; failure: 'unauthorized' | 'outdated' }
 
 export interface SchemaGateway {
   /** Leaves out Anytype's own tech space. */
@@ -65,7 +63,7 @@ export interface SchemaGateway {
   listSelectOptions(
     apiKey: string,
     spaceId: string,
-    propertyKey: string
+    propertyKey: string,
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>>
 
   /** Leaves out archived queries. Empty for a space no longer granted. */

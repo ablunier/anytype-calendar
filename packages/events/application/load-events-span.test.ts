@@ -2,10 +2,10 @@ import { describe, expect, test, vi } from 'vitest'
 import type {
   EventsGateway,
   EventsGatewayResult,
-  EventsSpanLoad,
   EventsObjectRef,
   EventsSource,
-  EventsTimeZone
+  EventsSpanLoad,
+  EventsTimeZone,
 } from '../domain'
 import { EventsSpanStore } from './events-span-store'
 import { LoadEventsSpan } from './load-events-span'
@@ -21,7 +21,7 @@ const UTC: EventsTimeZone = {
   dayOf: (instant) => {
     const date = new Date(instant)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
+  },
 }
 
 const SEPTEMBER = { kind: 'month', year: 2026, month: 8 } as const
@@ -34,7 +34,7 @@ const TASKS: EventsSource = {
   typeKey: 'task',
   from: 'due_date',
   to: null,
-  includesTime: true
+  includesTime: true,
 }
 const PROJECTS: EventsSource = {
   kind: 'type',
@@ -42,18 +42,17 @@ const PROJECTS: EventsSource = {
   typeKey: 'project',
   from: 'start_date',
   to: 'due_date',
-  includesTime: false
+  includesTime: false,
 }
 
 const ref = (id: string, start: number, end: number | null = null): EventsObjectRef => ({
   id,
   title: id,
   start,
-  end
+  end,
 })
 
-const keyOf = (source: EventsSource): string =>
-  source.kind === 'type' ? source.typeKey : source.queryId
+const keyOf = (source: EventsSource): string => (source.kind === 'type' ? source.typeKey : source.queryId)
 
 const ok = <T>(value: T): EventsGatewayResult<T> => ({ ok: true, value })
 const unauthorized = { ok: false, failure: 'unauthorized' } as const
@@ -69,13 +68,13 @@ function deferred<T>() {
 function setup({
   apiKey = API_KEY as string | null,
   sources = [TASKS, PROJECTS],
-  refs = {} as Record<string, EventsObjectRef[]>
+  refs = {} as Record<string, EventsObjectRef[]>,
 } = {}) {
   const gateway = {
     listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ok(refs[keyOf(source)] ?? [])),
     listLinkedObjects: vi.fn<EventsGateway['listLinkedObjects']>(async (_key, _space, ids) =>
-      ok(ids.flatMap((id) => (id.startsWith('gone') ? [] : [{ id, name: `Name of ${id}`, member: false }])))
-    )
+      ok(ids.flatMap((id) => (id.startsWith('gone') ? [] : [{ id, name: `Name of ${id}`, member: false }]))),
+    ),
   }
   const store = new EventsSpanStore()
   const loadEventsSpan = new LoadEventsSpan({
@@ -84,7 +83,7 @@ function setup({
     sources: { current: () => sources },
     zone: UTC,
     store,
-    now: () => NOW
+    now: () => NOW,
   })
   return { gateway, store, loadEventsSpan, reset: new ResetEventsSpan(store) }
 }
@@ -96,9 +95,9 @@ test("asks each source for the month's window and keeps the objects that overlap
       project: [
         ref('spans in', Date.UTC(2026, 7, 28), Date.UTC(2026, 8, 2)),
         ref('ended before', Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 10)),
-        ref('runs out', Date.UTC(2026, 8, 29), Date.UTC(2026, 9, 3))
-      ]
-    }
+        ref('runs out', Date.UTC(2026, 8, 29), Date.UTC(2026, 9, 3)),
+      ],
+    },
   })
 
   await loadEventsSpan.execute(SEPTEMBER)
@@ -123,7 +122,7 @@ test("asks each source for the month's window and keeps the objects that overlap
           start: Date.UTC(2026, 7, 28),
           end: Date.UTC(2026, 8, 2),
           allDay: true,
-          details: []
+          details: [],
         },
         {
           id: 'late task',
@@ -134,7 +133,7 @@ test("asks each source for the month's window and keeps the objects that overlap
           start: Date.UTC(2026, 8, 20, 15),
           end: null,
           allDay: false,
-          details: []
+          details: [],
         },
         {
           id: 'runs out',
@@ -145,10 +144,10 @@ test("asks each source for the month's window and keeps the objects that overlap
           start: Date.UTC(2026, 8, 29),
           end: Date.UTC(2026, 9, 3),
           allDay: true,
-          details: []
-        }
-      ]
-    }
+          details: [],
+        },
+      ],
+    },
   })
 })
 
@@ -160,14 +159,14 @@ test('keeps an object a type and a query over it both bring once for each, ranke
     viewId: null,
     from: 'start_date',
     to: null,
-    includesTime: false
+    includesTime: false,
   }
   const { store, loadEventsSpan } = setup({
     sources: [TASKS, OPEN_TASKS],
     refs: {
       task: [ref('shared', Date.UTC(2026, 8, 20, 15))],
-      q_open: [ref('shared', Date.UTC(2026, 8, 3)), ref('query only', Date.UTC(2026, 8, 4))]
-    }
+      q_open: [ref('shared', Date.UTC(2026, 8, 3)), ref('query only', Date.UTC(2026, 8, 4))],
+    },
   })
 
   await loadEventsSpan.execute(SEPTEMBER)
@@ -176,7 +175,7 @@ test('keeps an object a type and a query over it both bring once for each, ranke
   expect(last.objects.map(({ id, source, rank, start }) => [id, source, rank, start])).toEqual([
     ['shared', { kind: 'query', queryId: 'q_open' }, 1, Date.UTC(2026, 8, 3)],
     ['query only', { kind: 'query', queryId: 'q_open' }, 1, Date.UTC(2026, 8, 4)],
-    ['shared', { kind: 'type', typeKey: 'task' }, 0, Date.UTC(2026, 8, 20, 15)]
+    ['shared', { kind: 'type', typeKey: 'task' }, 0, Date.UTC(2026, 8, 20, 15)],
   ])
 })
 
@@ -185,7 +184,7 @@ test('asks for December across the turn of the year', async () => {
   await loadEventsSpan.execute(DECEMBER)
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
     start: Date.UTC(2026, 10, 24),
-    end: Date.UTC(2027, 0, 8) - 1
+    end: Date.UTC(2027, 0, 8) - 1,
   })
 })
 
@@ -194,7 +193,7 @@ test('asks for a week exactly, so one straddling a month is read whole', async (
   await loadEventsSpan.execute({ kind: 'week', start: { year: 2026, month: 8, day: 28 } })
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
     start: Date.UTC(2026, 8, 28),
-    end: Date.UTC(2026, 9, 5) - 1
+    end: Date.UTC(2026, 9, 5) - 1,
   })
 })
 
@@ -203,7 +202,7 @@ test('asks for a day exactly', async () => {
   await loadEventsSpan.execute({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })
   expect(gateway.listObjects).toHaveBeenCalledWith(API_KEY, TASKS, {
     start: Date.UTC(2026, 8, 14),
-    end: Date.UTC(2026, 8, 15) - 1
+    end: Date.UTC(2026, 8, 15) - 1,
   })
 })
 
@@ -245,7 +244,7 @@ describe('without a span', () => {
       zone: UTC,
       store,
       defaultSpan: () => week,
-      now: () => NOW
+      now: () => NOW,
     })
     await loadEventsSpan.execute()
     expect(store.get()).toMatchObject({ phase: 'loaded', last: { span: week } })
@@ -278,7 +277,7 @@ test('reads the selection as it is when the load starts', async () => {
     sources: { current: () => sources },
     zone: UTC,
     store,
-    now: () => NOW
+    now: () => NOW,
   })
   await loadEventsSpan.execute(SEPTEMBER)
   sources = [PROJECTS]
@@ -317,7 +316,7 @@ test('fails as unreachable when a request rejects', async () => {
 test('keeps the last result through a failed reload', async () => {
   const { gateway, store, loadEventsSpan } = setup({
     sources: [TASKS],
-    refs: { task: [ref('task', Date.UTC(2026, 8, 3, 10))] }
+    refs: { task: [ref('task', Date.UTC(2026, 8, 3, 10))] },
   })
   await loadEventsSpan.execute(SEPTEMBER)
   const { last } = store.get() as Extract<EventsSpanLoad, { phase: 'loaded' }>
@@ -332,7 +331,7 @@ describe('racing', () => {
   test('drops the result for a month the user already left', async () => {
     const { gateway, store, loadEventsSpan } = setup({
       sources: [TASKS],
-      refs: { task: [ref('october task', Date.UTC(2026, 9, 5, 12))] }
+      refs: { task: [ref('october task', Date.UTC(2026, 9, 5, 12))] },
     })
     const september = deferred<EventsGatewayResult<EventsObjectRef[]>>()
     gateway.listObjects.mockReturnValueOnce(september.promise)
@@ -344,7 +343,7 @@ describe('racing', () => {
 
     expect(store.get()).toMatchObject({
       phase: 'loaded',
-      last: { span: OCTOBER, objects: [{ id: 'october task' }] }
+      last: { span: OCTOBER, objects: [{ id: 'october task' }] },
     })
   })
 
@@ -416,7 +415,7 @@ describe('ResetEventsSpan', () => {
 test('an object of a timed source is not all-day, whatever the instant', async () => {
   const { store, loadEventsSpan } = setup({
     sources: [TASKS],
-    refs: { task: [ref('standup', Date.UTC(2026, 8, 3))] }
+    refs: { task: [ref('standup', Date.UTC(2026, 8, 3))] },
   })
   await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: false }] } })
@@ -425,7 +424,7 @@ test('an object of a timed source is not all-day, whatever the instant', async (
 test('an object of an all-day source is all-day, whatever the instant', async () => {
   const { store, loadEventsSpan } = setup({
     sources: [PROJECTS],
-    refs: { project: [ref('launch', Date.UTC(2026, 8, 3) + 9 * HOUR_MS)] }
+    refs: { project: [ref('launch', Date.UTC(2026, 8, 3) + 9 * HOUR_MS)] },
   })
   await loadEventsSpan.execute(SEPTEMBER)
   expect(store.get()).toMatchObject({ last: { objects: [{ allDay: true }] } })
@@ -441,11 +440,11 @@ describe('linked objects', () => {
     from: 'due_date',
     to: null,
     includesTime: true,
-    panel: [{ key: 'project', format: 'objects' }]
+    panel: [{ key: 'project', format: 'objects' }],
   }
   const linking = (id: string, ...ids: string[]): EventsObjectRef => ({
     ...ref(id, Date.UTC(2026, 8, 10)),
-    details: [{ key: 'project', format: 'objects', ids }]
+    details: [{ key: 'project', format: 'objects', ids }],
   })
 
   test('names them with one read per space, for every id the span links to', async () => {
@@ -453,8 +452,8 @@ describe('linked objects', () => {
       sources: [LINKING_TASKS, LINKING_QUERY, PROJECTS],
       refs: {
         task: [linking('a', 'obj_1', 'obj_2'), linking('b', 'obj_2', 'gone_3')],
-        q_open: [linking('c', 'obj_4')]
-      }
+        q_open: [linking('c', 'obj_4')],
+      },
     })
 
     await loadEventsSpan.execute(SEPTEMBER)
@@ -470,13 +469,13 @@ describe('linked objects', () => {
             format: 'objects',
             objects: [
               { id: 'obj_1', name: 'Name of obj_1', member: false },
-              { id: 'obj_2', name: 'Name of obj_2', member: false }
-            ]
-          }
-        ]
+              { id: 'obj_2', name: 'Name of obj_2', member: false },
+            ],
+          },
+        ],
       ],
       ['b', [{ key: 'project', format: 'objects', objects: [{ id: 'obj_2', name: 'Name of obj_2', member: false }] }]],
-      ['c', [{ key: 'project', format: 'objects', objects: [{ id: 'obj_4', name: 'Name of obj_4', member: false }] }]]
+      ['c', [{ key: 'project', format: 'objects', objects: [{ id: 'obj_4', name: 'Name of obj_4', member: false }] }]],
     ])
   })
 
@@ -489,7 +488,7 @@ describe('linked objects', () => {
   test('fails as unauthorized when the read of linked objects is refused', async () => {
     const { gateway, store, loadEventsSpan } = setup({
       sources: [LINKING_TASKS],
-      refs: { task: [linking('a', 'obj_1')] }
+      refs: { task: [linking('a', 'obj_1')] },
     })
     gateway.listLinkedObjects.mockResolvedValueOnce(unauthorized)
     await loadEventsSpan.execute(SEPTEMBER)

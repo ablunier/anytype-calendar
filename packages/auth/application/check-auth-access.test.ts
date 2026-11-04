@@ -5,7 +5,7 @@ import type {
   AuthGateway,
   AuthSession,
   AuthVerifyResult,
-  CredentialRepository
+  CredentialRepository,
 } from '../domain'
 import { CheckAuthAccess } from './check-auth-access'
 import { AuthSessionStore } from './session-store'
@@ -24,17 +24,17 @@ function deferred<T>() {
 
 function setup(
   initial: AuthSession = { phase: 'connected', key: KEY, access: null },
-  credential: AuthCredential | null = { apiKey: API_KEY, issuedAt: 42 }
+  credential: AuthCredential | null = { apiKey: API_KEY, issuedAt: 42 },
 ) {
   const gateway = {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(),
-    verifyApiKey: vi.fn<AuthGateway['verifyApiKey']>(async () => ({ ok: true, access: GRANTED }))
+    verifyApiKey: vi.fn<AuthGateway['verifyApiKey']>(async () => ({ ok: true, access: GRANTED })),
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),
     save: vi.fn<CredentialRepository['save']>(),
-    clear: vi.fn<CredentialRepository['clear']>()
+    clear: vi.fn<CredentialRepository['clear']>(),
   }
   const store = new AuthSessionStore(initial)
   return { store, gateway, checkAuthAccess: new CheckAuthAccess({ gateway, credentials, store }) }

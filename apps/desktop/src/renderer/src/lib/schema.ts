@@ -10,9 +10,8 @@ import {
   type SchemaSelection,
   type SchemaSpace,
   type SchemaType,
-  type SchemaTypeChoice
+  type SchemaTypeChoice,
 } from '@anytype-calendar/schema/domain'
-import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type {
   CategoryHue,
   Collection,
@@ -25,8 +24,9 @@ import type {
   ObjectType,
   Space,
   SyncView,
-  TypePicks
+  TypePicks,
 } from '@renderer/types'
+import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import { mappingIn, offeredMapping } from './calendar'
 
 /**
@@ -43,7 +43,7 @@ const TYPE_HUES: Record<string, CategoryHue> = {
   blue: 'denim',
   ice: 'dusk',
   teal: 'teal',
-  lime: 'sage'
+  lime: 'sage',
 }
 
 /** Anytype names its type icons after Ionicons; these are the ones with a vendored match. */
@@ -81,7 +81,7 @@ const TYPE_ICONS: Record<string, IconName> = {
   notifications: 'bell',
   repeat: 'repeat',
   search: 'search',
-  list: 'list'
+  list: 'list',
 }
 
 /** The hue Anytype's colour name is drawn in; one Anytype does not name draws neutral. */
@@ -98,7 +98,7 @@ export function spacesFor(snapshot: SchemaSnapshot): Space[] {
   return syncedSpaces(snapshot).map((space) =>
     space.icon === undefined
       ? { key: space.id, name: space.name }
-      : { key: space.id, name: space.name, icon: space.icon }
+      : { key: space.id, name: space.name, icon: space.icon },
   )
 }
 
@@ -107,8 +107,8 @@ export function collectionsBySpaceFor(snapshot: SchemaSnapshot): Map<string, Col
   return new Map(
     syncedSpaces(snapshot).map((space) => [
       space.id,
-      space.collections.map(({ id, name, lastModified, backlinks }) => ({ key: id, name, lastModified, backlinks }))
-    ])
+      space.collections.map(({ id, name, lastModified, backlinks }) => ({ key: id, name, lastModified, backlinks })),
+    ]),
   )
 }
 
@@ -134,13 +134,13 @@ function hintFor(collection: Collection, namesakes: Collection[]): CollectionHin
   if (namesakes.length < 2) return null
   const others = namesakes.filter((namesake) => namesake !== collection)
   const telling = [...new Set(collection.backlinks)].filter(
-    (name) => !others.every((other) => other.backlinks.includes(name))
+    (name) => !others.every((other) => other.backlinks.includes(name)),
   )
   if (telling.length > 0) {
     return {
       kind: 'backlinks',
       names: telling.slice(0, MAX_HINT_BACKLINKS),
-      more: Math.max(telling.length - MAX_HINT_BACKLINKS, 0)
+      more: Math.max(telling.length - MAX_HINT_BACKLINKS, 0),
     }
   }
   return collection.lastModified === null ? null : { kind: 'modified', at: collection.lastModified }
@@ -156,7 +156,7 @@ export function collectionPicksFor(choices: CollectionChoice[], query: string): 
     { kind: 'none' },
     ...choices
       .filter(({ collection }) => foldForSearch(collection.name).includes(wanted))
-      .map((choice): CollectionPick => ({ kind: 'collection', ...choice }))
+      .map((choice): CollectionPick => ({ kind: 'collection', ...choice })),
   ]
 }
 
@@ -180,7 +180,7 @@ export function typesFor(snapshot: SchemaSnapshot): ObjectType[] {
     ...space.queries.flatMap((query) => {
       const type = space.types.find(({ key }) => key === query.typeKey)
       return type ? [queryTypeFor(space, query, type)] : []
-    })
+    }),
   ])
 }
 
@@ -196,13 +196,13 @@ export function syncViewFor(snapshot: SchemaSnapshot, now: number): SyncView {
       return {
         state: 'synced',
         detail: { kind: 'elapsed', elapsed: elapsedSince(snapshot.last.syncedAt, now) },
-        hasResult
+        hasResult,
       }
     case 'failed':
       return {
         state: 'error',
         detail: { kind: snapshot.failure },
-        hasResult
+        hasResult,
       }
   }
 }
@@ -233,12 +233,12 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
   const chosen = [
     ...selection.selection.types.map(({ spaceId, typeKey, ...drawn }) => ({
       key: objectTypeKey(spaceId, typeKey),
-      mapping: { ...drawn, view: null }
+      mapping: { ...drawn, view: null },
     })),
     ...selection.selection.queries.map(({ spaceId, queryId, viewId, ...drawn }) => ({
       key: querySourceKey(spaceId, queryId),
-      mapping: { ...drawn, view: viewId }
-    }))
+      mapping: { ...drawn, view: viewId },
+    })),
   ]
   const dates: Record<string, DateMapping> = {}
   for (const { key, mapping } of chosen) {
@@ -249,7 +249,7 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
   return {
     spaceKeys: selection.selection.spaceIds,
     typeKeys: chosen.map(({ key }) => key),
-    dates
+    dates,
   }
 }
 
@@ -263,13 +263,12 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
 export function schemaSelectionFor(
   snapshot: SchemaSnapshot,
   picks: TypePicks,
-  previous: SchemaSelectionSnapshot
+  previous: SchemaSelectionSnapshot,
 ): SchemaSelection {
   const spaces = syncedSpaces(snapshot)
   const seenSpaces = new Set(spaces.map((space) => space.id))
   const offered = new Map(typesFor(snapshot).map((type) => [type.key, type]))
-  const kept: SchemaSelection =
-    previous.phase === 'saved' ? previous.selection : EMPTY_SCHEMA_SELECTION
+  const kept: SchemaSelection = previous.phase === 'saved' ? previous.selection : EMPTY_SCHEMA_SELECTION
 
   /** How a seen, ticked type or query is drawn; null for one not seen or not ticked. */
   const drawn = (key: string): DateMapping | null => {
@@ -284,7 +283,7 @@ export function schemaSelectionFor(
       if (!mapping) return []
       const { view: _, ...choice } = mapping
       return [{ spaceId: space.id, typeKey: type.key, ...choice }]
-    })
+    }),
   )
   const queries = spaces.flatMap((space) =>
     space.queries.flatMap((query): SchemaQueryChoice[] => {
@@ -292,22 +291,19 @@ export function schemaSelectionFor(
       if (!mapping) return []
       const { view, ...choice } = mapping
       return [{ spaceId: space.id, queryId: query.id, viewId: view, ...choice }]
-    })
+    }),
   )
 
   return {
     spaceIds: [
       ...kept.spaceIds.filter((id) => !seenSpaces.has(id)),
-      ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id)
+      ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id),
     ],
-    types: [
-      ...kept.types.filter((choice) => !offered.has(objectTypeKey(choice.spaceId, choice.typeKey))),
-      ...types
-    ],
+    types: [...kept.types.filter((choice) => !offered.has(objectTypeKey(choice.spaceId, choice.typeKey))), ...types],
     queries: [
       ...kept.queries.filter((choice) => !offered.has(querySourceKey(choice.spaceId, choice.queryId))),
-      ...queries
-    ]
+      ...queries,
+    ],
   }
 }
 
@@ -331,8 +327,7 @@ export function anytypeTypeKeyOf(type: ObjectType): string {
  */
 export function creatableTypesFor(types: ObjectType[], picks: TypePicks): ObjectType[] {
   return types.filter(
-    (type) =>
-      type.query === undefined && picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space)
+    (type) => type.query === undefined && picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space),
   )
 }
 
@@ -356,7 +351,7 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
     checkboxes: type.checkboxProperties.map(({ key, name }) => ({ key, label: name })),
     texts: type.textProperties.map(({ key, name }) => ({ key, label: name })),
     panelProps: type.panelProperties.map(({ key, name, format }) => ({ key, label: name, format })),
-    ...defaultMapping(type)
+    ...defaultMapping(type),
   }
 }
 
@@ -370,8 +365,8 @@ function queryTypeFor(space: SchemaSpace, query: SchemaQuery, type: SchemaType):
     query: {
       typeKey: objectTypeKey(space.id, type.key),
       typeLabel: type.name,
-      views: query.views.map(({ id, name }) => ({ key: id, label: name }))
-    }
+      views: query.views.map(({ id, name }) => ({ key: id, label: name })),
+    },
   }
 }
 
@@ -389,7 +384,7 @@ function defaultMapping(type: SchemaType): Omit<DateMapping, 'view'> {
     colourBy: null,
     panel: [],
     done: has(type.checkboxProperties, SCHEMA_DONE_KEY) ? SCHEMA_DONE_KEY : null,
-    location: has(type.textProperties, SCHEMA_LOCATION_KEY) ? SCHEMA_LOCATION_KEY : null
+    location: has(type.textProperties, SCHEMA_LOCATION_KEY) ? SCHEMA_LOCATION_KEY : null,
   }
 }
 

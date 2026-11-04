@@ -11,7 +11,7 @@ function fakeFile(initial: Record<string, unknown> | null = null): AtomicFile {
     },
     remove: async () => {
       bytes = null
-    }
+    },
   }
 }
 

@@ -17,7 +17,7 @@ function parseVersion(text: string): Version | null {
   if (!match) return null
   return {
     core: [Number(match[1]), Number(match[2]), Number(match[3])],
-    prerelease: match[4] ? match[4].split('.') : []
+    prerelease: match[4] ? match[4].split('.') : [],
   }
 }
 

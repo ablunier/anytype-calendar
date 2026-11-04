@@ -56,7 +56,7 @@ export function preference<State, Saved extends State = State>({
   section,
   initial,
   parse,
-  equals
+  equals,
 }: PreferenceOptions<State, Saved>): Preference<State, Saved> {
   const state = new PreferenceStore(initial, equals)
   return {
@@ -71,6 +71,6 @@ export function preference<State, Saved extends State = State>({
     async save(value) {
       await config.writeSection(section, value)
       state.set(value)
-    }
+    },
   }
 }

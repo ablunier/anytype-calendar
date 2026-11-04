@@ -9,7 +9,7 @@ function setup(initialCredential: AuthCredential | null = null) {
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => initialCredential),
     save: vi.fn<CredentialRepository['save']>(async () => {}),
-    clear: vi.fn<CredentialRepository['clear']>(async () => {})
+    clear: vi.fn<CredentialRepository['clear']>(async () => {}),
   }
   const store = new AuthSessionStore()
   const restoreAuthSession = new RestoreAuthSession({ credentials, store })
@@ -29,7 +29,7 @@ describe('restore', () => {
     expect(store.get()).toEqual({
       phase: 'connected',
       key: { hint: '4c19', issuedAt: 42 },
-      access: null
+      access: null,
     })
     expect(JSON.stringify(store.get())).not.toContain(API_KEY)
   })

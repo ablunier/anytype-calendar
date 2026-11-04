@@ -61,9 +61,7 @@ export interface SchemaSelection {
 export const EMPTY_SCHEMA_SELECTION: SchemaSelection = { spaceIds: [], types: [], queries: [] }
 
 /** `unset` until the user first finishes or skips onboarding; an empty selection is `saved`. */
-export type SchemaSelectionState =
-  | { phase: 'unset' }
-  | { phase: 'saved'; selection: SchemaSelection }
+export type SchemaSelectionState = { phase: 'unset' } | { phase: 'saved'; selection: SchemaSelection }
 
 /**
  * Null unless `value` is a well-formed selection: non-empty ids, a `to` that differs from
@@ -87,7 +85,7 @@ export function toSchemaSelection(value: unknown): SchemaSelection | null {
 function toChoices<T extends { spaceId: string }>(
   items: unknown,
   toChoice: (item: unknown) => T | null,
-  idOf: (choice: T) => string
+  idOf: (choice: T) => string,
 ): T[] | null {
   if (!Array.isArray(items)) return null
   const choices: T[] = []
@@ -122,9 +120,7 @@ function toQueryChoice(value: unknown): SchemaQueryChoice | null {
 }
 
 /** How a choice's objects are drawn: the fields type and query choices share. */
-function toDrawing(
-  value: object
-): Omit<SchemaTypeChoice, 'spaceId' | 'typeKey'> | null {
+function toDrawing(value: object): Omit<SchemaTypeChoice, 'spaceId' | 'typeKey'> | null {
   const {
     from,
     to,
@@ -132,7 +128,7 @@ function toDrawing(
     colourBy = null,
     panel = [],
     done = SCHEMA_DONE_KEY,
-    location = SCHEMA_LOCATION_KEY
+    location = SCHEMA_LOCATION_KEY,
   } = value as Record<string, unknown>
   if (!isId(from)) return null
   if (to !== null && (!isId(to) || to === from)) return null
@@ -162,10 +158,7 @@ function isId(value: unknown): value is string {
  * resolves falls back as any stale property does. Query choices are left alone too: only v2
  * serves queries, so they were chosen by v2's keys.
  */
-export function rekeySchemaSelection(
-  selection: SchemaSelection,
-  spaces: readonly SchemaSpace[]
-): SchemaSelection {
+export function rekeySchemaSelection(selection: SchemaSelection, spaces: readonly SchemaSpace[]): SchemaSelection {
   const typesBySpace = new Map(spaces.map(({ id, types }) => [id, types]))
   const chosen = new Set(selection.types.map(({ spaceId, typeKey }) => `${spaceId}\n${typeKey}`))
 

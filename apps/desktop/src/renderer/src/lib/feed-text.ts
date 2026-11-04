@@ -1,5 +1,5 @@
-import type { TFunction } from 'i18next'
 import type { FeedFailure, FeedStatus } from '@renderer/types'
+import type { TFunction } from 'i18next'
 import { syncDetailText } from './sync-text'
 
 /** Why a feed could not be read, or added. */

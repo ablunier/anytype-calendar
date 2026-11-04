@@ -1,12 +1,12 @@
-import { describe, expect, test } from 'vitest'
 import type { CalendarEvent } from '@renderer/types'
+import { describe, expect, test } from 'vitest'
 import {
   draggedPlacement,
   layOutDayColumn,
-  MINUTES_PER_DAY,
   MIN_SLOT_MINUTES,
+  MINUTES_PER_DAY,
   splitDayEvents,
-  timeOfMinute
+  timeOfMinute,
 } from './time-grid'
 
 const DAY = '2026-09-23'
@@ -23,7 +23,7 @@ function timed(id: string, time: string, end?: string, until?: string): Calendar
     allDay: false,
     details: [],
     ...(end === undefined ? {} : { end }),
-    ...(until === undefined ? {} : { until })
+    ...(until === undefined ? {} : { until }),
   }
 }
 
@@ -46,7 +46,7 @@ describe('splitDayEvents', () => {
       rank: 0,
       date: DAY,
       allDay: true,
-      details: []
+      details: [],
     }
     const { band, timed: kept } = splitDayEvents([allDay], DAY)
     expect(band.map((e) => e.id)).toEqual(['holiday'])
@@ -72,46 +72,55 @@ describe('layOutDayColumn', () => {
   })
 
   test('gives objects that do not overlap the same column', () => {
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '10:00'), timed('b', '11:00', '12:00')])
+    const segments = layOutDayColumn([timed('a', '09:00', '10:00'), timed('b', '11:00', '12:00')])
     expect(columnsOf(segments)).toEqual({ a: [0, 1], b: [0, 1] })
   })
 
   test('touching at an edge is not overlapping', () => {
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '10:00'), timed('b', '10:00', '11:00')])
+    const segments = layOutDayColumn([timed('a', '09:00', '10:00'), timed('b', '10:00', '11:00')])
     expect(columnsOf(segments)).toEqual({ a: [0, 1], b: [0, 1] })
   })
 
   test('splits the width between two that overlap', () => {
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '10:30'), timed('b', '10:00', '11:00')])
+    const segments = layOutDayColumn([timed('a', '09:00', '10:30'), timed('b', '10:00', '11:00')])
     expect(columnsOf(segments)).toEqual({ a: [0, 2], b: [1, 2] })
   })
 
   test('sizes a whole run together, so a bar keeps one width throughout', () => {
     // a overlaps b and b overlaps c, so all three are one run and share its width — even
     // though c, clear of a, takes the column a left free rather than a third one.
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '10:00'), timed('b', '09:30', '11:00'), timed('c', '10:30', '11:30')])
+    const segments = layOutDayColumn([
+      timed('a', '09:00', '10:00'),
+      timed('b', '09:30', '11:00'),
+      timed('c', '10:30', '11:30'),
+    ])
     expect(columnsOf(segments)).toEqual({ a: [0, 2], b: [1, 2], c: [0, 2] })
   })
 
   test('widens a run to hold everything open at once', () => {
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '12:00'), timed('b', '09:30', '12:00'), timed('c', '10:00', '12:00')])
+    const segments = layOutDayColumn([
+      timed('a', '09:00', '12:00'),
+      timed('b', '09:30', '12:00'),
+      timed('c', '10:00', '12:00'),
+    ])
     expect(columnsOf(segments)).toEqual({ a: [0, 3], b: [1, 3], c: [2, 3] })
   })
 
   test('reuses a column freed earlier in the run', () => {
-    const segments = layOutDayColumn(
-      [timed('long', '09:00', '13:00'), timed('a', '09:30', '10:00'), timed('b', '10:30', '11:00')])
+    const segments = layOutDayColumn([
+      timed('long', '09:00', '13:00'),
+      timed('a', '09:30', '10:00'),
+      timed('b', '10:30', '11:00'),
+    ])
     expect(columnsOf(segments)).toEqual({ long: [0, 2], a: [1, 2], b: [1, 2] })
   })
 
   test('starts a fresh run once nothing is left open', () => {
-    const segments = layOutDayColumn(
-      [timed('a', '09:00', '10:30'), timed('b', '10:00', '11:00'), timed('c', '14:00', '15:00')])
+    const segments = layOutDayColumn([
+      timed('a', '09:00', '10:30'),
+      timed('b', '10:00', '11:00'),
+      timed('c', '14:00', '15:00'),
+    ])
     expect(columnsOf(segments)).toEqual({ a: [0, 2], b: [1, 2], c: [0, 1] })
   })
 
@@ -144,19 +153,19 @@ describe('draggedPlacement', () => {
     expect(draggedPlacement({ ...drag, mode: 'move', minutes: 52, days: 3 })).toEqual({
       dayIndex: 5,
       startMinute: 10 * 60,
-      endMinute: 11 * 60
+      endMinute: 11 * 60,
     })
   })
 
   test("keeps a move on the view's days and within the day", () => {
     expect(draggedPlacement({ ...drag, mode: 'move', minutes: -2000, days: -9 })).toMatchObject({
       dayIndex: 0,
-      startMinute: 0
+      startMinute: 0,
     })
     expect(draggedPlacement({ ...drag, mode: 'move', minutes: 2000, days: 9 })).toEqual({
       dayIndex: 6,
       startMinute: MINUTES_PER_DAY - 15,
-      endMinute: MINUTES_PER_DAY
+      endMinute: MINUTES_PER_DAY,
     })
   })
 
@@ -164,7 +173,7 @@ describe('draggedPlacement', () => {
     expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 38, days: 2 })).toEqual({
       dayIndex: 2,
       startMinute: 9 * 60 + 10,
-      endMinute: 10 * 60 + 45
+      endMinute: 10 * 60 + 45,
     })
     expect(draggedPlacement({ ...drag, mode: 'resize', minutes: -600 }).endMinute).toBe(9 * 60 + 25)
     expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 6000 }).endMinute).toBe(MINUTES_PER_DAY - 15)

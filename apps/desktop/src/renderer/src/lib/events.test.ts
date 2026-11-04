@@ -1,27 +1,27 @@
-import { describe, expect, test } from 'vitest'
 import type { EventsDatedObject, EventsSpanResult } from '@anytype-calendar/events/domain'
-import type { EventsSnapshot } from '@shared/ipc'
 import type { CalendarEvent, ObjectType } from '@renderer/types'
+import type { EventsSnapshot } from '@shared/ipc'
+import { describe, expect, test } from 'vitest'
 import {
   addEndRequestFor,
   anchorOf,
   clearEndRequestFor,
   createRequestFor,
   endRequestFor,
-  hasOwnEnd,
   eventsFor,
+  hasOwnEnd,
   localDate,
   localTime,
   monthOf,
   moveRequestFor,
   resizeRequestFor,
   shiftSpan,
-  spanDays,
   shownSpanFor,
+  spanDays,
   spanFor,
   spanStatusFor,
   startRequestFor,
-  switchDateFor
+  switchDateFor,
 } from './events'
 
 // Built from local wall times, so these hold in whatever zone the tests run in.
@@ -42,21 +42,18 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   end: null,
   allDay: true,
   details: [],
-  ...overrides
+  ...overrides,
 })
 
 const result = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSpanResult => ({
   span,
   objects,
-  loadedAt: local(8, 14, 9, 28)
+  loadedAt: local(8, 14, 9, 28),
 })
 
-const loaded = (
-  objects: EventsDatedObject[],
-  span: EventsSpanResult['span'] = SEPTEMBER
-): EventsSnapshot => ({
+const loaded = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSnapshot => ({
   phase: 'loaded',
-  last: result(objects, span)
+  last: result(objects, span),
 })
 
 describe('shownSpanFor', () => {
@@ -64,14 +61,12 @@ describe('shownSpanFor', () => {
     expect(shownSpanFor({ phase: 'idle' }, 'month', NOW)).toEqual(SEPTEMBER)
     expect(shownSpanFor({ phase: 'idle' }, 'day', NOW)).toEqual({
       kind: 'day',
-      start: { year: 2026, month: 8, day: 14 }
+      start: { year: 2026, month: 8, day: 14 },
     })
   })
 
   test('is the span main is loading, even while it holds another', () => {
-    expect(
-      shownSpanFor({ phase: 'loading', span: OCTOBER, last: result([]) }, 'month', NOW)
-    ).toEqual(OCTOBER)
+    expect(shownSpanFor({ phase: 'loading', span: OCTOBER, last: result([]) }, 'month', NOW)).toEqual(OCTOBER)
   })
 
   test('is the span main loaded', () => {
@@ -108,11 +103,11 @@ describe('spanDays', () => {
   test('is seven days for a week and one for a day', () => {
     expect(spanDays({ kind: 'week', start: { year: 2026, month: 8, day: 28 } })).toEqual({
       first: '2026-09-28',
-      last: '2026-10-04'
+      last: '2026-10-04',
     })
     expect(spanDays({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })).toEqual({
       first: '2026-09-14',
-      last: '2026-09-14'
+      last: '2026-09-14',
     })
   })
 })
@@ -123,12 +118,12 @@ describe('shiftSpan', () => {
     expect(shiftSpan({ kind: 'month', year: 2026, month: 11 }, 1)).toEqual({
       kind: 'month',
       year: 2027,
-      month: 0
+      month: 0,
     })
     expect(shiftSpan({ kind: 'month', year: 2026, month: 0 }, -1)).toEqual({
       kind: 'month',
       year: 2025,
-      month: 11
+      month: 11,
     })
   })
 
@@ -170,7 +165,7 @@ describe('eventsFor', () => {
     const last = result([object({})])
     expect(eventsFor({ phase: 'loading', span: SEPTEMBER, last }, SEPTEMBER)).toHaveLength(1)
     expect(
-      eventsFor({ phase: 'failed', span: SEPTEMBER, failure: 'unreachable', at: NOW, last }, SEPTEMBER)
+      eventsFor({ phase: 'failed', span: SEPTEMBER, failure: 'unreachable', at: NOW, last }, SEPTEMBER),
     ).toHaveLength(1)
   })
 
@@ -188,8 +183,8 @@ describe('eventsFor', () => {
         rank: 0,
         date: '2026-09-03',
         allDay: true,
-        details: []
-      }
+        details: [],
+      },
     ])
   })
 
@@ -204,8 +199,7 @@ describe('eventsFor', () => {
   })
 
   test('carries whether it is done, its location, and the hue of the option it is coloured by', () => {
-    const [event] =
-      eventsFor(loaded([object({ done: true, location: 'Clinic', colour: 'red' })]), SEPTEMBER) ?? []
+    const [event] = eventsFor(loaded([object({ done: true, location: 'Clinic', colour: 'red' })]), SEPTEMBER) ?? []
     expect(event).toMatchObject({ done: true, location: 'Clinic', category: 'clay' })
   })
 
@@ -216,8 +210,7 @@ describe('eventsFor', () => {
   })
 
   test('ends an all-day range on the date of its end, with no time', () => {
-    const [event] =
-      eventsFor(loaded([object({ start: local(7, 28), end: local(8, 2) })]), SEPTEMBER) ?? []
+    const [event] = eventsFor(loaded([object({ start: local(7, 28), end: local(8, 2) })]), SEPTEMBER) ?? []
     expect(event).toEqual(expect.objectContaining({ date: '2026-08-28', until: '2026-09-02' }))
     expect(event).not.toHaveProperty('time')
     expect(event).not.toHaveProperty('end')
@@ -225,10 +218,8 @@ describe('eventsFor', () => {
 
   test('ends a timed range at its end time', () => {
     const [event] =
-      eventsFor(
-        loaded([object({ start: local(8, 9, 9, 30), end: local(8, 9, 10, 15), allDay: false })]),
-        SEPTEMBER
-      ) ?? []
+      eventsFor(loaded([object({ start: local(8, 9, 9, 30), end: local(8, 9, 10, 15), allDay: false })]), SEPTEMBER) ??
+      []
     expect(event).toMatchObject({ date: '2026-09-09', time: '09:30', until: '2026-09-09', end: '10:15' })
   })
 
@@ -246,21 +237,21 @@ describe('eventsFor', () => {
                 format: 'multi_select',
                 options: [
                   { name: 'Remote', color: 'blue' },
-                  { name: 'Odd', color: 'unknown' }
-                ]
+                  { name: 'Odd', color: 'unknown' },
+                ],
               },
               {
                 key: 'contacts',
                 format: 'objects',
                 objects: [
                   { id: 'obj_2', name: 'Acme', member: false },
-                  { id: 'participant-A8x', name: 'Mara', member: true }
-                ]
-              }
-            ]
-          })
+                  { id: 'participant-A8x', name: 'Mara', member: true },
+                ],
+              },
+            ],
+          }),
         ]),
-        SEPTEMBER
+        SEPTEMBER,
       ) ?? []
     expect(event?.details).toEqual([
       { key: 'salary', kind: 'text', text: '40–50k' },
@@ -271,17 +262,17 @@ describe('eventsFor', () => {
         kind: 'options',
         options: [
           { name: 'Remote', category: 'denim' },
-          { name: 'Odd', category: 'graphite' }
-        ]
+          { name: 'Odd', category: 'graphite' },
+        ],
       },
       {
         key: 'contacts',
         kind: 'objects',
         objects: [
           { id: 'obj_2', name: 'Acme', member: false },
-          { id: 'participant-A8x', name: 'Mara', member: true }
-        ]
-      }
+          { id: 'participant-A8x', name: 'Mara', member: true },
+        ],
+      },
     ])
   })
 
@@ -290,7 +281,7 @@ describe('eventsFor', () => {
     ['url', 'acme.example/jobs', 'https://acme.example/jobs'],
     ['url', 'http://acme.example', 'http://acme.example/'],
     ['email', 'jobs@acme.example', 'mailto:jobs@acme.example'],
-    ['phone', '+34 600 (00) 00-00', 'tel:+34600000000']
+    ['phone', '+34 600 (00) 00-00', 'tel:+34600000000'],
   ] as const)('links a %s detail %s as %s', (format, value, href) => {
     const [event] = eventsFor(loaded([object({ details: [{ key: 'k', format, value }] })]), SEPTEMBER) ?? []
     expect(event?.details).toEqual([{ key: 'k', kind: 'link', text: value, href }])
@@ -301,7 +292,7 @@ describe('eventsFor', () => {
     ['url', 'file:///etc/passwd'],
     ['url', 'see the board'],
     ['email', 'ask Mara'],
-    ['phone', 'ask at the desk']
+    ['phone', 'ask at the desk'],
   ] as const)('draws a %s detail it cannot open, %s, as text', (format, value) => {
     const [event] = eventsFor(loaded([object({ details: [{ key: 'k', format, value }] })]), SEPTEMBER) ?? []
     expect(event?.details).toEqual([{ key: 'k', kind: 'text', text: value }])
@@ -318,7 +309,7 @@ describe('spanStatusFor', () => {
     expect(spanStatusFor({ phase: 'idle' }, SEPTEMBER, NOW)).toEqual({ state: 'syncing', hasResult: false })
     expect(spanStatusFor({ phase: 'loading', span: SEPTEMBER, last: result([]) }, SEPTEMBER, NOW)).toEqual({
       state: 'syncing',
-      hasResult: true
+      hasResult: true,
     })
   })
 
@@ -326,7 +317,7 @@ describe('spanStatusFor', () => {
     expect(spanStatusFor(loaded([]), SEPTEMBER, NOW)).toEqual({
       state: 'synced',
       detail: { kind: 'elapsed', elapsed: { key: 'minutesAgo', count: 2 } },
-      hasResult: true
+      hasResult: true,
     })
   })
 
@@ -335,18 +326,18 @@ describe('spanStatusFor', () => {
       phase: 'failed',
       span: SEPTEMBER,
       failure,
-      at: NOW
+      at: NOW,
     })
     expect(spanStatusFor(failed('unauthorized'), SEPTEMBER, NOW)).toEqual({
       state: 'error',
       detail: { kind: 'unauthorized' },
-      hasResult: false
+      hasResult: false,
     })
     expect(spanStatusFor(failed('unreachable'), SEPTEMBER, NOW)).toMatchObject({
-      detail: { kind: 'unreachable' }
+      detail: { kind: 'unreachable' },
     })
     expect(spanStatusFor(failed('outdated'), SEPTEMBER, NOW)).toMatchObject({
-      detail: { kind: 'outdated' }
+      detail: { kind: 'outdated' },
     })
   })
 })
@@ -367,7 +358,7 @@ describe('switchDateFor', () => {
     expect(switchDateFor(spanFor('day', TODAY, 0), TODAY)).toBe(TODAY)
   })
 
-  test("keeps the reader where they were when the span is elsewhere", () => {
+  test('keeps the reader where they were when the span is elsewhere', () => {
     expect(switchDateFor(OCTOBER, TODAY)).toBe('2026-10-01')
     expect(switchDateFor(spanFor('week', '2026-03-10', 0), TODAY)).toBe('2026-03-09')
     expect(switchDateFor(spanFor('day', '2026-03-10', 0), TODAY)).toBe('2026-03-10')
@@ -390,50 +381,50 @@ describe('edit requests', () => {
     date: '2026-09-14',
     time: '09:00',
     allDay: false,
-    details: []
+    details: [],
   }
 
   test('name the object and the slot as a day of the calendar, its month zero-based', () => {
     expect(moveRequestFor(event, { date: '2026-10-01', minute: 600 })).toEqual({
       spaceId: 'bafy.space',
       id: 'obj_1',
-      change: { kind: 'move', start: { day: { year: 2026, month: 9, day: 1 }, minute: 600 } }
+      change: { kind: 'move', start: { day: { year: 2026, month: 9, day: 1 }, minute: 600 } },
     })
     expect(resizeRequestFor(event, { date: '2026-09-14', minute: 615 })).toEqual({
       spaceId: 'bafy.space',
       id: 'obj_1',
-      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 615 } }
+      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 615 } },
     })
   })
 
   test('set the start or the end to a date, and a time where one is given', () => {
     expect(startRequestFor(event, '2026-09-20').change).toEqual({
       kind: 'move',
-      start: { day: { year: 2026, month: 8, day: 20 }, minute: null }
+      start: { day: { year: 2026, month: 8, day: 20 }, minute: null },
     })
     expect(startRequestFor(event, '2026-09-14', '10:05').change).toEqual({
       kind: 'move',
-      start: { day: { year: 2026, month: 8, day: 14 }, minute: 605 }
+      start: { day: { year: 2026, month: 8, day: 14 }, minute: 605 },
     })
     expect(endRequestFor(event, '2026-09-15', '11:20').change).toEqual({
       kind: 'resize',
-      end: { day: { year: 2026, month: 8, day: 15 }, minute: 680 }
+      end: { day: { year: 2026, month: 8, day: 15 }, minute: 680 },
     })
   })
 
   test('add an end an hour after a timed start, into the next day if need be, or on an all-day start', () => {
     expect(addEndRequestFor(event).change).toEqual({
       kind: 'resize',
-      end: { day: { year: 2026, month: 8, day: 14 }, minute: 600 }
+      end: { day: { year: 2026, month: 8, day: 14 }, minute: 600 },
     })
     expect(addEndRequestFor({ ...event, time: '23:30' }).change).toEqual({
       kind: 'resize',
-      end: { day: { year: 2026, month: 8, day: 15 }, minute: 30 }
+      end: { day: { year: 2026, month: 8, day: 15 }, minute: 30 },
     })
     const { time: _time, ...allDay } = event
     expect(addEndRequestFor({ ...allDay, allDay: true }).change).toEqual({
       kind: 'resize',
-      end: { day: { year: 2026, month: 8, day: 14 }, minute: null }
+      end: { day: { year: 2026, month: 8, day: 14 }, minute: null },
     })
   })
 
@@ -454,7 +445,7 @@ describe('edit requests', () => {
       spaceId: 'bafy.space',
       typeKey: 'meeting',
       name: 'Retro',
-      at: { day: { year: 2026, month: 8, day: 18 }, minute: null }
+      at: { day: { year: 2026, month: 8, day: 18 }, minute: null },
     })
   })
 

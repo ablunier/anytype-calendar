@@ -10,7 +10,7 @@ Electron + React desktop calendar over the Anytype local API. npm workspaces mon
 
 ## Commands
 
-Run from the repo root. CI runs typecheck, tests and `lint:arch`.
+Run from the repo root. CI runs lint, typecheck, tests and `lint:arch`.
 
 | Task                  | Command                                                                |
 | --------------------- | ---------------------------------------------------------------------- |
@@ -19,6 +19,7 @@ Run from the repo root. CI runs typecheck, tests and `lint:arch`.
 | Test everything       | `npm test`                                                             |
 | Typecheck everything  | `npm run typecheck`                                                    |
 | Typecheck the app     | `npm -w apps/desktop run typecheck:web` (or `typecheck:node`)          |
+| Style (Biome)         | `npm run lint` (check) / `npm run lint:fix` (format and fix)           |
 | Layering rules        | `npm run lint:arch`                                                    |
 | Run the app           | `env -u ELECTRON_RUN_AS_NODE npm run dev`                              |
 | Run with fake Anytype | `env -u ELECTRON_RUN_AS_NODE ANYTYPE_CALENDAR_FAKE_AUTH=1 npm run dev` |
@@ -42,6 +43,7 @@ Run from the repo root. CI runs typecheck, tests and `lint:arch`.
 
 ## Key Conventions
 
+- Style is Biome's (`biome.json`): no semicolons, single quotes, 2 spaces, 120 columns, trailing commas. Run `npm run lint:fix` before committing.
 - Contexts never import each other; `apps/desktop/src/main/composition.ts` wires them, through one `compose-*.ts` module per context and `context-links.ts`.
 - From outside a context, import only `@anytype-calendar/<context>/<layer>`.
 - `domain` imports nothing; `application` imports its domain and `kernel`; `infrastructure` imports its domain and `@ablunier/anytype-client`.

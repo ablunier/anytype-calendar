@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { FileFeedsCache, type FeedsCacheDirectory } from './file-feeds-cache'
+import { type FeedsCacheDirectory, FileFeedsCache } from './file-feeds-cache'
 
 function setup(files: Record<string, string> = {}) {
   const stored = new Map(Object.entries(files))
@@ -10,7 +10,7 @@ function setup(files: Record<string, string> = {}) {
     },
     remove: async (name) => {
       stored.delete(name)
-    }
+    },
   }
   return { cache: new FileFeedsCache(directory), stored }
 }
@@ -33,7 +33,7 @@ test('holds nothing once removed, or before anything was written', async () => {
 test.each([
   ['not JSON', 'BEGIN:VCALENDAR'],
   ['no text', '{"readAt":1}'],
-  ['no time', '{"text":"x"}']
+  ['no time', '{"text":"x"}'],
 ])('a file holding %s reads as no copy', async (_, text) => {
   await expect(setup({ 'a1.json': text }).cache.read('a1')).resolves.toBeNull()
 })

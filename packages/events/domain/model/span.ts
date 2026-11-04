@@ -1,10 +1,4 @@
-import {
-  sameEventsMonth,
-  toEventsDay,
-  toEventsMonth,
-  type EventsDay,
-  type EventsMonth
-} from './month'
+import { type EventsDay, type EventsMonth, sameEventsMonth, toEventsDay, toEventsMonth } from './month'
 
 /**
  * The stretch of calendar on screen. Each kind carries only what pins it down — a month needs

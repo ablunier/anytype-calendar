@@ -11,12 +11,7 @@ export const FOCUS_REFRESH_INTERVAL_MS = 30_000
  * epoch milliseconds; pass the current time to drop calls right after something that already
  * did the work.
  */
-export function throttled(
-  action: () => void,
-  intervalMs: number,
-  now: () => number,
-  lastRun = -Infinity
-): () => void {
+export function throttled(action: () => void, intervalMs: number, now: () => number, lastRun = -Infinity): () => void {
   let last = lastRun
   return () => {
     const at = now()

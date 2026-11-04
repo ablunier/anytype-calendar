@@ -1,12 +1,6 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
   compareEventsDatedObjects,
-  eventsSpanWindow,
-  linkedEventsIds,
-  nextEventsSpanLoad,
-  overlapsEventsWindow,
-  shownEventsSpan,
-  toEventsDatedObject,
   type EventsApiKeySource,
   type EventsDatedObject,
   type EventsGateway,
@@ -17,7 +11,13 @@ import {
   type EventsSpan,
   type EventsSpanLoad,
   type EventsSpanLoadEvent,
-  type EventsTimeZone
+  type EventsTimeZone,
+  eventsSpanWindow,
+  linkedEventsIds,
+  nextEventsSpanLoad,
+  overlapsEventsWindow,
+  shownEventsSpan,
+  toEventsDatedObject,
 } from '../domain'
 import type { EventsSpanStore } from './events-span-store'
 
@@ -60,15 +60,7 @@ export class LoadEventsSpan {
   readonly #defaultSpan: (() => EventsSpan) | undefined
   readonly #now: () => number
 
-  constructor({
-    gateway,
-    apiKeys,
-    sources,
-    zone,
-    store,
-    defaultSpan,
-    now = Date.now
-  }: LoadEventsSpanDeps) {
+  constructor({ gateway, apiKeys, sources, zone, store, defaultSpan, now = Date.now }: LoadEventsSpanDeps) {
     this.#gateway = gateway
     this.#apiKeys = apiKeys
     this.#sources = sources
@@ -109,13 +101,13 @@ export class LoadEventsSpan {
         const result = await this.#gateway.listObjects(apiKey, source, window)
         if (!result.ok) throw new Refused(result.failure)
         return { source, rank, refs: result.value }
-      })
+      }),
     )
     const linked = await this.#fetchLinked(apiKey, perSource)
     const objects = perSource.flatMap(({ source, rank, refs }) =>
       refs
         .map((ref) => toEventsDatedObject(ref, source, rank, (id) => linked.get(`${source.spaceId}\n${id}`)))
-        .filter((object) => overlapsEventsWindow(object, window))
+        .filter((object) => overlapsEventsWindow(object, window)),
     )
     return objects.sort(compareEventsDatedObjects)
   }
@@ -126,7 +118,7 @@ export class LoadEventsSpan {
    */
   async #fetchLinked(
     apiKey: string,
-    perSource: readonly { source: EventsSource; refs: readonly EventsObjectRef[] }[]
+    perSource: readonly { source: EventsSource; refs: readonly EventsObjectRef[] }[],
   ): Promise<Map<string, EventsLinkedObject>> {
     const idsBySpace = new Map<string, Set<string>>()
     for (const { source, refs } of perSource) {
@@ -139,7 +131,7 @@ export class LoadEventsSpan {
         const result = await this.#gateway.listLinkedObjects(apiKey, spaceId, [...ids])
         if (!result.ok) throw new Refused(result.failure)
         return result.value.map((object): [string, EventsLinkedObject] => [`${spaceId}\n${object.id}`, object])
-      })
+      }),
     )
     return new Map(perSpace.flat())
   }

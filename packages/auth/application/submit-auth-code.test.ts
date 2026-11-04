@@ -4,7 +4,7 @@ import {
   type AuthCredential,
   type AuthExchangeResult,
   type AuthGateway,
-  type CredentialRepository
+  type CredentialRepository,
 } from '../domain'
 import { AuthSessionStore } from './session-store'
 import { StartAuthConnection } from './start-auth-connection'
@@ -31,8 +31,8 @@ function setup(initialCredential: AuthCredential | null = null) {
   const gateway = {
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async (_challengeId, code) =>
-      code === VALID_CODE ? { ok: true, apiKey: API_KEY, access: ACCESS } : { ok: false, failure: 'invalid-code' }
-    )
+      code === VALID_CODE ? { ok: true, apiKey: API_KEY, access: ACCESS } : { ok: false, failure: 'invalid-code' },
+    ),
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),
@@ -41,14 +41,14 @@ function setup(initialCredential: AuthCredential | null = null) {
     }),
     clear: vi.fn<CredentialRepository['clear']>(async () => {
       credential = null
-    })
+    }),
   }
   const store = new AuthSessionStore()
   const startAuthConnection = new StartAuthConnection({
     gateway,
     store,
     appName: 'Test app',
-    now: () => time
+    now: () => time,
   })
   const submitAuthCode = new SubmitAuthCode({ gateway, credentials, store, now: () => time })
   const stepBackAuthConnection = new StepBackAuthConnection(store)
@@ -63,7 +63,7 @@ function setup(initialCredential: AuthCredential | null = null) {
     stored: () => credential,
     advance: (ms: number) => {
       time += ms
-    }
+    },
   }
 }
 
@@ -79,7 +79,7 @@ describe('submitCode', () => {
     expect(store.get()).toEqual({
       phase: 'connected',
       key: { hint: '4c19', issuedAt: START + 5_000 },
-      access: ACCESS
+      access: ACCESS,
     })
     expect(JSON.stringify(store.get())).not.toContain(API_KEY)
   })
@@ -106,7 +106,7 @@ describe('submitCode', () => {
     expect(store.get()).toEqual({
       phase: 'failed',
       failure: 'invalid-code',
-      attempt: { challenge: expect.objectContaining({ id: 'ch_1' }), code: '1111' }
+      attempt: { challenge: expect.objectContaining({ id: 'ch_1' }), code: '1111' },
     })
     expect(stored()).toBeNull()
   })
@@ -158,8 +158,7 @@ describe('submitCode', () => {
 
 describe('late exchange results', () => {
   test('a success after stepping back is never stored', async () => {
-    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, gateway, credentials } =
-      setup()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, gateway, credentials } = setup()
     await startAuthConnection.execute()
     const exchange = deferred<AuthExchangeResult>()
     gateway.exchangeCode.mockReturnValueOnce(exchange.promise)
@@ -192,9 +191,7 @@ describe('late exchange results', () => {
     await startAuthConnection.execute()
     const firstExchange = deferred<AuthExchangeResult>()
     const secondExchange = deferred<AuthExchangeResult>()
-    gateway.exchangeCode
-      .mockReturnValueOnce(firstExchange.promise)
-      .mockReturnValueOnce(secondExchange.promise)
+    gateway.exchangeCode.mockReturnValueOnce(firstExchange.promise).mockReturnValueOnce(secondExchange.promise)
 
     const first = submitAuthCode.execute(VALID_CODE)
     stepBackAuthConnection.execute()
@@ -208,8 +205,7 @@ describe('late exchange results', () => {
   })
 
   test('stepping back while the key is being saved un-stores it', async () => {
-    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, credentials, stored } =
-      setup()
+    const { startAuthConnection, submitAuthCode, stepBackAuthConnection, store, credentials, stored } = setup()
     await startAuthConnection.execute()
     const saving = deferred<void>()
     credentials.save.mockImplementationOnce(async () => saving.promise)

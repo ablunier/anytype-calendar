@@ -1,6 +1,6 @@
-import { useState, type DragEvent } from 'react'
-import type { CalendarEvent } from '@renderer/types'
 import { addDays, daysBetween } from '@renderer/lib/calendar'
+import type { CalendarEvent } from '@renderer/types'
+import { type DragEvent, useState } from 'react'
 
 export interface DayDrag {
   /** The event being dragged, so its bar can be drawn as lifted. */
@@ -56,8 +56,8 @@ export function useDayDrag(onMove: (event: CalendarEvent, date: string) => void)
         const delta = daysBetween(dragging.grabDate, date)
         if (delta !== 0) onMove(dragging.event, addDays(dragging.event.date, delta))
         end()
-      }
-    })
+      },
+    }),
   }
 }
 

@@ -1,10 +1,10 @@
-import { describe, expect, test, vi } from 'vitest'
 import { AuthSessionStore } from '@anytype-calendar/auth/application'
 import type { AuthAccess, AuthSession } from '@anytype-calendar/auth/domain'
 import { EventsSpanStore } from '@anytype-calendar/events/application'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { SchemaSelectionStore, SchemaSyncStore } from '@anytype-calendar/schema/application'
 import { EMPTY_SCHEMA_SELECTION, type SchemaSpace } from '@anytype-calendar/schema/domain'
+import { describe, expect, test, vi } from 'vitest'
 import { linkContexts } from './context-links'
 
 const KEY = { hint: 'abcd', issuedAt: 0 }
@@ -28,7 +28,7 @@ function setup() {
     eventsState: new EventsSpanStore(),
     loadEventsSpan: { execute: vi.fn() },
     resetEventsSpan: { execute: vi.fn() },
-    showFeedsForSpan: vi.fn()
+    showFeedsForSpan: vi.fn(),
   }
   linkContexts(deps)
   return deps

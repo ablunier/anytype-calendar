@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest'
 import type { SchemaQueryChoice, SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
-import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import type { Collection, ObjectType, TypePicks } from '@renderer/types'
+import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
+import { describe, expect, test } from 'vitest'
 import {
   anytypeTypeKeyOf,
   collectionChoices,
@@ -18,7 +18,7 @@ import {
   spacesFor,
   syncViewFor,
   tracksAnyType,
-  typesFor
+  typesFor,
 } from './schema'
 
 const DUE = { key: 'due_date', name: 'Due date' }
@@ -33,9 +33,9 @@ const TASK_TYPE: SchemaType = {
   textProperties: [{ key: 'venue', name: 'Venue' }],
   panelProperties: [
     { key: 'venue', name: 'Venue', format: 'text' },
-    { key: 'project', name: 'Project', format: 'objects' }
+    { key: 'project', name: 'Project', format: 'objects' },
   ],
-  selectProperties: [{ key: 'priority', name: 'Priority', options: [{ name: 'P1', color: 'red' }] }]
+  selectProperties: [{ key: 'priority', name: 'Priority', options: [{ name: 'P1', color: 'red' }] }],
 }
 
 const UNKNOWN_ICON_TYPE: SchemaType = {
@@ -46,7 +46,7 @@ const UNKNOWN_ICON_TYPE: SchemaType = {
   checkboxProperties: [],
   textProperties: [],
   panelProperties: [],
-  selectProperties: []
+  selectProperties: [],
 }
 
 const NO_ICON_TYPE: SchemaType = {
@@ -57,7 +57,7 @@ const NO_ICON_TYPE: SchemaType = {
   checkboxProperties: [],
   textProperties: [],
   panelProperties: [],
-  selectProperties: []
+  selectProperties: [],
 }
 
 /** How a task is ticked done, placed and detailed until the user picks otherwise. */
@@ -68,13 +68,13 @@ const SPACE: SchemaSpace = {
   name: 'Personal',
   types: [TASK_TYPE, UNKNOWN_ICON_TYPE, NO_ICON_TYPE],
   queries: [],
-  collections: []
+  collections: [],
 }
 
 const SYNCED_AT = 100_000
 const SYNCED: SchemaSnapshot = {
   phase: 'synced',
-  last: { spaces: [SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT }
+  last: { spaces: [SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT },
 }
 
 describe('hasNotGrantedSpaces', () => {
@@ -92,7 +92,15 @@ describe('hasNotGrantedSpaces', () => {
 })
 
 describe('tracksAnyType', () => {
-  const task = { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }
+  const task = {
+    spaceId: 'sp_1',
+    typeKey: 'task',
+    from: 'due_date',
+    to: null,
+    includesTime: false,
+    colourBy: null,
+    ...TASK_DETAILS,
+  }
 
   test('is false until a selection is saved', () => {
     expect(tracksAnyType({ phase: 'unset' })).toBe(false)
@@ -125,7 +133,7 @@ describe('creatableTypesFor', () => {
   const query: SchemaQueryChoice['queryId'] = 'q_1'
   const space: SchemaSpace = {
     ...SPACE,
-    queries: [{ id: query, name: 'Open tasks', typeKey: 'task', views: [{ id: 'v_1', name: 'All' }] }]
+    queries: [{ id: query, name: 'Open tasks', typeKey: 'task', views: [{ id: 'v_1', name: 'All' }] }],
   }
   const types = typesFor({ phase: 'synced', last: { spaces: [space], hasNotGrantedSpaces: false, syncedAt: 0 } })
 
@@ -133,7 +141,7 @@ describe('creatableTypesFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: [objectTypeKey('sp_1', 'task'), querySourceKey('sp_1', query)],
-      dates: {}
+      dates: {},
     }
     expect(creatableTypesFor(types, picks).map(({ key }) => key)).toEqual([objectTypeKey('sp_1', 'task')])
     expect(creatableTypesFor(types, { ...picks, spaceKeys: [] })).toEqual([])
@@ -161,7 +169,7 @@ describe('spacesFor', () => {
   test("carries a space's image", () => {
     const withIcon: SchemaSnapshot = {
       phase: 'synced',
-      last: { ...SYNCED.last, spaces: [{ ...SPACE, icon: 'data:image/png;base64,AA==' }] }
+      last: { ...SYNCED.last, spaces: [{ ...SPACE, icon: 'data:image/png;base64,AA==' }] },
     }
     expect(spacesFor(withIcon)).toEqual([{ key: 'sp_1', name: 'Personal', icon: 'data:image/png;base64,AA==' }])
   })
@@ -187,20 +195,20 @@ describe('typesFor', () => {
       icon: 'check',
       props: [
         { key: 'due_date', label: 'Due date' },
-        { key: 'start_date', label: 'Start date' }
+        { key: 'start_date', label: 'Start date' },
       ],
       selects: [{ key: 'priority', label: 'Priority' }],
       checkboxes: [{ key: 'done', label: 'Done' }],
       texts: [{ key: 'venue', label: 'Venue' }],
       panelProps: [
         { key: 'venue', label: 'Venue', format: 'text' },
-        { key: 'project', label: 'Project', format: 'objects' }
+        { key: 'project', label: 'Project', format: 'objects' },
       ],
       from: 'due_date',
       to: null,
       includesTime: false,
       colourBy: null,
-      ...TASK_DETAILS
+      ...TASK_DETAILS,
     })
   })
 
@@ -213,13 +221,10 @@ describe('typesFor', () => {
         spaces: [
           {
             ...SPACE,
-            types: [
-              TASK_TYPE,
-              { ...UNKNOWN_ICON_TYPE, textProperties: [{ key: 'location', name: 'Location' }] }
-            ]
-          }
-        ]
-      }
+            types: [TASK_TYPE, { ...UNKNOWN_ICON_TYPE, textProperties: [{ key: 'location', name: 'Location' }] }],
+          },
+        ],
+      },
     })
     expect(note).toMatchObject({ done: null, location: 'location', panel: [] })
   })
@@ -256,12 +261,12 @@ describe('syncViewFor', () => {
     [30_000, { key: 'justNow' }],
     [90_000, { key: 'minutesAgo', count: 1 }],
     [2 * 60 * 60_000, { key: 'hoursAgo', count: 2 }],
-    [3 * 24 * 60 * 60_000, { key: 'daysAgo', count: 3 }]
+    [3 * 24 * 60 * 60_000, { key: 'daysAgo', count: 3 }],
   ])('synced %i ms later reads as "%o"', (elapsed, elapsedDetail) => {
     expect(syncViewFor(SYNCED, SYNCED_AT + elapsed)).toEqual({
       state: 'synced',
       detail: { kind: 'elapsed', elapsed: elapsedDetail },
-      hasResult: true
+      hasResult: true,
     })
   })
 
@@ -270,7 +275,7 @@ describe('syncViewFor', () => {
     expect(syncViewFor(failed, SYNCED_AT)).toEqual({
       state: 'error',
       detail: { kind: 'unauthorized' },
-      hasResult: false
+      hasResult: false,
     })
   })
 
@@ -279,12 +284,12 @@ describe('syncViewFor', () => {
       phase: 'failed',
       failure: 'unreachable',
       at: SYNCED_AT,
-      last: SYNCED.last
+      last: SYNCED.last,
     }
     expect(syncViewFor(failed, SYNCED_AT)).toEqual({
       state: 'error',
       detail: { kind: 'unreachable' },
-      hasResult: true
+      hasResult: true,
     })
   })
 
@@ -293,7 +298,7 @@ describe('syncViewFor', () => {
     expect(syncViewFor(failed, SYNCED_AT)).toEqual({
       state: 'error',
       detail: { kind: 'outdated' },
-      hasResult: true
+      hasResult: true,
     })
   })
 })
@@ -318,7 +323,7 @@ describe('picksFor', () => {
       icon: 'check',
       props: [
         { key: 'due_date', label: 'Due date' },
-        { key: 'start_date', label: 'Start date' }
+        { key: 'start_date', label: 'Start date' },
       ],
       selects: [{ key: 'priority', label: 'Priority' }],
       checkboxes: [{ key: 'done', label: 'Done' }],
@@ -328,8 +333,8 @@ describe('picksFor', () => {
       to: null,
       includesTime: false,
       colourBy: null,
-      ...TASK_DETAILS
-    }
+      ...TASK_DETAILS,
+    },
   ]
 
   test('is empty before onboarding is done', () => {
@@ -341,14 +346,26 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null, ...TASK_DETAILS }],
-        queries: []
-      }
+        types: [
+          {
+            spaceId: 'sp_1',
+            typeKey: 'task',
+            from: 'start_date',
+            to: null,
+            includesTime: true,
+            colourBy: null,
+            ...TASK_DETAILS,
+          },
+        ],
+        queries: [],
+      },
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS } }
+      dates: {
+        'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS },
+      },
     })
   })
 
@@ -357,9 +374,19 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy, ...TASK_DETAILS }],
-        queries: []
-      }
+        types: [
+          {
+            spaceId: 'sp_1',
+            typeKey: 'task',
+            from: 'due_date',
+            to: null,
+            includesTime: false,
+            colourBy,
+            ...TASK_DETAILS,
+          },
+        ],
+        queries: [],
+      },
     })
     expect(picksFor(saved('priority'), TYPES).dates['sp_1:task']?.colourBy).toBe('priority')
     expect(picksFor(saved('gone'), TYPES).dates['sp_1:task']).toEqual({
@@ -368,7 +395,7 @@ describe('picksFor', () => {
       includesTime: false,
       colourBy: null,
       view: null,
-      ...TASK_DETAILS
+      ...TASK_DETAILS,
     })
   })
 
@@ -377,14 +404,24 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: ['sp_1'],
-        types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'gone_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }],
-        queries: []
-      }
+        types: [
+          {
+            spaceId: 'sp_1',
+            typeKey: 'task',
+            from: 'gone_date',
+            to: null,
+            includesTime: false,
+            colourBy: null,
+            ...TASK_DETAILS,
+          },
+        ],
+        queries: [],
+      },
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: {}
+      dates: {},
     })
   })
 
@@ -393,14 +430,24 @@ describe('picksFor', () => {
       phase: 'saved',
       selection: {
         spaceIds: [],
-        types: [{ spaceId: 'sp_1', typeKey: 'ghost', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }],
-        queries: []
-      }
+        types: [
+          {
+            spaceId: 'sp_1',
+            typeKey: 'ghost',
+            from: 'due_date',
+            to: null,
+            includesTime: false,
+            colourBy: null,
+            ...TASK_DETAILS,
+          },
+        ],
+        queries: [],
+      },
     }
     expect(picksFor(selection, TYPES)).toEqual({
       spaceKeys: [],
       typeKeys: ['sp_1:ghost'],
-      dates: {}
+      dates: {},
     })
   })
 })
@@ -410,8 +457,18 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }],
-      queries: []
+      types: [
+        {
+          spaceId: 'sp_1',
+          typeKey: 'task',
+          from: 'due_date',
+          to: null,
+          includesTime: false,
+          colourBy: null,
+          ...TASK_DETAILS,
+        },
+      ],
+      queries: [],
     })
   })
 
@@ -419,12 +476,24 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS } }
+      dates: {
+        'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS },
+      },
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'start_date', to: null, includesTime: true, colourBy: null, ...TASK_DETAILS }],
-      queries: []
+      types: [
+        {
+          spaceId: 'sp_1',
+          typeKey: 'task',
+          from: 'start_date',
+          to: null,
+          includesTime: true,
+          colourBy: null,
+          ...TASK_DETAILS,
+        },
+      ],
+      queries: [],
     })
   })
 
@@ -432,21 +501,42 @@ describe('schemaSelectionFor', () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'due_date', to: null, includesTime: false, colourBy: 'priority', view: null, ...TASK_DETAILS } }
+      dates: {
+        'sp_1:task': {
+          from: 'due_date',
+          to: null,
+          includesTime: false,
+          colourBy: 'priority',
+          view: null,
+          ...TASK_DETAILS,
+        },
+      },
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]?.colourBy).toBe('priority')
   })
 
-  test('falls back to the type\'s own dates when the picked mapping no longer applies', () => {
+  test("falls back to the type's own dates when the picked mapping no longer applies", () => {
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
-      dates: { 'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS } }
+      dates: {
+        'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS },
+      },
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
-      types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }],
-      queries: []
+      types: [
+        {
+          spaceId: 'sp_1',
+          typeKey: 'task',
+          from: 'due_date',
+          to: null,
+          includesTime: false,
+          colourBy: null,
+          ...TASK_DETAILS,
+        },
+      ],
+      queries: [],
     })
   })
 
@@ -463,14 +553,14 @@ describe('schemaSelectionFor', () => {
           view: null,
           panel: ['project', 'venue'],
           done: null,
-          location: 'venue'
-        }
-      }
+          location: 'venue',
+        },
+      },
     }
     expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]).toMatchObject({
       panel: ['project', 'venue'],
       done: null,
-      location: 'venue'
+      location: 'venue',
     })
   })
 
@@ -480,21 +570,53 @@ describe('schemaSelectionFor', () => {
       selection: {
         spaceIds: ['sp_1', 'sp_9'],
         types: [
-          { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS },
-          { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }
+          {
+            spaceId: 'sp_1',
+            typeKey: 'task',
+            from: 'due_date',
+            to: null,
+            includesTime: false,
+            colourBy: null,
+            ...TASK_DETAILS,
+          },
+          {
+            spaceId: 'sp_9',
+            typeKey: 'ghost',
+            from: 'x_date',
+            to: null,
+            includesTime: false,
+            colourBy: null,
+            ...TASK_DETAILS,
+          },
         ],
-        queries: []
-      }
+        queries: [],
+      },
     }
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
 
     expect(schemaSelectionFor(SYNCED, picks, previous)).toEqual({
       spaceIds: ['sp_9', 'sp_1'],
       types: [
-        { spaceId: 'sp_9', typeKey: 'ghost', from: 'x_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS },
-        { spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: false, colourBy: null, ...TASK_DETAILS }
+        {
+          spaceId: 'sp_9',
+          typeKey: 'ghost',
+          from: 'x_date',
+          to: null,
+          includesTime: false,
+          colourBy: null,
+          ...TASK_DETAILS,
+        },
+        {
+          spaceId: 'sp_1',
+          typeKey: 'task',
+          from: 'due_date',
+          to: null,
+          includesTime: false,
+          colourBy: null,
+          ...TASK_DETAILS,
+        },
       ],
-      queries: []
+      queries: [],
     })
   })
 })
@@ -509,14 +631,14 @@ describe('queries', () => {
         typeKey: 'task',
         views: [
           { id: 'v_open', name: 'Open' },
-          { id: 'v_all', name: 'All' }
-        ]
-      }
-    ]
+          { id: 'v_all', name: 'All' },
+        ],
+      },
+    ],
   }
   const WITH_QUERY: SchemaSnapshot = {
     phase: 'synced',
-    last: { spaces: [QUERY_SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT }
+    last: { spaces: [QUERY_SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT },
   }
   const QUERY_KEY = 'sp_1:query:q_open'
   const OPEN_TASKS: SchemaQueryChoice = {
@@ -527,11 +649,11 @@ describe('queries', () => {
     to: null,
     includesTime: true,
     colourBy: 'priority',
-    ...TASK_DETAILS
+    ...TASK_DETAILS,
   }
   const saved = (...queries: SchemaQueryChoice[]): SchemaSelectionSnapshot => ({
     phase: 'saved',
-    selection: { spaceIds: ['sp_1'], types: [], queries }
+    selection: { spaceIds: ['sp_1'], types: [], queries },
   })
 
   test("lists a query after its space's types, in its type's hue, with its views", () => {
@@ -548,25 +670,25 @@ describe('queries', () => {
         typeLabel: 'Task',
         views: [
           { key: 'v_open', label: 'Open' },
-          { key: 'v_all', label: 'All' }
-        ]
+          { key: 'v_all', label: 'All' },
+        ],
       },
       props: [
         { key: 'due_date', label: 'Due date' },
-        { key: 'start_date', label: 'Start date' }
+        { key: 'start_date', label: 'Start date' },
       ],
       selects: [{ key: 'priority', label: 'Priority' }],
       checkboxes: [{ key: 'done', label: 'Done' }],
       texts: [{ key: 'venue', label: 'Venue' }],
       panelProps: [
         { key: 'venue', label: 'Venue', format: 'text' },
-        { key: 'project', label: 'Project', format: 'objects' }
+        { key: 'project', label: 'Project', format: 'objects' },
       ],
       from: 'due_date',
       to: null,
       includesTime: false,
       colourBy: null,
-      ...TASK_DETAILS
+      ...TASK_DETAILS,
     })
     expect(querySourceKey('sp_1', 'q_open')).toBe(QUERY_KEY)
   })
@@ -580,8 +702,15 @@ describe('queries', () => {
       spaceKeys: ['sp_1'],
       typeKeys: [QUERY_KEY],
       dates: {
-        [QUERY_KEY]: { from: 'start_date', to: null, includesTime: true, colourBy: 'priority', view: 'v_all', ...TASK_DETAILS }
-      }
+        [QUERY_KEY]: {
+          from: 'start_date',
+          to: null,
+          includesTime: true,
+          colourBy: 'priority',
+          view: 'v_all',
+          ...TASK_DETAILS,
+        },
+      },
     })
   })
 
@@ -595,20 +724,27 @@ describe('queries', () => {
       spaceKeys: ['sp_1'],
       typeKeys: [QUERY_KEY],
       dates: {
-        [QUERY_KEY]: { from: 'start_date', to: null, includesTime: true, colourBy: 'priority', view: 'v_all', ...TASK_DETAILS }
-      }
+        [QUERY_KEY]: {
+          from: 'start_date',
+          to: null,
+          includesTime: true,
+          colourBy: 'priority',
+          view: 'v_all',
+          ...TASK_DETAILS,
+        },
+      },
     }
     expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
       types: [],
-      queries: [OPEN_TASKS]
+      queries: [OPEN_TASKS],
     })
   })
 
   test('saves a picked query with no view picked as reading its first, on its own dates', () => {
     const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [QUERY_KEY], dates: {} }
     expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' }).queries).toEqual([
-      { ...OPEN_TASKS, viewId: null, from: 'due_date', includesTime: false, colourBy: null }
+      { ...OPEN_TASKS, viewId: null, from: 'due_date', includesTime: false, colourBy: null },
     ])
   })
 
@@ -621,17 +757,17 @@ describe('queries', () => {
       view: null,
       panel: ['project'],
       done: null,
-      location: 'venue'
+      location: 'venue',
     }
     const picks: TypePicks = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task', QUERY_KEY],
-      dates: { 'sp_1:task': typeMapping }
+      dates: { 'sp_1:task': typeMapping },
     }
     expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' }).queries[0]).toMatchObject({
       panel: ['project'],
       done: null,
-      location: 'venue'
+      location: 'venue',
     })
   })
 
@@ -643,11 +779,16 @@ describe('queries', () => {
 })
 
 describe('collections', () => {
-  const collection = (key: string, name: string, lastModified: number | null, backlinks: string[] = []): Collection => ({
+  const collection = (
+    key: string,
+    name: string,
+    lastModified: number | null,
+    backlinks: string[] = [],
+  ): Collection => ({
     key,
     name,
     lastModified,
-    backlinks
+    backlinks,
   })
 
   test('maps each synced space to its collections, by space key', () => {
@@ -658,15 +799,15 @@ describe('collections', () => {
         hasNotGrantedSpaces: false,
         spaces: [
           { ...SPACE, collections: [{ id: 'col_1', name: 'Trip', lastModified: 5, backlinks: [] }] },
-          { ...SPACE, id: 'sp_2' }
-        ]
-      }
+          { ...SPACE, id: 'sp_2' },
+        ],
+      },
     }
     expect(collectionsBySpaceFor(snapshot)).toEqual(
       new Map([
         ['sp_1', [collection('col_1', 'Trip', 5)]],
-        ['sp_2', []]
-      ])
+        ['sp_2', []],
+      ]),
     )
     expect(collectionsBySpaceFor({ phase: 'idle' })).toEqual(new Map())
   })
@@ -677,21 +818,27 @@ describe('collections', () => {
       collection('c_old', 'Notes', 1, ['Home']),
       collection('c_new', 'Notes', 9, ['Work']),
       collection('c_undated', 'Notes', null, ['Desk']),
-      collection('c_books', 'Books', 1)
+      collection('c_books', 'Books', 1),
     ])
-    expect(choices.map(({ collection }) => collection.key)).toEqual(['c_books', 'c_new', 'c_old', 'c_undated', 'c_trip'])
+    expect(choices.map(({ collection }) => collection.key)).toEqual([
+      'c_books',
+      'c_new',
+      'c_old',
+      'c_undated',
+      'c_trip',
+    ])
   })
 
   test('tells copies of a name apart by the backlinks they do not all share, at most two then a count', () => {
     const choices = collectionChoices([
       collection('c_home', 'Notes', 2, ['Home', 'Weekly review']),
       collection('c_work', 'Notes', 1, ['Work', 'Weekly review', 'Q4', 'Desk', 'Work']),
-      collection('c_trip', 'Trip', 1, ['Ignored'])
+      collection('c_trip', 'Trip', 1, ['Ignored']),
     ])
     expect(choices.map(({ hint }) => hint)).toEqual([
       { kind: 'backlinks', names: ['Home'], more: 0 },
       { kind: 'backlinks', names: ['Work', 'Q4'], more: 1 },
-      null
+      null,
     ])
   })
 
@@ -701,14 +848,14 @@ describe('collections', () => {
       collection('c_never', 'Notes', null, ['Home']),
       collection('c_other', 'Notes', 1, ['Home', 'Work']),
       collection('c_bare', 'Inbox', 3),
-      collection('c_bare_too', 'Inbox', 2)
+      collection('c_bare_too', 'Inbox', 2),
     ])
     expect(Object.fromEntries(choices.map(({ collection, hint }) => [collection.key, hint]))).toEqual({
       c_shared: { kind: 'modified', at: 7 },
       c_never: null,
       c_other: { kind: 'backlinks', names: ['Work'], more: 0 },
       c_bare: { kind: 'modified', at: 3 },
-      c_bare_too: { kind: 'modified', at: 2 }
+      c_bare_too: { kind: 'modified', at: 2 },
     })
   })
 
@@ -716,7 +863,7 @@ describe('collections', () => {
     const choices = collectionChoices([
       collection('c_cafe', 'Café talks', 1),
       collection('c_launch', 'Q4 launch', 1, ['Cafe']),
-      collection('c_launch2', 'Q4 launch', 2, ['Home'])
+      collection('c_launch2', 'Q4 launch', 2, ['Home']),
     ])
     const keysFor = (query: string) =>
       collectionPicksFor(choices, query).map((pick) => (pick.kind === 'none' ? 'none' : pick.collection.key))

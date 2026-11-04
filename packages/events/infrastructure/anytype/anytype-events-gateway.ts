@@ -1,13 +1,13 @@
 import {
   ANYTYPE_PAGE_LIMIT,
-  listAll,
   type AnytypeClient,
   type AnytypeFilter,
   type AnytypeIssue,
   type AnytypeObjectRow,
   type AnytypePage,
   type AnytypePaging,
-  type AnytypeResult
+  type AnytypeResult,
+  listAll,
 } from '@ablunier/anytype-client'
 import type {
   EventsDetailRef,
@@ -17,7 +17,7 @@ import type {
   EventsObjectRef,
   EventsPanelProperty,
   EventsSource,
-  EventsWindow
+  EventsWindow,
 } from '../../domain'
 
 const UNAUTHORIZED = 401
@@ -67,22 +67,22 @@ export class AnytypeEventsGateway implements EventsGateway {
   async listObjects(
     apiKey: string,
     source: EventsSource,
-    window: EventsWindow
+    window: EventsWindow,
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     const api = this.#client.withApiKey(apiKey)
     if (source.kind === 'type') {
       const search = {
         filters: [
           { property: TYPE_PROPERTY_KEY, condition: 'equal', value: source.typeKey } satisfies AnytypeFilter,
-          ...windowFilters(source, window)
+          ...windowFilters(source, window),
         ],
-        fields: fieldsOf(source)
+        fields: fieldsOf(source),
       }
       return this.#readAll(source, (paging) => api.search.inSpace(source.spaceId, search, paging))
     }
     const view = source.viewId === null ? {} : { view: source.viewId }
     return this.#readAll(source, (paging) =>
-      api.queries.listObjects(source.spaceId, source.queryId, { ...view, fields: fieldsOf(source) }, paging)
+      api.queries.listObjects(source.spaceId, source.queryId, { ...view, fields: fieldsOf(source) }, paging),
     )
   }
 
@@ -94,33 +94,32 @@ export class AnytypeEventsGateway implements EventsGateway {
   async listLinkedObjects(
     apiKey: string,
     spaceId: string,
-    ids: readonly string[]
+    ids: readonly string[],
   ): Promise<EventsGatewayResult<EventsLinkedObject[]>> {
     const api = this.#client.withApiKey(apiKey)
     const memberIds = ids.filter((id) => id.startsWith(MEMBER_ID_PREFIX))
     const objectIds = ids.filter((id) => !id.startsWith(MEMBER_ID_PREFIX))
     const batches = Array.from({ length: Math.ceil(objectIds.length / ANYTYPE_PAGE_LIMIT) }, (_, index) =>
-      objectIds.slice(index * ANYTYPE_PAGE_LIMIT, (index + 1) * ANYTYPE_PAGE_LIMIT)
+      objectIds.slice(index * ANYTYPE_PAGE_LIMIT, (index + 1) * ANYTYPE_PAGE_LIMIT),
     )
     const reads = await Promise.all([
       ...batches.map(async (batch) => {
-        const search = { filters: [{ property: ID_PROPERTY_KEY, condition: 'in', value: batch } satisfies AnytypeFilter] }
-        const rows = linkedRows(await listAll((paging) => api.search.inSpace(spaceId, search, paging)))
-        return rows && rows.flatMap((row) => toLinked(row.id, row.name, false))
+        const search = {
+          filters: [{ property: ID_PROPERTY_KEY, condition: 'in', value: batch } satisfies AnytypeFilter],
+        }
+        const response = await listAll((paging) => api.search.inSpace(spaceId, search, paging))
+        return linkedObjects(response, (row) => toLinked(row.id, row.name, false))
       }),
       memberIds.length === 0
         ? []
         : (async () => {
             const wanted = new Set(memberIds)
-            const rows = linkedRows(await listAll((paging) => api.members.list(spaceId, paging)))
-            return (
-              rows &&
-              rows.flatMap((row) => {
-                const id = typeof row.identity === 'string' ? `${MEMBER_ID_PREFIX}${row.identity}` : undefined
-                return id !== undefined && wanted.has(id) ? toLinked(id, row.name, true) : []
-              })
-            )
-          })()
+            const response = await listAll((paging) => api.members.list(spaceId, paging))
+            return linkedObjects(response, (row) => {
+              const id = typeof row.identity === 'string' ? `${MEMBER_ID_PREFIX}${row.identity}` : undefined
+              return id !== undefined && wanted.has(id) ? toLinked(id, row.name, true) : []
+            })
+          })(),
     ])
     if (reads.some((read) => read === null)) return { ok: false, failure: 'unauthorized' }
     return { ok: true, value: reads.flatMap((read) => read ?? []) }
@@ -128,7 +127,7 @@ export class AnytypeEventsGateway implements EventsGateway {
 
   async #readAll(
     source: EventsSource,
-    page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<AnytypePage<AnytypeObjectRow>>>
+    page: (paging: Required<AnytypePaging>) => Promise<AnytypeResult<AnytypePage<AnytypeObjectRow>>>,
   ): Promise<EventsGatewayResult<EventsObjectRef[]>> {
     const response = await listAll(page)
     if (!response.ok) {
@@ -163,11 +162,14 @@ function fieldsOf({ from, to, done, location, colourBy, panel = [] }: EventsSour
 }
 
 /**
- * The rows of a read of linked objects or members; none for a space that is gone or no longer
- * granted, or a build without the route, and null for a refused key.
+ * None for a space that is gone or no longer granted, or a build without the route, and null
+ * for a refused key.
  */
-function linkedRows<Row>(response: AnytypeResult<{ data: Row[] }>): Row[] | null {
-  if (response.ok) return response.body.data
+function linkedObjects<Row>(
+  response: AnytypeResult<{ data: Row[] }>,
+  toObjects: (row: Row) => EventsLinkedObject[],
+): EventsLinkedObject[] | null {
+  if (response.ok) return response.body.data.flatMap(toObjects)
   if (response.status === UNAUTHORIZED) return null
   if (response.unsupported || GONE_STATUSES.has(response.status)) return []
   throw new Error(`Anytype answered ${response.status} when asked for linked objects`)
@@ -198,8 +200,8 @@ function windowFilters({ from, to }: EventsSource, window: EventsWindow): Anytyp
     fromBeforeEnd,
     {
       operator: 'or',
-      filters: [{ property: to, condition: 'greater_or_equal', value: start }, fromAfterStart]
-    }
+      filters: [{ property: to, condition: 'greater_or_equal', value: start }, fromAfterStart],
+    },
   ]
 }
 
@@ -209,7 +211,7 @@ function windowFilters({ from, to }: EventsSource, window: EventsWindow): Anytyp
  */
 function toRef(
   row: AnytypeObjectRow,
-  { from, to, done, location, colourBy, panel = [] }: EventsSource
+  { from, to, done, location, colourBy, panel = [] }: EventsSource,
 ): EventsObjectRef[] {
   const { id, name, properties } = row
   if (typeof id !== 'string' || id === '') throw malformed()
@@ -219,7 +221,7 @@ function toRef(
     id,
     title: typeof name === 'string' ? name : '',
     start,
-    end: to === null ? null : dateIn(properties, to)
+    end: to === null ? null : dateIn(properties, to),
   }
   if (done !== undefined) ref.done = field(properties, done) === true
   const place = location === undefined ? undefined : stringField(properties, location)
@@ -277,9 +279,7 @@ function dateIn(properties: unknown, key: string): number | null {
 }
 
 function field(value: unknown, name: string): unknown {
-  return typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)[name]
-    : undefined
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[name] : undefined
 }
 
 function stringField(value: unknown, name: string): string | undefined {

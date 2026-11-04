@@ -9,7 +9,7 @@ export const FEEDS_COLOURS = [
   'blue',
   'ice',
   'teal',
-  'lime'
+  'lime',
 ] as const
 
 export type FeedsColour = (typeof FEEDS_COLOURS)[number]
@@ -25,7 +25,7 @@ const NEW_COLOURS: readonly FeedsColour[] = [
   'ice',
   'red',
   'yellow',
-  'grey'
+  'grey',
 ]
 
 const MAX_NAME_LENGTH = 200
@@ -50,9 +50,7 @@ export function isFeedsColour(value: unknown): value is FeedsColour {
 /** The first colour no subscription has yet, or, once all ten are taken, the next in turn. */
 export function nextFeedsColour(taken: readonly FeedsColour[]): FeedsColour {
   return (
-    NEW_COLOURS.find((colour) => !taken.includes(colour)) ??
-    NEW_COLOURS[taken.length % NEW_COLOURS.length] ??
-    'blue'
+    NEW_COLOURS.find((colour) => !taken.includes(colour)) ?? NEW_COLOURS[taken.length % NEW_COLOURS.length] ?? 'blue'
   )
 }
 

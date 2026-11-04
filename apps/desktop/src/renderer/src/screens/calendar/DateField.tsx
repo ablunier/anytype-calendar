@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { useTranslation } from 'react-i18next'
 import { longDate, shortDate } from '@renderer/lib/calendar'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MiniMonth } from './MiniMonth'
 
 /** The picker's width, and the gap it keeps from the window's edge. */
@@ -36,7 +36,7 @@ export function DateField({
   today,
   weekStart,
   showWeekNumbers,
-  onChange
+  onChange,
 }: DateFieldProps): React.JSX.Element {
   const { i18n } = useTranslation()
   const [place, setPlace] = useState<CSSProperties | null>(null)
@@ -77,7 +77,7 @@ export function DateField({
     }
     setPlace({
       top: rect.bottom + 4,
-      left: Math.max(EDGE, Math.min(rect.left, window.innerWidth - PICKER_WIDTH - EDGE))
+      left: Math.max(EDGE, Math.min(rect.left, window.innerWidth - PICKER_WIDTH - EDGE)),
     })
   }
 
@@ -99,7 +99,7 @@ export function DateField({
         className={[
           'rounded-4 border px-6 py-2 text-left type-numeral text-small text-ink-body',
           'transition duration-fast ease-standard hover:border-line-subtle hover:bg-surface-hover focus-visible:shadow-focus',
-          open ? 'border-line-subtle bg-surface-hover' : 'border-transparent bg-transparent'
+          open ? 'border-line-subtle bg-surface-hover' : 'border-transparent bg-transparent',
         ].join(' ')}
       >
         {shortDate(value, i18n.language)}

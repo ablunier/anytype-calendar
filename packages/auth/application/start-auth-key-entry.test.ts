@@ -16,7 +16,7 @@ describe('startAuthKeyEntry', () => {
     const store = new AuthSessionStore({
       phase: 'connected',
       key: { hint: '4c19', issuedAt: 0 },
-      access: null
+      access: null,
     })
     const startAuthKeyEntry = new StartAuthKeyEntry(store)
     const listener = vi.fn()

@@ -4,7 +4,7 @@ import { AuthSessionStore } from './session-store'
 
 const awaitingCode: AuthSession = {
   phase: 'awaiting-code',
-  challenge: { id: 'ch_1', expiresAt: 60_000 }
+  challenge: { id: 'ch_1', expiresAt: 60_000 },
 }
 
 test('starts signed out', () => {

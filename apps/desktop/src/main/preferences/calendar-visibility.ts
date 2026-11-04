@@ -23,7 +23,5 @@ export function toCalendarVisibility(value: unknown): CalendarVisibilitySnapshot
 }
 
 export function sameCalendarVisibility(a: CalendarVisibilitySnapshot, b: CalendarVisibilitySnapshot): boolean {
-  return (
-    a.collapsed === b.collapsed && sameKeys(a.hidden, b.hidden) && sameKeys(a.collapsedSpaces, b.collapsedSpaces)
-  )
+  return a.collapsed === b.collapsed && sameKeys(a.hidden, b.hidden) && sameKeys(a.collapsedSpaces, b.collapsedSpaces)
 }

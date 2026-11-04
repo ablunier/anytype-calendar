@@ -8,7 +8,7 @@ import type {
   SchemaSpaceList,
   SchemaSpaceRef,
   SchemaSync,
-  SchemaTypeRef
+  SchemaTypeRef,
 } from '../domain'
 import { ResetSchemaSync } from './reset-schema-sync'
 import { SchemaSyncStore } from './schema-sync-store'
@@ -19,7 +19,7 @@ const NOW = 7_000
 
 const SPACES: SchemaSpaceRef[] = [
   { id: 'sp_personal', name: 'Personal', icon: 'data:image/png;base64,AA==' },
-  { id: 'sp_empty', name: 'Empty' }
+  { id: 'sp_empty', name: 'Empty' },
 ]
 
 const CREATED: SchemaProperty = { key: 'created_date', name: 'Creation date', format: 'date' }
@@ -40,12 +40,12 @@ const TYPES: Record<string, SchemaTypeRef[]> = {
       key: 'task',
       name: 'Task',
       icon: { name: 'checkbox', color: 'lime' },
-      properties: [TAG, DUE, CREATED, DONE, PRIORITY, STAGE]
+      properties: [TAG, DUE, CREATED, DONE, PRIORITY, STAGE],
     },
     { key: 'page', name: 'Page', icon: null, properties: [TAG, CREATED, PRIORITY] },
-    { key: 'project', name: 'Project', icon: null, properties: [START, FINISH, CREATED, LOCATION, PRIORITY] }
+    { key: 'project', name: 'Project', icon: null, properties: [START, FINISH, CREATED, LOCATION, PRIORITY] },
   ],
-  sp_empty: [{ key: 'page', name: 'Page', icon: null, properties: [CREATED] }]
+  sp_empty: [{ key: 'page', name: 'Page', icon: null, properties: [CREATED] }],
 }
 
 const VIEWS = [{ id: '63194', name: 'Open' }]
@@ -56,18 +56,18 @@ const QUERIES: Record<string, SchemaQueryRef[]> = {
     // Over a type with no user date, over two types, and over none: none can be placed.
     { id: 'q_pages', name: 'Pages', typeKeys: ['page'], views: VIEWS },
     { id: 'q_mixed', name: 'Mixed', typeKeys: ['task', 'project'], views: VIEWS },
-    { id: 'q_none', name: 'By tag', typeKeys: [], views: VIEWS }
-  ]
+    { id: 'q_none', name: 'By tag', typeKeys: [], views: VIEWS },
+  ],
 }
 
 const COLLECTIONS: Record<string, SchemaCollection[]> = {
-  sp_personal: [{ id: 'col_trip', name: 'Trip', lastModified: 5_000, backlinks: [] }]
+  sp_personal: [{ id: 'col_trip', name: 'Trip', lastModified: 5_000, backlinks: [] }],
 }
 
 const ok = <T>(value: T): SchemaGatewayResult<T> => ({ ok: true, value })
 const listed = (spaces: SchemaSpaceRef[], hasNotGrantedSpaces = false): SchemaSpaceList => ({
   spaces,
-  hasNotGrantedSpaces
+  hasNotGrantedSpaces,
 })
 const unauthorized = { ok: false, failure: 'unauthorized' } as const
 
@@ -85,19 +85,17 @@ function setup(apiKey: string | null = API_KEY) {
     listTypes: vi.fn<SchemaGateway['listTypes']>(async (_key, spaceId) => ok(TYPES[spaceId] ?? [])),
     // Stage has no options, so it colours nothing.
     listSelectOptions: vi.fn<SchemaGateway['listSelectOptions']>(async (_key, _space, property) =>
-      ok(property === 'priority' ? [P1] : property === 'tag' ? [WORK] : [])
+      ok(property === 'priority' ? [P1] : property === 'tag' ? [WORK] : []),
     ),
     listQueries: vi.fn<SchemaGateway['listQueries']>(async (_key, spaceId) => ok(QUERIES[spaceId] ?? [])),
-    listCollections: vi.fn<SchemaGateway['listCollections']>(async (_key, spaceId) =>
-      ok(COLLECTIONS[spaceId] ?? [])
-    )
+    listCollections: vi.fn<SchemaGateway['listCollections']>(async (_key, spaceId) => ok(COLLECTIONS[spaceId] ?? [])),
   }
   const store = new SchemaSyncStore()
   const syncSchema = new SyncSchema({
     gateway,
     apiKeys: { current: async () => apiKey },
     store,
-    now: () => NOW
+    now: () => NOW,
   })
   return { gateway, store, syncSchema }
 }
@@ -128,9 +126,9 @@ test('reads every space with its dated types', async () => {
               panelProperties: [
                 { key: 'tag', name: 'Tag', format: 'multi_select', options: [WORK] },
                 { key: 'priority', name: 'Priority', format: 'select', options: [P1] },
-                { key: 'stage', name: 'Stage', format: 'select', options: [] }
+                { key: 'stage', name: 'Stage', format: 'select', options: [] },
               ],
-              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
+              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }],
             },
             {
               key: 'project',
@@ -138,23 +136,23 @@ test('reads every space with its dated types', async () => {
               icon: null,
               dateProperties: [
                 { key: 'start_date', name: 'Start date' },
-                { key: 'finish_date', name: 'Finish date' }
+                { key: 'finish_date', name: 'Finish date' },
               ],
               checkboxProperties: [],
               textProperties: [{ key: 'location', name: 'Location' }],
               panelProperties: [
                 { key: 'location', name: 'Location', format: 'text' },
-                { key: 'priority', name: 'Priority', format: 'select', options: [P1] }
+                { key: 'priority', name: 'Priority', format: 'select', options: [P1] },
               ],
-              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }]
-            }
+              selectProperties: [{ key: 'priority', name: 'Priority', options: [P1] }],
+            },
           ],
           queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: VIEWS }],
-          collections: COLLECTIONS['sp_personal']
+          collections: COLLECTIONS.sp_personal,
         },
-        { id: 'sp_empty', name: 'Empty', types: [], queries: [], collections: [] }
-      ]
-    }
+        { id: 'sp_empty', name: 'Empty', types: [], queries: [], collections: [] },
+      ],
+    },
   })
   expect(gateway.listSpaces).toHaveBeenCalledWith(API_KEY)
   expect(gateway.listTypes).toHaveBeenCalledWith(API_KEY, 'sp_personal')
@@ -165,10 +163,14 @@ test('reads every space with its dated types', async () => {
 test('keys a query that names its type by its former key to the type as the space now spells it', async () => {
   const { gateway, store, syncSchema } = setup()
   gateway.listTypes.mockImplementation(async (_key, spaceId) =>
-    ok(spaceId === 'sp_personal' ? [{ key: '6a67', formerKey: 'book', name: 'Book', icon: null, properties: [START] }] : [])
+    ok(
+      spaceId === 'sp_personal'
+        ? [{ key: '6a67', formerKey: 'book', name: 'Book', icon: null, properties: [START] }]
+        : [],
+    ),
   )
   gateway.listQueries.mockImplementation(async (_key, spaceId) =>
-    ok(spaceId === 'sp_personal' ? [{ id: 'q_books', name: 'Reading', typeKeys: ['book'], views: VIEWS }] : [])
+    ok(spaceId === 'sp_personal' ? [{ id: 'q_books', name: 'Reading', typeKeys: ['book'], views: VIEWS }] : []),
   )
   await syncSchema.execute()
   const { last } = store.get() as Extract<SchemaSync, { phase: 'synced' }>
@@ -181,7 +183,7 @@ test("asks for a select or multi-select property's options once per space, and o
   expect(gateway.listSelectOptions.mock.calls).toEqual([
     [API_KEY, 'sp_personal', 'tag'],
     [API_KEY, 'sp_personal', 'priority'],
-    [API_KEY, 'sp_personal', 'stage']
+    [API_KEY, 'sp_personal', 'stage'],
   ])
 })
 
@@ -211,12 +213,12 @@ test('offers the panel neither hidden properties, nor the name and type it draws
                 property('cv', 'files'),
                 property('remote', 'checkbox'),
                 property('applied', 'date'),
-                property('hidden_note', 'text', true)
-              ]
-            }
+                property('hidden_note', 'text', true),
+              ],
+            },
           ]
-        : []
-    )
+        : [],
+    ),
   )
   await syncSchema.execute()
   const { last } = store.get() as Extract<SchemaSync, { phase: 'synced' }>
@@ -227,7 +229,7 @@ test('offers the panel neither hidden properties, nor the name and type it draws
     'contacts',
     'site',
     'mail',
-    'phone'
+    'phone',
   ])
   expect(job?.checkboxProperties).toEqual([{ key: 'remote', name: 'remote' }])
   expect(job?.textProperties.map(({ key }) => key)).toEqual(['salary', 'hidden_note'])
@@ -266,7 +268,7 @@ test('is syncing while Anytype is being read', async () => {
   await running
   expect(store.get()).toEqual({
     phase: 'synced',
-    last: { spaces: [], hasNotGrantedSpaces: false, syncedAt: NOW }
+    last: { spaces: [], hasNotGrantedSpaces: false, syncedAt: NOW },
   })
 })
 
@@ -284,7 +286,7 @@ test.each(['listSpaces', 'listTypes', 'listQueries', 'listCollections'] as const
     gateway[method].mockResolvedValue(unauthorized)
     await syncSchema.execute()
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'unauthorized' })
-  }
+  },
 )
 
 test.each(['listSpaces', 'listTypes', 'listSelectOptions', 'listQueries', 'listCollections'] as const)(
@@ -294,7 +296,7 @@ test.each(['listSpaces', 'listTypes', 'listSelectOptions', 'listQueries', 'listC
     gateway[method].mockResolvedValue({ ok: false, failure: 'outdated' })
     await syncSchema.execute()
     expect(store.get()).toMatchObject({ phase: 'failed', failure: 'outdated' })
-  }
+  },
 )
 
 test('fails as unreachable when a request rejects', async () => {

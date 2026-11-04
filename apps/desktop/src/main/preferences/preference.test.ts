@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { appConfigStore } from '../app-config-file'
 import type { AtomicFile } from '../atomic-file'
-import { preference, PreferenceStore } from './preference'
+import { PreferenceStore, preference } from './preference'
 
 function fakeFile(): AtomicFile {
   let bytes: Buffer | null = null
@@ -12,7 +12,7 @@ function fakeFile(): AtomicFile {
     },
     remove: async () => {
       bytes = null
-    }
+    },
   }
 }
 
@@ -75,7 +75,7 @@ describe('preference', () => {
       config,
       section: 'colour',
       initial: 'red',
-      parse: (value) => (value === null ? null : toColour(value))
+      parse: (value) => (value === null ? null : toColour(value)),
     })
     await config.writeSection('colour', null)
     await colour.load()

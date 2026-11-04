@@ -12,7 +12,7 @@ function fakeFile(): AtomicFile {
     },
     remove: async () => {
       bytes = null
-    }
+    },
   }
 }
 

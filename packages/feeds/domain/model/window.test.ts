@@ -9,7 +9,7 @@ test.each([
   ['a range ending on the first instant', { start: 500, end: 1_000 }, true],
   ['a range starting on the last instant', { start: 2_000, end: 3_000 }, true],
   ['a range around it', { start: 0, end: 5_000 }, true],
-  ['a range after it', { start: 2_001, end: 3_000 }, false]
+  ['a range after it', { start: 2_001, end: 3_000 }, false],
 ])('%s', (_, occurrence, expected) => {
   expect(overlapsFeedsWindow(occurrence, window)).toBe(expected)
 })
