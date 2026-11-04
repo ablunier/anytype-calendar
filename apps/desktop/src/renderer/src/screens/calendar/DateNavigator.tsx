@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import type { CalendarView } from '@renderer/types'
 import { Button, IconButton } from '@renderer/components/ui'
+import type { CalendarView } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { ViewSwitcher } from './ViewSwitcher'
 
 export interface DateNavigatorProps {
@@ -12,14 +12,7 @@ export interface DateNavigatorProps {
   onToday: () => void
 }
 
-export function DateNavigator({
-  title,
-  view,
-  onView,
-  onPrev,
-  onNext,
-  onToday
-}: DateNavigatorProps): React.JSX.Element {
+export function DateNavigator({ title, view, onView, onPrev, onNext, onToday }: DateNavigatorProps): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <div className="flex items-center gap-16 border-b border-line-subtle bg-surface-card px-16 py-10">

@@ -114,6 +114,11 @@
   width: var(--ds-size-28);
 }
 
+/* What a row gives up to the week-number gutter beside it. */
+@utility week-number-inset {
+  margin-left: var(--ds-size-28);
+}
+
 /* A month grid's week row. `--columns` and `--lane-top` are inherited by the bars inside it:
  * seven equal columns, and a top that clears the day cell's own padding, its date and the gap
  * below, in the same tokens the cell uses, so it follows any change to them. */

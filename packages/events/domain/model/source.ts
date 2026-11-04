@@ -44,7 +44,5 @@ export interface EventsColourBy {
 }
 
 export function eventsSourceKey(source: EventsSource): EventsSourceKey {
-  return source.kind === 'type'
-    ? { kind: 'type', typeKey: source.typeKey }
-    : { kind: 'query', queryId: source.queryId }
+  return source.kind === 'type' ? { kind: 'type', typeKey: source.typeKey } : { kind: 'query', queryId: source.queryId }
 }

@@ -1,17 +1,11 @@
-import { useTranslation } from 'react-i18next'
-import type { EventsRescheduleRequest } from '@shared/ipc'
-import type { CalendarEvent, FeedEventDetails, ObjectType, Space } from '@renderer/types'
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
-import {
-  addEndRequestFor,
-  clearEndRequestFor,
-  endRequestFor,
-  hasOwnEnd,
-  startRequestFor
-} from '@renderer/lib/events'
+import { addEndRequestFor, clearEndRequestFor, endRequestFor, hasOwnEnd, startRequestFor } from '@renderer/lib/events'
+import type { CalendarEvent, FeedEventDetails, ObjectType, Space } from '@renderer/types'
+import type { EventsRescheduleRequest } from '@shared/ipc'
+import { useTranslation } from 'react-i18next'
 import { DateField, type DateFieldProps } from './DateField'
 import { EventDetails } from './EventDetails'
 import { TimeField } from './TimeField'
@@ -62,9 +56,7 @@ function DetailDate({ date, time, caption, edit }: DetailDateProps): React.JSX.E
     <div className="flex flex-col gap-2">
       <span className="type-caption text-tiny text-ink-tertiary">{caption}</span>
       {time ? (
-        <span className="type-numeral text-small text-ink-body">
-          {formatTime(time, timeFormat, i18n.language)}
-        </span>
+        <span className="type-numeral text-small text-ink-body">{formatTime(time, timeFormat, i18n.language)}</span>
       ) : null}
       <span className="type-numeral text-small text-ink-body">{shortDate(date, i18n.language)}</span>
     </div>
@@ -85,7 +77,7 @@ function DetailToggle({ checked, label, onChange }: DetailToggleProps): React.JS
       className={[
         'flex h-18 w-30 shrink-0 items-center rounded-pill p-2',
         'transition-colors duration-fast ease-standard',
-        checked ? 'justify-end bg-surface-accent' : 'justify-start bg-surface-sunken border border-line-strong'
+        checked ? 'justify-end bg-surface-accent' : 'justify-start bg-surface-sunken border border-line-strong',
       ].join(' ')}
     >
       <span className="size-icon-14 rounded-pill bg-surface-card shadow-1" />
@@ -94,7 +86,15 @@ function DetailToggle({ checked, label, onChange }: DetailToggleProps): React.JS
   const text = <span className="type-ui text-small text-ink-body">{label}</span>
   if (!onChange) {
     return (
-      <div role="switch" aria-checked={checked} aria-readonly aria-label={label} className="flex items-center gap-10">
+      // Focusable though it cannot change, so a keyboard user can still come upon its state.
+      <div
+        role="switch"
+        tabIndex={0}
+        aria-checked={checked}
+        aria-readonly
+        aria-label={label}
+        className="flex items-center gap-10 rounded-control"
+      >
         {track}
         {text}
       </div>
@@ -144,7 +144,7 @@ export function EventDetail({
   picker,
   onSetDone,
   onReschedule,
-  onGoToDate
+  onGoToDate,
 }: EventDetailProps): React.JSX.Element {
   const { t } = useTranslation()
   const space = spacesByKey.get(event.space)
@@ -157,7 +157,7 @@ export function EventDetail({
     ? {
         picker,
         onDate: (moved) => onReschedule(startRequestFor(event, moved)),
-        onTime: (moved) => onReschedule(startRequestFor(event, date, moved))
+        onTime: (moved) => onReschedule(startRequestFor(event, date, moved)),
       }
     : undefined
   const endEdit: DateEdit | undefined =
@@ -170,16 +170,14 @@ export function EventDetail({
             // `HH:MM` compares in order as a string; the field goes back to the saved time.
             if (until === date && time !== undefined && moved < time) return
             onReschedule(endRequestFor(event, until, moved))
-          }
+          },
         }
       : undefined
 
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
       <div className="flex flex-col gap-8">
-        <h2 className="type-heading text-h4 text-pretty text-ink-primary">
-          {event.title || t('common.untitled')}
-        </h2>
+        <h2 className="type-heading text-h4 text-pretty text-ink-primary">{event.title || t('common.untitled')}</h2>
         <div className="flex items-center gap-8">
           {type ? (
             <Tag category={type.category} icon={type.icon}>
@@ -220,7 +218,12 @@ export function EventDetail({
             </div>
             {editable && ownEnd ? (
               until ? (
-                <Button variant="ghost" size="sm" iconLeft="minus" onClick={() => onReschedule(clearEndRequestFor(event))}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconLeft="minus"
+                  onClick={() => onReschedule(clearEndRequestFor(event))}
+                >
                   {t('calendar.eventDetail.removeEnd')}
                 </Button>
               ) : (
@@ -299,9 +302,7 @@ export function FeedEventDetail({ event, feed }: FeedEventDetailProps): React.JS
   return (
     <div className="flex flex-col gap-16 overflow-auto px-16 py-20">
       <div className="flex flex-col gap-8">
-        <h2 className="type-heading text-h4 text-pretty text-ink-primary">
-          {event.title || t('common.untitled')}
-        </h2>
+        <h2 className="type-heading text-h4 text-pretty text-ink-primary">{event.title || t('common.untitled')}</h2>
         <div className="flex items-center gap-8">
           <Tag category={category} icon="rss">
             {feed.calendar}

@@ -29,7 +29,7 @@ export function Toast({ message, onDismiss }: ToastProps): React.JSX.Element {
       role="alert"
       className={[
         'animate-sheet fixed bottom-24 left-1/2 z-60 flex max-w-440 -translate-x-1/2 items-start gap-10',
-        'rounded-8 border border-line-subtle bg-surface-raised py-8 pr-8 pl-12 shadow-3'
+        'rounded-8 border border-line-subtle bg-surface-raised py-8 pr-8 pl-12 shadow-3',
       ].join(' ')}
     >
       <Icon name="circle-alert" size={16} className="mt-4 shrink-0 text-ink-danger" />

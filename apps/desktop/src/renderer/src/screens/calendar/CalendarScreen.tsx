@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
-import type {
-  EventsCreateRequest,
-  EventsEditResult,
-  EventsRescheduleRequest,
-  EventsSetDoneRequest
-} from '@shared/ipc'
+import { Button, EmptyState, Toast } from '@renderer/components/ui'
+import {
+  buildMonthGrid,
+  buildWeek,
+  dayLabel,
+  indexBy,
+  monthLabel,
+  spacesByKeys,
+  weekLabel,
+} from '@renderer/lib/calendar'
+import { editFailureText, notAddedText, readOnlyText } from '@renderer/lib/edit-text'
+import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
+import { syncDetailText } from '@renderer/lib/sync-text'
+import { allHidden, visibleEvents } from '@renderer/lib/visibility'
 import type {
   CalendarEvent,
   CalendarSlot,
@@ -17,22 +23,11 @@ import type {
   FeedSource,
   ObjectType,
   Space,
-  SyncView
+  SyncView,
 } from '@renderer/types'
-import { Button, EmptyState, Toast } from '@renderer/components/ui'
-import {
-  buildMonthGrid,
-  buildWeek,
-  dayLabel,
-  indexBy,
-  monthLabel,
-  spacesByKeys,
-  weekLabel
-} from '@renderer/lib/calendar'
-import { editFailureText, notAddedText, readOnlyText } from '@renderer/lib/edit-text'
-import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
-import { syncDetailText } from '@renderer/lib/sync-text'
-import { allHidden, visibleEvents } from '@renderer/lib/visibility'
+import type { EventsCreateRequest, EventsEditResult, EventsRescheduleRequest, EventsSetDoneRequest } from '@shared/ipc'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CalendarSidebar } from './CalendarSidebar'
 import { CalendarTopBar } from './CalendarTopBar'
 import { CreateEventDialog } from './CreateEventDialog'
@@ -149,7 +144,7 @@ export function CalendarScreen({
   onReread,
   updateNotice,
   onOpenRelease,
-  onDismissUpdate
+  onDismissUpdate,
 }: CalendarScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const typesByKey = useMemo(() => indexBy(types), [types])
@@ -157,18 +152,18 @@ export function CalendarScreen({
   const anchor = anchorOf(span)
   const events = useMemo(
     () => (loadedEvents === null ? null : visibleEvents(loadedEvents, hiddenSources)),
-    [loadedEvents, hiddenSources]
+    [loadedEvents, hiddenSources],
   )
   const creatable = useMemo(
     () => creatableTypes.filter(({ key }) => !hiddenSources.has(key)),
-    [creatableTypes, hiddenSources]
+    [creatableTypes, hiddenSources],
   )
   const toggleable = useMemo(() => [...sources, ...feeds], [sources, feeds])
   const everythingHidden = allHidden(toggleable, hiddenSources)
 
   const cells = useMemo(
     () => (span.kind === 'month' ? buildMonthGrid(span.year, span.month, weekStart) : []),
-    [span, weekStart]
+    [span, weekStart],
   )
   const days = useMemo(
     () =>
@@ -177,7 +172,7 @@ export function CalendarScreen({
         : span.kind === 'day'
           ? [{ date: anchor, outside: false }]
           : [],
-    [span.kind, anchor, weekStart]
+    [span.kind, anchor, weekStart],
   )
 
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
@@ -190,7 +185,7 @@ export function CalendarScreen({
   const [openDetail, setDetail] = useState<DetailTarget | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [focusedDay, setFocusedDay] = useState(
-    () => cells.find((cell) => !cell.outside && cell.date === today)?.day ?? 1
+    () => cells.find((cell) => !cell.outside && cell.date === today)?.day ?? 1,
   )
 
   /* An object whose source is hidden has gone from the grid, so its panel goes too. One the
@@ -252,8 +247,7 @@ export function CalendarScreen({
     if (readOnly !== null) say(readOnly)
     else if (creatable.length === 0) {
       say(t(creatableTypes.length === 0 ? 'calendar.edit.noTypes' : 'calendar.edit.typesHidden'))
-    }
-    else setCreating(slot)
+    } else setCreating(slot)
   }
 
   const selectDay = (day: number): void => {
@@ -274,14 +268,7 @@ export function CalendarScreen({
         onDismissUpdate={onDismissUpdate}
       />
 
-      <DateNavigator
-        title={label}
-        view={span.kind}
-        onView={onView}
-        onPrev={onPrev}
-        onNext={onNext}
-        onToday={onToday}
-      />
+      <DateNavigator title={label} view={span.kind} onView={onView} onPrev={onPrev} onNext={onNext} onToday={onToday} />
 
       <div className="flex min-h-0 flex-1">
         <CalendarSidebar
@@ -326,7 +313,12 @@ export function CalendarScreen({
                     variant="secondary"
                     size="sm"
                     iconLeft="eye"
-                    onClick={() => onSetSourcesShown(toggleable.map(({ key }) => key), true)}
+                    onClick={() =>
+                      onSetSourcesShown(
+                        toggleable.map(({ key }) => key),
+                        true,
+                      )
+                    }
                   >
                     {t('calendar.showAll')}
                   </Button>
@@ -349,10 +341,7 @@ export function CalendarScreen({
           ) : /* A time grid is drawn even when empty: its hours are the point, and the
                  all-day band would otherwise be the only thing on screen. So is a month
                  where objects can be created, which takes a day to double-click. */
-          events !== null &&
-            events.length === 0 &&
-            span.kind === 'month' &&
-            !(canEdit && creatable.length > 0) ? (
+          events !== null && events.length === 0 && span.kind === 'month' && !(canEdit && creatable.length > 0) ? (
             <Centered>
               <EmptyState
                 icon="calendar-days"
@@ -413,9 +402,7 @@ export function CalendarScreen({
             shownDays={spanDays(span)}
             onClose={() => setDetail(null)}
             onOpenEvent={openEvent}
-            onSetDone={(event, done) =>
-              void edit(onSetDone({ spaceId: event.space, id: event.id, done }))
-            }
+            onSetDone={(event, done) => void edit(onSetDone({ spaceId: event.space, id: event.id, done }))}
             onReschedule={(request) => void edit(onReschedule(request))}
             onGoToDate={onSelectDate}
           />

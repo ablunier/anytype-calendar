@@ -1,8 +1,4 @@
-import type {
-  FeedsCache,
-  FeedsCalendarParser,
-  FeedsSubscriptionRepository
-} from '../domain'
+import type { FeedsCache, FeedsCalendarParser, FeedsSubscriptionRepository } from '../domain'
 import type { FeedsStore } from './feeds-store'
 
 export interface LoadFeedsDeps {
@@ -40,9 +36,9 @@ export class LoadFeeds {
         if (!copy || !calendar || this.#store.status(id).readAt !== null) return
         this.#store.update(id, {
           calendar,
-          status: { ...this.#store.status(id), readAt: copy.readAt }
+          status: { ...this.#store.status(id), readAt: copy.readAt },
         })
-      })
+      }),
     )
   }
 }

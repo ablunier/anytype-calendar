@@ -1,14 +1,14 @@
 import {
+  type FeedsAddOutcome,
+  type FeedsCache,
+  type FeedsCalendarParser,
+  type FeedsColour,
+  type FeedsGateway,
   feedsFetchFailureOf,
   feedsUrlHost,
   nextFeedsColour,
   toFeedsName,
   toFeedsUrl,
-  type FeedsAddOutcome,
-  type FeedsCache,
-  type FeedsCalendarParser,
-  type FeedsColour,
-  type FeedsGateway
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
 import type { SaveFeedsSubscriptions } from './save-feeds-subscriptions'
@@ -76,8 +76,8 @@ export class AddFeedsSubscription {
         id,
         name: given ?? toFeedsName(calendar.name) ?? feedsUrlHost(address),
         url: address,
-        colour: colour ?? nextFeedsColour(current.map((subscription) => subscription.colour))
-      }
+        colour: colour ?? nextFeedsColour(current.map((subscription) => subscription.colour)),
+      },
     ])
     this.#store.update(id, { calendar, status: { readAt, reading: false, error: null } })
     await this.#cache.write(id, { text: result.text, readAt }).catch(() => undefined)

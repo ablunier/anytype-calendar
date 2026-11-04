@@ -5,7 +5,7 @@ test.each(['https://example.com/a?b=c', 'http://example.com', 'mailto:iris@examp
   'opens %s',
   (link) => {
     expect(isOpenableLink(link)).toBe(true)
-  }
+  },
 )
 
 test.each([
@@ -13,7 +13,7 @@ test.each([
   ['a script', 'javascript:alert(1)'],
   ['an Anytype deep link', 'anytype://object?objectId=x'],
   ['no URL', 'example.com'],
-  ['not a string', 42]
+  ['not a string', 42],
 ])('refuses %s', (_, link) => {
   expect(isOpenableLink(link)).toBe(false)
 })

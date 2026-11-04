@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto'
-import { join } from 'path'
-import { setTimeout as sleep } from 'timers/promises'
-import { app, safeStorage } from 'electron'
+import { randomBytes } from 'node:crypto'
+import { join } from 'node:path'
+import { setTimeout as sleep } from 'node:timers/promises'
 import {
   AuthSessionStore,
   CheckAuthAccess,
@@ -12,15 +11,16 @@ import {
   StartAuthKeyEntry,
   StepBackAuthConnection,
   SubmitAuthApiKey,
-  SubmitAuthCode
+  SubmitAuthCode,
 } from '@anytype-calendar/auth/application'
 import type { AuthGateway, CredentialRepository } from '@anytype-calendar/auth/domain'
 import {
   AnytypeAuthGateway,
   EncryptedFileCredentialRepository,
   InMemoryAuthGateway,
-  InMemoryCredentialRepository
+  InMemoryCredentialRepository,
 } from '@anytype-calendar/auth/infrastructure'
+import { app, safeStorage } from 'electron'
 import type { Anytype } from '../anytype/compose-anytype'
 import { credentialFileAt, safeStorageCipher } from './credential-storage'
 
@@ -38,7 +38,7 @@ export function composeAuth(anytype: Anytype) {
     startAuthConnection: new StartAuthConnection({
       gateway,
       store: authSession,
-      appName: 'Calendar for Anytype'
+      appName: 'Calendar for Anytype',
     }),
     submitAuthCode: new SubmitAuthCode({ gateway, credentials, store: authSession }),
     startAuthKeyEntry: new StartAuthKeyEntry(authSession),
@@ -47,7 +47,7 @@ export function composeAuth(anytype: Anytype) {
     signOutOfAuth: new SignOutOfAuth({ credentials, store: authSession }),
     copyAuthApiKey: new CopyAuthApiKey(credentials),
     // Adapts the credentials to the key source port schema and events each declare.
-    apiKeys: { current: async () => (await credentials.load())?.apiKey ?? null }
+    apiKeys: { current: async () => (await credentials.load())?.apiKey ?? null },
   }
 }
 
@@ -55,7 +55,7 @@ function inMemoryAuthGateway(): AuthGateway {
   return new InMemoryAuthGateway({
     sleep: (ms) => sleep(ms),
     log: (message) => console.info(message),
-    randomId: () => randomBytes(3).toString('hex')
+    randomId: () => randomBytes(3).toString('hex'),
   })
 }
 
@@ -72,6 +72,6 @@ function credentialRepository(fileName: string): CredentialRepository {
   }
   return new EncryptedFileCredentialRepository({
     cipher: safeStorageCipher,
-    file: credentialFileAt(join(app.getPath('userData'), fileName))
+    file: credentialFileAt(join(app.getPath('userData'), fileName)),
   })
 }

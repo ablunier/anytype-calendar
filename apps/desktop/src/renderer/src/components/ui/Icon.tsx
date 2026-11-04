@@ -1,19 +1,16 @@
-import type { CSSProperties } from 'react'
 import type { IconName } from '@renderer/types'
+import type { CSSProperties } from 'react'
 
 /* Vite rewrites each glyph to a hashed URL at build time, so the map is resolved
  * statically rather than by string concatenation at runtime. */
 const modules = import.meta.glob('../../assets/icons/*.svg', {
   eager: true,
   query: '?url',
-  import: 'default'
+  import: 'default',
 }) as Record<string, string>
 
 const iconUrls: Partial<Record<IconName, string>> = Object.fromEntries(
-  Object.entries(modules).map(([path, url]) => [
-    path.slice(path.lastIndexOf('/') + 1, -'.svg'.length),
-    url
-  ])
+  Object.entries(modules).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -'.svg'.length), url]),
 )
 
 /** 14 for dense rows, 16 controls, 20 headers, 24 empty states. */
@@ -28,7 +25,7 @@ const sizeClass: Record<IconSize, string> = {
   16: 'size-icon-16',
   18: 'size-icon-18',
   20: 'size-icon-20',
-  24: 'size-icon-24'
+  24: 'size-icon-24',
 }
 
 export interface IconProps {
@@ -46,23 +43,19 @@ export interface IconProps {
  */
 export function Icon({ name, size = 16, title, className, style }: IconProps): React.JSX.Element {
   const url = iconUrls[name]
-  return (
-    <span
-      role={title ? 'img' : undefined}
-      aria-label={title}
-      aria-hidden={title ? undefined : true}
-      className={`inline-block shrink-0 bg-current ${sizeClass[size]} ${className ?? ''}`}
-      style={{
-        WebkitMaskImage: `url("${url}")`,
-        maskImage: `url("${url}")`,
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskPosition: 'center',
-        maskPosition: 'center',
-        WebkitMaskSize: 'contain',
-        maskSize: 'contain',
-        ...style
-      }}
-    />
-  )
+  const glyph = {
+    className: `inline-block shrink-0 bg-current ${sizeClass[size]} ${className ?? ''}`,
+    style: {
+      WebkitMaskImage: `url("${url}")`,
+      maskImage: `url("${url}")`,
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskPosition: 'center',
+      maskPosition: 'center',
+      WebkitMaskSize: 'contain',
+      maskSize: 'contain',
+      ...style,
+    },
+  }
+  return title ? <span role="img" aria-label={title} {...glyph} /> : <span aria-hidden {...glyph} />
 }

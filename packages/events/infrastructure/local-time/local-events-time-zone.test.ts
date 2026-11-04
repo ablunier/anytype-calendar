@@ -33,16 +33,16 @@ test('rolls a day or a month outside its range over into the neighbouring one', 
   expect(zone.dayOf(zone.startOfDay({ year: 2026, month: 8, day: 31 }))).toEqual({
     year: 2026,
     month: 9,
-    day: 1
+    day: 1,
   })
   expect(zone.dayOf(zone.startOfDay({ year: 2026, month: 1, day: -6 }))).toEqual({
     year: 2026,
     month: 0,
-    day: 25
+    day: 25,
   })
   expect(zone.dayOf(zone.startOfDay({ year: 2026, month: 12, day: 8 }))).toEqual({
     year: 2027,
     month: 0,
-    day: 8
+    day: 8,
   })
 })

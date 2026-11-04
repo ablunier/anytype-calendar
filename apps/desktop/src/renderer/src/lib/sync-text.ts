@@ -1,5 +1,5 @@
-import type { TFunction } from 'i18next'
 import type { SyncDetail } from '@renderer/types'
+import type { TFunction } from 'i18next'
 
 /** Resolves a `SyncDetail` (from `lib/schema.ts`/`lib/events.ts`) to the text `SyncStatus` draws. */
 export function syncDetailText(t: TFunction, detail: SyncDetail | undefined): string | undefined {

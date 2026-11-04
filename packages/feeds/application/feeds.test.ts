@@ -7,7 +7,7 @@ import type {
   FeedsGateway,
   FeedsOccurrence,
   FeedsSubscription,
-  FeedsSubscriptionRepository
+  FeedsSubscriptionRepository,
 } from '../domain'
 import { AddFeedsSubscription } from './add-feeds-subscription'
 import { EditFeedsSubscription } from './edit-feeds-subscription'
@@ -31,8 +31,8 @@ const feed = (occurrences: Partial<FeedsOccurrence>[], name: string | null = nul
       start: 1_500,
       end: null,
       allDay: false,
-      ...fields
-    }))
+      ...fields,
+    })),
   })
 
 const parser: FeedsCalendarParser = {
@@ -42,12 +42,12 @@ const parser: FeedsCalendarParser = {
       return {
         name,
         occurrencesIn: (window) =>
-          occurrences.filter(({ start, end }) => start <= window.end && (end ?? start) >= window.start)
+          occurrences.filter(({ start, end }) => start <= window.end && (end ?? start) >= window.start),
       }
     } catch {
       return null
     }
-  }
+  },
 }
 
 const subscription = (id: string, fields: Partial<FeedsSubscription> = {}): FeedsSubscription => ({
@@ -55,20 +55,20 @@ const subscription = (id: string, fields: Partial<FeedsSubscription> = {}): Feed
   name: `Feed ${id}`,
   url: `https://example.com/${id}.ics`,
   colour: 'blue',
-  ...fields
+  ...fields,
 })
 
 function setup({
   saved = [] as FeedsSubscription[],
   copies = {} as Record<string, FeedsCopy>,
-  answers = {} as Record<string, FeedsFetchResult | Promise<FeedsFetchResult>>
+  answers = {} as Record<string, FeedsFetchResult | Promise<FeedsFetchResult>>,
 } = {}) {
   let stored = saved
   const repository: FeedsSubscriptionRepository = {
     load: async () => stored,
     save: vi.fn(async (next: readonly FeedsSubscription[]) => {
       stored = [...next]
-    })
+    }),
   }
   const cached = new Map(Object.entries(copies))
   const cache: FeedsCache = {
@@ -78,10 +78,10 @@ function setup({
     },
     remove: async (id) => {
       cached.delete(id)
-    }
+    },
   }
   const gateway: FeedsGateway = {
-    fetch: vi.fn(async (url: string) => (await answers[url]) ?? { ok: false, failure: 'unreachable' })
+    fetch: vi.fn(async (url: string) => (await answers[url]) ?? { ok: false, failure: 'unreachable' }),
   }
   const store = new FeedsStore()
   const now = () => 9_000
@@ -99,7 +99,7 @@ function setup({
     edit: new EditFeedsSubscription({ gateway, parser, cache, store, save, now }),
     remove: new RemoveFeedsSubscription({ save, cache }),
     reorder: new ReorderFeedsSubscriptions(save),
-    show: new ShowFeedsWindow(store)
+    show: new ShowFeedsWindow(store),
   }
 }
 
@@ -107,17 +107,17 @@ describe('loading at launch', () => {
   test('restores the subscriptions with their cached copies, drawn in the window', async () => {
     const { store, load, show } = setup({
       saved: [subscription('a'), subscription('b')],
-      copies: { a: { text: feed([{ title: 'Standup' }]), readAt: 500 } }
+      copies: { a: { text: feed([{ title: 'Standup' }]), readAt: 500 } },
     })
     show.execute(WINDOW)
     await load.execute()
     const state = store.get()
     expect(state.subscriptions.map(({ id, host, status }) => ({ id, host, status }))).toEqual([
       { id: 'a', host: 'example.com', status: { readAt: 500, reading: false, error: null } },
-      { id: 'b', host: 'example.com', status: { readAt: null, reading: false, error: null } }
+      { id: 'b', host: 'example.com', status: { readAt: null, reading: false, error: null } },
     ])
     expect(state.events).toEqual([
-      { id: 'e0', feedId: 'a', rank: 0, title: 'Standup', start: 1_500, end: null, allDay: false }
+      { id: 'e0', feedId: 'a', rank: 0, title: 'Standup', start: 1_500, end: null, allDay: false },
     ])
   })
 
@@ -130,7 +130,7 @@ describe('loading at launch', () => {
   test('skips a copy that is no longer a calendar', async () => {
     const { store, load, show } = setup({
       saved: [subscription('a')],
-      copies: { a: { text: 'garbage', readAt: 500 } }
+      copies: { a: { text: 'garbage', readAt: 500 } },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -143,7 +143,15 @@ describe('moving the window', () => {
   test('expands what was read over the new window without reading it again', async () => {
     const { store, load, show, gateway } = setup({
       saved: [subscription('a')],
-      copies: { a: { text: feed([{ id: 'early', start: 1_500 }, { id: 'late', start: 5_500 }]), readAt: 1 } }
+      copies: {
+        a: {
+          text: feed([
+            { id: 'early', start: 1_500 },
+            { id: 'late', start: 5_500 },
+          ]),
+          readAt: 1,
+        },
+      },
     })
     await load.execute()
     show.execute(WINDOW)
@@ -158,8 +166,8 @@ describe('moving the window', () => {
       saved: [subscription('a'), subscription('b')],
       copies: {
         a: { text: feed([{ title: 'Zebra' }]), readAt: 1 },
-        b: { text: feed([{ title: 'Aardvark' }]), readAt: 1 }
-      }
+        b: { text: feed([{ title: 'Aardvark' }]), readAt: 1 },
+      },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -174,7 +182,7 @@ describe('refreshing', () => {
     const { store, load, refresh, show, cached } = setup({
       saved: [subscription('a')],
       copies: { a: { text: feed([{ title: 'Old' }]), readAt: 1 } },
-      answers: { 'https://example.com/a.ics': { ok: true, text: feed([{ title: 'New' }]) } }
+      answers: { 'https://example.com/a.ics': { ok: true, text: feed([{ title: 'New' }]) } },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -190,8 +198,8 @@ describe('refreshing', () => {
       copies: { a: { text: feed([{ title: 'Kept' }]), readAt: 1 } },
       answers: {
         'https://example.com/a.ics': { ok: false, failure: 'http', status: 404 },
-        'https://example.com/b.ics': { ok: true, text: '<html>Sign in</html>' }
-      }
+        'https://example.com/b.ics': { ok: true, text: '<html>Sign in</html>' },
+      },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -199,7 +207,7 @@ describe('refreshing', () => {
     expect(store.get().events.map(({ title }) => title)).toEqual(['Kept'])
     expect(store.get().subscriptions.map(({ status }) => status)).toEqual([
       { readAt: 1, reading: false, error: { failure: 'http', status: 404, at: 9_000 } },
-      { readAt: null, reading: false, error: { failure: 'not-calendar', at: 9_000 } }
+      { readAt: null, reading: false, error: { failure: 'not-calendar', at: 9_000 } },
     ])
   })
 
@@ -209,8 +217,8 @@ describe('refreshing', () => {
       saved: [subscription('slow'), subscription('fast')],
       answers: {
         'https://example.com/slow.ics': new Promise((resolve) => (answerSlow = resolve)),
-        'https://example.com/fast.ics': { ok: true, text: feed([{ title: 'Fast' }]) }
-      }
+        'https://example.com/fast.ics': { ok: true, text: feed([{ title: 'Fast' }]) },
+      },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -225,7 +233,7 @@ describe('refreshing', () => {
   test('does not ask for a feed already being read', async () => {
     const { load, refresh, gateway } = setup({
       saved: [subscription('a')],
-      answers: { 'https://example.com/a.ics': { ok: true, text: feed([]) } }
+      answers: { 'https://example.com/a.ics': { ok: true, text: feed([]) } },
     })
     await load.execute()
     await Promise.all([refresh.execute(), refresh.execute(['a'])])
@@ -236,7 +244,7 @@ describe('refreshing', () => {
     let answer: (result: FeedsFetchResult) => void = () => undefined
     const { store, load, refresh, remove, show, cached } = setup({
       saved: [subscription('a')],
-      answers: { 'https://example.com/a.ics': new Promise((resolve) => (answer = resolve)) }
+      answers: { 'https://example.com/a.ics': new Promise((resolve) => (answer = resolve)) },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -253,20 +261,20 @@ describe('adding a subscription', () => {
   test('reads it first, then saves it last, in a colour not yet taken', async () => {
     const { store, stored, load, add, show, cached } = setup({
       saved: [subscription('a', { colour: 'blue' })],
-      answers: { 'https://example.com/new.ics': { ok: true, text: feed([{ title: 'Holiday' }]) } }
+      answers: { 'https://example.com/new.ics': { ok: true, text: feed([{ title: 'Holiday' }]) } },
     })
     show.execute(WINDOW)
     await load.execute()
     await expect(add.execute({ url: 'webcal://example.com/new.ics', name: ' Holidays ' })).resolves.toEqual({
       ok: true,
-      id: 'new1'
+      id: 'new1',
     })
     expect(stored()).toEqual([
       subscription('a', { colour: 'blue' }),
-      { id: 'new1', name: 'Holidays', url: 'https://example.com/new.ics', colour: 'teal' }
+      { id: 'new1', name: 'Holidays', url: 'https://example.com/new.ics', colour: 'teal' },
     ])
     expect(store.get().events.map(({ title, feedId }) => ({ title, feedId }))).toEqual([
-      { title: 'Holiday', feedId: 'new1' }
+      { title: 'Holiday', feedId: 'new1' },
     ])
     expect(store.get().subscriptions[1]?.status).toEqual({ readAt: 9_000, reading: false, error: null })
     expect(cached.has('new1')).toBe(true)
@@ -282,8 +290,8 @@ describe('adding a subscription', () => {
     const { stored, add } = setup({
       answers: {
         'https://example.com/named.ics': { ok: true, text: feed([], 'Team rota') },
-        'https://example.com/bare.ics': { ok: true, text: feed([]) }
-      }
+        'https://example.com/bare.ics': { ok: true, text: feed([]) },
+      },
     })
     await add.execute({ url: 'https://example.com/named.ics', name: '' })
     await add.execute({ url: 'https://example.com/bare.ics', name: '  ' })
@@ -292,17 +300,33 @@ describe('adding a subscription', () => {
 
   test.each([
     ['an address that is not one', { url: 'example.com/cal.ics', name: 'X' }, { ok: false, failure: 'invalid-url' }],
-    ['a name too long', { url: 'https://example.com/ok.ics', name: 'x'.repeat(300) }, { ok: false, failure: 'invalid-name' }],
-    ['one that does not answer', { url: 'https://example.com/down.ics', name: 'X' }, { ok: false, failure: 'unreachable' }],
-    ['one that answers 404', { url: 'https://example.com/gone.ics', name: 'X' }, { ok: false, failure: 'http', status: 404 }],
-    ['one that is not a calendar', { url: 'https://example.com/page', name: 'X' }, { ok: false, failure: 'not-calendar' }]
+    [
+      'a name too long',
+      { url: 'https://example.com/ok.ics', name: 'x'.repeat(300) },
+      { ok: false, failure: 'invalid-name' },
+    ],
+    [
+      'one that does not answer',
+      { url: 'https://example.com/down.ics', name: 'X' },
+      { ok: false, failure: 'unreachable' },
+    ],
+    [
+      'one that answers 404',
+      { url: 'https://example.com/gone.ics', name: 'X' },
+      { ok: false, failure: 'http', status: 404 },
+    ],
+    [
+      'one that is not a calendar',
+      { url: 'https://example.com/page', name: 'X' },
+      { ok: false, failure: 'not-calendar' },
+    ],
   ])('refuses %s, saving nothing', async (_, input, outcome) => {
     const { stored, add, repository } = setup({
       answers: {
         'https://example.com/ok.ics': { ok: true, text: feed([]) },
         'https://example.com/gone.ics': { ok: false, failure: 'http', status: 404 },
-        'https://example.com/page': { ok: true, text: '<!doctype html>' }
-      }
+        'https://example.com/page': { ok: true, text: '<!doctype html>' },
+      },
     })
     await expect(add.execute(input)).resolves.toEqual(outcome)
     expect(stored()).toEqual([])
@@ -323,7 +347,7 @@ describe('editing the subscriptions', () => {
     const { stored, load, edit, store, show, cached } = setup({
       saved: [subscription('a')],
       copies: { a: { text: feed([{ title: 'Old' }]), readAt: 1 } },
-      answers: { 'https://example.com/moved.ics': { ok: true, text: feed([{ title: 'Moved' }]) } }
+      answers: { 'https://example.com/moved.ics': { ok: true, text: feed([{ title: 'Moved' }]) } },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -337,11 +361,11 @@ describe('editing the subscriptions', () => {
   test.each([
     ['an address that is not one', 'example.com/x.ics', { ok: false, failure: 'invalid-url' }],
     ['one that does not answer', 'https://example.com/down.ics', { ok: false, failure: 'unreachable' }],
-    ['one that is not a calendar', 'https://example.com/page', { ok: false, failure: 'not-calendar' }]
+    ['one that is not a calendar', 'https://example.com/page', { ok: false, failure: 'not-calendar' }],
   ])('refuses %s, keeping the address and the rest of the edit unsaved', async (_, url, outcome) => {
     const { stored, load, edit, repository } = setup({
       saved: [subscription('a')],
-      answers: { 'https://example.com/page': { ok: true, text: '<!doctype html>' } }
+      answers: { 'https://example.com/page': { ok: true, text: '<!doctype html>' } },
     })
     await load.execute()
     await expect(edit.execute({ id: 'a', name: 'Renamed', url })).resolves.toEqual(outcome)
@@ -362,8 +386,8 @@ describe('editing the subscriptions', () => {
       saved: [subscription('a')],
       answers: {
         'https://example.com/a.ics': new Promise((resolve) => (answerOld = resolve)),
-        'https://example.com/new.ics': { ok: true, text: feed([{ title: 'New' }]) }
-      }
+        'https://example.com/new.ics': { ok: true, text: feed([{ title: 'New' }]) },
+      },
     })
     show.execute(WINDOW)
     await load.execute()
@@ -378,7 +402,7 @@ describe('editing the subscriptions', () => {
   test('removes one along with its cached copy', async () => {
     const { stored, load, remove, cached } = setup({
       saved: [subscription('a'), subscription('b')],
-      copies: { a: { text: feed([]), readAt: 1 } }
+      copies: { a: { text: feed([]), readAt: 1 } },
     })
     await load.execute()
     await remove.execute('a')
@@ -387,7 +411,9 @@ describe('editing the subscriptions', () => {
   })
 
   test('reorders them only by a list naming each once', async () => {
-    const { stored, load, reorder, repository } = setup({ saved: [subscription('a'), subscription('b'), subscription('c')] })
+    const { stored, load, reorder, repository } = setup({
+      saved: [subscription('a'), subscription('b'), subscription('c')],
+    })
     await load.execute()
     await reorder.execute(['c', 'a', 'b'])
     expect(stored().map(({ id }) => id)).toEqual(['c', 'a', 'b'])
@@ -401,12 +427,12 @@ describe('editing the subscriptions', () => {
   test('applies changes made together one over the other', async () => {
     const { stored, load, edit, add } = setup({
       saved: [subscription('a')],
-      answers: { 'https://example.com/new.ics': { ok: true, text: feed([]) } }
+      answers: { 'https://example.com/new.ics': { ok: true, text: feed([]) } },
     })
     await load.execute()
     await Promise.all([
       add.execute({ url: 'https://example.com/new.ics', name: 'New' }),
-      edit.execute({ id: 'a', name: 'Renamed' })
+      edit.execute({ id: 'a', name: 'Renamed' }),
     ])
     expect(stored().map(({ name }) => name)).toEqual(['Renamed', 'New'])
   })

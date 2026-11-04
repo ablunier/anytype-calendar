@@ -1,5 +1,5 @@
-import { useId } from 'react'
 import type { CategoryHue } from '@renderer/types'
+import { useId } from 'react'
 import { catBg } from './category'
 import { Icon } from './Icon'
 
@@ -27,7 +27,7 @@ export function Checkbox({
   description,
   ariaLabel,
   swatch,
-  disabled = false
+  disabled = false,
 }: CheckboxProps): React.JSX.Element {
   const id = useId()
   const fill = swatch ? catBg[swatch] : 'bg-surface-accent'
@@ -41,7 +41,7 @@ export function Checkbox({
       className={[
         'relative flex gap-8',
         description ? 'items-start' : 'items-center',
-        disabled ? 'opacity-45' : ''
+        disabled ? 'opacity-45' : '',
       ].join(' ')}
     >
       <input
@@ -63,7 +63,7 @@ export function Checkbox({
           disabled ? 'cursor-not-allowed' : 'cursor-pointer',
           checked ? `border-transparent ${fill}` : 'border-line-strong bg-surface-card',
           'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
-          'peer-focus-visible:outline-focus-ring'
+          'peer-focus-visible:outline-focus-ring',
         ].join(' ')}
       >
         {checked ? <Icon name="check" size={11} className="text-stone-000" /> : null}
@@ -71,14 +71,10 @@ export function Checkbox({
       {label ? (
         <label
           htmlFor={id}
-          className={['flex flex-col gap-2', disabled ? 'cursor-not-allowed' : 'cursor-pointer'].join(
-            ' '
-          )}
+          className={['flex flex-col gap-2', disabled ? 'cursor-not-allowed' : 'cursor-pointer'].join(' ')}
         >
           <span className="type-ui text-small text-ink-body">{label}</span>
-          {description ? (
-            <span className="type-caption text-tiny text-ink-tertiary">{description}</span>
-          ) : null}
+          {description ? <span className="type-caption text-tiny text-ink-tertiary">{description}</span> : null}
         </label>
       ) : null}
     </div>

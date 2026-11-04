@@ -1,16 +1,16 @@
 import {
   compareFeedsEvents,
-  feedsUrlHost,
-  NO_FEEDS,
-  sameFeedsWindow,
-  UNREAD_FEED,
   type FeedsCalendar,
   type FeedsEvent,
   type FeedsOccurrence,
   type FeedsReadStatus,
   type FeedsState,
   type FeedsSubscription,
-  type FeedsWindow
+  type FeedsWindow,
+  feedsUrlHost,
+  NO_FEEDS,
+  sameFeedsWindow,
+  UNREAD_FEED,
 } from '../domain'
 
 export type FeedsListener = (state: FeedsState) => void
@@ -87,10 +87,10 @@ export class FeedsStore {
         name,
         colour,
         host: feedsUrlHost(url),
-        status: this.status(id)
+        status: this.status(id),
       })),
       window: this.#window,
-      events: this.#events()
+      events: this.#events(),
     }
     for (const listener of this.#listeners) listener(this.#state)
   }
@@ -100,7 +100,7 @@ export class FeedsStore {
     if (window === null) return []
     return this.#subscriptions
       .flatMap(({ id }, rank) =>
-        this.#occurrences(id, window).map((occurrence) => ({ ...occurrence, feedId: id, rank }))
+        this.#occurrences(id, window).map((occurrence) => ({ ...occurrence, feedId: id, rank })),
       )
       .sort(compareFeedsEvents)
   }

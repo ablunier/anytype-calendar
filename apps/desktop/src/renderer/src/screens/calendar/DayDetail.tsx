@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
-import type { CalendarEvent, ObjectType } from '@renderer/types'
 import { eventHue, longDate } from '@renderer/lib/calendar'
+import type { CalendarEvent, ObjectType } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { EventRow } from './EventRow'
 
 export interface DayDetailProps {
@@ -11,19 +11,12 @@ export interface DayDetailProps {
   onOpenEvent: (event: CalendarEvent) => void
 }
 
-export function DayDetail({
-  date,
-  events,
-  typesByKey,
-  onOpenEvent
-}: DayDetailProps): React.JSX.Element {
+export function DayDetail({ date, events, typesByKey, onOpenEvent }: DayDetailProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   return (
     <div className="flex min-h-0 flex-col">
       <div className="px-16 pt-16 pb-8">
-        <h2 className="mb-2 type-heading text-h4 text-ink-primary">
-          {longDate(date, i18n.language)}
-        </h2>
+        <h2 className="mb-2 type-heading text-h4 text-ink-primary">{longDate(date, i18n.language)}</h2>
         <span className="type-numeral text-tiny text-ink-tertiary">
           {t('calendar.dayDetail.eventCount', { count: events.length })}
         </span>

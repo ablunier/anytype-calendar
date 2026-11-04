@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
 import { AnytypeClient, type AnytypeFetch } from '@ablunier/anytype-client'
+import { describe, expect, test } from 'vitest'
 import { AnytypeEventsWriter } from './anytype-events-writer'
 
 type FetchCall = { url: string; init: Parameters<AnytypeFetch>[1] }
@@ -22,7 +22,7 @@ function setup(...replies: Reply[]) {
       if (reply instanceof Error) throw reply
       const text = 'text' in reply ? reply.text : JSON.stringify(reply.body)
       return { status: reply.status, text: async () => text }
-    }
+    },
   })
   const writer = new AnytypeEventsWriter(client)
   return { writer, calls }
@@ -32,7 +32,7 @@ const edited: Reply = { status: 200, body: { etag: 'e2', diff_stats: {} } }
 
 const v2Error = (status: number, code: string, issues: { path: string; message: string }[] = []): Reply => ({
   status,
-  body: { status, code, message: `${code} message`, issues }
+  body: { status, code, message: `${code} message`, issues },
 })
 
 const bodyOf = (call: FetchCall | undefined): unknown => JSON.parse(call?.init.body ?? 'null')
@@ -44,8 +44,8 @@ describe('rescheduling', () => {
     await expect(
       writer.reschedule(API_KEY, TARGET, {
         start_date: Date.UTC(2026, 8, 16, 14, 0, 0, 750),
-        '6a650e02aa': Date.UTC(2026, 8, 16, 15)
-      })
+        '6a650e02aa': Date.UTC(2026, 8, 16, 15),
+      }),
     ).resolves.toEqual({ ok: true, value: null })
 
     expect(calls).toHaveLength(1)
@@ -53,15 +53,15 @@ describe('rescheduling', () => {
     expect(calls[0]?.init.method).toBe('PATCH')
     expect(calls[0]?.init.headers).toMatchObject({
       Authorization: `Bearer ${API_KEY}`,
-      'Idempotency-Key': 'idem-1'
+      'Idempotency-Key': 'idem-1',
     })
     expect(bodyOf(calls[0])).toEqual({
       ops: [
         {
           op: 'set_properties',
-          set: { start_date: '2026-09-16T14:00:00Z', '6a650e02aa': '2026-09-16T15:00:00Z' }
-        }
-      ]
+          set: { start_date: '2026-09-16T14:00:00Z', '6a650e02aa': '2026-09-16T15:00:00Z' },
+        },
+      ],
     })
   })
 
@@ -93,10 +93,19 @@ describe('rescheduling', () => {
 
 describe('refusals', () => {
   test.each([
-    [{ status: 401, body: { object: 'error', status: 401, code: 'unauthorized', message: 'x' } }, { failure: 'unauthorized' }],
-    [{ status: 403, body: { object: 'error', status: 403, code: 'write_not_granted', message: 'x' } }, { failure: 'not-granted' }],
+    [
+      { status: 401, body: { object: 'error', status: 401, code: 'unauthorized', message: 'x' } },
+      { failure: 'unauthorized' },
+    ],
+    [
+      { status: 403, body: { object: 'error', status: 403, code: 'write_not_granted', message: 'x' } },
+      { failure: 'not-granted' },
+    ],
     [v2Error(403, 'space_not_granted'), { failure: 'not-granted' }],
-    [{ status: 429, body: { object: 'error', status: 429, code: 'rate_limit_exceeded', message: 'x' } }, { failure: 'rate-limited' }]
+    [
+      { status: 429, body: { object: 'error', status: 429, code: 'rate_limit_exceeded', message: 'x' } },
+      { failure: 'rate-limited' },
+    ],
   ] as const)('reads %j as %j', async (reply, failure) => {
     const { writer } = setup(reply)
     await expect(writer.setDone(API_KEY, TARGET, 'done', true)).resolves.toEqual({ ok: false, ...failure })
@@ -105,17 +114,17 @@ describe('refusals', () => {
   test("says why Anytype refused a change, in its first issue's words where it names one", async () => {
     const { writer } = setup(
       v2Error(400, 'invalid_input', [{ path: 'ops[0].set.due_date', message: 'due_date is not a date' }]),
-      v2Error(404, 'object_not_found')
+      v2Error(404, 'object_not_found'),
     )
     await expect(writer.reschedule(API_KEY, TARGET, { due_date: 0 })).resolves.toEqual({
       ok: false,
       failure: 'rejected',
-      message: 'due_date is not a date'
+      message: 'due_date is not a date',
     })
     await expect(writer.reschedule(API_KEY, TARGET, { due_date: 0 })).resolves.toEqual({
       ok: false,
       failure: 'rejected',
-      message: 'object_not_found message'
+      message: 'object_not_found message',
     })
   })
 
@@ -123,7 +132,7 @@ describe('refusals', () => {
     const { writer } = setup({ status: 404, text: '404 page not found' })
     await expect(writer.setDone(API_KEY, TARGET, 'done', false)).resolves.toEqual({
       ok: false,
-      failure: 'unsupported'
+      failure: 'unsupported',
     })
   })
 
@@ -150,8 +159,8 @@ describe('creating', () => {
         spaceId: SPACE_ID,
         typeKey: 'meeting',
         name: 'Retro',
-        dates: { start_date: Date.UTC(2026, 8, 18, 16), end_date: Date.UTC(2026, 8, 18, 17) }
-      })
+        dates: { start_date: Date.UTC(2026, 8, 18, 16), end_date: Date.UTC(2026, 8, 18, 17) },
+      }),
     ).resolves.toEqual({ ok: true, value: { id: 'bafynew' } })
 
     expect(calls[0]?.url).toBe(`${BASE}/v2/spaces/bafy.space/objects`)
@@ -160,14 +169,14 @@ describe('creating', () => {
     expect(bodyOf(calls[0])).toEqual({
       type: 'meeting',
       name: 'Retro',
-      properties: { start_date: '2026-09-18T16:00:00Z', end_date: '2026-09-18T17:00:00Z' }
+      properties: { start_date: '2026-09-18T16:00:00Z', end_date: '2026-09-18T17:00:00Z' },
     })
   })
 
   test('rejects a creation answered without an id', async () => {
     const { writer } = setup({ status: 201, body: { etag: 'e1' } })
     await expect(
-      writer.create(API_KEY, { spaceId: SPACE_ID, typeKey: 'meeting', name: '', dates: {} })
+      writer.create(API_KEY, { spaceId: SPACE_ID, typeKey: 'meeting', name: '', dates: {} }),
     ).rejects.toThrow('without an id')
   })
 })
@@ -175,7 +184,7 @@ describe('creating', () => {
 describe('adding to a collection', () => {
   const COLLECTION = { spaceId: SPACE_ID, collectionId: 'bafycol' }
 
-  test("patches the collection with one add_items op naming the object, under an Idempotency-Key", async () => {
+  test('patches the collection with one add_items op naming the object, under an Idempotency-Key', async () => {
     const { writer, calls } = setup(edited)
 
     await expect(writer.addToCollection(API_KEY, COLLECTION, 'bafynew')).resolves.toEqual({ ok: true, value: null })
@@ -185,7 +194,7 @@ describe('adding to a collection', () => {
     expect(calls[0]?.init.method).toBe('PATCH')
     expect(calls[0]?.init.headers).toMatchObject({
       Authorization: `Bearer ${API_KEY}`,
-      'Idempotency-Key': 'idem-1'
+      'Idempotency-Key': 'idem-1',
     })
     expect(bodyOf(calls[0])).toEqual({ ops: [{ op: 'add_items', items: ['bafynew'] }] })
   })
@@ -195,7 +204,7 @@ describe('adding to a collection', () => {
     await expect(writer.addToCollection(API_KEY, COLLECTION, 'bafynew')).resolves.toEqual({
       ok: false,
       failure: 'rejected',
-      message: 'object not found'
+      message: 'object not found',
     })
   })
 })

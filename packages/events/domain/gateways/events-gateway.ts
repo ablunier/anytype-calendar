@@ -1,6 +1,6 @@
 import type { EventsDetailRef, EventsLinkedObject } from '../model/detail'
-import type { EventsWindow } from '../model/window'
 import type { EventsSource } from '../model/source'
+import type { EventsWindow } from '../model/window'
 
 export interface EventsObjectRef {
   id: string
@@ -23,9 +23,7 @@ export interface EventsObjectRef {
  * error, so it is a value; only a transport breakdown or a response Anytype should never give
  * rejects the promise.
  */
-export type EventsGatewayResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; failure: 'unauthorized' | 'outdated' }
+export type EventsGatewayResult<T> = { ok: true; value: T } | { ok: false; failure: 'unauthorized' | 'outdated' }
 
 export interface EventsGateway {
   /**
@@ -37,7 +35,7 @@ export interface EventsGateway {
   listObjects(
     apiKey: string,
     source: EventsSource,
-    window: EventsWindow
+    window: EventsWindow,
   ): Promise<EventsGatewayResult<EventsObjectRef[]>>
 
   /**
@@ -47,6 +45,6 @@ export interface EventsGateway {
   listLinkedObjects(
     apiKey: string,
     spaceId: string,
-    ids: readonly string[]
+    ids: readonly string[],
   ): Promise<EventsGatewayResult<EventsLinkedObject[]>>
 }

@@ -29,7 +29,8 @@ test('the stored credential cannot be changed through an object handed in or out
   await repository.save(saved)
   saved.apiKey = 'tampered'
   const loaded = await repository.load()
-  loaded!.apiKey = 'tampered'
+  expect(loaded).toEqual(credential)
+  if (loaded) loaded.apiKey = 'tampered'
 
   await expect(repository.load()).resolves.toEqual(credential)
 })

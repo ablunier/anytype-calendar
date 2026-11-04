@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
 import type { IconName, SyncState } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { Icon } from './Icon'
 
 interface SyncPresentation {
@@ -15,7 +15,7 @@ const presentation: Record<SyncState, SyncPresentation> = {
   synced: { icon: 'check', fg: 'text-ink-accent', bg: 'bg-surface-accent-soft' },
   syncing: { icon: 'refresh-cw', fg: 'text-ochre-600', bg: 'bg-ochre-050' },
   offline: { icon: 'unplug', fg: 'text-ink-secondary', bg: 'bg-surface-sunken' },
-  error: { icon: 'circle-alert', fg: 'text-ink-danger', bg: 'bg-surface-danger-soft' }
+  error: { icon: 'circle-alert', fg: 'text-ink-danger', bg: 'bg-surface-danger-soft' },
 }
 
 export interface SyncStatusProps {
@@ -26,33 +26,15 @@ export interface SyncStatusProps {
   compact?: boolean
 }
 
-export function SyncStatus({
-  state = 'synced',
-  detail,
-  label,
-  compact = false
-}: SyncStatusProps): React.JSX.Element {
+export function SyncStatus({ state = 'synced', detail, label, compact = false }: SyncStatusProps): React.JSX.Element {
   const { t } = useTranslation()
   const s = presentation[state]
   return (
-    <div
-      className={[
-        'flex items-center gap-8 rounded-6',
-        compact ? '' : `px-8 py-6 ${s.bg}`
-      ].join(' ')}
-    >
-      <Icon
-        name={s.icon}
-        size={14}
-        className={[s.fg, state === 'syncing' ? 'animate-spinner-slow' : ''].join(' ')}
-      />
+    <div className={['flex items-center gap-8 rounded-6', compact ? '' : `px-8 py-6 ${s.bg}`].join(' ')}>
+      <Icon name={s.icon} size={14} className={[s.fg, state === 'syncing' ? 'animate-spinner-slow' : ''].join(' ')} />
       <span className="flex flex-col leading-numeral">
-        <span className={['type-ui text-tiny', s.fg].join(' ')}>
-          {label ?? t(`sync.status.${state}`)}
-        </span>
-        {detail ? (
-          <span className="type-numeral text-micro text-ink-tertiary">{detail}</span>
-        ) : null}
+        <span className={['type-ui text-tiny', s.fg].join(' ')}>{label ?? t(`sync.status.${state}`)}</span>
+        {detail ? <span className="type-numeral text-micro text-ink-tertiary">{detail}</span> : null}
       </span>
     </div>
   )

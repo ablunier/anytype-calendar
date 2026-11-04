@@ -30,15 +30,7 @@ describe('Galician calendar fallback', () => {
 
   test('weekdayNames falls back to the hardcoded Galician names', async () => {
     const { weekdayNames } = await import('./calendar')
-    expect(weekdayNames('gl', 'long')).toEqual([
-      'luns',
-      'martes',
-      'mércores',
-      'xoves',
-      'venres',
-      'sábado',
-      'domingo'
-    ])
+    expect(weekdayNames('gl', 'long')).toEqual(['luns', 'martes', 'mércores', 'xoves', 'venres', 'sábado', 'domingo'])
     expect(weekdayNames('gl', 'short')).toEqual(['luns', 'mar.', 'mér.', 'xov.', 'ven.', 'sáb.', 'dom.'])
   })
 
@@ -62,9 +54,7 @@ describe('Galician calendar fallback', () => {
     const { weekLabel } = await import('./calendar')
     expect(weekLabel('2026-09-21', '2026-09-27', 'gl')).toBe('21–27 de set. de 2026')
     expect(weekLabel('2026-09-28', '2026-10-04', 'gl')).toBe('28 de set.–4 de out. de 2026')
-    expect(weekLabel('2026-12-28', '2027-01-03', 'gl')).toBe(
-      '28 de dec. de 2026–3 de xan. de 2027'
-    )
+    expect(weekLabel('2026-12-28', '2027-01-03', 'gl')).toBe('28 de dec. de 2026–3 de xan. de 2027')
   })
 
   test('formatTime uses a.m./p.m. and leaves 24h untouched', async () => {

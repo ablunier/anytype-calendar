@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import type { CategoryHue, IconName } from '@renderer/types'
+import type { ReactNode } from 'react'
 import { catBgSoft, catText } from './category'
 import { Icon } from './Icon'
 
@@ -16,7 +16,7 @@ export function Tag({ children, category = 'graphite', icon }: TagProps): React.
         'inline-flex h-22 items-center gap-4 rounded-chip border border-transparent px-8',
         'type-caption text-tiny font-medium',
         catBgSoft[category],
-        catText[category]
+        catText[category],
       ].join(' ')}
     >
       {icon ? <Icon name={icon} size={12} /> : null}

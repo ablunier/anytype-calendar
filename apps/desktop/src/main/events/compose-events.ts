@@ -1,4 +1,4 @@
-import { setTimeout as sleep } from 'timers/promises'
+import { setTimeout as sleep } from 'node:timers/promises'
 import type { AnytypeClient } from '@ablunier/anytype-client'
 import {
   CompleteEventsObject,
@@ -6,11 +6,9 @@ import {
   EventsSpanStore,
   LoadEventsSpan,
   RescheduleEventsObject,
-  ResetEventsSpan
+  ResetEventsSpan,
 } from '@anytype-calendar/events/application'
 import {
-  eventsSpanWindow,
-  shownEventsSpan,
   type EventsApiKeySource,
   type EventsDay,
   type EventsGateway,
@@ -18,13 +16,15 @@ import {
   type EventsSpan,
   type EventsTimeZone,
   type EventsWindow,
-  type EventsWriter
+  type EventsWriter,
+  eventsSpanWindow,
+  shownEventsSpan,
 } from '@anytype-calendar/events/domain'
 import {
   AnytypeEventsGateway,
   AnytypeEventsWriter,
   InMemoryEventsGateway,
-  LocalEventsTimeZone
+  LocalEventsTimeZone,
 } from '@anytype-calendar/events/infrastructure'
 import type { Anytype } from '../anytype/compose-anytype'
 
@@ -50,7 +50,7 @@ export function composeEvents({ anytype, apiKeys, sources, defaultSpan }: Events
     zone,
     store: eventsState,
     // A launch opens on the view last chosen, so the first read is the one the window draws.
-    defaultSpan: openingSpan
+    defaultSpan: openingSpan,
   })
   const editDeps = { writer, apiKeys, sources, zone, store: eventsState, load: loadEventsSpan }
   return {
@@ -61,14 +61,14 @@ export function composeEvents({ anytype, apiKeys, sources, defaultSpan }: Events
     createEventsObject: new CreateEventsObject(editDeps),
     completeEventsObject: new CompleteEventsObject(editDeps),
     /** The span on screen, or before any, the one a launch opens on. */
-    shownWindow: (): EventsWindow => eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone)
+    shownWindow: (): EventsWindow => eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone),
   }
 }
 
 function anytypeEvents(client: AnytypeClient): { gateway: EventsGateway; writer: EventsWriter } {
   return {
     gateway: new AnytypeEventsGateway({ client, warn: (message) => console.warn(message) }),
-    writer: new AnytypeEventsWriter(client)
+    writer: new AnytypeEventsWriter(client),
   }
 }
 

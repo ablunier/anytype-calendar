@@ -1,10 +1,10 @@
-import { useTranslation } from 'react-i18next'
-import type { EventsRescheduleRequest } from '@shared/ipc'
-import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/types'
 import { IconButton } from '@renderer/components/ui'
 import { eventsOnDay } from '@renderer/lib/calendar'
+import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/types'
+import type { EventsRescheduleRequest } from '@shared/ipc'
+import { useTranslation } from 'react-i18next'
 import { DayDetail } from './DayDetail'
-import { EventDetail, FeedEventDetail, type DatePickerSettings } from './EventDetail'
+import { type DatePickerSettings, EventDetail, FeedEventDetail } from './EventDetail'
 
 export interface DetailPanelProps {
   detail: DetailTarget
@@ -36,7 +36,7 @@ export function DetailPanel({
   onOpenEvent,
   onSetDone,
   onReschedule,
-  onGoToDate
+  onGoToDate,
 }: DetailPanelProps): React.JSX.Element {
   const { t } = useTranslation()
   /* The event as it is now, not as it was when opened: ticked, moved, or read again since. It

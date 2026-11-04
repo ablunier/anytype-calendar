@@ -3,13 +3,16 @@ import { FEEDS_COLOURS, feedsUrlHost, nextFeedsColour, toFeedsName, toFeedsUrl }
 
 describe('toFeedsUrl', () => {
   test.each([
-    ['https://calendar.google.com/calendar/ical/x/private-abc/basic.ics', 'https://calendar.google.com/calendar/ical/x/private-abc/basic.ics'],
+    [
+      'https://calendar.google.com/calendar/ical/x/private-abc/basic.ics',
+      'https://calendar.google.com/calendar/ical/x/private-abc/basic.ics',
+    ],
     ['http://example.com/cal.ics', 'http://example.com/cal.ics'],
     ['  https://example.com/cal.ics \n', 'https://example.com/cal.ics'],
     ['webcal://p01-caldav.icloud.com/published/2/abc', 'https://p01-caldav.icloud.com/published/2/abc'],
     ['WEBCALS://example.com/cal', 'https://example.com/cal'],
     ['HTTPS://Example.com', 'https://Example.com'],
-    ['https://example.com:8443/feed?token=a#b', 'https://example.com:8443/feed?token=a#b']
+    ['https://example.com:8443/feed?token=a#b', 'https://example.com:8443/feed?token=a#b'],
   ])('reads %s', (input, expected) => {
     expect(toFeedsUrl(input)).toBe(expected)
   })
@@ -22,7 +25,7 @@ describe('toFeedsUrl', () => {
     ['no host', 'https:///cal.ics'],
     ['only a port', 'https://:443/cal.ics'],
     ['a space inside', 'https://example.com/my cal.ics'],
-    ['not a string', 42]
+    ['not a string', 42],
   ])('refuses %s', (_, input) => {
     expect(toFeedsUrl(input)).toBeNull()
   })

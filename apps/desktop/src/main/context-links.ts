@@ -42,7 +42,7 @@ export function linkContexts({
   eventsState,
   loadEventsSpan,
   resetEventsSpan,
-  showFeedsForSpan
+  showFeedsForSpan,
 }: ContextLinksDeps): void {
   // Checking the key's access is what fills in a restored session's, and replaces the session
   // while it stays connected, which must not read everything again.

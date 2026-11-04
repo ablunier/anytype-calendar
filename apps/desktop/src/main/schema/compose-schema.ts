@@ -1,4 +1,4 @@
-import { setTimeout as sleep } from 'timers/promises'
+import { setTimeout as sleep } from 'node:timers/promises'
 import {
   LoadSchemaSelection,
   RekeySchemaSelection,
@@ -6,13 +6,13 @@ import {
   SaveSchemaSelection,
   SchemaSelectionStore,
   SchemaSyncStore,
-  SyncSchema
+  SyncSchema,
 } from '@anytype-calendar/schema/application'
 import type { SchemaApiKeySource } from '@anytype-calendar/schema/domain'
 import {
   AnytypeSchemaGateway,
   InMemorySchemaGateway,
-  JsonFileSchemaSelectionRepository
+  JsonFileSchemaSelectionRepository,
 } from '@anytype-calendar/schema/infrastructure'
 import type { Anytype } from '../anytype/compose-anytype'
 import type { AppConfigStore } from '../app-config-file'
@@ -32,7 +32,7 @@ export function composeSchema({ anytype, apiKeys, appConfig }: SchemaDeps) {
     anytype.kind === 'real'
       ? new AnytypeSchemaGateway({
           client: anytype.client,
-          encodeBase64: (bytes) => Buffer.from(bytes).toString('base64')
+          encodeBase64: (bytes) => Buffer.from(bytes).toString('base64'),
         })
       : new InMemorySchemaGateway({ sleep: (ms) => sleep(ms) })
 
@@ -46,6 +46,6 @@ export function composeSchema({ anytype, apiKeys, appConfig }: SchemaDeps) {
     schemaSelection,
     loadSchemaSelection: new LoadSchemaSelection({ repository, store: schemaSelection }),
     saveSchemaSelection,
-    rekeySchemaSelection: new RekeySchemaSelection(saveSchemaSelection)
+    rekeySchemaSelection: new RekeySchemaSelection(saveSchemaSelection),
   }
 }

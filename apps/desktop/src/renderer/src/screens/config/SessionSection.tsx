@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import type { ApiAccessView, ApiKeyView } from '@renderer/types'
 import { Button, Card, Icon, IconButton } from '@renderer/components/ui'
 import { API_KEYS_BREADCRUMB } from '@renderer/lib/anytype-menu'
 import { isoDate } from '@renderer/lib/calendar'
+import type { ApiAccessView, ApiKeyView } from '@renderer/types'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface SessionSectionProps {
   apiKey: ApiKeyView
@@ -16,12 +16,7 @@ export interface SessionSectionProps {
 
 const COPIED_FEEDBACK_MS = 2_000
 
-export function SessionSection({
-  apiKey,
-  access,
-  onCopyKey,
-  onSignOut
-}: SessionSectionProps): React.JSX.Element {
+export function SessionSection({ apiKey, access, onCopyKey, onSignOut }: SessionSectionProps): React.JSX.Element {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
@@ -33,10 +28,8 @@ export function SessionSection({
 
   const accessSummary = (view: ApiAccessView): string =>
     [
-      view.spaceCount === null
-        ? t('config.session.allSpaces')
-        : t('common.spacesCount', { count: view.spaceCount }),
-      view.canEdit ? t('config.session.canEdit') : t('config.session.readOnly')
+      view.spaceCount === null ? t('config.session.allSpaces') : t('common.spacesCount', { count: view.spaceCount }),
+      view.canEdit ? t('config.session.canEdit') : t('config.session.readOnly'),
     ].join(' · ')
 
   useEffect(() => {
@@ -58,9 +51,7 @@ export function SessionSection({
             <Icon name="shield-check" size={16} className="text-ink-tertiary" />
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="type-ui text-small text-ink-primary">{t('config.session.apiKey')}</span>
-              <span className="truncate type-numeral text-tiny text-ink-tertiary">
-                {keySummary(apiKey)}
-              </span>
+              <span className="truncate type-numeral text-tiny text-ink-tertiary">{keySummary(apiKey)}</span>
             </div>
             <IconButton
               icon={copied ? 'check' : 'copy'}
@@ -79,9 +70,7 @@ export function SessionSection({
           </div>
           <div className="flex items-center gap-12 pt-12">
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="type-ui text-small text-ink-primary">
-                {t('config.session.signOutTitle')}
-              </span>
+              <span className="type-ui text-small text-ink-primary">{t('config.session.signOutTitle')}</span>
               <span className="type-caption text-tiny text-ink-secondary">
                 {t('config.session.signOutDescription')}
               </span>
@@ -95,16 +84,12 @@ export function SessionSection({
 
       {/* The local API cannot delete keys, so revoking is done in Anytype itself. */}
       <section>
-        <h2 className="mb-10 type-heading text-h4 text-ink-primary">
-          {t('config.session.revokeHeading')}
-        </h2>
+        <h2 className="mb-10 type-heading text-h4 text-ink-primary">{t('config.session.revokeHeading')}</h2>
         <Card>
           <div className="flex items-start gap-12">
             <Icon name="info" size={16} className="mt-2 text-ink-tertiary" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <span className="type-ui text-small text-ink-primary">
-                {t('config.session.revokeTitle')}
-              </span>
+              <span className="type-ui text-small text-ink-primary">{t('config.session.revokeTitle')}</span>
               <span className="max-w-prose-max type-caption text-tiny text-ink-body">
                 {t('config.session.revokeInstructions', { breadcrumb: API_KEYS_BREADCRUMB })}
               </span>

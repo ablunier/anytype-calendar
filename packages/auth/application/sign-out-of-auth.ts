@@ -1,5 +1,5 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
-import { nextAuthSession, type AuthEvent, type AuthSession, type CredentialRepository } from '../domain'
+import { type AuthEvent, type AuthSession, type CredentialRepository, nextAuthSession } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
 export interface SignOutOfAuthDeps {

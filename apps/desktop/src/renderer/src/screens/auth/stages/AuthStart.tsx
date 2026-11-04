@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
 import { Button } from '@renderer/components/ui'
 import { AuthHead } from '@renderer/screens/auth/AuthShell'
+import { useTranslation } from 'react-i18next'
 
 export interface AuthStartProps {
   onStart: () => void

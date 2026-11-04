@@ -1,5 +1,5 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
-import { nextAuthSession, type AuthEvent, type AuthSession } from '../domain'
+import { type AuthEvent, type AuthSession, nextAuthSession } from '../domain'
 import type { AuthSessionStore } from './session-store'
 
 /** Switches the start screen from the code challenge to pasting a key the user already has. */

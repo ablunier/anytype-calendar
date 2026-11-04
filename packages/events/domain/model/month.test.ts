@@ -50,7 +50,7 @@ describe('toEventsMonth', () => {
     ['a negative month', { year: 2026, month: -1 }],
     ['year 0', { year: 0, month: 0 }],
     ['a five-digit year', { year: 10_000, month: 0 }],
-    ['an infinite year', { year: Infinity, month: 0 }]
+    ['an infinite year', { year: Infinity, month: 0 }],
   ])('rejects %s', (_, value) => {
     expect(toEventsMonth(value)).toBeNull()
   })
@@ -67,7 +67,7 @@ describe('toEventsDay', () => {
     ['day 0', { year: 2026, month: 8, day: 0 }],
     ['day 32', { year: 2026, month: 8, day: 32 }],
     ['a fractional day', { year: 2026, month: 8, day: 3.5 }],
-    ['a month it would reject on its own', { year: 2026, month: 12, day: 3 }]
+    ['a month it would reject on its own', { year: 2026, month: 12, day: 3 }],
   ])('rejects %s', (_, value) => {
     expect(toEventsDay(value)).toBeNull()
   })

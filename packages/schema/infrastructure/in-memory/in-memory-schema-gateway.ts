@@ -7,7 +7,7 @@ import type {
   SchemaSelectOption,
   SchemaSpaceList,
   SchemaTypeIcon,
-  SchemaTypeRef
+  SchemaTypeRef,
 } from '../../domain'
 
 export interface InMemorySchemaType {
@@ -41,15 +41,10 @@ const SYSTEM_PROPERTIES: SchemaProperty[] = [
   date('last_modified_date', 'Last modified date'),
   { key: 'tag', name: 'Tag', format: 'multi_select' },
   { key: 'description', name: 'Description', format: 'text' },
-  { key: 'last_modified_by', name: 'Last modified by', format: 'objects', hidden: true }
+  { key: 'last_modified_by', name: 'Last modified by', format: 'objects', hidden: true },
 ]
 
-function type(
-  key: string,
-  name: string,
-  icon: SchemaTypeIcon,
-  dates: SchemaProperty[]
-): InMemorySchemaType {
+function type(key: string, name: string, icon: SchemaTypeIcon, dates: SchemaProperty[]): InMemorySchemaType {
   return { key, name, icon, properties: [...dates, ...SYSTEM_PROPERTIES] }
 }
 
@@ -59,12 +54,12 @@ const PRIORITY: SchemaProperty = { key: 'priority', name: 'Priority', format: 's
 const PRIORITY_OPTIONS: SchemaSelectOption[] = [
   { name: 'High', color: 'red' },
   { name: 'Medium', color: 'orange' },
-  { name: 'Low', color: 'blue' }
+  { name: 'Low', color: 'blue' },
 ]
 const TAG_OPTIONS: SchemaSelectOption[] = [
   { name: 'Work', color: 'blue' },
   { name: 'Home', color: 'lime' },
-  { name: 'Urgent', color: 'red' }
+  { name: 'Urgent', color: 'red' },
 ]
 const PROJECT_LINK: SchemaProperty = { key: 'linked_projects', name: 'Project', format: 'objects' }
 const ATTENDEES: SchemaProperty = { key: 'attendees', name: 'Attendees', format: 'objects' }
@@ -92,44 +87,36 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
     name: 'Personal',
     types: [
       type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY, PROJECT_LINK]),
-      type(
-        'meeting',
-        'Meeting',
-        { name: 'people', color: 'teal' },
-        [date('start_date', 'Start date'), date('end_date', 'End date'), LOCATION, VENUE, ATTENDEES, LINK]
-      ),
-      type(
-        'contact',
-        'Person',
-        { name: 'person-circle', color: 'pink' },
-        [date('birthday', 'Birthday'), EMAIL, PHONE]
-      ),
-      type('note', 'Note', { name: 'create', color: 'yellow' }, [])
+      type('meeting', 'Meeting', { name: 'people', color: 'teal' }, [
+        date('start_date', 'Start date'),
+        date('end_date', 'End date'),
+        LOCATION,
+        VENUE,
+        ATTENDEES,
+        LINK,
+      ]),
+      type('contact', 'Person', { name: 'person-circle', color: 'pink' }, [date('birthday', 'Birthday'), EMAIL, PHONE]),
+      type('note', 'Note', { name: 'create', color: 'yellow' }, []),
     ],
     options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS },
     collections: [
       { id: 'col_lisbon', name: 'Trip to Lisbon', lastModified: Date.UTC(2026, 8, 2, 18, 4), backlinks: [] },
-      { id: 'col_reading', name: 'Reading list', lastModified: Date.UTC(2026, 6, 19, 10, 30), backlinks: [] }
-    ]
+      { id: 'col_reading', name: 'Reading list', lastModified: Date.UTC(2026, 6, 19, 10, 30), backlinks: [] },
+    ],
   },
   {
     id: 'sp_studio',
     name: 'Studio',
     types: [
-      type(
-        'project',
-        'Project',
-        PROJECT,
-        [date('start_date', 'Start date'), date('due_date', 'Due date')]
-      ),
+      type('project', 'Project', PROJECT, [date('start_date', 'Start date'), date('due_date', 'Due date')]),
       type('task', 'Task', TASK, [date('due_date', 'Due date'), DONE, PRIORITY, PROJECT_LINK]),
-      type(
-        'invoice',
-        'Invoice',
-        { name: 'receipt', color: 'red' },
-        [date('issued_on', 'Issued on'), date('due_date', 'Due date'), AMOUNT, EMAIL]
-      ),
-      type('note', 'Note', { name: 'create', color: 'yellow' }, [])
+      type('invoice', 'Invoice', { name: 'receipt', color: 'red' }, [
+        date('issued_on', 'Issued on'),
+        date('due_date', 'Due date'),
+        AMOUNT,
+        EMAIL,
+      ]),
+      type('note', 'Note', { name: 'create', color: 'yellow' }, []),
     ],
     options: { priority: PRIORITY_OPTIONS, tag: TAG_OPTIONS },
     queries: [
@@ -139,9 +126,9 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
         typeKeys: ['task'],
         views: [
           { id: 'v_open', name: 'Open' },
-          { id: 'v_all', name: 'All' }
-        ]
-      }
+          { id: 'v_all', name: 'All' },
+        ],
+      },
     ],
     collections: [
       { id: 'col_q4', name: 'Q4 launch', lastModified: Date.UTC(2026, 9, 12, 8, 15), backlinks: [] },
@@ -150,36 +137,31 @@ export const IN_MEMORY_SCHEMA_SPACES: InMemorySchemaSpace[] = [
         id: 'col_notes_work',
         name: 'Notes',
         lastModified: Date.UTC(2026, 9, 20, 9, 45),
-        backlinks: ['Work', 'Weekly review']
-      }
-    ]
+        backlinks: ['Work', 'Weekly review'],
+      },
+    ],
   },
   {
     id: 'sp_reading',
     name: 'Reading',
     types: [
-      type(
-        'book',
-        'Book',
-        { name: 'book', color: 'purple' },
-        [date('start_date', 'Start date'), date('finish_date', 'Finish date'), FINISHED, PAGES]
-      )
+      type('book', 'Book', { name: 'book', color: 'purple' }, [
+        date('start_date', 'Start date'),
+        date('finish_date', 'Finish date'),
+        FINISHED,
+        PAGES,
+      ]),
     ],
-    options: { tag: TAG_OPTIONS }
+    options: { tag: TAG_OPTIONS },
   },
   {
     id: 'sp_archive',
     name: 'Archive 2024',
     types: [
-      type(
-        'project',
-        'Project',
-        PROJECT,
-        [date('start_date', 'Start date'), date('closed_on', 'Closed on')]
-      ),
-      type('task', 'Task', TASK, [date('due_date', 'Due date')])
-    ]
-  }
+      type('project', 'Project', PROJECT, [date('start_date', 'Start date'), date('closed_on', 'Closed on')]),
+      type('task', 'Task', TASK, [date('due_date', 'Due date')]),
+    ],
+  },
 ]
 
 /** Simulates the Anytype local API's schema reads with no I/O. Accepts any key. */
@@ -188,11 +170,7 @@ export class InMemorySchemaGateway implements SchemaGateway {
   readonly #spaces: InMemorySchemaSpace[]
   readonly #requestLatencyMs: number
 
-  constructor({
-    sleep,
-    spaces = IN_MEMORY_SCHEMA_SPACES,
-    requestLatencyMs = 400
-  }: InMemorySchemaGatewayOptions) {
+  constructor({ sleep, spaces = IN_MEMORY_SCHEMA_SPACES, requestLatencyMs = 400 }: InMemorySchemaGatewayOptions) {
     this.#sleep = sleep
     this.#spaces = spaces
     this.#requestLatencyMs = requestLatencyMs
@@ -202,7 +180,7 @@ export class InMemorySchemaGateway implements SchemaGateway {
     await this.#sleep(this.#requestLatencyMs)
     return {
       ok: true,
-      value: { spaces: this.#spaces.map(({ id, name }) => ({ id, name })), hasNotGrantedSpaces: false }
+      value: { spaces: this.#spaces.map(({ id, name }) => ({ id, name })), hasNotGrantedSpaces: false },
     }
   }
 
@@ -212,7 +190,7 @@ export class InMemorySchemaGateway implements SchemaGateway {
       key,
       name,
       icon: icon && { ...icon },
-      properties: properties.map((property) => ({ ...property }))
+      properties: properties.map((property) => ({ ...property })),
     }))
     return { ok: true, value: types }
   }
@@ -220,7 +198,7 @@ export class InMemorySchemaGateway implements SchemaGateway {
   async listSelectOptions(
     _apiKey: string,
     spaceId: string,
-    propertyKey: string
+    propertyKey: string,
   ): Promise<SchemaGatewayResult<SchemaSelectOption[]>> {
     await this.#sleep(this.#requestLatencyMs)
     const options = this.#space(spaceId).options?.[propertyKey] ?? []
@@ -235,8 +213,8 @@ export class InMemorySchemaGateway implements SchemaGateway {
       value: queries.map(({ typeKeys, views, ...query }) => ({
         ...query,
         typeKeys: [...typeKeys],
-        views: views.map((view) => ({ ...view }))
-      }))
+        views: views.map((view) => ({ ...view })),
+      })),
     }
   }
 
@@ -245,7 +223,7 @@ export class InMemorySchemaGateway implements SchemaGateway {
     const collections = this.#space(spaceId).collections ?? []
     return {
       ok: true,
-      value: collections.map(({ backlinks, ...collection }) => ({ ...collection, backlinks: [...backlinks] }))
+      value: collections.map(({ backlinks, ...collection }) => ({ ...collection, backlinks: [...backlinks] })),
     }
   }
 

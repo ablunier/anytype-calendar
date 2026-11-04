@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next'
 import { Icon } from '@renderer/components/ui'
 import { API_KEYS_BREADCRUMB } from '@renderer/lib/anytype-menu'
+import { useTranslation } from 'react-i18next'
 
 /** For when the key's grant leaves some of the account's spaces out of every list here. */
 export function NotGrantedSpacesHint(): React.JSX.Element {

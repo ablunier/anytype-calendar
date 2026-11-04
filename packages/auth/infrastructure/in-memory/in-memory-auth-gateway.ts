@@ -1,10 +1,4 @@
-import type {
-  AuthAccess,
-  AuthChallengeResult,
-  AuthExchangeResult,
-  AuthGateway,
-  AuthVerifyResult
-} from '../../domain'
+import type { AuthAccess, AuthChallengeResult, AuthExchangeResult, AuthGateway, AuthVerifyResult } from '../../domain'
 
 /** Every key it issues, in this run or an earlier one, since a restart restores the last. */
 const ISSUED_KEY_PREFIX = 'ak_mock_'
@@ -46,7 +40,7 @@ export class InMemoryAuthGateway implements AuthGateway {
     acceptedCode = '2749',
     acceptedApiKey = 'ak_fake_2749',
     requestLatencyMs = 300,
-    exchangeLatencyMs = 1_200
+    exchangeLatencyMs = 1_200,
   }: InMemoryAuthGatewayOptions) {
     this.#sleep = sleep
     this.#log = log
@@ -61,9 +55,7 @@ export class InMemoryAuthGateway implements AuthGateway {
     await this.#sleep(this.#requestLatencyMs)
     const challengeId = `ch_${this.#randomId()}`
     this.#openChallenges.add(challengeId)
-    this.#log(
-      `[in-memory anytype] "${appName}" asks to connect — challenge ${challengeId}, code ${this.#acceptedCode}`
-    )
+    this.#log(`[in-memory anytype] "${appName}" asks to connect — challenge ${challengeId}, code ${this.#acceptedCode}`)
     return { ok: true, challengeId }
   }
 

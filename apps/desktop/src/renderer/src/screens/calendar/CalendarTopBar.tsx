@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
-import type { SyncView } from '@renderer/types'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, IconButton, SyncStatus } from '@renderer/components/ui'
 import { syncDetailText } from '@renderer/lib/sync-text'
+import type { SyncView } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 
 export interface CalendarTopBarProps {
   sync: SyncView
@@ -24,7 +24,7 @@ export function CalendarTopBar({
   onReread,
   updateNotice,
   onOpenRelease,
-  onDismissUpdate
+  onDismissUpdate,
 }: CalendarTopBarProps): React.JSX.Element {
   const { t } = useTranslation()
   return (

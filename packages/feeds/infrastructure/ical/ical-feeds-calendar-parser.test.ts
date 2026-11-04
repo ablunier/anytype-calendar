@@ -16,13 +16,15 @@ const local = (year: number, month: number, day: number, hours = 0, minutes = 0)
 }
 const ZONE: FeedsTimeZone = {
   startOfDay: ({ year, month, day }) => local(year, month + 1, day),
-  at: ({ year, month, day }, minute) => local(year, month + 1, day, 0, minute)
+  at: ({ year, month, day }, minute) => local(year, month + 1, day, 0, minute),
 }
 
 const parser = new IcalFeedsCalendarParser(ZONE)
 
 const calendar = (...lines: string[]): FeedsCalendar => {
-  const parsed = parser.parse(['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Test//EN', ...lines, 'END:VCALENDAR'].join('\r\n'))
+  const parsed = parser.parse(
+    ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Test//EN', ...lines, 'END:VCALENDAR'].join('\r\n'),
+  )
   if (!parsed) throw new Error('not parsed')
   return parsed
 }
@@ -32,7 +34,7 @@ const event = (...lines: string[]): string[] => ['BEGIN:VEVENT', ...lines, 'END:
 /** From the first instant of the first day to the last of the last, in Madrid. */
 const days = (from: [number, number, number], to: [number, number, number]): FeedsWindow => ({
   start: local(...from),
-  end: local(to[0], to[1], to[2] + 1) - 1
+  end: local(to[0], to[1], to[2] + 1) - 1,
 })
 
 const MARCH = days([2026, 3, 1], [2026, 3, 31])
@@ -47,8 +49,8 @@ describe('reading a feed', () => {
         'SUMMARY:Launch review',
         'LOCATION:Room 4',
         'DESCRIPTION:Bring the numbers\\nand the slides',
-        'URL:https://example.com/launch'
-      )
+        'URL:https://example.com/launch',
+      ),
     )
     expect(feed.occurrencesIn(MARCH)).toEqual([
       {
@@ -59,8 +61,8 @@ describe('reading a feed', () => {
         allDay: false,
         location: 'Room 4',
         description: 'Bring the numbers\nand the slides',
-        url: 'https://example.com/launch'
-      }
+        url: 'https://example.com/launch',
+      },
     ])
   })
 
@@ -78,7 +80,7 @@ describe('reading a feed', () => {
     ['an HTML page', '<!doctype html><title>Sign in</title>'],
     ['nothing', ''],
     ['a vCard', 'BEGIN:VCARD\r\nVERSION:4.0\r\nFN:Ada\r\nEND:VCARD'],
-    ['a calendar cut short', 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART;BROKEN']
+    ['a calendar cut short', 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART;BROKEN'],
   ])('refuses %s', (_, text) => {
     expect(parser.parse(text)).toBeNull()
   })
@@ -88,16 +90,21 @@ describe('reading a feed', () => {
       ...event('UID:feb', 'DTSTART:20260215T090000Z'),
       ...event('UID:march', 'DTSTART:20260315T090000Z'),
       ...event('UID:across', 'DTSTART:20260225T090000Z', 'DTEND:20260302T090000Z'),
-      ...event('UID:april', 'DTSTART:20260415T090000Z')
+      ...event('UID:april', 'DTSTART:20260415T090000Z'),
     )
-    expect(feed.occurrencesIn(MARCH).map(({ id }) => id).sort()).toEqual(['across', 'march'])
+    expect(
+      feed
+        .occurrencesIn(MARCH)
+        .map(({ id }) => id)
+        .sort(),
+    ).toEqual(['across', 'march'])
   })
 
   test('tells apart events sharing a UID, and ones with none', () => {
     const feed = calendar(
       ...event('UID:same', 'DTSTART:20260310T090000Z'),
       ...event('UID:same', 'DTSTART:20260311T090000Z'),
-      ...event('DTSTART:20260312T090000Z')
+      ...event('DTSTART:20260312T090000Z'),
     )
     const ids = feed.occurrencesIn(MARCH).map(({ id }) => id)
     expect(new Set(ids).size).toBe(3)
@@ -116,21 +123,27 @@ describe('reading a feed', () => {
 
 describe('all-day events', () => {
   test('a one-day event, whose end is the next day, is a single day', () => {
-    const feed = calendar(...event('UID:a', 'DTSTART;VALUE=DATE:20260319', 'DTEND;VALUE=DATE:20260320', 'SUMMARY:San José'))
+    const feed = calendar(
+      ...event('UID:a', 'DTSTART;VALUE=DATE:20260319', 'DTEND;VALUE=DATE:20260320', 'SUMMARY:San José'),
+    )
     expect(feed.occurrencesIn(MARCH)).toEqual([
-      { id: 'a', title: 'San José', start: local(2026, 3, 19), end: null, allDay: true }
+      { id: 'a', title: 'San José', start: local(2026, 3, 19), end: null, allDay: true },
     ])
   })
 
   test('a multi-day event ends on its last day, not the day after', () => {
     const feed = calendar(...event('UID:a', 'DTSTART;VALUE=DATE:20260330', 'DTEND;VALUE=DATE:20260403'))
-    expect(feed.occurrencesIn(MARCH)[0]).toMatchObject({ start: local(2026, 3, 30), end: local(2026, 4, 2), allDay: true })
+    expect(feed.occurrencesIn(MARCH)[0]).toMatchObject({
+      start: local(2026, 3, 30),
+      end: local(2026, 4, 2),
+      allDay: true,
+    })
   })
 
   test('one with no end, or a duration, is a single day, or as many as it lasts', () => {
     const feed = calendar(
       ...event('UID:bare', 'DTSTART;VALUE=DATE:20260305'),
-      ...event('UID:week', 'DTSTART;VALUE=DATE:20260309', 'DURATION:P7D')
+      ...event('UID:week', 'DTSTART;VALUE=DATE:20260309', 'DURATION:P7D'),
     )
     const byId = new Map(feed.occurrencesIn(MARCH).map((occurrence) => [occurrence.id, occurrence]))
     expect(byId.get('bare')).toMatchObject({ start: local(2026, 3, 5), end: null })
@@ -159,15 +172,18 @@ describe('time zones', () => {
     'DTSTART:19701101T020000',
     'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
     'END:STANDARD',
-    'END:VTIMEZONE'
+    'END:VTIMEZONE',
   ]
 
   test('reads a time in the zone the feed defines', () => {
     const feed = calendar(
       ...NEW_YORK,
-      ...event('UID:a', 'DTSTART;TZID=America/New_York:20260310T090000', 'DTEND;TZID=America/New_York:20260310T103000')
+      ...event('UID:a', 'DTSTART;TZID=America/New_York:20260310T090000', 'DTEND;TZID=America/New_York:20260310T103000'),
     )
-    expect(feed.occurrencesIn(MARCH)[0]).toMatchObject({ start: Date.UTC(2026, 2, 10, 13), end: Date.UTC(2026, 2, 10, 14, 30) })
+    expect(feed.occurrencesIn(MARCH)[0]).toMatchObject({
+      start: Date.UTC(2026, 2, 10, 13),
+      end: Date.UTC(2026, 2, 10, 14, 30),
+    })
   })
 
   test('reads a time in a zone the feed names but leaves undefined by its IANA name', () => {
@@ -178,7 +194,7 @@ describe('time zones', () => {
   test('reads a floating time, or one in a zone nobody knows, on the user’s own clock', () => {
     const feed = calendar(
       ...event('UID:floating', 'DTSTART:20260310T090000'),
-      ...event('UID:unknown', 'DTSTART;TZID=Somewhere Standard Time:20260311T090000')
+      ...event('UID:unknown', 'DTSTART;TZID=Somewhere Standard Time:20260311T090000'),
     )
     const byId = new Map(feed.occurrencesIn(MARCH).map((occurrence) => [occurrence.id, occurrence.start]))
     expect(byId.get('floating')).toBe(local(2026, 3, 10, 9))
@@ -188,22 +204,28 @@ describe('time zones', () => {
   test('keeps a weekly time on its clock across a change of the clocks, by the feed’s zone', () => {
     const feed = calendar(
       ...NEW_YORK,
-      ...event('UID:a', 'DTSTART;TZID=America/New_York:20260302T090000', 'DURATION:PT1H', 'RRULE:FREQ=WEEKLY;COUNT=3')
+      ...event('UID:a', 'DTSTART;TZID=America/New_York:20260302T090000', 'DURATION:PT1H', 'RRULE:FREQ=WEEKLY;COUNT=3'),
     )
-    expect(feed.occurrencesIn(MARCH).map(({ start }) => start).sort()).toEqual([
-      Date.UTC(2026, 2, 2, 14),
-      Date.UTC(2026, 2, 9, 13),
-      Date.UTC(2026, 2, 16, 13)
-    ])
+    expect(
+      feed
+        .occurrencesIn(MARCH)
+        .map(({ start }) => start)
+        .sort(),
+    ).toEqual([Date.UTC(2026, 2, 2, 14), Date.UTC(2026, 2, 9, 13), Date.UTC(2026, 2, 16, 13)])
   })
 
   test('keeps a weekly time on its clock across a change of the clocks, by an IANA zone', () => {
     const feed = calendar(
-      ...event('UID:a', 'DTSTART;TZID=Europe/Madrid:20260323T100000', 'DTEND;TZID=Europe/Madrid:20260323T110000', 'RRULE:FREQ=WEEKLY;COUNT=2')
+      ...event(
+        'UID:a',
+        'DTSTART;TZID=Europe/Madrid:20260323T100000',
+        'DTEND;TZID=Europe/Madrid:20260323T110000',
+        'RRULE:FREQ=WEEKLY;COUNT=2',
+      ),
     )
     expect(feed.occurrencesIn(days([2026, 3, 20], [2026, 4, 5]))).toEqual([
       expect.objectContaining({ start: Date.UTC(2026, 2, 23, 9), end: Date.UTC(2026, 2, 23, 10) }),
-      expect.objectContaining({ start: Date.UTC(2026, 2, 30, 8), end: Date.UTC(2026, 2, 30, 9) })
+      expect.objectContaining({ start: Date.UTC(2026, 2, 30, 8), end: Date.UTC(2026, 2, 30, 9) }),
     ])
   })
 
@@ -211,7 +233,7 @@ describe('time zones', () => {
     const feed = calendar(...event('UID:a', 'DTSTART:20260323T100000', 'RRULE:FREQ=WEEKLY;COUNT=2'))
     expect(feed.occurrencesIn(days([2026, 3, 20], [2026, 4, 5])).map(({ start }) => start)).toEqual([
       local(2026, 3, 23, 10),
-      local(2026, 3, 30, 10)
+      local(2026, 3, 30, 10),
     ])
   })
 })
@@ -219,7 +241,13 @@ describe('time zones', () => {
 describe('recurring events', () => {
   test('expands a rule into the window only, each instance with an id of its own', () => {
     const feed = calendar(
-      ...event('UID:standup', 'DTSTART:20260105T090000Z', 'DTEND:20260105T091500Z', 'RRULE:FREQ=WEEKLY;BYDAY=MO', 'SUMMARY:Standup')
+      ...event(
+        'UID:standup',
+        'DTSTART:20260105T090000Z',
+        'DTEND:20260105T091500Z',
+        'RRULE:FREQ=WEEKLY;BYDAY=MO',
+        'SUMMARY:Standup',
+      ),
     )
     const march = feed.occurrencesIn(MARCH)
     expect(march.map(({ start }) => new Date(start).toISOString().slice(0, 10))).toEqual([
@@ -227,14 +255,14 @@ describe('recurring events', () => {
       '2026-03-09',
       '2026-03-16',
       '2026-03-23',
-      '2026-03-30'
+      '2026-03-30',
     ])
     expect(march[0]).toEqual({
       id: `standup#${Date.UTC(2026, 2, 2, 9)}`,
       title: 'Standup',
       start: Date.UTC(2026, 2, 2, 9),
       end: Date.UTC(2026, 2, 2, 9, 15),
-      allDay: false
+      allDay: false,
     })
     expect(new Set(march.map(({ id }) => id)).size).toBe(5)
   })
@@ -242,65 +270,102 @@ describe('recurring events', () => {
   test('the same instance keeps its id from one window to another', () => {
     const feed = calendar(...event('UID:a', 'DTSTART:20260105T090000Z', 'RRULE:FREQ=DAILY'))
     const inMarch = feed.occurrencesIn(MARCH).find(({ start }) => start === Date.UTC(2026, 2, 31, 9))
-    const inApril = feed.occurrencesIn(days([2026, 3, 30], [2026, 4, 30])).find(({ start }) => start === Date.UTC(2026, 2, 31, 9))
+    const inApril = feed
+      .occurrencesIn(days([2026, 3, 30], [2026, 4, 30]))
+      .find(({ start }) => start === Date.UTC(2026, 2, 31, 9))
     expect(inMarch?.id).toBe(inApril?.id)
   })
 
   test('leaves out the dates EXDATE takes away', () => {
     const feed = calendar(
-      ...event('UID:a', 'DTSTART:20260302T090000Z', 'RRULE:FREQ=WEEKLY;COUNT=4', 'EXDATE:20260309T090000Z,20260316T090000Z')
+      ...event(
+        'UID:a',
+        'DTSTART:20260302T090000Z',
+        'RRULE:FREQ=WEEKLY;COUNT=4',
+        'EXDATE:20260309T090000Z,20260316T090000Z',
+      ),
     )
     expect(feed.occurrencesIn(MARCH).map(({ start }) => new Date(start).getUTCDate())).toEqual([2, 23])
   })
 
   test('draws an overridden instance where, and as, the override says', () => {
     const feed = calendar(
-      ...event('UID:a', 'DTSTART:20260302T090000Z', 'DTEND:20260302T100000Z', 'RRULE:FREQ=WEEKLY;COUNT=3', 'SUMMARY:Review'),
-      ...event('UID:a', 'RECURRENCE-ID:20260309T090000Z', 'DTSTART:20260310T150000Z', 'DTEND:20260310T153000Z', 'SUMMARY:Review (moved)')
+      ...event(
+        'UID:a',
+        'DTSTART:20260302T090000Z',
+        'DTEND:20260302T100000Z',
+        'RRULE:FREQ=WEEKLY;COUNT=3',
+        'SUMMARY:Review',
+      ),
+      ...event(
+        'UID:a',
+        'RECURRENCE-ID:20260309T090000Z',
+        'DTSTART:20260310T150000Z',
+        'DTEND:20260310T153000Z',
+        'SUMMARY:Review (moved)',
+      ),
     )
     expect(
       feed
         .occurrencesIn(MARCH)
         .map(({ id, title, start, end }) => ({ id, title, start, end }))
-        .sort((a, b) => a.start - b.start)
+        .sort((a, b) => a.start - b.start),
     ).toEqual([
-      { id: `a#${Date.UTC(2026, 2, 2, 9)}`, title: 'Review', start: Date.UTC(2026, 2, 2, 9), end: Date.UTC(2026, 2, 2, 10) },
+      {
+        id: `a#${Date.UTC(2026, 2, 2, 9)}`,
+        title: 'Review',
+        start: Date.UTC(2026, 2, 2, 9),
+        end: Date.UTC(2026, 2, 2, 10),
+      },
       {
         id: `a#${Date.UTC(2026, 2, 9, 9)}`,
         title: 'Review (moved)',
         start: Date.UTC(2026, 2, 10, 15),
-        end: Date.UTC(2026, 2, 10, 15, 30)
+        end: Date.UTC(2026, 2, 10, 15, 30),
       },
-      { id: `a#${Date.UTC(2026, 2, 16, 9)}`, title: 'Review', start: Date.UTC(2026, 2, 16, 9), end: Date.UTC(2026, 2, 16, 10) }
+      {
+        id: `a#${Date.UTC(2026, 2, 16, 9)}`,
+        title: 'Review',
+        start: Date.UTC(2026, 2, 16, 9),
+        end: Date.UTC(2026, 2, 16, 10),
+      },
     ])
   })
 
   test('finds an instance moved into the window from one after it', () => {
     const feed = calendar(
       ...event('UID:a', 'DTSTART:20260302T090000Z', 'RRULE:FREQ=MONTHLY;COUNT=3'),
-      ...event('UID:a', 'RECURRENCE-ID:20260402T090000Z', 'DTSTART:20260327T090000Z')
+      ...event('UID:a', 'RECURRENCE-ID:20260402T090000Z', 'DTSTART:20260327T090000Z'),
     )
-    expect(feed.occurrencesIn(MARCH).map(({ start }) => start).sort()).toEqual([
-      Date.UTC(2026, 2, 2, 9),
-      Date.UTC(2026, 2, 27, 9)
-    ])
+    expect(
+      feed
+        .occurrencesIn(MARCH)
+        .map(({ start }) => start)
+        .sort(),
+    ).toEqual([Date.UTC(2026, 2, 2, 9), Date.UTC(2026, 2, 27, 9)])
     expect(feed.occurrencesIn(days([2026, 4, 1], [2026, 4, 30]))).toEqual([])
   })
 
   test('leaves out an instance its override cancels', () => {
     const feed = calendar(
       ...event('UID:a', 'DTSTART:20260302T090000Z', 'RRULE:FREQ=WEEKLY;COUNT=2'),
-      ...event('UID:a', 'RECURRENCE-ID:20260309T090000Z', 'DTSTART:20260309T090000Z', 'STATUS:CANCELLED')
+      ...event('UID:a', 'RECURRENCE-ID:20260309T090000Z', 'DTSTART:20260309T090000Z', 'STATUS:CANCELLED'),
     )
     expect(feed.occurrencesIn(MARCH).map(({ start }) => start)).toEqual([Date.UTC(2026, 2, 2, 9)])
   })
 
   test('expands an all-day rule, each instance a day', () => {
     const feed = calendar(
-      ...event('UID:a', 'DTSTART;VALUE=DATE:20250319', 'DTEND;VALUE=DATE:20250320', 'RRULE:FREQ=YEARLY', 'SUMMARY:Birthday')
+      ...event(
+        'UID:a',
+        'DTSTART;VALUE=DATE:20250319',
+        'DTEND;VALUE=DATE:20250320',
+        'RRULE:FREQ=YEARLY',
+        'SUMMARY:Birthday',
+      ),
     )
     expect(feed.occurrencesIn(MARCH)).toEqual([
-      { id: `a#${local(2026, 3, 19)}`, title: 'Birthday', start: local(2026, 3, 19), end: null, allDay: true }
+      { id: `a#${local(2026, 3, 19)}`, title: 'Birthday', start: local(2026, 3, 19), end: null, allDay: true },
     ])
   })
 
@@ -326,7 +391,7 @@ describe('recurring events', () => {
   test('stops a rule recurring every second, and keeps the other events', () => {
     const feed = calendar(
       ...event('UID:flood', 'DTSTART:20260301T000000Z', 'RRULE:FREQ=SECONDLY'),
-      ...event('UID:b', 'DTSTART:20260310T090000Z')
+      ...event('UID:b', 'DTSTART:20260310T090000Z'),
     )
     expect(feed.occurrencesIn(MARCH).some(({ id }) => id === 'b')).toBe(true)
   })

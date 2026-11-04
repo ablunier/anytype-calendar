@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { appConfigStore } from '../app-config-file'
 import type { AtomicFile } from '../atomic-file'
 import { CheckForUpdate, DismissUpdateNotice } from './check-for-update'
-import { compareVersions, toLatestRelease, type LatestRelease } from './release-version'
+import { compareVersions, type LatestRelease, toLatestRelease } from './release-version'
 import { UpdateNoticeStore } from './update-notice-store'
 
 const PAGE = 'https://github.com/ablunier/anytype-calendar/releases/tag/'
@@ -16,7 +16,7 @@ function fakeFile(): AtomicFile {
     },
     remove: async () => {
       bytes = null
-    }
+    },
   }
 }
 
@@ -34,7 +34,7 @@ function setup(current: string, latest: () => Promise<LatestRelease | null>) {
     store,
     listener,
     check: new CheckForUpdate({ config, store, fetchLatest: latest }),
-    dismiss: new DismissUpdateNotice({ config, store })
+    dismiss: new DismissUpdateNotice({ config, store }),
   }
 }
 
@@ -49,7 +49,7 @@ describe('compareVersions', () => {
     ['1.0.0-rc.1', '1.0.0-beta.9'],
     ['1.0.0-beta.1.1', '1.0.0-beta.1'],
     ['1.0.0-beta', '1.0.0-1'],
-    ['v1.0.1', '1.0.0']
+    ['v1.0.1', '1.0.0'],
   ])('%s is newer than %s', (newer, older) => {
     expect(compareVersions(newer, older)).toBeGreaterThan(0)
     expect(compareVersions(older, newer)).toBeLessThan(0)
@@ -67,15 +67,11 @@ describe('compareVersions', () => {
 
 describe('toLatestRelease', () => {
   test('reads the tag without its v, and the release page', () => {
-    expect(toLatestRelease({ tag_name: 'v1.2.0', html_url: `${PAGE}v1.2.0` })).toEqual(
-      release('1.2.0')
-    )
+    expect(toLatestRelease({ tag_name: 'v1.2.0', html_url: `${PAGE}v1.2.0` })).toEqual(release('1.2.0'))
   })
 
   test('refuses a page outside this repository', () => {
-    expect(
-      toLatestRelease({ tag_name: 'v1.2.0', html_url: 'https://example.com/releases/' })
-    ).toBeNull()
+    expect(toLatestRelease({ tag_name: 'v1.2.0', html_url: 'https://example.com/releases/' })).toBeNull()
   })
 
   test('refuses a tag that is not a version, and any other shape', () => {
@@ -92,7 +88,7 @@ describe('CheckForUpdate', () => {
     expect(store.get()).toEqual({
       current: '1.0.0-beta.1',
       available: release('1.0.0'),
-      dismissed: false
+      dismissed: false,
     })
     expect(listener).toHaveBeenCalledTimes(1)
   })

@@ -51,19 +51,13 @@ function byDrawingOrder(a: EventSegment, b: EventSegment): number {
  * `maxLanes` is how many bars a row has room for; past it, segments are dropped and counted
  * in `hidden` instead.
  */
-export function layOutWeek(
-  events: CalendarEvent[],
-  week: DayColumn[],
-  maxLanes = MAX_LANES
-): WeekLayout {
+export function layOutWeek(events: CalendarEvent[], week: DayColumn[], maxLanes = MAX_LANES): WeekLayout {
   const segments: EventSegment[] = []
 
   for (const event of events) {
     const start = event.date
     const end = event.until ?? event.date
-    const covered = week.flatMap((cell, index) =>
-      start <= cell.date && cell.date <= end ? [index] : []
-    )
+    const covered = week.flatMap((cell, index) => (start <= cell.date && cell.date <= end ? [index] : []))
     const first = covered[0]
     const last = covered[covered.length - 1]
     if (first === undefined || last === undefined) continue
@@ -74,7 +68,7 @@ export function layOutWeek(
       span: last - first + 1,
       lane: 0,
       continuesBefore: start < week[first].date,
-      continuesAfter: end > week[last].date
+      continuesAfter: end > week[last].date,
     })
   }
 

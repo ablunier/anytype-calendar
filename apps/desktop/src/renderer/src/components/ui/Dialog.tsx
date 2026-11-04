@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react'
+import { type ReactNode, useCallback, useEffect, useId, useRef } from 'react'
 import { IconButton } from './IconButton'
 
 export type DialogWidth = 'default' | 'wide'
 
 const widthClass: Record<DialogWidth, string> = {
   default: 'w-440',
-  wide: 'w-460'
+  wide: 'w-460',
 }
 
 const FOCUSABLE =
@@ -33,7 +33,7 @@ export function Dialog({
   description,
   children,
   footer,
-  width = 'default'
+  width = 'default',
 }: DialogProps): React.JSX.Element | null {
   const id = useId()
   const sheetRef = useRef<HTMLDivElement>(null)
@@ -79,21 +79,19 @@ export function Dialog({
   if (!open) return null
 
   return (
-    <div
-      onClick={onClose}
-      className="animate-scrim fixed inset-0 z-60 flex items-center justify-center bg-overlay-scrim p-24"
-    >
+    <div className="animate-scrim fixed inset-0 z-60 flex items-center justify-center bg-overlay-scrim p-24">
+      {/* A pointer's way out, layered under the sheet; Escape is the keyboard's. */}
+      <div aria-hidden onClick={onClose} className="absolute inset-0 -z-1" />
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
         aria-describedby={description ? `${id}-description` : undefined}
-        onClick={(event) => event.stopPropagation()}
         className={[
           'animate-sheet flex max-h-full max-w-full flex-col overflow-hidden rounded-sheet border border-line-subtle',
           'bg-surface-raised shadow-3',
-          widthClass[width]
+          widthClass[width],
         ].join(' ')}
       >
         <div className="flex shrink-0 items-start gap-12 px-20 pt-20 pb-12">

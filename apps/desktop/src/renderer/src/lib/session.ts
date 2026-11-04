@@ -1,8 +1,8 @@
 /* The only renderer module that reads a session's shape; components get view models. */
 
 import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
-import type { SessionSnapshot } from '@shared/ipc'
 import type { ApiAccessView, ApiKeyView, AuthView, EditAccess } from '@renderer/types'
+import type { SessionSnapshot } from '@shared/ipc'
 
 /** Null once connected. */
 export function authViewFor(session: SessionSnapshot): AuthView | null {
@@ -13,7 +13,7 @@ export function authViewFor(session: SessionSnapshot): AuthView | null {
       return {
         stage: 'code',
         challengeId: session.challenge.id,
-        expiresAt: session.challenge.expiresAt
+        expiresAt: session.challenge.expiresAt,
       }
     case 'verifying':
       return { stage: 'verifying', code: session.attempt.code }
@@ -26,7 +26,7 @@ export function authViewFor(session: SessionSnapshot): AuthView | null {
         stage: 'error',
         failure: session.failure,
         code: session.attempt?.code,
-        origin: session.enteredKey ? 'key' : 'code'
+        origin: session.enteredKey ? 'key' : 'code',
       }
     case 'connected':
       return null
@@ -35,9 +35,7 @@ export function authViewFor(session: SessionSnapshot): AuthView | null {
 
 /** Null until connected. */
 export function apiKeyFor(session: SessionSnapshot): ApiKeyView | null {
-  return session.phase === 'connected'
-    ? { hint: session.key.hint, issuedAt: session.key.issuedAt }
-    : null
+  return session.phase === 'connected' ? { hint: session.key.hint, issuedAt: session.key.issuedAt } : null
 }
 
 /** Null until connected, and until Anytype has been asked what a restored key reaches. */
@@ -47,7 +45,7 @@ export function apiAccessFor(session: SessionSnapshot): ApiAccessView | null {
   if (grant === null) return { spaceCount: null, canEdit: true }
   return {
     spaceCount: grant.allSpaces ? null : grant.spaceIds.length,
-    canEdit: grant.permission === 'readwrite'
+    canEdit: grant.permission === 'readwrite',
   }
 }
 

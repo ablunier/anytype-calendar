@@ -1,6 +1,11 @@
 // The pure center of the events context: no other layer, no other context, no npm runtime
 // deps, no Node core modules.
 
+export * from './gateways/api-key-source'
+export * from './gateways/events-gateway'
+export * from './gateways/events-writer'
+export * from './gateways/source-selection'
+export * from './gateways/time-zone'
 export * from './model/dated-object'
 export * from './model/detail'
 export * from './model/edit'
@@ -9,8 +14,3 @@ export * from './model/source'
 export * from './model/span'
 export * from './model/span-load'
 export * from './model/window'
-export * from './gateways/api-key-source'
-export * from './gateways/events-gateway'
-export * from './gateways/events-writer'
-export * from './gateways/source-selection'
-export * from './gateways/time-zone'

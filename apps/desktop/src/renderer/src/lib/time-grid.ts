@@ -39,7 +39,7 @@ export interface TimedSegment {
  */
 export function splitDayEvents(
   events: CalendarEvent[],
-  date: string
+  date: string,
 ): { band: CalendarEvent[]; timed: CalendarEvent[] } {
   const band: CalendarEvent[] = []
   const timed: CalendarEvent[] = []
@@ -82,7 +82,7 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
         startMinute,
         endMinute: Math.min(MINUTES_PER_DAY, Math.max(endMinute, startMinute + MIN_SLOT_MINUTES)),
         column: 0,
-        columns: 1
+        columns: 1,
       }
     })
     .sort(byStartThenLength)
@@ -100,9 +100,7 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
 
   for (const segment of segments) {
     if (segment.startMinute >= clusterEnd) closeCluster()
-    const taken = new Set(
-      cluster.filter((other) => other.endMinute > segment.startMinute).map((other) => other.column)
-    )
+    const taken = new Set(cluster.filter((other) => other.endMinute > segment.startMinute).map((other) => other.column))
     let column = 0
     while (taken.has(column)) column++
     cluster.push({ ...segment, column })
@@ -131,15 +129,11 @@ export interface TimedDrag {
  * days. A move keeps how long it is drawn; a resize never ends before a quarter hour past its
  * start, nor at midnight.
  */
-export function draggedPlacement({
-  mode,
-  dayIndex,
-  startMinute,
-  endMinute,
-  minutes,
-  days,
-  dayCount
-}: TimedDrag): { dayIndex: number; startMinute: number; endMinute: number } {
+export function draggedPlacement({ mode, dayIndex, startMinute, endMinute, minutes, days, dayCount }: TimedDrag): {
+  dayIndex: number
+  startMinute: number
+  endMinute: number
+} {
   if (mode === 'resize') {
     const end = Math.max(Math.min(snap(endMinute + minutes), LAST_END_MINUTE), startMinute + SNAP_MINUTES)
     return { dayIndex, startMinute, endMinute: end }
@@ -149,7 +143,7 @@ export function draggedPlacement({
   return {
     dayIndex: Math.min(Math.max(dayIndex + days, 0), dayCount - 1),
     startMinute: start,
-    endMinute: Math.min(start + length, MINUTES_PER_DAY)
+    endMinute: Math.min(start + length, MINUTES_PER_DAY),
   }
 }
 

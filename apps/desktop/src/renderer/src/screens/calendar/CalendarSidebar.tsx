@@ -1,8 +1,8 @@
-import { useTranslation } from 'react-i18next'
 import type { EventsSpan } from '@anytype-calendar/events/domain'
-import type { FeedSource, ObjectType, Space } from '@renderer/types'
 import { IconButton } from '@renderer/components/ui'
 import { anchorOf, spanDays } from '@renderer/lib/events'
+import type { FeedSource, ObjectType, Space } from '@renderer/types'
+import { useTranslation } from 'react-i18next'
 import { MiniMonth } from './MiniMonth'
 import { FeedList, SourceTree } from './SourceTree'
 
@@ -67,7 +67,12 @@ export function CalendarSidebar({
       className="flex w-240 shrink-0 flex-col gap-16 overflow-hidden border-r border-line-subtle bg-surface-card p-12"
     >
       <div className="flex shrink-0 justify-end">
-        <IconButton size="sm" icon="panel-left-close" label={t('calendar.sidebar.collapse')} onClick={onToggleCollapsed} />
+        <IconButton
+          size="sm"
+          icon="panel-left-close"
+          label={t('calendar.sidebar.collapse')}
+          onClick={onToggleCollapsed}
+        />
       </div>
       <MiniMonth
         label={t('calendar.sidebar.miniMonth')}

@@ -1,6 +1,6 @@
-import type { TFunction } from 'i18next'
-import type { EventsEditResult } from '@shared/ipc'
 import type { EditAccess } from '@renderer/types'
+import type { EventsEditResult } from '@shared/ipc'
+import type { TFunction } from 'i18next'
 
 /** What went wrong with an edit, for the toast that reports it. */
 export function editFailureText(t: TFunction, result: Exclude<EventsEditResult, { ok: true }>): string {
@@ -29,7 +29,7 @@ export function editFailureText(t: TFunction, result: Exclude<EventsEditResult, 
 /** Why an object was created but not added to the collection picked for it. */
 export function notAddedText(
   t: TFunction,
-  failure: NonNullable<Extract<EventsEditResult, { ok: true }>['collection']>
+  failure: NonNullable<Extract<EventsEditResult, { ok: true }>['collection']>,
 ): string {
   return t('calendar.create.notAdded', { reason: editFailureText(t, { ok: false, ...failure }) })
 }

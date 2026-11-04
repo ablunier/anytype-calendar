@@ -6,13 +6,9 @@ import type {
   EventsSpanLoad,
   EventsTimeZone,
   EventsWriteResult,
-  EventsWriter
+  EventsWriter,
 } from '../domain'
-import {
-  CompleteEventsObject,
-  CreateEventsObject,
-  RescheduleEventsObject
-} from './edit-events-object'
+import { CompleteEventsObject, CreateEventsObject, RescheduleEventsObject } from './edit-events-object'
 import { EventsSpanStore } from './events-span-store'
 import { LoadEventsSpan } from './load-events-span'
 
@@ -25,7 +21,7 @@ const UTC: EventsTimeZone = {
   dayOf: (instant) => {
     const date = new Date(instant)
     return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() }
-  }
+  },
 }
 
 const SEPTEMBER = { kind: 'month', year: 2026, month: 8 } as const
@@ -36,7 +32,7 @@ const MEETINGS: EventsSource = {
   typeKey: 'meeting',
   from: 'start_date',
   to: 'end_date',
-  includesTime: true
+  includesTime: true,
 }
 const TASKS: EventsSource = {
   kind: 'type',
@@ -45,7 +41,7 @@ const TASKS: EventsSource = {
   from: 'due_date',
   to: null,
   includesTime: false,
-  done: 'done'
+  done: 'done',
 }
 const OPEN_TASKS: EventsSource = { ...TASKS, kind: 'query', queryId: 'q_open', viewId: null }
 
@@ -53,7 +49,7 @@ const standup: EventsObjectRef = {
   id: 'obj_1',
   title: 'Standup',
   start: Date.UTC(2026, 8, 14, 9),
-  end: Date.UTC(2026, 8, 14, 9, 30)
+  end: Date.UTC(2026, 8, 14, 9, 30),
 }
 const invoice: EventsObjectRef = { id: 'obj_2', title: 'Invoice', start: Date.UTC(2026, 8, 20), end: null, done: false }
 
@@ -70,14 +66,14 @@ function deferred<T>() {
 
 async function setup({
   sources = [MEETINGS, TASKS] as EventsSource[],
-  write = async (): Promise<EventsWriteResult<never> | EventsWriteResult> => OK
+  write = async (): Promise<EventsWriteResult<never> | EventsWriteResult> => OK,
 } = {}) {
   let refs: Record<string, EventsObjectRef[]> = { meeting: [standup], task: [invoice], q_open: [invoice] }
   const gateway = {
     listObjects: vi.fn<EventsGateway['listObjects']>(async (_key, source) => ({
       ok: true,
-      value: refs[source.kind === 'type' ? source.typeKey : source.queryId] ?? []
-    }))
+      value: refs[source.kind === 'type' ? source.typeKey : source.queryId] ?? [],
+    })),
   }
   const writer = {
     reschedule: vi.fn<EventsWriter['reschedule']>(write),
@@ -86,7 +82,7 @@ async function setup({
       return result.ok ? { ok: true, value: { id: 'obj_new' } } : result
     }),
     setDone: vi.fn<EventsWriter['setDone']>(write),
-    addToCollection: vi.fn<EventsWriter['addToCollection']>(async () => OK)
+    addToCollection: vi.fn<EventsWriter['addToCollection']>(async () => OK),
   }
   const store = new EventsSpanStore()
   let apiKey: string | null = API_KEY
@@ -107,12 +103,14 @@ async function setup({
     },
     reschedule: new RescheduleEventsObject(deps),
     create: new CreateEventsObject(deps),
-    complete: new CompleteEventsObject(deps)
+    complete: new CompleteEventsObject(deps),
   }
 }
 
 const objectsIn = (state: EventsSpanLoad) =>
-  state.phase === 'idle' ? [] : (state.last?.objects ?? []).map(({ id, start, end, done }) => ({ id, start, end, done }))
+  state.phase === 'idle'
+    ? []
+    : (state.last?.objects ?? []).map(({ id, start, end, done }) => ({ id, start, end, done }))
 
 describe('rescheduling', () => {
   test("writes the object's new dates to the source's properties, keeping how long it lasts, then reads the span again", async () => {
@@ -123,13 +121,13 @@ describe('rescheduling', () => {
       reschedule.execute({
         spaceId: 'sp_1',
         id: 'obj_1',
-        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 14 * 60 } }
-      })
+        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 14 * 60 } },
+      }),
     ).resolves.toEqual({ ok: true })
     expect(writer.reschedule).toHaveBeenCalledWith(
       API_KEY,
       { spaceId: 'sp_1', id: 'obj_1' },
-      { start_date: Date.UTC(2026, 8, 16, 14), end_date: Date.UTC(2026, 8, 16, 14, 30) }
+      { start_date: Date.UTC(2026, 8, 16, 14), end_date: Date.UTC(2026, 8, 16, 14, 30) },
     )
     expect(gateway.listObjects).toHaveBeenCalled()
   })
@@ -142,7 +140,7 @@ describe('rescheduling', () => {
     const done = reschedule.execute({
       spaceId: 'sp_1',
       id: 'obj_1',
-      change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 14 * 60 } }
+      change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 14 * 60 } },
     })
     expect(objectsIn(store.shown())).toContainEqual(expect.objectContaining({ id: 'obj_1', start: moved }))
     // What the store was loaded with is left alone: the edit is only drawn over it.
@@ -157,7 +155,7 @@ describe('rescheduling', () => {
 
   test('puts the object back, and says why, when Anytype refuses the write', async () => {
     const { reschedule, store, gateway } = await setup({
-      write: async () => ({ ok: false, failure: 'rejected', message: 'not a date' })
+      write: async () => ({ ok: false, failure: 'rejected', message: 'not a date' }),
     })
     gateway.listObjects.mockClear()
 
@@ -165,8 +163,8 @@ describe('rescheduling', () => {
       reschedule.execute({
         spaceId: 'sp_1',
         id: 'obj_1',
-        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } }
-      })
+        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } },
+      }),
     ).resolves.toEqual({ ok: false, failure: 'rejected', message: 'not a date' })
     expect(objectsIn(store.shown())).toContainEqual(expect.objectContaining({ id: 'obj_1', start: standup.start }))
     expect(gateway.listObjects).not.toHaveBeenCalled()
@@ -178,8 +176,8 @@ describe('rescheduling', () => {
       reschedule.execute({
         spaceId: 'sp_1',
         id: 'obj_1',
-        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } }
-      })
+        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } },
+      }),
     ).resolves.toEqual({ ok: false, failure: 'unreachable' })
   })
 
@@ -188,15 +186,19 @@ describe('rescheduling', () => {
     const day = { year: 2026, month: 8, day: 22 }
 
     await reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'move', start: { day, minute: null } } })
-    expect(writer.reschedule).toHaveBeenCalledWith(API_KEY, { spaceId: 'sp_1', id: 'obj_2' }, {
-      due_date: Date.UTC(2026, 8, 22)
-    })
+    expect(writer.reschedule).toHaveBeenCalledWith(
+      API_KEY,
+      { spaceId: 'sp_1', id: 'obj_2' },
+      {
+        due_date: Date.UTC(2026, 8, 22),
+      },
+    )
 
     await expect(
-      reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'resize', end: { day, minute: null } } })
+      reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'resize', end: { day, minute: null } } }),
     ).resolves.toEqual(INVALID)
     await expect(reschedule.execute({ spaceId: 'sp_1', id: 'obj_2', change: { kind: 'clear-end' } })).resolves.toEqual(
-      INVALID
+      INVALID,
     )
   })
 
@@ -207,14 +209,14 @@ describe('rescheduling', () => {
 
     await reschedule.execute({
       ...target,
-      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 10 * 60 + 20 } }
+      change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 14 }, minute: 10 * 60 + 20 } },
     })
     expect(writer.reschedule).toHaveBeenLastCalledWith(API_KEY, target, { end_date: Date.UTC(2026, 8, 14, 10, 20) })
 
     writer.reschedule.mockImplementation(() => pending.promise)
     const clearing = reschedule.execute({ ...target, change: { kind: 'clear-end' } })
     expect(objectsIn(store.shown())).toContainEqual(
-      expect.objectContaining({ id: 'obj_1', start: standup.start, end: null })
+      expect.objectContaining({ id: 'obj_1', start: standup.start, end: null }),
     )
     pending.resolve(OK)
     await expect(clearing).resolves.toEqual({ ok: true })
@@ -228,8 +230,8 @@ describe('rescheduling', () => {
     await expect(
       reschedule.execute({
         ...target,
-        change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 15 }, minute: null } }
-      })
+        change: { kind: 'resize', end: { day: { year: 2026, month: 8, day: 15 }, minute: null } },
+      }),
     ).resolves.toEqual(INVALID)
     expect(writer.reschedule).not.toHaveBeenCalled()
   })
@@ -239,7 +241,7 @@ describe('rescheduling', () => {
     const { reschedule, writer } = await setup()
     await expect(reschedule.execute({ spaceId: 'sp_1', id: 'obj_9', change })).resolves.toEqual({
       ok: false,
-      failure: 'gone'
+      failure: 'gone',
     })
 
     const unchosen = await setup({ sources: [MEETINGS, TASKS] })
@@ -255,12 +257,12 @@ describe('rescheduling', () => {
         apiKeys: { current: async () => API_KEY },
         sources: { current: () => sources },
         zone: UTC,
-        store: unchosen.store
-      })
+        store: unchosen.store,
+      }),
     })
     await expect(narrowed.execute({ spaceId: 'sp_1', id: 'obj_1', change })).resolves.toEqual({
       ok: false,
-      failure: 'gone'
+      failure: 'gone',
     })
     expect(writer.reschedule).not.toHaveBeenCalled()
   })
@@ -272,8 +274,8 @@ describe('rescheduling', () => {
       reschedule.execute({
         spaceId: 'sp_1',
         id: 'obj_1',
-        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } }
-      })
+        change: { kind: 'move', start: { day: { year: 2026, month: 8, day: 16 }, minute: 600 } },
+      }),
     ).resolves.toEqual({ ok: false, failure: 'unauthorized' })
     expect(writer.reschedule).not.toHaveBeenCalled()
   })
@@ -288,14 +290,14 @@ describe('creating', () => {
         spaceId: 'sp_1',
         typeKey: 'meeting',
         name: 'Retro',
-        at: { day: { year: 2026, month: 8, day: 18 }, minute: 16 * 60 }
-      })
+        at: { day: { year: 2026, month: 8, day: 18 }, minute: 16 * 60 },
+      }),
     ).resolves.toEqual({ ok: true })
     expect(writer.create).toHaveBeenCalledWith(API_KEY, {
       spaceId: 'sp_1',
       typeKey: 'meeting',
       name: 'Retro',
-      dates: { start_date: Date.UTC(2026, 8, 18, 16), end_date: Date.UTC(2026, 8, 18, 17) }
+      dates: { start_date: Date.UTC(2026, 8, 18, 16), end_date: Date.UTC(2026, 8, 18, 17) },
     })
   })
 
@@ -305,11 +307,11 @@ describe('creating', () => {
 
     await expect(create.execute({ spaceId: 'sp_1', typeKey: 'task', name: 'x', at })).resolves.toEqual({
       ok: false,
-      failure: 'gone'
+      failure: 'gone',
     })
     await expect(create.execute({ spaceId: 'sp_2', typeKey: 'meeting', name: 'x', at })).resolves.toEqual({
       ok: false,
-      failure: 'gone'
+      failure: 'gone',
     })
     expect(writer.create).not.toHaveBeenCalled()
   })
@@ -318,7 +320,7 @@ describe('creating', () => {
     spaceId: 'sp_1',
     typeKey: 'meeting',
     name: 'Retro',
-    at: { day: { year: 2026, month: 8, day: 18 }, minute: 16 * 60 }
+    at: { day: { year: 2026, month: 8, day: 18 }, minute: 16 * 60 },
   }
 
   test('adds the new object to the collection picked, then reads the span again once', async () => {
@@ -350,7 +352,7 @@ describe('creating', () => {
 
     await expect(create.execute({ ...retro, collectionId: 'col_gone' })).resolves.toEqual({
       ok: true,
-      collection: { failure: 'rejected', message: 'object not found' }
+      collection: { failure: 'rejected', message: 'object not found' },
     })
     expect(objectsIn(store.get()).map(({ id }) => id)).toContain('obj_new')
   })
@@ -360,17 +362,17 @@ describe('creating', () => {
     writer.addToCollection.mockRejectedValue(new TypeError('fetch failed'))
     await expect(create.execute({ ...retro, collectionId: 'col_q4' })).resolves.toEqual({
       ok: true,
-      collection: { failure: 'unreachable' }
+      collection: { failure: 'unreachable' },
     })
   })
 
   test('touches no collection when the create is refused', async () => {
     const { create, writer } = await setup({
-      write: async () => ({ ok: false, failure: 'not-granted' })
+      write: async () => ({ ok: false, failure: 'not-granted' }),
     })
     await expect(create.execute({ ...retro, collectionId: 'col_q4' })).resolves.toEqual({
       ok: false,
-      failure: 'not-granted'
+      failure: 'not-granted',
     })
     expect(writer.addToCollection).not.toHaveBeenCalled()
   })
@@ -395,7 +397,7 @@ describe('completing', () => {
     const { complete, writer } = await setup()
     await expect(complete.execute({ spaceId: 'sp_1', id: 'obj_1', done: true })).resolves.toEqual({
       ok: false,
-      failure: 'invalid'
+      failure: 'invalid',
     })
     expect(writer.setDone).not.toHaveBeenCalled()
   })

@@ -25,11 +25,11 @@ function setup(initialCredential: { apiKey: string; issuedAt: number } | null = 
     createChallenge: vi.fn<AuthGateway['createChallenge']>(async () => ({ ok: true, challengeId: 'ch_1' })),
     exchangeCode: vi.fn<AuthGateway['exchangeCode']>(async () => ({
       ok: false,
-      failure: 'invalid-code'
+      failure: 'invalid-code',
     })),
     verifyApiKey: vi.fn<AuthGateway['verifyApiKey']>(async (apiKey) =>
-      apiKey === VALID_KEY ? { ok: true, access: ACCESS } : { ok: false, failure: 'invalid-key' }
-    )
+      apiKey === VALID_KEY ? { ok: true, access: ACCESS } : { ok: false, failure: 'invalid-key' },
+    ),
   }
   const credentials = {
     load: vi.fn<CredentialRepository['load']>(async () => credential),
@@ -38,7 +38,7 @@ function setup(initialCredential: { apiKey: string; issuedAt: number } | null = 
     }),
     clear: vi.fn<CredentialRepository['clear']>(async () => {
       credential = null
-    })
+    }),
   }
   const store = new AuthSessionStore()
   const startAuthKeyEntry = new StartAuthKeyEntry(store)
@@ -55,7 +55,7 @@ function setup(initialCredential: { apiKey: string; issuedAt: number } | null = 
     stored: () => credential,
     advance: (ms: number) => {
       time += ms
-    }
+    },
   }
 }
 
@@ -71,7 +71,7 @@ describe('submitApiKey', () => {
     expect(store.get()).toEqual({
       phase: 'connected',
       key: { hint: '4c19', issuedAt: START + 5_000 },
-      access: ACCESS
+      access: ACCESS,
     })
     expect(JSON.stringify(store.get())).not.toContain(VALID_KEY)
   })
@@ -136,14 +136,7 @@ describe('submitApiKey', () => {
 
 describe('late verify results', () => {
   test('a success after stepping back is never stored', async () => {
-    const {
-      startAuthKeyEntry,
-      submitAuthApiKey,
-      stepBackAuthConnection,
-      store,
-      gateway,
-      credentials
-    } = setup()
+    const { startAuthKeyEntry, submitAuthApiKey, stepBackAuthConnection, store, gateway, credentials } = setup()
     startAuthKeyEntry.execute()
     const verify = deferred<AuthVerifyResult>()
     gateway.verifyApiKey.mockReturnValueOnce(verify.promise)
@@ -172,14 +165,7 @@ describe('late verify results', () => {
   })
 
   test('stepping back while the key is being saved un-stores it', async () => {
-    const {
-      startAuthKeyEntry,
-      submitAuthApiKey,
-      stepBackAuthConnection,
-      store,
-      credentials,
-      stored
-    } = setup()
+    const { startAuthKeyEntry, submitAuthApiKey, stepBackAuthConnection, store, credentials, stored } = setup()
     startAuthKeyEntry.execute()
     const saving = deferred<void>()
     credentials.save.mockImplementationOnce(async () => saving.promise)

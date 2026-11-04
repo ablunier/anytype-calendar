@@ -1,5 +1,5 @@
-import { useId } from 'react'
 import type { IconName } from '@renderer/types'
+import { useId } from 'react'
 import { Icon } from './Icon'
 
 export type FieldSize = 'sm' | 'md' | 'lg'
@@ -7,7 +7,7 @@ export type FieldSize = 'sm' | 'md' | 'lg'
 export const fieldHeight: Record<FieldSize, string> = {
   sm: 'h-control-sm',
   md: 'h-control-md',
-  lg: 'h-control-lg'
+  lg: 'h-control-lg',
 }
 
 export interface InputProps {
@@ -36,7 +36,7 @@ export function Input({
   type = 'text',
   size = 'md',
   disabled = false,
-  mono = false
+  mono = false,
 }: InputProps): React.JSX.Element {
   const id = useId()
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined
@@ -54,7 +54,7 @@ export function Input({
           'focus-within:shadow-focus',
           fieldHeight[size],
           disabled ? 'bg-surface-sunken' : 'bg-surface-card',
-          error ? 'border-clay-500 focus-within:shadow-none' : 'border-line-default focus-within:border-line-accent'
+          error ? 'border-clay-500 focus-within:shadow-none' : 'border-line-default focus-within:border-line-accent',
         ].join(' ')}
       >
         {icon ? <Icon name={icon} size={14} className="text-ink-tertiary" /> : null}
@@ -69,7 +69,7 @@ export function Input({
           onChange={(e) => onChange(e.target.value)}
           className={[
             'min-w-0 flex-1 border-0 bg-transparent text-small text-ink-body outline-none',
-            mono ? 'type-numeral' : 'type-body'
+            mono ? 'type-numeral' : 'type-body',
           ].join(' ')}
         />
       </div>

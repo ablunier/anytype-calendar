@@ -6,7 +6,7 @@ export type CardPadding = 'dense' | 'default' | 'roomy'
 const paddingClass: Record<CardPadding, string> = {
   dense: 'p-12',
   default: 'p-16',
-  roomy: 'p-24'
+  roomy: 'p-24',
 }
 
 export interface CardProps {
@@ -17,12 +17,7 @@ export interface CardProps {
   className?: string
 }
 
-export function Card({
-  children,
-  padding = 'default',
-  elevation = 1,
-  className
-}: CardProps): React.JSX.Element {
+export function Card({ children, padding = 'default', elevation = 1, className }: CardProps): React.JSX.Element {
   const shadow = elevation === 0 ? 'shadow-none' : elevation === 2 ? 'shadow-2' : 'shadow-1'
   return (
     <div
@@ -30,7 +25,7 @@ export function Card({
         'rounded-card border border-line-subtle bg-surface-card',
         paddingClass[padding],
         shadow,
-        className ?? ''
+        className ?? '',
       ].join(' ')}
     >
       {children}

@@ -1,16 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import {
-  AUTH_CHALLENGE_LIFETIME_MS,
-  createAuthChallenge,
-  isChallengeExpired,
-  isWellFormedAuthCode
-} from './challenge'
+import { AUTH_CHALLENGE_LIFETIME_MS, createAuthChallenge, isChallengeExpired, isWellFormedAuthCode } from './challenge'
 
 describe('createAuthChallenge', () => {
   test('stamps the code lifetime onto the issue time', () => {
     expect(createAuthChallenge('ch_1', 1_000)).toEqual({
       id: 'ch_1',
-      expiresAt: 1_000 + AUTH_CHALLENGE_LIFETIME_MS
+      expiresAt: 1_000 + AUTH_CHALLENGE_LIFETIME_MS,
     })
   })
 })
@@ -40,7 +35,7 @@ describe('isWellFormedAuthCode', () => {
     ['non-digit', '27a9'],
     ['padded', ' 2749'],
     ['trailing newline', '2749\n'],
-    ['non-ASCII digits', '٢٧٤٩']
+    ['non-ASCII digits', '٢٧٤٩'],
   ])('rejects %s', (_, code) => {
     expect(isWellFormedAuthCode(code)).toBe(false)
   })

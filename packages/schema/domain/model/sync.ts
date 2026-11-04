@@ -52,8 +52,8 @@ export function nextSchemaSync(state: SchemaSync, event: SchemaSyncEvent): Schem
             last: {
               spaces: event.spaces,
               hasNotGrantedSpaces: event.hasNotGrantedSpaces,
-              syncedAt: event.at
-            }
+              syncedAt: event.at,
+            },
           }
         : state
 

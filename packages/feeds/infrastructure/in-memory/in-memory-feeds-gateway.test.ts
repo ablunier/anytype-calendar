@@ -22,6 +22,6 @@ test('answers a page that is not a calendar for any other address', async () => 
   await expect(gateway.fetch('https://example.com/team')).resolves.toMatchObject({ ok: true })
   await expect(gateway.fetch('https://unreachable.example/team.ics')).resolves.toEqual({
     ok: false,
-    failure: 'unreachable'
+    failure: 'unreachable',
   })
 })

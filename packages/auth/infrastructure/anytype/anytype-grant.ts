@@ -11,7 +11,7 @@ export function grantFromPairing(grant: AnytypeApiKeyGrant | undefined): AuthGra
   return {
     allSpaces,
     spaceIds: allSpaces ? [] : stringsIn(grant.space_ids),
-    permission: permissionOf(grant.permission)
+    permission: permissionOf(grant.permission),
   }
 }
 
@@ -28,7 +28,7 @@ export function grantFromWhoami(whoami: AnytypeWhoami | null): AuthGrant {
   return {
     allSpaces,
     spaceIds: allSpaces || !Array.isArray(spaces) ? [] : stringsIn(spaces.map((space) => space?.id)),
-    permission: permissionOf(grant.permission)
+    permission: permissionOf(grant.permission),
   }
 }
 
@@ -38,7 +38,5 @@ function permissionOf(value: unknown): 'read' | 'readwrite' {
 }
 
 function stringsIn(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string' && item !== '')
-    : []
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item !== '') : []
 }

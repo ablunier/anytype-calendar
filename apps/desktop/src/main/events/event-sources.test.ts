@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest'
 import type { SchemaQueryChoice, SchemaSync, SchemaTypeChoice } from '@anytype-calendar/schema/domain'
+import { expect, test } from 'vitest'
 import { eventsSourcesFor } from './event-sources'
 
 const TASK: SchemaTypeChoice = {
@@ -11,7 +11,7 @@ const TASK: SchemaTypeChoice = {
   colourBy: 'priority',
   panel: [],
   done: 'done',
-  location: 'location'
+  location: 'location',
 }
 
 const OPEN_TASKS: SchemaQueryChoice = {
@@ -24,7 +24,7 @@ const OPEN_TASKS: SchemaQueryChoice = {
   colourBy: 'priority',
   panel: [],
   done: 'done',
-  location: 'location'
+  location: 'location',
 }
 
 const SYNCED: SchemaSync = {
@@ -44,28 +44,28 @@ const SYNCED: SchemaSync = {
             dateProperties: [{ key: 'due_date', name: 'Due date' }],
             checkboxProperties: [
               { key: 'done', name: 'Done' },
-              { key: 'finished', name: 'Finished' }
+              { key: 'finished', name: 'Finished' },
             ],
             textProperties: [
               { key: 'location', name: 'Location' },
-              { key: 'venue', name: 'Venue' }
+              { key: 'venue', name: 'Venue' },
             ],
             panelProperties: [
               { key: 'venue', name: 'Venue', format: 'text' },
               { key: 'stage', name: 'Stage', format: 'select', options: [{ name: 'Draft', color: 'grey' }] },
-              { key: 'project', name: 'Project', format: 'objects' }
+              { key: 'project', name: 'Project', format: 'objects' },
             ],
             selectProperties: [
               { key: 'priority', name: 'Priority', options: [{ name: 'P1', color: 'red' }] },
-              { key: 'stage', name: 'Stage', options: [{ name: 'Draft', color: 'grey' }] }
-            ]
-          }
+              { key: 'stage', name: 'Stage', options: [{ name: 'Draft', color: 'grey' }] },
+            ],
+          },
         ],
         queries: [{ id: 'q_open', name: 'Open tasks', typeKey: 'task', views: [{ id: '63194', name: 'Open' }] }],
-        collections: []
-      }
-    ]
-  }
+        collections: [],
+      },
+    ],
+  },
 }
 
 test('is empty until a selection is saved', () => {
@@ -82,13 +82,13 @@ test('keeps the chosen types of chosen spaces only', () => {
           types: [
             { ...TASK, colourBy: null },
             { ...TASK, spaceId: 'sp_2' },
-            { ...TASK, typeKey: 'project', from: 'start_date', to: 'due_date', includesTime: false }
+            { ...TASK, typeKey: 'project', from: 'start_date', to: 'due_date', includesTime: false },
           ],
-          queries: []
-        }
+          queries: [],
+        },
       },
-      { phase: 'idle' }
-    )
+      { phase: 'idle' },
+    ),
   ).toEqual([
     { kind: 'type', spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null, includesTime: true },
     {
@@ -97,20 +97,20 @@ test('keeps the chosen types of chosen spaces only', () => {
       typeKey: 'project',
       from: 'start_date',
       to: 'due_date',
-      includesTime: false
-    }
+      includesTime: false,
+    },
   ])
 })
 
 test.each([
   ['From', { from: 'v1_due_date' }],
-  ['To', { to: 'v1_end_date' }]
+  ['To', { to: 'v1_end_date' }],
 ])('reads a type by its own dates when the synced type no longer has the saved %s', (_, stale) => {
   expect(
     eventsSourcesFor(
       { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, ...stale }], queries: [] } },
-      SYNCED
-    )
+      SYNCED,
+    ),
   ).toMatchObject([{ typeKey: 'task', from: 'due_date', to: null, includesTime: false }])
 })
 
@@ -119,10 +119,10 @@ test("reads a query by its type's own dates when that type no longer has the sav
     eventsSourcesFor(
       {
         phase: 'saved',
-        selection: { spaceIds: ['sp_1'], types: [], queries: [{ ...OPEN_TASKS, from: 'v1_due_date' }] }
+        selection: { spaceIds: ['sp_1'], types: [], queries: [{ ...OPEN_TASKS, from: 'v1_due_date' }] },
       },
-      SYNCED
-    )
+      SYNCED,
+    ),
   ).toMatchObject([{ queryId: 'q_open', from: 'due_date', to: null, includesTime: false }])
 })
 
@@ -130,8 +130,8 @@ test('keeps the Done, Location and colours of a type read by its own dates', () 
   expect(
     eventsSourcesFor(
       { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, from: 'v1_due_date' }], queries: [] } },
-      SYNCED
-    )
+      SYNCED,
+    ),
   ).toMatchObject([{ done: 'done', location: 'location', colourBy: { key: 'priority' } }])
 })
 
@@ -140,16 +140,16 @@ test('keeps the saved dates of a type the sync did not see', () => {
     eventsSourcesFor(
       {
         phase: 'saved',
-        selection: { spaceIds: ['sp_1'], types: [{ ...TASK, typeKey: 'gone', from: 'v1_due_date' }], queries: [] }
+        selection: { spaceIds: ['sp_1'], types: [{ ...TASK, typeKey: 'gone', from: 'v1_due_date' }], queries: [] },
       },
-      SYNCED
-    )
+      SYNCED,
+    ),
   ).toMatchObject([{ typeKey: 'gone', from: 'v1_due_date', includesTime: true }])
 })
 
 test('reads Done, Location and the chosen colours where the synced type has them', () => {
   expect(
-    eventsSourcesFor({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [TASK], queries: [] } }, SYNCED)
+    eventsSourcesFor({ phase: 'saved', selection: { spaceIds: ['sp_1'], types: [TASK], queries: [] } }, SYNCED),
   ).toEqual([
     {
       kind: 'type',
@@ -160,15 +160,15 @@ test('reads Done, Location and the chosen colours where the synced type has them
       includesTime: true,
       done: 'done',
       location: 'location',
-      colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] }
-    }
+      colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] },
+    },
   ])
 })
 
 test('colours by nothing when the type no longer has the chosen property', () => {
   const [source] = eventsSourcesFor(
     { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, colourBy: 'gone' }], queries: [] } },
-    SYNCED
+    SYNCED,
   )
   expect(source).not.toHaveProperty('colourBy')
 })
@@ -180,10 +180,10 @@ test("puts queries after types, and reads a query's details through the type it 
       selection: {
         spaceIds: ['sp_1'],
         types: [TASK],
-        queries: [OPEN_TASKS, { ...OPEN_TASKS, spaceId: 'sp_2' }]
-      }
+        queries: [OPEN_TASKS, { ...OPEN_TASKS, spaceId: 'sp_2' }],
+      },
     },
-    SYNCED
+    SYNCED,
   )
   expect(sources.map(({ kind }) => kind)).toEqual(['type', 'query'])
   expect(sources[1]).toEqual({
@@ -196,7 +196,7 @@ test("puts queries after types, and reads a query's details through the type it 
     includesTime: false,
     done: 'done',
     location: 'location',
-    colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] }
+    colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] },
   })
 })
 
@@ -204,8 +204,8 @@ test('reads a query by its dates alone before a sync has seen it', () => {
   expect(
     eventsSourcesFor(
       { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [], queries: [OPEN_TASKS] } },
-      { phase: 'idle' }
-    )
+      { phase: 'idle' },
+    ),
   ).toEqual([
     {
       kind: 'query',
@@ -214,8 +214,8 @@ test('reads a query by its dates alone before a sync has seen it', () => {
       viewId: '63194',
       from: 'due_date',
       to: null,
-      includesTime: false
-    }
+      includesTime: false,
+    },
   ])
 })
 
@@ -228,9 +228,9 @@ test('reads the Done and Location the user picked, where the synced type has the
         types: [{ ...TASK, done: 'finished', location: 'venue' }],
         queries: [
           { ...OPEN_TASKS, done: 'gone', location: 'gone' },
-          { ...OPEN_TASKS, queryId: 'q_open_2', done: null, location: null }
-        ]
-      }
+          { ...OPEN_TASKS, queryId: 'q_open_2', done: null, location: null },
+        ],
+      },
     },
     {
       ...SYNCED,
@@ -238,10 +238,10 @@ test('reads the Done and Location the user picked, where the synced type has the
         ...SYNCED.last,
         spaces: SYNCED.last.spaces.map((space) => ({
           ...space,
-          queries: [...space.queries, { id: 'q_open_2', name: 'Also open', typeKey: 'task', views: [] }]
-        }))
-      }
-    } as SchemaSync
+          queries: [...space.queries, { id: 'q_open_2', name: 'Also open', typeKey: 'task', views: [] }],
+        })),
+      },
+    } as SchemaSync,
   )
   expect(picked).toMatchObject({ done: 'finished', location: 'venue' })
   expect(gone).not.toHaveProperty('done')
@@ -254,21 +254,25 @@ test("reads the panel's properties in the chosen order, leaving out ones the syn
   const [source] = eventsSourcesFor(
     {
       phase: 'saved',
-      selection: { spaceIds: ['sp_1'], types: [{ ...TASK, panel: ['project', 'gone', 'stage', 'venue'] }], queries: [] }
+      selection: {
+        spaceIds: ['sp_1'],
+        types: [{ ...TASK, panel: ['project', 'gone', 'stage', 'venue'] }],
+        queries: [],
+      },
     },
-    SYNCED
+    SYNCED,
   )
   expect(source?.panel).toEqual([
     { key: 'project', format: 'objects' },
     { key: 'stage', format: 'select', options: [{ name: 'Draft', color: 'grey' }] },
-    { key: 'venue', format: 'text' }
+    { key: 'venue', format: 'text' },
   ])
 })
 
 test('shows nothing more for a panel with nothing the synced type has', () => {
   const [source] = eventsSourcesFor(
     { phase: 'saved', selection: { spaceIds: ['sp_1'], types: [{ ...TASK, panel: ['gone'] }], queries: [] } },
-    SYNCED
+    SYNCED,
   )
   expect(source).not.toHaveProperty('panel')
 })

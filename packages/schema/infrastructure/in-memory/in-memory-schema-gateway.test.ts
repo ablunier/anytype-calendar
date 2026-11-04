@@ -9,12 +9,12 @@ const SPACE: InMemorySchemaSpace = {
       key: 'task',
       name: 'Task',
       icon: { name: 'checkbox', color: 'lime' },
-      properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
-    }
+      properties: [{ key: 'due_date', name: 'Due date', format: 'date' }],
+    },
   ],
   options: { priority: [{ name: 'High', color: 'red' }] },
   queries: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }],
-  collections: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }]
+  collections: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }],
 }
 
 function setup() {
@@ -24,7 +24,7 @@ function setup() {
       sleeps.push(ms)
     },
     spaces: [SPACE],
-    requestLatencyMs: 50
+    requestLatencyMs: 50,
   })
   return { gateway, sleeps }
 }
@@ -33,7 +33,7 @@ test('lists the seeded spaces after the simulated latency', async () => {
   const { gateway, sleeps } = setup()
   await expect(gateway.listSpaces()).resolves.toEqual({
     ok: true,
-    value: { spaces: [{ id: 'sp_1', name: 'Personal' }], hasNotGrantedSpaces: false }
+    value: { spaces: [{ id: 'sp_1', name: 'Personal' }], hasNotGrantedSpaces: false },
   })
   expect(sleeps).toEqual([50])
 })
@@ -47,9 +47,9 @@ test("answers with a space's types", async () => {
         key: 'task',
         name: 'Task',
         icon: { name: 'checkbox', color: 'lime' },
-        properties: [{ key: 'due_date', name: 'Due date', format: 'date' }]
-      }
-    ]
+        properties: [{ key: 'due_date', name: 'Due date', format: 'date' }],
+      },
+    ],
   })
 })
 
@@ -57,7 +57,7 @@ test("answers with a space's queries, and none for a space without", async () =>
   const { gateway } = setup()
   await expect(gateway.listQueries('ak_any', 'sp_1')).resolves.toEqual({
     ok: true,
-    value: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }]
+    value: [{ id: 'q_1', name: 'Open tasks', typeKeys: ['task'], views: [{ id: 'v_1', name: 'Open' }] }],
   })
   const { queries: _, ...withoutQueries } = SPACE
   const bare = new InMemorySchemaGateway({ sleep: async () => {}, spaces: [withoutQueries] })
@@ -68,7 +68,7 @@ test("answers with a space's collections, and none for a space without", async (
   const { gateway } = setup()
   await expect(gateway.listCollections('ak_any', 'sp_1')).resolves.toEqual({
     ok: true,
-    value: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }]
+    value: [{ id: 'col_1', name: 'Trip', lastModified: 1_000, backlinks: [] }],
   })
   const { collections: _, ...withoutCollections } = SPACE
   const bare = new InMemorySchemaGateway({ sleep: async () => {}, spaces: [withoutCollections] })
@@ -87,7 +87,7 @@ test('ships the design sample account by default', async () => {
     'Personal',
     'Studio',
     'Reading',
-    'Archive 2024'
+    'Archive 2024',
   ])
 })
 
@@ -95,10 +95,10 @@ test("answers with a space's options for a property, and none for one it has not
   const { gateway } = setup()
   await expect(gateway.listSelectOptions('ak_any', 'sp_1', 'priority')).resolves.toEqual({
     ok: true,
-    value: [{ name: 'High', color: 'red' }]
+    value: [{ name: 'High', color: 'red' }],
   })
   await expect(gateway.listSelectOptions('ak_any', 'sp_1', 'status')).resolves.toEqual({
     ok: true,
-    value: []
+    value: [],
   })
 })

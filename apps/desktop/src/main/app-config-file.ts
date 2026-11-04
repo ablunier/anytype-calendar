@@ -20,7 +20,7 @@ export function appConfigStore(file: AtomicFile): AppConfigStore {
     const result = queue.then(task, task)
     queue = result.then(
       () => undefined,
-      () => undefined
+      () => undefined,
     )
     return result
   }
@@ -45,6 +45,6 @@ export function appConfigStore(file: AtomicFile): AppConfigStore {
         const document = await readDocument()
         document[key] = value
         await file.write(Buffer.from(JSON.stringify(document, null, 2), 'utf8'))
-      })
+      }),
   }
 }

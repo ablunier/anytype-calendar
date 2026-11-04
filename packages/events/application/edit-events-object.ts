@@ -1,8 +1,4 @@
 import {
-  eventsSourceKey,
-  newEventsObjectDates,
-  rescheduleEventsDatedObject,
-  sameEventsObject,
   type EventsApiKeySource,
   type EventsCollectionTarget,
   type EventsDateChanges,
@@ -16,7 +12,11 @@ import {
   type EventsSourceSelection,
   type EventsTimeZone,
   type EventsWriteResult,
-  type EventsWriter
+  type EventsWriter,
+  eventsSourceKey,
+  newEventsObjectDates,
+  rescheduleEventsDatedObject,
+  sameEventsObject,
 } from '../domain'
 import type { EventsSpanStore } from './events-span-store'
 import type { LoadEventsSpan } from './load-events-span'
@@ -83,9 +83,7 @@ export class RescheduleEventsObject {
       // Its To is its From, or it has none: it has no end of its own to set or clear.
       return INVALID
     } else dates = { [to]: moved.end }
-    return writeThenLoad(this.#deps, moved, (apiKey) =>
-      this.#deps.writer.reschedule(apiKey, { spaceId, id }, dates)
-    )
+    return writeThenLoad(this.#deps, moved, (apiKey) => this.#deps.writer.reschedule(apiKey, { spaceId, id }, dates))
   }
 }
 
@@ -114,7 +112,7 @@ export class CreateEventsObject {
       (apiKey) => writer.create(apiKey, { spaceId, typeKey, name, dates }),
       collectionId === undefined
         ? undefined
-        : (apiKey, { id }) => addToCollection(writer, apiKey, { spaceId, collectionId }, id)
+        : (apiKey, { id }) => addToCollection(writer, apiKey, { spaceId, collectionId }, id),
     )
   }
 }
@@ -134,7 +132,7 @@ export class CompleteEventsObject {
     const key = source.done
     if (key === undefined) return INVALID
     return writeThenLoad(this.#deps, { ...object, done }, (apiKey) =>
-      this.#deps.writer.setDone(apiKey, { spaceId, id }, key, done)
+      this.#deps.writer.setDone(apiKey, { spaceId, id }, key, done),
     )
   }
 }
@@ -143,7 +141,7 @@ async function addToCollection(
   writer: EventsWriter,
   apiKey: string,
   collection: EventsCollectionTarget,
-  objectId: string
+  objectId: string,
 ): Promise<EventsEditFailure | null> {
   let added: EventsWriteResult
   try {
@@ -163,7 +161,7 @@ async function addToCollection(
 function shownObject(
   { store, sources }: EditEventsObjectDeps,
   spaceId: string,
-  id: string
+  id: string,
 ): { object: EventsDatedObject; source: EventsSource } | null {
   const shown = store.shown()
   const objects = shown.phase === 'idle' ? [] : (shown.last?.objects ?? [])
@@ -179,7 +177,9 @@ function shownObject(
 }
 
 function sameSourceKey(a: EventsSourceKey, b: EventsSourceKey): boolean {
-  return a.kind === 'type' ? b.kind === 'type' && a.typeKey === b.typeKey : b.kind === 'query' && a.queryId === b.queryId
+  return a.kind === 'type'
+    ? b.kind === 'type' && a.typeKey === b.typeKey
+    : b.kind === 'query' && a.queryId === b.queryId
 }
 
 /**
@@ -191,7 +191,7 @@ async function writeThenLoad<T>(
   { apiKeys, store, load }: EditEventsObjectDeps,
   edit: EventsDatedObject | null,
   write: (apiKey: string) => Promise<EventsWriteResult<T>>,
-  then?: (apiKey: string, written: T) => Promise<EventsEditFailure | null>
+  then?: (apiKey: string, written: T) => Promise<EventsEditFailure | null>,
 ): Promise<EventsEditOutcome> {
   const release = edit ? store.hold(edit) : () => {}
   try {

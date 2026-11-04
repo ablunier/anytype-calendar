@@ -45,10 +45,7 @@ export type EventsSpanLoadEvent =
  * absorbed, unlike a schema sync: it always yields a new state, since the newer one may be
  * for another span or a changed selection, and the older one's result must lose.
  */
-export function nextEventsSpanLoad(
-  state: EventsSpanLoad,
-  event: EventsSpanLoadEvent
-): EventsSpanLoad {
+export function nextEventsSpanLoad(state: EventsSpanLoad, event: EventsSpanLoadEvent): EventsSpanLoad {
   switch (event.type) {
     case 'load-started':
       return withLast({ phase: 'loading', span: event.span }, lastResult(state))
@@ -60,10 +57,7 @@ export function nextEventsSpanLoad(
 
     case 'load-failed':
       return state.phase === 'loading'
-        ? withLast(
-            { phase: 'failed', span: state.span, failure: event.failure, at: event.at },
-            state.last
-          )
+        ? withLast({ phase: 'failed', span: state.span, failure: event.failure, at: event.at }, state.last)
         : state
 
     case 'reset':

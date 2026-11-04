@@ -6,7 +6,7 @@ import { SchemaSelectionStore } from './schema-selection-store'
 
 const SELECTION: SchemaSelection = {
   spaceIds: ['sp_1'],
-  types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }]
+  types: [{ spaceId: 'sp_1', typeKey: 'task', from: 'due_date', to: null }],
 }
 
 const LATER: SchemaSelection = { spaceIds: [], types: [] }
@@ -22,7 +22,7 @@ function deferred() {
 function setup(stored: SchemaSelection | null = null) {
   const repository = {
     load: vi.fn<SchemaSelectionRepository['load']>(async () => stored),
-    save: vi.fn<SchemaSelectionRepository['save']>(async () => {})
+    save: vi.fn<SchemaSelectionRepository['save']>(async () => {}),
   }
   const store = new SchemaSelectionStore()
   const listener = vi.fn()
@@ -32,7 +32,7 @@ function setup(stored: SchemaSelection | null = null) {
     store,
     listener,
     load: new LoadSchemaSelection({ repository, store }),
-    save: new SaveSchemaSelection({ repository, store })
+    save: new SaveSchemaSelection({ repository, store }),
   }
 }
 
