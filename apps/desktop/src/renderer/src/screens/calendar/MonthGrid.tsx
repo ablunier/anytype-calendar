@@ -4,7 +4,7 @@ import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
 import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MonthDayCell } from './MonthDayCell'
-import { useDayDrag } from './useDayDrag'
+import type { CalendarDrag } from './useCalendarDrag'
 
 export interface MonthGridProps {
   cells: MonthCell[]
@@ -23,8 +23,8 @@ export interface MonthGridProps {
   onSelectDay: (day: number) => void
   /** `date` is the day whose cell the event was opened from, `YYYY-MM-DD`. */
   onOpenEvent: (event: CalendarEvent, date: string) => void
-  /** `date` is the day its first day lands on, `YYYY-MM-DD`. Left off where objects cannot be moved. */
-  onMoveEvent?: (event: CalendarEvent, date: string) => void
+  /** The screen's drags. Null where objects cannot be moved. */
+  drag: CalendarDrag | null
   /** Asks for a new object on the day, `YYYY-MM-DD`. */
   onCreate: (date: string) => void
 }
@@ -66,13 +66,12 @@ export function MonthGrid({
   onFocusDay,
   onSelectDay,
   onOpenEvent,
-  onMoveEvent,
+  drag,
   onCreate,
 }: MonthGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLTableElement>(null)
   const shouldRefocus = useRef(false)
-  const drag = useDayDrag((event, date) => onMoveEvent?.(event, date))
 
   const weeks = useMemo(() => {
     const chunks = chunkWeeks(cells)
@@ -177,7 +176,7 @@ export function MonthGrid({
                 onSelect={() => onSelectDay(cell.day)}
                 onKeyDown={(event) => handleKeyDown(event, cell.day)}
                 onOpenEvent={(event) => onOpenEvent(event, cell.date)}
-                drag={onMoveEvent ? drag : null}
+                drag={drag}
                 onCreate={() => onCreate(cell.date)}
               />
             ))}

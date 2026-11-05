@@ -35,6 +35,7 @@ import { DateNavigator } from './DateNavigator'
 import { DetailPanel } from './DetailPanel'
 import { MonthGrid } from './MonthGrid'
 import { TimeGrid } from './TimeGrid'
+import { useCalendarDrag } from './useCalendarDrag'
 
 export interface CalendarScreenProps {
   /** What is on screen, which main holds: a month, a week or a day. */
@@ -243,6 +244,8 @@ export function CalendarScreen({
   const resizeEvent = (event: CalendarEvent, slot: CalendarSlot): void => {
     void edit(onReschedule(resizeRequestFor(event, slot)))
   }
+  /* Held here rather than by a grid: a drag that lands on a grid need not start in it. */
+  const drag = useCalendarDrag({ onMove: moveEvent, onResize: resizeEvent })
   const askToCreate = (slot: CalendarSlot): void => {
     if (readOnly !== null) say(readOnly)
     else if (creatable.length === 0) {
@@ -369,9 +372,7 @@ export function CalendarScreen({
               onFocusDay={setFocusedDay}
               onSelectDay={selectDay}
               onOpenEvent={openEvent}
-              {...(canEdit
-                ? { onMoveEvent: (event: CalendarEvent, date: string) => moveEvent(event, { date, minute: null }) }
-                : {})}
+              drag={canEdit ? drag : null}
               onCreate={(date) => askToCreate({ date, minute: null })}
             />
           ) : (
@@ -385,7 +386,7 @@ export function CalendarScreen({
               selectedDate={selectedDate}
               onSelectDay={selectDate}
               onOpenEvent={openEvent}
-              {...(canEdit ? { onMoveEvent: moveEvent, onResizeEvent: resizeEvent } : {})}
+              drag={canEdit ? drag : null}
               onCreate={askToCreate}
             />
           )}

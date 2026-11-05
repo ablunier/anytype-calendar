@@ -111,39 +111,36 @@ export function layOutDayColumn(timed: CalendarEvent[]): TimedSegment[] {
   return placed
 }
 
-export interface TimedDrag {
-  /** `move` keeps its length; `resize` pulls its end and keeps its start. */
-  mode: 'move' | 'resize'
-  /** Where it was drawn when the drag began: its column among the view's days, and its minutes. */
-  dayIndex: number
+export interface TimedPlacement {
   startMinute: number
   endMinute: number
-  /** How far the pointer has gone, in minutes down the day and columns across. */
-  minutes: number
-  days: number
-  dayCount: number
+}
+
+/** The minute `offset` pixels down a day's canvas `height` pixels tall, kept on the day. */
+export function minuteAt(offset: number, height: number): number {
+  return Math.min(Math.max((offset / height) * MINUTES_PER_DAY, 0), MINUTES_PER_DAY)
 }
 
 /**
- * Where a dragged object lands, snapped to the grid's quarter hours and kept on the view's
- * days. A move keeps how long it is drawn; a resize never ends before a quarter hour past its
- * start, nor at midnight.
+ * Where a moved object lands with the pointer at `minute`, held `held` minutes below its
+ * start: snapped to the grid's quarter hours, kept on the day, and as long as it is `drawn`.
  */
-export function draggedPlacement({ mode, dayIndex, startMinute, endMinute, minutes, days, dayCount }: TimedDrag): {
-  dayIndex: number
-  startMinute: number
-  endMinute: number
-} {
-  if (mode === 'resize') {
-    const end = Math.max(Math.min(snap(endMinute + minutes), LAST_END_MINUTE), startMinute + SNAP_MINUTES)
-    return { dayIndex, startMinute, endMinute: end }
-  }
-  const length = endMinute - startMinute
-  const start = Math.min(Math.max(snap(startMinute + minutes), 0), LAST_END_MINUTE)
+export function movedPlacement(drawn: TimedPlacement, held: number, minute: number): TimedPlacement {
+  const start = Math.min(Math.max(snap(minute - held), 0), LAST_END_MINUTE)
   return {
-    dayIndex: Math.min(Math.max(dayIndex + days, 0), dayCount - 1),
     startMinute: start,
-    endMinute: Math.min(start + length, MINUTES_PER_DAY),
+    endMinute: Math.min(start + drawn.endMinute - drawn.startMinute, MINUTES_PER_DAY),
+  }
+}
+
+/**
+ * Where a resized object ends with the pointer at `minute`: snapped, and never before a
+ * quarter hour past its start, nor at midnight.
+ */
+export function resizedPlacement(startMinute: number, minute: number): TimedPlacement {
+  return {
+    startMinute,
+    endMinute: Math.max(Math.min(snap(minute), LAST_END_MINUTE), startMinute + SNAP_MINUTES),
   }
 }
 
