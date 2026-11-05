@@ -107,6 +107,16 @@ module.exports = {
       to: { path: 'node_modules/(electron|react|react-dom)(/|$)' }
     },
     {
+      name: 'renderer-no-test-helpers',
+      comment:
+        'The component test helpers and Testing Library are for *.test.tsx only, which ' +
+        "options.exclude keeps out of the graph; an app module importing either would ship " +
+        'them in the renderer bundle.',
+      severity: 'error',
+      from: { path: '^apps/desktop/src/renderer/src/', pathNot: '^apps/desktop/src/renderer/src/test/' },
+      to: { path: '^(?:apps/desktop/src/renderer/src/test/|node_modules/(?:@testing-library/|jsdom/))' }
+    },
+    {
       name: 'no-circular',
       comment: 'Circular imports make the layering unenforceable and break incremental builds.',
       severity: 'error',
@@ -133,7 +143,7 @@ module.exports = {
       // Anchored to this repo's own build output. An unanchored (dist|out)/ also matches
       // node_modules/<pkg>/dist/..., which hides any npm package that ships from a dist
       // directory (vite, among many) and lets a boundary breach through unnoticed.
-      path: '^(packages|apps)/[^/]+/(dist|out)/|\\.test\\.ts$|electron\\.vite\\.config\\.ts$'
+      path: '^(packages|apps)/[^/]+/(dist|out)/|\\.test\\.tsx?$|electron\\.vite\\.config\\.ts$'
     },
     tsConfig: { fileName: 'tsconfig.paths.json' },
     tsPreCompilationDeps: true,

@@ -26,7 +26,7 @@ Run from the repo root. CI runs lint, typecheck, tests and `lint:arch`.
 
 - Without `env -u ELECTRON_RUN_AS_NODE`, Electron fails with a misleading `isPackaged` TypeError.
 - Fake sign-in: code `2749`, or the API key `ak_fake_2749`.
-- Vitest projects: `domain`, `application`, `infrastructure`, `renderer` (pure `lib/` modules), `main` (pure glue: no Electron or Node core imports).
+- Vitest projects: `domain`, `application`, `infrastructure`, `renderer` (pure `lib/` modules), `components` (renderer `*.test.tsx` under jsdom; render with `renderWithI18n` from `@renderer/test/render`), `main` (pure glue: no Electron or Node core imports).
 
 ## External References
 

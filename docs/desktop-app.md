@@ -272,6 +272,13 @@ Standard electron-vite three-process layout:
     and `resizedPlacement` turn the pointer's height on a day's canvas into where a drag
     lands, snapped to `SNAP_MINUTES`: a move keeps the point it was held by under the pointer,
     and a resize ends at the pointer, at least one snap after its start.
+  - Tests: the pure `lib/` modules are `*.test.ts` in the `renderer` Vitest project, under
+    `node`. Components are `*.test.tsx` beside them in the `components` project, under
+    `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role
+    and by real key and pointer sequences, and asserted on roles, names and states, never on
+    class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
+    use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers. jsdom lays nothing
+    out, so layout and visual checks (gutters, outlines, drag previews) are out of their reach.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as
