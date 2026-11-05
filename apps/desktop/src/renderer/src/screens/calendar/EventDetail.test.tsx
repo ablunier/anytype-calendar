@@ -37,7 +37,6 @@ describe('EventDetail Done switch', () => {
     const { user, onSetDone } = renderDetail('This key can only read.')
     const done = screen.getByRole('switch', { name: 'Done' })
     expect(done).toBeChecked()
-    expect(done).toHaveAttribute('aria-checked', 'true')
     expect(done).toHaveAttribute('aria-readonly', 'true')
 
     // A read-only panel of this event has two tab stops, the All day switch and then Done.

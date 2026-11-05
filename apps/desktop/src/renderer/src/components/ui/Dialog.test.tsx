@@ -31,6 +31,8 @@ describe('Dialog', () => {
   })
 
   it('stays open when a press starts inside the sheet and ends on the backdrop', async () => {
+    // Guards the backdrop closing on click: a press split across two elements clicks their shared
+    // parent, so this fails if the backdrop moves to onMouseUp or onPointerUp.
     const { user, onClose, sheet, backdrop } = renderDialog()
     await user.pointer([{ keys: '[MouseLeft>]', target: sheet }, { target: backdrop }, { keys: '[/MouseLeft]' }])
     expect(onClose).not.toHaveBeenCalled()
@@ -40,5 +42,38 @@ describe('Dialog', () => {
     const { user, onClose } = renderDialog()
     await user.click(screen.getByRole('textbox', { name: 'Name' }))
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('keeps Tab and Shift+Tab inside the sheet', async () => {
+    const { user } = renderDialog()
+    const close = screen.getByRole('button', { name: 'Close' })
+    const name = screen.getByRole('textbox', { name: 'Name' })
+
+    name.focus()
+    await user.tab()
+    expect(close).toHaveFocus()
+
+    await user.tab({ shift: true })
+    expect(name).toHaveFocus()
+  })
+
+  it('gives focus back to the control that had it when it closes', () => {
+    const dialog = (open: boolean) => (
+      <>
+        <button type="button">Rename…</button>
+        <Dialog open={open} title="Rename" onClose={() => {}}>
+          <input aria-label="Name" />
+        </Dialog>
+      </>
+    )
+    const { rerender } = renderWithI18n(dialog(false))
+    const opener = screen.getByRole('button', { name: 'Rename…' })
+    opener.focus()
+
+    rerender(dialog(true))
+    expect(opener).not.toHaveFocus()
+
+    rerender(dialog(false))
+    expect(opener).toHaveFocus()
   })
 })
