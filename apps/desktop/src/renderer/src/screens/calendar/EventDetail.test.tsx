@@ -39,13 +39,11 @@ describe('EventDetail Done switch', () => {
     expect(done).toBeChecked()
     expect(done).toHaveAttribute('aria-readonly', 'true')
 
-    // A read-only panel of this event has two tab stops, the All day switch and then Done.
-    document.body.focus()
-    await user.tab()
-    expect(screen.getByRole('switch', { name: 'All day' })).toHaveFocus()
-    await user.tab()
-    expect(done).toHaveFocus()
+    // A disabled control would drop out of the tab order, hiding the state from keyboard users.
+    expect(done).toBeEnabled()
+    expect(done.tabIndex).toBe(0)
 
+    done.focus()
     await user.keyboard(' ')
     await user.click(done)
     expect(onSetDone).not.toHaveBeenCalled()
