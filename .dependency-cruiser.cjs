@@ -133,7 +133,7 @@ module.exports = {
       // Anchored to this repo's own build output. An unanchored (dist|out)/ also matches
       // node_modules/<pkg>/dist/..., which hides any npm package that ships from a dist
       // directory (vite, among many) and lets a boundary breach through unnoticed.
-      path: '^(packages|apps)/[^/]+/(dist|out)/|\\.test\\.ts$|electron\\.vite\\.config\\.ts$'
+      path: '^(packages|apps)/[^/]+/(dist|out)/|\\.test\\.tsx?$|electron\\.vite\\.config\\.ts$'
     },
     tsConfig: { fileName: 'tsconfig.paths.json' },
     tsPreCompilationDeps: true,

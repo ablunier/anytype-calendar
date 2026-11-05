@@ -15,29 +15,40 @@ const layerProject = (layer: 'domain' | 'application' | 'infrastructure') => ({
   test: {
     name: layer,
     root: __dirname,
-    // No jsdom or happy-dom is installed anywhere in this repo, so the packages cannot
-    // accidentally acquire a DOM.
+    // Only the components project has a DOM, so the packages cannot accidentally acquire one.
     environment: 'node' as const,
     include: [`packages/*/${layer}/**/*.test.ts`],
   },
 })
 
 // Mirrors the aliases in apps/desktop/electron.vite.config.ts's `renderer` block, so these
-// tests resolve the same modules the app does. The lib/ modules under test are pure
-// functions with no DOM dependency, so `node` is enough — no jsdom/happy-dom is installed.
+// tests resolve the same modules the app does.
+const rendererAlias = [
+  { find: '@renderer', replacement: resolve(__dirname, 'apps/desktop/src/renderer/src') },
+  { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
+  workspaceAlias,
+]
+
+// The lib/ modules under test are pure functions with no DOM dependency, so `node` is enough.
 const rendererProject = {
-  resolve: {
-    alias: [
-      { find: '@renderer', replacement: resolve(__dirname, 'apps/desktop/src/renderer/src') },
-      { find: '@shared', replacement: resolve(__dirname, 'apps/desktop/src/shared') },
-      workspaceAlias,
-    ],
-  },
+  resolve: { alias: rendererAlias },
   test: {
     name: 'renderer',
     root: __dirname,
     environment: 'node' as const,
     include: ['apps/desktop/src/renderer/src/**/*.test.ts'],
+  },
+}
+
+// React components, driven by role and by real key and pointer sequences under jsdom.
+const componentsProject = {
+  resolve: { alias: rendererAlias },
+  test: {
+    name: 'components',
+    root: __dirname,
+    environment: 'jsdom' as const,
+    include: ['apps/desktop/src/renderer/src/**/*.test.tsx'],
+    setupFiles: ['apps/desktop/src/renderer/src/test/setup.ts'],
   },
 }
 
@@ -64,6 +75,7 @@ export default defineConfig({
       layerProject('application'),
       layerProject('infrastructure'),
       rendererProject,
+      componentsProject,
       mainProject,
     ],
   },
