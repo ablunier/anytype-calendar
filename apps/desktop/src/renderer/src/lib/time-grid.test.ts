@@ -1,10 +1,12 @@
 import type { CalendarEvent } from '@renderer/types'
 import { describe, expect, test } from 'vitest'
 import {
-  draggedPlacement,
   layOutDayColumn,
   MIN_SLOT_MINUTES,
   MINUTES_PER_DAY,
+  minuteAt,
+  movedPlacement,
+  resizedPlacement,
   splitDayEvents,
   timeOfMinute,
 } from './time-grid'
@@ -146,37 +148,51 @@ describe('layOutDayColumn', () => {
   })
 })
 
-describe('draggedPlacement', () => {
-  const drag = { dayIndex: 2, startMinute: 9 * 60 + 10, endMinute: 10 * 60 + 10, minutes: 0, days: 0, dayCount: 7 }
-
-  test('moves an object to the nearest quarter hour and another day, keeping its length', () => {
-    expect(draggedPlacement({ ...drag, mode: 'move', minutes: 52, days: 3 })).toEqual({
-      dayIndex: 5,
-      startMinute: 10 * 60,
-      endMinute: 11 * 60,
-    })
+describe('minuteAt', () => {
+  test('reads the minute from how far down the day the pointer is', () => {
+    expect(minuteAt(300, 1200)).toBe(6 * 60)
   })
 
-  test("keeps a move on the view's days and within the day", () => {
-    expect(draggedPlacement({ ...drag, mode: 'move', minutes: -2000, days: -9 })).toMatchObject({
-      dayIndex: 0,
-      startMinute: 0,
-    })
-    expect(draggedPlacement({ ...drag, mode: 'move', minutes: 2000, days: 9 })).toEqual({
-      dayIndex: 6,
+  test('keeps the minute on the day', () => {
+    expect(minuteAt(-20, 1200)).toBe(0)
+    expect(minuteAt(1300, 1200)).toBe(MINUTES_PER_DAY)
+  })
+})
+
+describe('movedPlacement', () => {
+  const drawn = { startMinute: 9 * 60 + 10, endMinute: 10 * 60 + 10 }
+
+  test('keeps the point it is held by under the pointer, snapped to a quarter hour', () => {
+    expect(movedPlacement(drawn, 20, 10 * 60 + 22)).toEqual({ startMinute: 10 * 60, endMinute: 11 * 60 })
+  })
+
+  test('keeps its length', () => {
+    const { startMinute, endMinute } = movedPlacement(drawn, 0, 14 * 60 + 7)
+    expect(endMinute - startMinute).toBe(60)
+  })
+
+  test('keeps it within the day', () => {
+    expect(movedPlacement(drawn, 50, 10)).toEqual({ startMinute: 0, endMinute: 60 })
+    expect(movedPlacement(drawn, 0, MINUTES_PER_DAY)).toEqual({
       startMinute: MINUTES_PER_DAY - 15,
       endMinute: MINUTES_PER_DAY,
     })
   })
+})
 
-  test('pulls only the end of a resize, never before a quarter hour past the start nor to midnight', () => {
-    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 38, days: 2 })).toEqual({
-      dayIndex: 2,
-      startMinute: 9 * 60 + 10,
-      endMinute: 10 * 60 + 45,
-    })
-    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: -600 }).endMinute).toBe(9 * 60 + 25)
-    expect(draggedPlacement({ ...drag, mode: 'resize', minutes: 6000 }).endMinute).toBe(MINUTES_PER_DAY - 15)
+describe('resizedPlacement', () => {
+  const start = 9 * 60 + 10
+
+  test('puts the end at the pointer, snapped to a quarter hour, and keeps the start', () => {
+    expect(resizedPlacement(start, 10 * 60 + 38)).toEqual({ startMinute: start, endMinute: 10 * 60 + 45 })
+  })
+
+  test('never ends before a quarter hour past the start', () => {
+    expect(resizedPlacement(start, 8 * 60).endMinute).toBe(9 * 60 + 25)
+  })
+
+  test('never ends at midnight', () => {
+    expect(resizedPlacement(start, MINUTES_PER_DAY).endMinute).toBe(MINUTES_PER_DAY - 15)
   })
 })
 

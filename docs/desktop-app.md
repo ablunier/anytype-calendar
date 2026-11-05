@@ -218,7 +218,20 @@ Standard electron-vite three-process layout:
     each with its own subcomponents. `screens/calendar` holds all three views: `CalendarScreen`
     keeps the chrome and switches on `span.kind` between `MonthGrid` and `TimeGrid`, and
     `TimeGrid` serves the week and the day alike — they differ only in how many columns it
-    draws, so it takes `days: DayColumn[]`, seven of them or one.
+    draws, so it takes `days: DayColumn[]`, seven of them or one. Every drag in the views —
+    a bar in the month grid or the all-day band, a box or its bottom edge in the hour grid —
+    is native drag and drop through one hook, `useCalendarDrag`, held by `CalendarScreen`
+    rather than by a grid so a drag can start outside the grid it lands on. It holds what is
+    dragged as a union (`CalendarDragged`), and each target reports a `CalendarSlot`: a month
+    cell by its day, the all-day band by the column under the pointer, an hour column by its
+    day and the minute under the pointer. A target sits on the element the objects are drawn
+    in, so the pointer over an object, the dragged one included, is still over the target. The
+    browser ends and cancels it — Escape, or a drop on nothing that takes it, leaves the object
+    where it was — and fires no click after it. Its one `dataTransfer` entry, which Chromium
+    needs to start a drag, has the app's own type (`application/x-anytype-calendar`), so a
+    text field it is dropped on pastes nothing. Where a drag lands and the edit a drop asks
+    for are pure, in `lib/calendar-drag.ts`; the screen redraws only when the landing moves,
+    a quarter hour at a time, not with every pixel the pointer travels.
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
     barrel-exported from `components/ui/index.ts`. `Combobox` is a Select that can be typed in
     to narrow it; the caller does the matching (`optionsFor`), so it knows nothing of what it
@@ -255,7 +268,10 @@ Standard electron-vite three-process layout:
     and packs overlapping ones into columns — a run of transitively overlapping objects is
     sized together, so a bar keeps one width throughout, though an object clear of an earlier
     one reuses the column it freed. An object with no To date is a moment, drawn at
-    `MIN_SLOT_MINUTES`, not something running on to midnight.
+    `MIN_SLOT_MINUTES`, not something running on to midnight. `minuteAt`, `movedPlacement`
+    and `resizedPlacement` turn the pointer's height on a day's canvas into where a drag
+    lands, snapped to `SNAP_MINUTES`: a move keeps the point it was held by under the pointer,
+    and a resize ends at the pointer, at least one snap after its start.
   - Tests: the pure `lib/` modules are `*.test.ts` in the `renderer` Vitest project, under
     `node`. Components are `*.test.tsx` beside them in the `components` project, under
     `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role

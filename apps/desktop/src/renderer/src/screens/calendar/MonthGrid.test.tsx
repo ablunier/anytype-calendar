@@ -29,6 +29,7 @@ function Harness(): React.JSX.Element {
         onSelectDay={(day) => setSelected(isoDate(YEAR, MONTH, day))}
         onOpenEvent={() => {}}
         onCreate={() => {}}
+        drag={null}
       />
       <button type="button">After</button>
     </>

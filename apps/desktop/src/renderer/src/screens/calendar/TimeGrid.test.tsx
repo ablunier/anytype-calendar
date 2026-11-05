@@ -17,6 +17,7 @@ function renderTimeGrid(days: ReturnType<typeof buildWeek>) {
       onSelectDay={() => {}}
       onOpenEvent={() => {}}
       onCreate={() => {}}
+      drag={null}
     />,
   )
 }

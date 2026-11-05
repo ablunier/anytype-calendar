@@ -1,27 +1,26 @@
 import { dayLabel, eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
+import { timedLanding } from '@renderer/lib/calendar-drag'
 import {
-  draggedPlacement,
   layOutDayColumn,
   MINUTES_PER_DAY,
+  minuteAt,
   SNAP_MINUTES,
   splitDayEvents,
   type TimedSegment,
   timeOfMinute,
 } from '@renderer/lib/time-grid'
 import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
-import { type CSSProperties, type PointerEvent, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type DragEvent, useEffect, useEffectEvent, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
 import { TimeGutter } from './TimeGutter'
+import type { CalendarDrag } from './useCalendarDrag'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
 /** Where the grid opens when today is out of view: early enough to show a working morning. */
 const DEFAULT_SCROLL_HOUR = 7
-
-/** How far the pointer goes before a press on an object is a drag rather than a click. */
-const DRAG_THRESHOLD_PX = 4
 
 export interface TimeGridProps {
   /** Seven days for a week, one for a day. */
@@ -36,29 +35,10 @@ export interface TimeGridProps {
   selectedDate: string | null
   onSelectDay: (date: string) => void
   onOpenEvent: (event: CalendarEvent, date: string) => void
-  /**
-   * `slot` is where it now starts, or for a resize where it now ends. Left off where objects
-   * cannot be moved.
-   */
-  onMoveEvent?: (event: CalendarEvent, slot: CalendarSlot) => void
-  onResizeEvent?: (event: CalendarEvent, slot: CalendarSlot) => void
+  /** The screen's drags, for the band too. Null where objects cannot be moved. */
+  drag: CalendarDrag | null
   /** Asks for a new object at the slot: a minute of the hour grid, or a day of the band. */
   onCreate: (slot: CalendarSlot) => void
-}
-
-/** A press on a timed object, which becomes a drag once the pointer has gone far enough. */
-interface Press {
-  segment: TimedSegment
-  mode: 'move' | 'resize'
-  dayIndex: number
-  originX: number
-  originY: number
-  /** Measured when it began: pixels per hour down the grid, and per day across it. */
-  hourPx: number
-  dayPx: number
-  dx: number
-  dy: number
-  dragging: boolean
 }
 
 /**
@@ -68,7 +48,8 @@ interface Press {
  *
  * A timed object is dragged by its body to another time or day, or by its bottom edge to end
  * at another time, a quarter hour at a time; a preview shows where it lands until it is let
- * go. Escape drops the drag.
+ * go. Each day's column takes the drop, at the minute under the pointer; Escape, or a drop
+ * outside the hour grid, leaves it where it was.
  */
 export function TimeGrid({
   days,
@@ -80,16 +61,11 @@ export function TimeGrid({
   selectedDate,
   onSelectDay,
   onOpenEvent,
-  onMoveEvent,
-  onResizeEvent,
+  drag,
   onCreate,
 }: TimeGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const scroller = useRef<HTMLDivElement>(null)
-  const grid = useRef<HTMLTableElement>(null)
-  const [press, setPress] = useState<Press | null>(null)
-  // The click that ends a drag is not a click on the object.
-  const swallowClick = useRef(false)
 
   const split = useMemo(() => days.map((day) => splitDayEvents(events, day.date)), [days, events])
   const weekdays = weekdayNames(i18n.language, 'short')
@@ -105,86 +81,20 @@ export function TimeGrid({
   })
   useEffect(() => scrollToNow(days), [days])
 
-  const placement = press?.dragging
-    ? draggedPlacement({
-        mode: press.mode,
-        dayIndex: press.dayIndex,
-        startMinute: press.segment.startMinute,
-        endMinute: press.segment.endMinute,
-        minutes: (press.dy / press.hourPx) * 60,
-        days: Math.round(press.dx / press.dayPx),
-        dayCount: days.length,
-      })
-    : null
+  const dragged = drag?.dragged ?? null
+  const landing = timedLanding(dragged, drag?.over ?? null)
 
-  /* Followed on the window, not the object: the pointer leaves it as soon as the drag moves
-   * it, and the object is redrawn under the pointer in another column. */
-  const pressing = press !== null
-  const latest = useRef({ press, placement })
-  latest.current = { press, placement }
-  useEffect(() => {
-    if (!pressing) return
-    const move = (pointer: globalThis.PointerEvent): void => {
-      setPress((current) => {
-        if (!current) return current
-        const dx = pointer.clientX - current.originX
-        const dy = pointer.clientY - current.originY
-        const dragging = current.dragging || Math.hypot(dx, dy) > DRAG_THRESHOLD_PX
-        return { ...current, dx, dy, dragging }
-      })
+  const startDrag = (segment: TimedSegment, date: string) => (event: DragEvent, mode: 'move' | 'resize') => {
+    if (!drag) return
+    const drawn = { startMinute: segment.startMinute, endMinute: segment.endMinute }
+    if (mode === 'resize') {
+      drag.start({ kind: 'resize', event: segment.event, date, drawn }, event)
+      return
     }
-    const drop = (): void => {
-      const { press: ended, placement: landed } = latest.current
-      setPress(null)
-      if (!ended?.dragging || !landed) return
-      swallowClick.current = true
-      // Cleared after the click the release fires, if it fires one on the object at all.
-      setTimeout(() => {
-        swallowClick.current = false
-      })
-      const { event, startMinute, endMinute } = ended.segment
-      const date = days[landed.dayIndex]?.date
-      if (date === undefined) return
-      if (ended.mode === 'move') {
-        if (landed.startMinute !== startMinute || landed.dayIndex !== ended.dayIndex) {
-          onMoveEvent?.(event, { date, minute: landed.startMinute })
-        }
-      } else if (landed.endMinute !== endMinute) {
-        onResizeEvent?.(event, { date, minute: landed.endMinute })
-      }
-    }
-    const cancel = (): void => setPress(null)
-    const cancelOnEscape = (key: KeyboardEvent): void => {
-      if (key.key === 'Escape') cancel()
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', drop)
-    window.addEventListener('pointercancel', cancel)
-    window.addEventListener('keydown', cancelOnEscape)
-    return () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', drop)
-      window.removeEventListener('pointercancel', cancel)
-      window.removeEventListener('keydown', cancelOnEscape)
-    }
-  }, [pressing, days, onMoveEvent, onResizeEvent])
-
-  const beginPress = (segment: TimedSegment, dayIndex: number) => (pointer: PointerEvent, mode: 'move' | 'resize') => {
-    const root = grid.current
-    const row = root?.querySelector('[data-hour]')
-    if (!root || !row) return
-    setPress({
-      segment,
-      mode,
-      dayIndex,
-      originX: pointer.clientX,
-      originY: pointer.clientY,
-      hourPx: row.getBoundingClientRect().height,
-      dayPx: root.getBoundingClientRect().width / days.length,
-      dx: 0,
-      dy: 0,
-      dragging: false,
-    })
+    // The box is as tall as the minutes it is drawn over.
+    const { top, height } = event.currentTarget.getBoundingClientRect()
+    const held = ((event.clientY - top) / height) * (drawn.endMinute - drawn.startMinute)
+    drag.start({ kind: 'move', event: segment.event, grab: { at: 'time', date, held, drawn } }, event)
   }
 
   return (
@@ -195,10 +105,7 @@ export function TimeGrid({
           they would keep the width the scrollbar takes from the grid. Pinning them together
           also keeps `scrollTop` the hour offset it would be without them, since the pinned
           block covers exactly the space above the day canvas. */}
-      <div
-        ref={scroller}
-        className={['min-h-0 flex-1 overflow-auto', press?.dragging ? 'cursor-grabbing select-none' : ''].join(' ')}
-      >
+      <div ref={scroller} className="min-h-0 flex-1 overflow-auto">
         <div className="sticky top-0 z-10 bg-surface-card">
           {/* A day view needs no column header: the navigator's own heading already names it. */}
           {days.length > 1 ? (
@@ -243,9 +150,7 @@ export function TimeGrid({
             eventsByDay={split.map(({ band }) => band)}
             typesByKey={typesByKey}
             onOpenEvent={onOpenEvent}
-            {...(onMoveEvent
-              ? { onMoveEvent: (event: CalendarEvent, date: string) => onMoveEvent(event, { date, minute: null }) }
-              : {})}
+            drag={drag}
             onCreate={(date) => onCreate({ date, minute: null })}
           />
         </div>
@@ -254,7 +159,6 @@ export function TimeGrid({
           <TimeGutter />
           {/* A table, not a grid: no arrow keys move between its days, as a grid's would. */}
           <table
-            ref={grid}
             aria-label={t(days.length > 1 ? 'calendar.grid.week' : 'calendar.grid.day')}
             className="block min-w-0 flex-1"
           >
@@ -279,17 +183,16 @@ export function TimeGrid({
                       index === 0 ? '' : 'border-l border-grid-line',
                       isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card',
                     ].join(' ')}
+                    {...drag?.timeTarget(day.date)}
                   >
                     {/* The pointer's target for the empty day, under the objects drawn after it. */}
                     <div
                       aria-hidden
                       className="absolute inset-0"
-                      onClick={() => {
-                        if (!swallowClick.current) onSelectDay(day.date)
-                      }}
+                      onClick={() => onSelectDay(day.date)}
                       onDoubleClick={(click) => {
                         const { top, height } = click.currentTarget.getBoundingClientRect()
-                        const minute = ((click.clientY - top) / height) * MINUTES_PER_DAY
+                        const minute = minuteAt(click.clientY - top, height)
                         const snapped = Math.floor(minute / SNAP_MINUTES) * SNAP_MINUTES
                         onCreate({
                           date: day.date,
@@ -315,29 +218,29 @@ export function TimeGrid({
                           title={event.title || t('common.untitled')}
                           category={eventHue(event, type)}
                           {...(event.done === undefined ? {} : { done: event.done })}
-                          {...(onMoveEvent && !event.feed ? { onDragStart: beginPress(segment, index) } : {})}
+                          {...(drag && !event.feed
+                            ? { onDragStart: startDrag(segment, day.date), onDragEnd: drag.end }
+                            : {})}
                           // Only a type with a To date has an end to pull; a feed's event has no type.
-                          resizable={onResizeEvent !== undefined && Boolean(type?.to)}
-                          lifted={press?.dragging === true && press.segment.event.id === event.id}
-                          onClick={() => {
-                            if (!swallowClick.current) onOpenEvent(event, day.date)
-                          }}
+                          resizable={Boolean(type?.to)}
+                          lifted={drag?.draggingId === event.id}
+                          onClick={() => onOpenEvent(event, day.date)}
                         />
                       )
                     })}
 
-                    {press && placement?.dayIndex === index ? (
+                    {dragged && landing?.date === day.date ? (
                       <TimedEvent
                         segment={{
-                          event: press.segment.event,
-                          startMinute: placement.startMinute,
-                          endMinute: placement.endMinute,
+                          event: dragged.event,
+                          startMinute: landing.startMinute,
+                          endMinute: landing.endMinute,
                           column: 0,
                           columns: 1,
                         }}
-                        title={press.segment.event.title || t('common.untitled')}
-                        category={eventHue(press.segment.event, typesByKey.get(press.segment.event.type))}
-                        time={timeOfMinute(placement.startMinute)}
+                        title={dragged.event.title || t('common.untitled')}
+                        category={eventHue(dragged.event, typesByKey.get(dragged.event.type))}
+                        time={timeOfMinute(landing.startMinute)}
                         preview
                         onClick={() => {}}
                       />
