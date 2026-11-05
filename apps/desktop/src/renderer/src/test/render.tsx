@@ -1,4 +1,5 @@
 import en from '@renderer/i18n/locales/en.json'
+import { i18nOptions } from '@renderer/i18n/options'
 import { type RenderOptions, type RenderResult, render } from '@testing-library/react'
 import { type UserEvent, userEvent } from '@testing-library/user-event'
 import { createInstance } from 'i18next'
@@ -10,8 +11,7 @@ const i18n = createInstance()
 void i18n.use(initReactI18next).init({
   resources: { en: { translation: en } },
   lng: 'en',
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false },
+  ...i18nOptions,
   initAsync: false,
 })
 

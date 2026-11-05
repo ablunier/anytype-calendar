@@ -13,6 +13,7 @@ function renderDialog() {
   const sheet = screen.getByRole('dialog', { name: 'Rename' })
   // The backdrop is aria-hidden and has no role; it is the sheet's sibling, layered under it.
   const backdrop = sheet.previousElementSibling as HTMLElement
+  expect(backdrop).toHaveAttribute('aria-hidden', 'true')
   return { ...view, onClose, sheet, backdrop }
 }
 

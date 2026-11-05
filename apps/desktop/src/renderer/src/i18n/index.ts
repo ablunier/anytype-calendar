@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import gl from './locales/gl.json'
+import { i18nOptions } from './options'
 
 // Computed synchronously, ahead of the persisted preference `useLocale` later corrects (a
 // no-op if this already agrees), so the very first paint never flashes English on a
@@ -17,8 +18,7 @@ void i18n.use(initReactI18next).init({
     gl: { translation: gl },
   },
   lng: initialLocale,
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false },
+  ...i18nOptions,
 })
 
 export default i18n

@@ -40,11 +40,11 @@ describe('EventDetail Done switch', () => {
     expect(done).toHaveAttribute('aria-checked', 'true')
     expect(done).toHaveAttribute('aria-readonly', 'true')
 
-    done.ownerDocument.body.focus()
-    while (document.activeElement !== done) {
-      await user.tab()
-      if (document.activeElement === document.body) throw new Error('Tab never reached the Done switch')
-    }
+    // A read-only panel of this event has two tab stops, the All day switch and then Done.
+    document.body.focus()
+    await user.tab()
+    expect(screen.getByRole('switch', { name: 'All day' })).toHaveFocus()
+    await user.tab()
     expect(done).toHaveFocus()
 
     await user.keyboard(' ')
