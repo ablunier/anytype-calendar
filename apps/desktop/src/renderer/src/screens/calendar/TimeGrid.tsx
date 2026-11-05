@@ -1,4 +1,5 @@
 import { dayLabel, eventHue, isWeekendColumn, weekdayNames } from '@renderer/lib/calendar'
+import { timedLanding } from '@renderer/lib/calendar-drag'
 import {
   layOutDayColumn,
   MINUTES_PER_DAY,
@@ -14,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
 import { TimeGutter } from './TimeGutter'
-import { type CalendarDrag, timedLanding } from './useCalendarDrag'
+import type { CalendarDrag } from './useCalendarDrag'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
@@ -83,17 +84,17 @@ export function TimeGrid({
   const dragged = drag?.dragged ?? null
   const landing = timedLanding(dragged, drag?.over ?? null)
 
-  const startDrag = (segment: TimedSegment) => (event: DragEvent, mode: 'move' | 'resize') => {
+  const startDrag = (segment: TimedSegment, date: string) => (event: DragEvent, mode: 'move' | 'resize') => {
     if (!drag) return
     const drawn = { startMinute: segment.startMinute, endMinute: segment.endMinute }
     if (mode === 'resize') {
-      drag.start({ kind: 'resize', event: segment.event, drawn }, event)
+      drag.start({ kind: 'resize', event: segment.event, date, drawn }, event)
       return
     }
     // The box is as tall as the minutes it is drawn over.
     const { top, height } = event.currentTarget.getBoundingClientRect()
     const held = ((event.clientY - top) / height) * (drawn.endMinute - drawn.startMinute)
-    drag.start({ kind: 'move', event: segment.event, grab: { at: 'time', held, drawn } }, event)
+    drag.start({ kind: 'move', event: segment.event, grab: { at: 'time', date, held, drawn } }, event)
   }
 
   return (
@@ -182,10 +183,9 @@ export function TimeGrid({
                       index === 0 ? '' : 'border-l border-grid-line',
                       isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card',
                     ].join(' ')}
+                    {...drag?.timeTarget(day.date)}
                   >
                     {/* The pointer's target for the empty day, under the objects drawn after it. */}
-                    {/* biome-ignore lint/a11y/noStaticElementInteractions: a pointer-only target; the day's header button selects it for the keyboard. */}
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: as above, and creating is the event form's job. */}
                     <div
                       aria-hidden
                       className="absolute inset-0"
@@ -199,7 +199,6 @@ export function TimeGrid({
                           minute: Math.min(Math.max(snapped, 0), MINUTES_PER_DAY - SNAP_MINUTES),
                         })
                       }}
-                      {...drag?.timeTarget(day.date)}
                     />
                     {HOURS.map((hour) => (
                       <div
@@ -219,7 +218,9 @@ export function TimeGrid({
                           title={event.title || t('common.untitled')}
                           category={eventHue(event, type)}
                           {...(event.done === undefined ? {} : { done: event.done })}
-                          {...(drag && !event.feed ? { onDragStart: startDrag(segment), onDragEnd: drag.end } : {})}
+                          {...(drag && !event.feed
+                            ? { onDragStart: startDrag(segment, day.date), onDragEnd: drag.end }
+                            : {})}
                           // Only a type with a To date has an end to pull; a feed's event has no type.
                           resizable={Boolean(type?.to)}
                           lifted={drag?.draggingId === event.id}

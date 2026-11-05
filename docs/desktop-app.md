@@ -223,11 +223,15 @@ Standard electron-vite three-process layout:
     is native drag and drop through one hook, `useCalendarDrag`, held by `CalendarScreen`
     rather than by a grid so a drag can start outside the grid it lands on. It holds what is
     dragged as a union (`CalendarDragged`), and each target reports a `CalendarSlot`: a month
-    cell or a band day by the day, an hour column by the day and the minute under the pointer.
-    The browser ends and cancels it — Escape, or a drop on nothing that takes it, leaves the
-    object where it was — and fires no click after it. Its one `dataTransfer` entry, which
-    Chromium needs to start a drag, has the app's own type (`application/x-anytype-calendar`),
-    so a text field it is dropped on pastes nothing.
+    cell by its day, the all-day band by the column under the pointer, an hour column by its
+    day and the minute under the pointer. A target sits on the element the objects are drawn
+    in, so the pointer over an object, the dragged one included, is still over the target. The
+    browser ends and cancels it — Escape, or a drop on nothing that takes it, leaves the object
+    where it was — and fires no click after it. Its one `dataTransfer` entry, which Chromium
+    needs to start a drag, has the app's own type (`application/x-anytype-calendar`), so a
+    text field it is dropped on pastes nothing. Where a drag lands and the edit a drop asks
+    for are pure, in `lib/calendar-drag.ts`; the screen redraws only when the landing moves,
+    a quarter hour at a time, not with every pixel the pointer travels.
   - `components/ui/` — presentational primitives (Button, Card, Dialog, Select, Tag, etc.),
     barrel-exported from `components/ui/index.ts`. `Combobox` is a Select that can be typed in
     to narrow it; the caller does the matching (`optionsFor`), so it knows nothing of what it

@@ -43,14 +43,17 @@ export function AllDayBand({
       <span className="flex w-hour-gutter shrink-0 items-start justify-end pt-6 pr-6 type-caption text-micro text-ink-muted">
         {t('calendar.allDay')}
       </span>
-      <div className="grid-days relative grid min-w-0 flex-1 py-2" style={{ '--days': days.length } as CSSProperties}>
+      <div
+        className="grid-days relative grid min-w-0 flex-1 py-2"
+        style={{ '--days': days.length } as CSSProperties}
+        {...drag?.rowTarget(days.map((day) => day.date))}
+      >
         {/* Hidden because they hold nothing to read: they are the pointer's targets behind the
             bars, to double-click or drop on. */}
         {days.map((day, index) => (
           <div
             key={day.date}
             onDoubleClick={() => onCreate(day.date)}
-            {...drag?.dayTarget(day.date)}
             aria-hidden
             className={[
               'min-h-20',

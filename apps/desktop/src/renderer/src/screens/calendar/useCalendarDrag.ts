@@ -1,5 +1,13 @@
-import { addDays, daysBetween } from '@renderer/lib/calendar'
-import { minuteAt, movedPlacement, resizedPlacement, type TimedPlacement } from '@renderer/lib/time-grid'
+import { addDays } from '@renderer/lib/calendar'
+import {
+  type CalendarDragged,
+  columnAt,
+  dropEdit,
+  sameLanding,
+  takesByDay,
+  takesByTime,
+} from '@renderer/lib/calendar-drag'
+import { minuteAt } from '@renderer/lib/time-grid'
 import type { CalendarEvent, CalendarSlot } from '@renderer/types'
 import { type DragEvent, useState } from 'react'
 
@@ -13,17 +21,6 @@ const DRAG_TYPE = 'application/x-anytype-calendar'
  * ahead of any drag: an image that has not loaded by `dragstart` is not used. */
 const NO_IMAGE = new Image()
 NO_IMAGE.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='
-
-export type CalendarGrab =
-  /** A bar spans several days, and the day of it held is the one that lands where it is dropped. */
-  | { at: 'day'; date: string }
-  /** A box in the hour grid: `held` is how many minutes below its start, as it is `drawn`. */
-  | { at: 'time'; held: number; drawn: TimedPlacement }
-
-export type CalendarDragged =
-  | { kind: 'move'; event: CalendarEvent; grab: CalendarGrab }
-  /** Pulling the end of a box in the hour grid. */
-  | { kind: 'resize'; event: CalendarEvent; drawn: TimedPlacement }
 
 export interface CalendarDropTarget {
   onDragOver: (drag: DragEvent) => void
@@ -41,11 +38,17 @@ export interface CalendarDrag {
   overDate: string | null
   start: (dragged: CalendarDragged, drag: DragEvent) => void
   end: () => void
-  /** What a month cell or a day of the all-day band spreads on itself: it takes bars, by the day. */
+  /** What a month cell spreads on itself: it takes bars, by the day. */
   dayTarget: (date: string) => CalendarDropTarget
   /**
+   * What a row of equal day columns spreads on itself, such as the all-day band: it takes bars,
+   * by the column under the pointer, so a bar drawn over the row takes the drop too.
+   */
+  rowTarget: (dates: string[]) => CalendarDropTarget
+  /**
    * What a day's column of the hour grid spreads on its 24-hour canvas: it takes boxes, by the
-   * minute under the pointer.
+   * minute under the pointer. Spread on the element the boxes are drawn in, so the pointer over
+   * one is over the column too.
    */
   timeTarget: (date: string) => CalendarDropTarget
 }
@@ -72,18 +75,9 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
   }
 
   const land = (landed: CalendarDragged, slot: CalendarSlot): void => {
-    const { event } = landed
-    const placed = timedLanding(landed, slot)
-    if (landed.kind === 'resize') {
-      if (placed && placed.endMinute !== landed.drawn.endMinute) {
-        onResize(event, { date: placed.date, minute: placed.endMinute })
-      }
-    } else if (landed.grab.at === 'day') {
-      const delta = daysBetween(landed.grab.date, slot.date)
-      if (delta !== 0) onMove(event, { date: addDays(event.date, delta), minute: null })
-    } else if (placed && (placed.startMinute !== landed.grab.drawn.startMinute || placed.date !== event.date)) {
-      onMove(event, { date: placed.date, minute: placed.startMinute })
-    }
+    const edit = dropEdit(landed, slot)
+    if (edit?.kind === 'move') onMove(landed.event, edit.slot)
+    else if (edit?.kind === 'resize') onResize(landed.event, edit.slot)
   }
 
   const target = (
@@ -94,8 +88,9 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
       if (!dragged || !takes(dragged)) return
       drag.preventDefault()
       drag.dataTransfer.dropEffect = 'move'
+      // Redrawn only when where it lands moves: the screen holds this state, not the grid.
       const slot = locate(drag)
-      if (slot.date !== over?.date || slot.minute !== over.minute) setOver(slot)
+      if (!sameLanding(dragged, over, slot)) setOver(slot)
     },
     onDragLeave: (drag) => {
       // Leaving for one of its own children is not leaving it.
@@ -122,36 +117,18 @@ export function useCalendarDrag({ onMove, onResize }: CalendarDragActions): Cale
       setDragged(next)
     },
     end,
-    dayTarget: (date) =>
-      target(
-        (candidate) => candidate.kind === 'move' && candidate.grab.at === 'day',
-        () => ({ date, minute: null }),
-      ),
+    dayTarget: (date) => target(takesByDay, () => ({ date, minute: null })),
+    rowTarget: (dates) =>
+      target(takesByDay, (drag) => {
+        const { left, width } = drag.currentTarget.getBoundingClientRect()
+        return { date: dates[columnAt(drag.clientX - left, width, dates.length)] ?? '', minute: null }
+      }),
     timeTarget: (date) =>
-      target(
-        (candidate) => candidate.kind === 'resize' || candidate.grab.at === 'time',
-        (drag) => {
-          const { top, height } = drag.currentTarget.getBoundingClientRect()
-          return { date, minute: Math.round(minuteAt(drag.clientY - top, height)) }
-        },
-      ),
+      target(takesByTime, (drag) => {
+        const { top, height } = drag.currentTarget.getBoundingClientRect()
+        return { date, minute: Math.round(minuteAt(drag.clientY - top, height)) }
+      }),
   }
-}
-
-/**
- * Where a drag in the hour grid lands with the pointer at `slot`: a move on the day under the
- * pointer, a resize on its own day. Null for a drag the hour grid does not take.
- */
-export function timedLanding(
-  dragged: CalendarDragged | null,
-  slot: CalendarSlot | null,
-): ({ date: string } & TimedPlacement) | null {
-  if (!dragged || slot?.minute == null) return null
-  if (dragged.kind === 'resize') {
-    return { date: dragged.event.date, ...resizedPlacement(dragged.drawn.startMinute, slot.minute) }
-  }
-  if (dragged.grab.at !== 'time') return null
-  return { date: slot.date, ...movedPlacement(dragged.grab.drawn, dragged.grab.held, slot.minute) }
 }
 
 /**
@@ -160,6 +137,5 @@ export function timedLanding(
  */
 export function grabbedDate(drag: DragEvent, firstDate: string, span: number): string {
   const { left, width } = drag.currentTarget.getBoundingClientRect()
-  const column = Math.floor(((drag.clientX - left) / width) * span)
-  return addDays(firstDate, Math.min(Math.max(column, 0), span - 1))
+  return addDays(firstDate, columnAt(drag.clientX - left, width, span))
 }
