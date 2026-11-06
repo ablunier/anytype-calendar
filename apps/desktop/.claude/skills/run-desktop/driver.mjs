@@ -120,6 +120,44 @@ const clickTextExpr = (text) => `(() => {
   return 'OK'
 })()`
 
+/**
+ * Real input, sent from main with `webContents.sendInputEvent`: it activates buttons, steps
+ * radios and fires `click.detail`, which CDP `insertText` and DOM `el.click()` don't. Chromium
+ * drops it unless the window is focused, so it is focused first.
+ */
+async function sendInput(events) {
+  const session = await main()
+  try {
+    await evaluate(
+      session,
+      `(() => {
+        const win = process.mainModule.require('electron').BrowserWindow.getAllWindows()[0]
+        if (!win.isFocused()) win.focus()
+        for (const event of ${JSON.stringify(events)}) win.webContents.sendInputEvent(event)
+      })()`
+    )
+  } finally {
+    session.close()
+  }
+}
+
+/** Electron's key names, plus the `char` event Enter, Space and printable keys need to act. */
+function keyEvents(key) {
+  const names = { Enter: 'Return', ArrowLeft: 'Left', ArrowRight: 'Right', ArrowUp: 'Up', ArrowDown: 'Down' }
+  const keyCode = names[key] ?? key
+  const char = keyCode === 'Return' || keyCode === 'Space' || keyCode.length === 1
+  return [
+    { type: 'keyDown', keyCode },
+    ...(char ? [{ type: 'char', keyCode: keyCode === 'Space' ? ' ' : keyCode }] : []),
+    { type: 'keyUp', keyCode }
+  ]
+}
+
+const mouseClick = (x, y) => [
+  { type: 'mouseDown', x, y, button: 'left', clickCount: 1 },
+  { type: 'mouseUp', x, y, button: 'left', clickCount: 1 }
+]
+
 function print(value) {
   console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 2))
 }
@@ -238,6 +276,46 @@ const commands = {
       await session.send('Input.insertText', { text: text.join(' ') })
       print('OK')
     }),
+
+  /** `press End`, `press ArrowLeft`, `press Enter`; the key goes to whatever has focus. */
+  async press(key) {
+    if (!key) throw new Error('press <key>')
+    await sendInput(keyEvents(key))
+    await sleep(300)
+    print('OK')
+  },
+
+  /** A real mouse click at the centre of the selector's first match, in CSS pixels. */
+  click: (selector) =>
+    withPage(async (session) => {
+      const point = await evaluate(
+        session,
+        `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); return [Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2)] })()`
+      )
+      if (!point) return print('NOT_FOUND')
+      await sendInput(mouseClick(...point))
+      await sleep(300)
+      print(`OK at ${point.join(',')}`)
+    }),
+
+  /** A real mouse click at window coordinates, in CSS pixels. */
+  async 'click-at'(x, y) {
+    if (x === undefined || y === undefined) throw new Error('click-at <x> <y>')
+    await sendInput(mouseClick(Number(x), Number(y)))
+    await sleep(300)
+    print('OK')
+  },
+
+  /** What has focus: a short description of `document.activeElement`. */
+  focused: () =>
+    withPage(async (session) =>
+      print(
+        await evaluate(
+          session,
+          `(() => { const el = document.activeElement; if (!el || el === document.body) return 'BODY'; const name = el.getAttribute('aria-label') ?? el.closest('label')?.textContent.trim() ?? el.textContent.trim().slice(0, 40); return el.tagName.toLowerCase() + (el.getAttribute('role') ? '[role=' + el.getAttribute('role') + ']' : '') + (el.dataset.day ? '[data-day=' + el.dataset.day + ']' : '') + ' ' + JSON.stringify(name) })()`
+        )
+      )
+    ),
 
   'wait-text': (text, timeoutMs = '10000') =>
     withPage(async (session) => print((await waitForText(session, text, Number(timeoutMs))) ? 'found' : 'TIMEOUT')),
