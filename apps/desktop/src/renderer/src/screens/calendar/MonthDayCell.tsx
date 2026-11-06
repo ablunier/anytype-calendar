@@ -5,6 +5,7 @@ import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
 import { type CalendarDrag, grabbedDate } from './useCalendarDrag'
+import type { DoubleClickSlotCapture } from './useDoubleClickSlot'
 
 export interface MonthDayCellProps {
   cell: MonthCell
@@ -22,11 +23,12 @@ export interface MonthDayCellProps {
   onFocus: () => void
   /** Every click, outside days' too: it may be the first press of a double-click. */
   onClick: (click: MouseEvent) => void
+  doubleClick: DoubleClickSlotCapture
   onKeyDown: (event: KeyboardEvent) => void
   onOpenEvent: (event: CalendarEvent) => void
   /** Null where objects cannot be moved. */
   drag: CalendarDrag | null
-  onCreate: (doubleClick: MouseEvent) => void
+  onCreate: () => void
 }
 
 export function MonthDayCell({
@@ -41,6 +43,7 @@ export function MonthDayCell({
   tabbable,
   onFocus,
   onClick,
+  doubleClick,
   onKeyDown,
   onOpenEvent,
   drag,
@@ -66,6 +69,7 @@ export function MonthDayCell({
       onFocus={interactive ? onFocus : undefined}
       onKeyDown={interactive ? onKeyDown : undefined}
       onDoubleClick={onCreate}
+      {...doubleClick}
       {...drag?.dayTarget(cell.date)}
       className={[
         'flex min-h-daycell flex-col gap-4 border-r border-b border-grid-line p-6',

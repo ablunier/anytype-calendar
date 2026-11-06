@@ -1,5 +1,6 @@
 import { buildMonthGrid, isoDate } from '@renderer/lib/calendar'
 import { renderWithI18n } from '@renderer/test/render'
+import type { CalendarEvent } from '@renderer/types'
 import { fireEvent, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -10,7 +11,13 @@ import { MonthGrid } from './MonthGrid'
 const YEAR = 2026
 const MONTH = 10
 
-function Harness({ onCreate = () => {} }: { onCreate?: (date: string) => void }): React.JSX.Element {
+interface HarnessProps {
+  events?: CalendarEvent[]
+  onCreate?: (date: string) => void
+  onOpenEvent?: (event: CalendarEvent) => void
+}
+
+function Harness({ events = [], onCreate = () => {}, onOpenEvent = () => {} }: HarnessProps): React.JSX.Element {
   const [focusedDay, setFocusedDay] = useState(10)
   const [selected, setSelected] = useState<string | null>(null)
   return (
@@ -18,7 +25,7 @@ function Harness({ onCreate = () => {} }: { onCreate?: (date: string) => void })
       <button type="button">Before</button>
       <MonthGrid
         cells={buildMonthGrid(YEAR, MONTH, 0)}
-        events={[]}
+        events={events}
         typesByKey={new Map()}
         today={isoDate(YEAR, MONTH, 3)}
         showWeekNumbers={false}
@@ -27,13 +34,24 @@ function Harness({ onCreate = () => {} }: { onCreate?: (date: string) => void })
         focusedDay={focusedDay}
         onFocusDay={setFocusedDay}
         onSelectDay={(day) => setSelected(isoDate(YEAR, MONTH, day))}
-        onOpenEvent={() => {}}
+        onOpenEvent={onOpenEvent}
         onCreate={onCreate}
         drag={null}
       />
       <button type="button">After</button>
     </>
   )
+}
+
+const STANDUP_ON_11: CalendarEvent = {
+  id: 'ev_1',
+  title: 'Standup',
+  type: 'task',
+  space: 'sp_1',
+  rank: 0,
+  date: isoDate(YEAR, MONTH, 11),
+  allDay: true,
+  details: [],
 }
 
 const grid = (): HTMLElement => screen.getByRole('grid', { name: 'Month' })
@@ -111,11 +129,38 @@ describe('MonthGrid', () => {
     const onCreate = vi.fn()
     renderWithI18n(<Harness onCreate={onCreate} />)
     fireEvent.click(cell(10), { detail: 1 })
+    // A pressed mouse button moves focus unless its default is prevented.
+    expect(fireEvent.mouseDown(cell(11), { detail: 2 })).toBe(false)
     fireEvent.click(cell(11), { detail: 2 })
     fireEvent.dblClick(cell(11), { detail: 2 })
     expect(onCreate).toHaveBeenCalledExactlyOnceWith(isoDate(YEAR, MONTH, 10))
     // The second press selects nothing, so the day created on stays the one selected.
     expect(cell(10)).toHaveAttribute('aria-selected', 'true')
     expect(cell(11)).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('creates on the day of the first press, though the second lands on an object', () => {
+    const onCreate = vi.fn()
+    const onOpenEvent = vi.fn()
+    renderWithI18n(<Harness events={[STANDUP_ON_11]} onCreate={onCreate} onOpenEvent={onOpenEvent} />)
+    const chip = screen.getByRole('button', { name: /Standup/ })
+    fireEvent.click(cell(10), { detail: 1 })
+    fireEvent.click(chip, { detail: 2 })
+    fireEvent.dblClick(chip, { detail: 2 })
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith(isoDate(YEAR, MONTH, 10))
+    expect(onOpenEvent).not.toHaveBeenCalled()
+  })
+
+  it('opens an object double-clicked from its first press, and creates nothing', () => {
+    const onCreate = vi.fn()
+    const onOpenEvent = vi.fn()
+    renderWithI18n(<Harness events={[STANDUP_ON_11]} onCreate={onCreate} onOpenEvent={onOpenEvent} />)
+    fireEvent.click(cell(10), { detail: 1 })
+    const chip = screen.getByRole('button', { name: /Standup/ })
+    fireEvent.click(chip, { detail: 1 })
+    fireEvent.click(chip, { detail: 2 })
+    fireEvent.dblClick(chip, { detail: 2 })
+    expect(onOpenEvent).toHaveBeenCalledTimes(2)
+    expect(onCreate).not.toHaveBeenCalled()
   })
 })

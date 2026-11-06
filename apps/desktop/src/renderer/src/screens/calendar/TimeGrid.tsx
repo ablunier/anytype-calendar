@@ -73,7 +73,7 @@ export function TimeGrid({
 }: TimeGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const scroller = useRef<HTMLDivElement>(null)
-  const doubleClick = useDoubleClickSlot<CalendarSlot>()
+  const doubleClick = useDoubleClickSlot(onCreate)
 
   const split = useMemo(() => days.map((day) => splitDayEvents(events, day.date)), [days, events])
   const weekdays = weekdayNames(i18n.language, 'short')
@@ -192,16 +192,18 @@ export function TimeGrid({
                       isWeekendColumn(weekStart, index) ? 'bg-surface-rail' : 'bg-surface-card',
                     ].join(' ')}
                     {...drag?.timeTarget(day.date)}
+                    {...doubleClick.capture}
                   >
                     {/* The pointer's target for the empty day, under the objects drawn after it. */}
                     <div
                       aria-hidden
+                      data-slots={day.date}
                       className="absolute inset-0"
                       onClick={(click) => {
                         doubleClick.press(click, slotAt(click, day.date))
-                        if (!doubleClick.continues(click)) onSelectDay(day.date)
+                        onSelectDay(day.date)
                       }}
-                      onDoubleClick={(click) => onCreate(doubleClick.take(click, slotAt(click, day.date)))}
+                      onDoubleClick={(click) => onCreate(slotAt(click, day.date))}
                     />
                     {HOURS.map((hour) => (
                       <div

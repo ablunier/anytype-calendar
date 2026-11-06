@@ -73,7 +73,7 @@ export function MonthGrid({
   const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLTableElement>(null)
   const shouldRefocus = useRef(false)
-  const doubleClick = useDoubleClickSlot<string>()
+  const doubleClick = useDoubleClickSlot(onCreate)
 
   const weeks = useMemo(() => {
     const chunks = chunkWeeks(cells)
@@ -177,12 +177,13 @@ export function MonthGrid({
                 onFocus={() => onFocusDay(cell.day)}
                 onClick={(click) => {
                   doubleClick.press(click, cell.date)
-                  if (!cell.outside && !doubleClick.continues(click)) onSelectDay(cell.day)
+                  if (!cell.outside) onSelectDay(cell.day)
                 }}
+                doubleClick={doubleClick.capture}
                 onKeyDown={(event) => handleKeyDown(event, cell.day)}
                 onOpenEvent={(event) => onOpenEvent(event, cell.date)}
                 drag={drag}
-                onCreate={(click) => onCreate(doubleClick.take(click, cell.date))}
+                onCreate={() => onCreate(cell.date)}
               />
             ))}
           </tr>

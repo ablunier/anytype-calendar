@@ -27,6 +27,14 @@ function renderTimeGrid(
   )
 }
 
+/** The empty day under the objects; jsdom lays nothing out, so it is given 24 rows of 40px. */
+function emptyDay(container: HTMLElement, date: string): HTMLElement {
+  const slots = container.querySelector<HTMLElement>(`[data-slots="${date}"]`)
+  if (!slots) throw new Error(`No empty day for ${date}`)
+  slots.getBoundingClientRect = () => ({ top: 0, height: 960 }) as DOMRect
+  return slots
+}
+
 describe('TimeGrid', () => {
   it('draws a week as a table whose columns are named by the whole date', () => {
     renderTimeGrid(buildWeek('2026-11-11', 0))
@@ -49,12 +57,11 @@ describe('TimeGrid', () => {
     const onCreate = vi.fn()
     const onSelectDay = vi.fn()
     const { container } = renderTimeGrid(buildWeek('2026-11-11', 0), onCreate, onSelectDay)
-    // The empty day under the objects, one per column; jsdom lays nothing out, so each is given 24 rows of 40px.
-    const columns = [...container.querySelectorAll<HTMLElement>('td.day-canvas > div[aria-hidden]:first-child')]
-    for (const column of columns) column.getBoundingClientRect = () => ({ top: 0, height: 960 }) as DOMRect
-    const [wednesday, thursday] = [columns[2], columns[3]]
+    const [wednesday, thursday] = [emptyDay(container, '2026-11-11'), emptyDay(container, '2026-11-12')]
     // The first press selects the day, which opens the panel and narrows the grid under the pointer.
     fireEvent.click(wednesday, { detail: 1, clientY: 400 })
+    // A pressed mouse button moves focus unless its default is prevented.
+    expect(fireEvent.mouseDown(thursday, { detail: 2, clientY: 440 })).toBe(false)
     fireEvent.click(thursday, { detail: 2, clientY: 440 })
     fireEvent.dblClick(thursday, { detail: 2, clientY: 440 })
     expect(onCreate).toHaveBeenCalledExactlyOnceWith({ date: '2026-11-11', minute: 600 })
@@ -65,9 +72,7 @@ describe('TimeGrid', () => {
   it('creates where it is double-clicked when no press came before', () => {
     const onCreate = vi.fn()
     const { container } = renderTimeGrid(buildWeek('2026-11-11', 0), onCreate)
-    const thursday = container.querySelectorAll<HTMLElement>('td.day-canvas > div[aria-hidden]:first-child')[3]
-    thursday.getBoundingClientRect = () => ({ top: 0, height: 960 }) as DOMRect
-    fireEvent.dblClick(thursday, { detail: 2, clientY: 440 })
+    fireEvent.dblClick(emptyDay(container, '2026-11-12'), { detail: 2, clientY: 440 })
     expect(onCreate).toHaveBeenCalledExactlyOnceWith({ date: '2026-11-12', minute: 660 })
   })
 })
