@@ -235,6 +235,16 @@ describe('CalendarScreen changing span', () => {
     expect(props.onNext).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps focus on Next after a key that could not move through the grid', async () => {
+    const { user, update } = renderCalendar()
+    day(20).focus()
+    // The first End reaches the last day; the second has nowhere to go.
+    await user.keyboard('{End}{End}')
+    nextButton().focus()
+    update({ span: december })
+    expect(nextButton()).toHaveFocus()
+  })
+
   it('keeps focus in the view switcher, so the arrows keep moving through it', async () => {
     const onView = vi.fn()
     const { user, update } = renderCalendar({ onView })
