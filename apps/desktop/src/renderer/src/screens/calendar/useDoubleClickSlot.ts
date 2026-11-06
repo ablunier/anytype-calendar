@@ -7,6 +7,8 @@ const DOUBLE_CLICK_MS = 1000
 export interface DoubleClickSlot<Slot> {
   /** Called on every click; keeps the slot of a click that may start a double-click. */
   press: (click: MouseEvent, slot: Slot) => void
+  /** Whether the click is the second press of a double-click, which must not select where it lands. */
+  continues: (click: MouseEvent) => boolean
   /** Called on the double-click: the first press's slot, or `slot` when none is recent. */
   take: (doubleClick: MouseEvent, slot: Slot) => Slot
 }
@@ -18,14 +20,17 @@ export interface DoubleClickSlot<Slot> {
  */
 export function useDoubleClickSlot<Slot>(): DoubleClickSlot<Slot> {
   const first = useRef<{ slot: Slot; at: number } | null>(null)
+  const recent = (event: MouseEvent): boolean =>
+    first.current !== null && event.timeStamp - first.current.at <= DOUBLE_CLICK_MS
   return {
     press: (click, slot) => {
       if (click.detail <= 1) first.current = { slot, at: click.timeStamp }
     },
+    continues: (click) => click.detail >= 2 && recent(click),
     take: (doubleClick, slot) => {
-      const pressed = first.current
+      const pressed = recent(doubleClick) ? first.current : null
       first.current = null
-      return pressed && doubleClick.timeStamp - pressed.at <= DOUBLE_CLICK_MS ? pressed.slot : slot
+      return pressed ? pressed.slot : slot
     },
   }
 }

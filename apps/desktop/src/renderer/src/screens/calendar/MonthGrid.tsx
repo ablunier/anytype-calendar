@@ -175,8 +175,10 @@ export function MonthGrid({
                 isWeekend={isWeekendColumn(weekStart, dayIndex)}
                 tabbable={!cell.outside && cell.day === focusedDay}
                 onFocus={() => onFocusDay(cell.day)}
-                onPress={(click) => doubleClick.press(click, cell.date)}
-                onSelect={() => onSelectDay(cell.day)}
+                onClick={(click) => {
+                  doubleClick.press(click, cell.date)
+                  if (!cell.outside && !doubleClick.continues(click)) onSelectDay(cell.day)
+                }}
                 onKeyDown={(event) => handleKeyDown(event, cell.day)}
                 onOpenEvent={(event) => onOpenEvent(event, cell.date)}
                 drag={drag}

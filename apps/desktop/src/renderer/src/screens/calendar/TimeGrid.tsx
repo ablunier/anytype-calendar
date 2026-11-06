@@ -199,7 +199,7 @@ export function TimeGrid({
                       className="absolute inset-0"
                       onClick={(click) => {
                         doubleClick.press(click, slotAt(click, day.date))
-                        onSelectDay(day.date)
+                        if (!doubleClick.continues(click)) onSelectDay(day.date)
                       }}
                       onDoubleClick={(click) => onCreate(doubleClick.take(click, slotAt(click, day.date)))}
                     />

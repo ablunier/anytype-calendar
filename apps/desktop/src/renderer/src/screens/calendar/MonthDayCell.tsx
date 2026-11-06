@@ -21,8 +21,7 @@ export interface MonthDayCellProps {
   tabbable: boolean
   onFocus: () => void
   /** Every click, outside days' too: it may be the first press of a double-click. */
-  onPress: (click: MouseEvent) => void
-  onSelect: () => void
+  onClick: (click: MouseEvent) => void
   onKeyDown: (event: KeyboardEvent) => void
   onOpenEvent: (event: CalendarEvent) => void
   /** Null where objects cannot be moved. */
@@ -41,8 +40,7 @@ export function MonthDayCell({
   isWeekend,
   tabbable,
   onFocus,
-  onPress,
-  onSelect,
+  onClick,
   onKeyDown,
   onOpenEvent,
   drag,
@@ -64,10 +62,7 @@ export function MonthDayCell({
       aria-selected={interactive ? isSelected : undefined}
       aria-current={isToday ? 'date' : undefined}
       tabIndex={tabbable ? 0 : -1}
-      onClick={(click) => {
-        onPress(click)
-        if (interactive) onSelect()
-      }}
+      onClick={onClick}
       onFocus={interactive ? onFocus : undefined}
       onKeyDown={interactive ? onKeyDown : undefined}
       onDoubleClick={onCreate}

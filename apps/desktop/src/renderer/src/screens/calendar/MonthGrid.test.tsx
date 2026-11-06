@@ -114,5 +114,8 @@ describe('MonthGrid', () => {
     fireEvent.click(cell(11), { detail: 2 })
     fireEvent.dblClick(cell(11), { detail: 2 })
     expect(onCreate).toHaveBeenCalledExactlyOnceWith(isoDate(YEAR, MONTH, 10))
+    // The second press selects nothing, so the day created on stays the one selected.
+    expect(cell(10)).toHaveAttribute('aria-selected', 'true')
+    expect(cell(11)).toHaveAttribute('aria-selected', 'false')
   })
 })
