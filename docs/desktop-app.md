@@ -277,10 +277,11 @@ Standard electron-vite three-process layout:
     `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role
     and by real key and pointer sequences, and asserted on roles, names and states, never on
     class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
-    use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers and stubs the
-    scrolling jsdom leaves out (`scrollTo`, `scrollIntoView`). jsdom lays nothing out, so
-    layout and visual checks (gutters, outlines, drag previews, where a popup is placed) are
-    out of their reach.
+    use the visible copy, `test/fixtures.ts` builds an `ObjectType` keyed as main keys it, and
+    `test/setup.ts` adds the `jest-dom` matchers and stubs the scrolling jsdom leaves out
+    (`scrollTo`, `scrollIntoView`). Screens take everything as props, so they are rendered
+    with no fake `window.api`. jsdom lays nothing out, so layout and visual checks (gutters,
+    outlines, drag previews, where a popup is placed) are out of their reach.
     Hooks with logic of their own have `*.test.ts` beside them under `hooks/`, which the
     `components` project takes from `renderer` for its DOM. They run through `renderHook`,
     stub with `vi.stubGlobal` only the `window.api` members they use (and `matchMedia`, which
