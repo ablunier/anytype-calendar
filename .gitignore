@@ -4,7 +4,9 @@ dist
 *.tsbuildinfo
 *.log
 CLAUDE.md
-.claude/*
-!.claude/skills/
-.claude/skills/*
-!.claude/skills/run-desktop
+.claude
+!/.claude/
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/run-desktop
