@@ -1,10 +1,11 @@
 import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
 import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
 import { type CalendarDrag, grabbedDate } from './useCalendarDrag'
+import type { DoubleClickSlotCapture } from './useDoubleClickSlot'
 
 export interface MonthDayCellProps {
   cell: MonthCell
@@ -20,7 +21,9 @@ export interface MonthDayCellProps {
   isWeekend: boolean
   tabbable: boolean
   onFocus: () => void
-  onSelect: () => void
+  /** Every click, outside days' too: it may be the first press of a double-click. */
+  onClick: (click: MouseEvent) => void
+  doubleClick: DoubleClickSlotCapture
   onKeyDown: (event: KeyboardEvent) => void
   onOpenEvent: (event: CalendarEvent) => void
   /** Null where objects cannot be moved. */
@@ -39,7 +42,8 @@ export function MonthDayCell({
   isWeekend,
   tabbable,
   onFocus,
-  onSelect,
+  onClick,
+  doubleClick,
   onKeyDown,
   onOpenEvent,
   drag,
@@ -61,10 +65,11 @@ export function MonthDayCell({
       aria-selected={interactive ? isSelected : undefined}
       aria-current={isToday ? 'date' : undefined}
       tabIndex={tabbable ? 0 : -1}
-      onClick={interactive ? onSelect : undefined}
+      onClick={onClick}
       onFocus={interactive ? onFocus : undefined}
       onKeyDown={interactive ? onKeyDown : undefined}
       onDoubleClick={onCreate}
+      {...doubleClick}
       {...drag?.dayTarget(cell.date)}
       className={[
         'flex min-h-daycell flex-col gap-4 border-r border-b border-grid-line p-6',
