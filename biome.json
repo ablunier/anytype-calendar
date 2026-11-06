@@ -12,6 +12,7 @@
       "**/*.css",
       "**/*.json",
       "**/*.jsonc",
+      ".agents/**/*.mjs",
       "!tools",
       "!**/out",
       "!**/dist",

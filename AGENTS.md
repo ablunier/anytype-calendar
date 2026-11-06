@@ -30,16 +30,17 @@ Run from the repo root. CI runs lint, typecheck, tests and `lint:arch`.
 
 ## External References
 
-| Need                                                 | File                          |
-| ---------------------------------------------------- | ----------------------------- |
-| Contexts, layers, import rules, adding a context     | `docs/architecture.md`        |
-| Main process, IPC, renderer, screens, `lib/` modules | `docs/desktop-app.md`         |
-| Anytype API v2 behaviour the adapters rely on        | `docs/anytype-api.md`         |
-| Release workflow and update checks                   | `docs/releasing.md`           |
-| Version pins, `postinstall`, packaging               | `docs/deps-notes.md`          |
-| Layering rules and their reasons                     | `.dependency-cruiser.cjs`     |
-| Why `tools/arch-lint` is outside the workspace       | `tools/arch-lint/README.md`   |
-| Client surface and API quirks                        | `../anytype-client/README.md` |
+| Need                                                 | File                                  |
+| ---------------------------------------------------- | ------------------------------------- |
+| Launch, screenshot or click through the running app  | `.agents/skills/run-desktop/SKILL.md` |
+| Contexts, layers, import rules, adding a context     | `docs/architecture.md`                |
+| Main process, IPC, renderer, screens, `lib/` modules | `docs/desktop-app.md`                 |
+| Anytype API v2 behaviour the adapters rely on        | `docs/anytype-api.md`                 |
+| Release workflow and update checks                   | `docs/releasing.md`                   |
+| Version pins, `postinstall`, packaging               | `docs/deps-notes.md`                  |
+| Layering rules and their reasons                     | `.dependency-cruiser.cjs`             |
+| Why `tools/arch-lint` is outside the workspace       | `tools/arch-lint/README.md`           |
+| Client surface and API quirks                        | `../anytype-client/README.md`         |
 
 ## Key Conventions
 

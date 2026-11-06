@@ -4,12 +4,12 @@ description: Build, run, and drive the Calendar for Anytype Electron desktop app
 ---
 
 Calendar for Anytype is an Electron + React app. Agents drive it with
-`.claude/skills/run-desktop/driver.mjs`, a dependency-free Node CLI. `launch` starts the
+`.agents/skills/run-desktop/driver.mjs`, a dependency-free Node CLI. `launch` starts the
 **built** app detached, with the Chrome DevTools Protocol on the renderer (port 9333) and
 the Node inspector on the main process (port 9335). Every other command connects, does one
 thing, prints, and exits, so there is no REPL and no tmux.
 
-All paths below are relative to `apps/desktop/`.
+Run every command below from the repo root.
 
 ## Prerequisites
 
@@ -21,22 +21,22 @@ All paths below are relative to `apps/desktop/`.
 ## Setup
 
 ```bash
-cd ../.. && npm install && cd apps/desktop   # root postinstall fetches the Electron binary
+npm install   # postinstall fetches the Electron binary
 ```
 
 ## Build
 
-The driver runs `out/`, not the dev server. **Rebuild after every source change**, then
+The driver runs `apps/desktop/out/`, not the dev server. **Rebuild after every source change**, then
 `quit` and `launch` again:
 
 ```bash
-npm run build
+npm -w apps/desktop run build
 ```
 
 ## Run (agent path)
 
 ```bash
-D=.claude/skills/run-desktop/driver.mjs
+D=.agents/skills/run-desktop/driver.mjs
 node $D launch --fake          # simulated Anytype; omit --fake for the real one
 node $D state                  # main's session + schema snapshots, as the renderer sees them
 node $D sign-in-fake           # start → type 2749 → verify, in one go
@@ -44,6 +44,8 @@ node $D wait-text "Synced"     # the success card's sync finished
 node $D ss success-synced      # -> /tmp/run-desktop/shots/success-synced.png
 node $D text ul                # innerText of the first match (no selector = whole body)
 node $D click-text "Choose spaces and types"
+node $D focus 'button[aria-label="Next month"]' && node $D press Enter && node $D focused
+node $D click '[role=grid][aria-label=Month] [data-day="10"] time'   # real mouse click
 node $D sign-out
 node $D quit
 ```
@@ -78,20 +80,24 @@ with `RUN_DESKTOP_PAGE_PORT` / `RUN_DESKTOP_MAIN_PORT`.
 | `eval <expr>` | Evaluates an expression in the page (promises are awaited) and prints the result. |
 | `click-text <text>` | Clicks a button or link by text. Prints `OK`, `NOT_FOUND` or `DISABLED`. |
 | `focus <selector>` / `type <text>` | Focuses an element / inserts text into the focused one. |
+| `press <key>` | A real key press to whatever has focus: `Enter`, `Space`, `Escape`, `Tab`, `End`, `Home`, `ArrowLeft`…, or one character (an uppercase letter is sent with Shift). |
+| `click <selector>` | A real mouse click at the centre of the first match. Prints `OK at x,y`, `NOT_FOUND`, or `OBSCURED` when something covers that point. |
+| `click-at <x> <y>` | A real mouse click at window coordinates, in CSS pixels. |
+| `focused` | Describes `document.activeElement`: tag, role, `data-day`, and a name from `aria-labelledby`, `aria-label`, its labels (wrapping or `for=`) or its text, in that order. |
 | `wait-text <text> [ms]` | Polls the body text. Prints `found` or `TIMEOUT` (default 10 s). |
 | `main-eval <expr>` | Evaluates an expression in the Electron main process. |
 
 ## Run (human path)
 
 `npm run dev` from the repo root starts the electron-vite dev server with HMR (see
-CLAUDE.md's Commands section, including its `env -u ELECTRON_RUN_AS_NODE` requirement). It
+AGENTS.md's Commands section, including its `env -u ELECTRON_RUN_AS_NODE` requirement). It
 wasn't exercised while writing this skill, and nothing in it is drivable: it opens no
 debugging ports.
 
 ## Test
 
 ```bash
-cd ../.. && npm test && npm run typecheck && npm run lint:arch
+npm test && npm run typecheck && npm run lint:arch
 ```
 
 These are vitest over `packages/*`, the renderer's `lib/` and main's pure glue, `tsc -b`,
@@ -136,6 +142,30 @@ and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:set
   checkbox or date change. In real mode that file is the human's own, so don't press
   Continue or Skip, or change anything in Settings, unless asked. Opening Settings or
   re-reading writes nothing.
+- **Keyboard and mouse behaviour needs `press` and `click`.** `type` only inserts text, a
+  dispatched `KeyboardEvent` is untrusted, and `el.click()` leaves `click.detail` at 0. So
+  none of them activates a button with Enter, steps a radio group with the arrows, or moves
+  through the grid. A month cell's handler also counts clicks for double-click, so a
+  `click-text`/`el.click()` selects the day but never opens the Day detail panel. `press`,
+  `click` and `click-at` send real input from main with `webContents.sendInputEvent`.
+- **Real input focuses the window first**, because Chromium drops it otherwise, and waits up
+  to 500 ms for the window's `focus` event. That focus can start the re-read described above.
+  It goes to the window whose URL is the driven page's, and fails rather than guess if
+  several windows show that URL.
+- **`click` and `click-at` take CSS pixels.** The driver multiplies them by the page's zoom
+  factor before sending, so they stay accurate after Ctrl+= or Ctrl+-.
+- **The input events are unit-tested; the plumbing isn't.** `input.mjs` builds the events
+  `press`, `click` and `click-at` send, and `input.test.mjs` covers them in the `skills`
+  vitest project, part of `npm test`. Sending them needs a running app, so check that by hand.
+- **Landmarks with an implicit role don't match `[role=…]`.** The Day detail panel is
+  `<aside aria-label="Day detail">`, so select it as `aside[aria-label="Day detail"]`, not
+  `[role=complementary]`. The main grid is `[role=grid][aria-label=Month]` and its cells
+  carry `data-day`. The mini month is also a `role=grid`, labelled by its month (e.g.
+  `November 2026`), and has its own `Previous month`/`Next month` buttons after the top
+  bar's.
+- **The view switcher is visually hidden radios.** Focus one with
+  `eval "[...document.querySelectorAll('input[type=radio]')].find(r => r.closest('label').textContent.trim() === 'Month').focus()"`,
+  then `press ArrowLeft`.
 - **Checkboxes are hidden native inputs**, so `click-text` can't reach them. Click them
   with `eval` by their aria-label, e.g.
   `document.querySelector('input[aria-label="Show the Studio space"]').click()`. For a
@@ -164,7 +194,7 @@ and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:set
 - **`ERROR: electron exited during launch`**: read the log. An `isPackaged` TypeError means
   `ELECTRON_RUN_AS_NODE` leaked in; the driver strips it, but a hand-run `npm run dev` needs
   `env -u ELECTRON_RUN_AS_NODE`.
-- **`ERROR: no build at …/out/main/index.js`**: run `npm run build`.
+- **`ERROR: no build at …/out/main/index.js`**: run `npm -w apps/desktop run build`.
 - **Electron keeps running after you kill a background `bash -c 'electron …'`**: killing
   the wrapper shell leaves Electron orphaned. Kill the Electron pid itself, or better, use
   `launch`/`quit`, which track it.

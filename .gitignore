@@ -5,3 +5,8 @@ dist
 *.log
 CLAUDE.md
 .claude
+!/.claude/
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/run-desktop
