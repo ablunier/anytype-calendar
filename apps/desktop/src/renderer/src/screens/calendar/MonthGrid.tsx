@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MonthDayCell } from './MonthDayCell'
 import type { CalendarDrag } from './useCalendarDrag'
+import { useDoubleClickSlot } from './useDoubleClickSlot'
 
 export interface MonthGridProps {
   cells: MonthCell[]
@@ -72,6 +73,7 @@ export function MonthGrid({
   const { t, i18n } = useTranslation()
   const gridRef = useRef<HTMLTableElement>(null)
   const shouldRefocus = useRef(false)
+  const doubleClick = useDoubleClickSlot(onCreate)
 
   const weeks = useMemo(() => {
     const chunks = chunkWeeks(cells)
@@ -173,7 +175,11 @@ export function MonthGrid({
                 isWeekend={isWeekendColumn(weekStart, dayIndex)}
                 tabbable={!cell.outside && cell.day === focusedDay}
                 onFocus={() => onFocusDay(cell.day)}
-                onSelect={() => onSelectDay(cell.day)}
+                onClick={(click) => {
+                  doubleClick.press(click, cell.date)
+                  if (!cell.outside) onSelectDay(cell.day)
+                }}
+                doubleClick={doubleClick.capture}
                 onKeyDown={(event) => handleKeyDown(event, cell.day)}
                 onOpenEvent={(event) => onOpenEvent(event, cell.date)}
                 drag={drag}
