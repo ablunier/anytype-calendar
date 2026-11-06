@@ -4,7 +4,7 @@
 // every other command connects, does one thing, prints, and exits. No dependencies: Node's
 // global fetch and WebSocket (Node 22+) are enough.
 //
-//   node .claude/skills/run-desktop/driver.mjs <command> [args]     (from apps/desktop)
+//   node .agents/skills/run-desktop/driver.mjs <command> [args]     (from the repo root)
 //
 // Run with no command for the list.
 
@@ -13,8 +13,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-const UNIT = path.resolve(import.meta.dirname, '../../..')
-const ROOT = path.resolve(UNIT, '../..')
+const ROOT = path.resolve(import.meta.dirname, '../../..')
+const UNIT = path.join(ROOT, 'apps/desktop')
 const ELECTRON = path.join(ROOT, 'node_modules/electron/dist/electron')
 const BUILT_MAIN = path.join(UNIT, 'out/main/index.js')
 

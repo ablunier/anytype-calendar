@@ -4,4 +4,5 @@ dist
 *.tsbuildinfo
 *.log
 CLAUDE.md
-.claude
+.claude/*
+!.claude/skills/

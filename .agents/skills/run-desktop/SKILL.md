@@ -4,12 +4,12 @@ description: Build, run, and drive the Calendar for Anytype Electron desktop app
 ---
 
 Calendar for Anytype is an Electron + React app. Agents drive it with
-`.claude/skills/run-desktop/driver.mjs`, a dependency-free Node CLI. `launch` starts the
+`.agents/skills/run-desktop/driver.mjs`, a dependency-free Node CLI. `launch` starts the
 **built** app detached, with the Chrome DevTools Protocol on the renderer (port 9333) and
 the Node inspector on the main process (port 9335). Every other command connects, does one
 thing, prints, and exits, so there is no REPL and no tmux.
 
-All paths below are relative to `apps/desktop/`.
+Run every command below from the repo root.
 
 ## Prerequisites
 
@@ -21,22 +21,22 @@ All paths below are relative to `apps/desktop/`.
 ## Setup
 
 ```bash
-cd ../.. && npm install && cd apps/desktop   # root postinstall fetches the Electron binary
+npm install   # postinstall fetches the Electron binary
 ```
 
 ## Build
 
-The driver runs `out/`, not the dev server. **Rebuild after every source change**, then
+The driver runs `apps/desktop/out/`, not the dev server. **Rebuild after every source change**, then
 `quit` and `launch` again:
 
 ```bash
-npm run build
+npm -w apps/desktop run build
 ```
 
 ## Run (agent path)
 
 ```bash
-D=.claude/skills/run-desktop/driver.mjs
+D=.agents/skills/run-desktop/driver.mjs
 node $D launch --fake          # simulated Anytype; omit --fake for the real one
 node $D state                  # main's session + schema snapshots, as the renderer sees them
 node $D sign-in-fake           # start → type 2749 → verify, in one go
@@ -90,14 +90,14 @@ with `RUN_DESKTOP_PAGE_PORT` / `RUN_DESKTOP_MAIN_PORT`.
 ## Run (human path)
 
 `npm run dev` from the repo root starts the electron-vite dev server with HMR (see
-CLAUDE.md's Commands section, including its `env -u ELECTRON_RUN_AS_NODE` requirement). It
+AGENTS.md's Commands section, including its `env -u ELECTRON_RUN_AS_NODE` requirement). It
 wasn't exercised while writing this skill, and nothing in it is drivable: it opens no
 debugging ports.
 
 ## Test
 
 ```bash
-cd ../.. && npm test && npm run typecheck && npm run lint:arch
+npm test && npm run typecheck && npm run lint:arch
 ```
 
 These are vitest over `packages/*`, the renderer's `lib/` and main's pure glue, `tsc -b`,
@@ -187,7 +187,7 @@ and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:set
 - **`ERROR: electron exited during launch`**: read the log. An `isPackaged` TypeError means
   `ELECTRON_RUN_AS_NODE` leaked in; the driver strips it, but a hand-run `npm run dev` needs
   `env -u ELECTRON_RUN_AS_NODE`.
-- **`ERROR: no build at …/out/main/index.js`**: run `npm run build`.
+- **`ERROR: no build at …/out/main/index.js`**: run `npm -w apps/desktop run build`.
 - **Electron keeps running after you kill a background `bash -c 'electron …'`**: killing
   the wrapper shell leaves Electron orphaned. Kill the Electron pid itself, or better, use
   `launch`/`quit`, which track it.
