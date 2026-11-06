@@ -10,17 +10,24 @@ import {
   timeOfMinute,
 } from '@renderer/lib/time-grid'
 import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
-import { type CSSProperties, type DragEvent, useEffect, useEffectEvent, useMemo, useRef } from 'react'
+import { type CSSProperties, type DragEvent, type MouseEvent, useEffect, useEffectEvent, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
 import { TimedEvent } from './TimedEvent'
 import { TimeGutter } from './TimeGutter'
 import type { CalendarDrag } from './useCalendarDrag'
+import { useDoubleClickSlot } from './useDoubleClickSlot'
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
 /** Where the grid opens when today is out of view: early enough to show a working morning. */
 const DEFAULT_SCROLL_HOUR = 7
+
+function slotAt(click: MouseEvent, date: string): CalendarSlot {
+  const { top, height } = click.currentTarget.getBoundingClientRect()
+  const snapped = Math.floor(minuteAt(click.clientY - top, height) / SNAP_MINUTES) * SNAP_MINUTES
+  return { date, minute: Math.min(Math.max(snapped, 0), MINUTES_PER_DAY - SNAP_MINUTES) }
+}
 
 export interface TimeGridProps {
   /** Seven days for a week, one for a day. */
@@ -66,6 +73,7 @@ export function TimeGrid({
 }: TimeGridProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const scroller = useRef<HTMLDivElement>(null)
+  const doubleClick = useDoubleClickSlot<CalendarSlot>()
 
   const split = useMemo(() => days.map((day) => splitDayEvents(events, day.date)), [days, events])
   const weekdays = weekdayNames(i18n.language, 'short')
@@ -189,16 +197,11 @@ export function TimeGrid({
                     <div
                       aria-hidden
                       className="absolute inset-0"
-                      onClick={() => onSelectDay(day.date)}
-                      onDoubleClick={(click) => {
-                        const { top, height } = click.currentTarget.getBoundingClientRect()
-                        const minute = minuteAt(click.clientY - top, height)
-                        const snapped = Math.floor(minute / SNAP_MINUTES) * SNAP_MINUTES
-                        onCreate({
-                          date: day.date,
-                          minute: Math.min(Math.max(snapped, 0), MINUTES_PER_DAY - SNAP_MINUTES),
-                        })
+                      onClick={(click) => {
+                        doubleClick.press(click, slotAt(click, day.date))
+                        onSelectDay(day.date)
                       }}
+                      onDoubleClick={(click) => onCreate(doubleClick.take(click, slotAt(click, day.date)))}
                     />
                     {HOURS.map((hour) => (
                       <div

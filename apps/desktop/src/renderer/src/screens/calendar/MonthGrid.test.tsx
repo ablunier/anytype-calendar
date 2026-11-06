@@ -1,8 +1,8 @@
 import { buildMonthGrid, isoDate } from '@renderer/lib/calendar'
 import { renderWithI18n } from '@renderer/test/render'
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { useState } from 'react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { MonthGrid } from './MonthGrid'
 
 // November 2026 starts on a Sunday and ends on a Monday, so with Monday first the grid
@@ -10,7 +10,7 @@ import { MonthGrid } from './MonthGrid'
 const YEAR = 2026
 const MONTH = 10
 
-function Harness(): React.JSX.Element {
+function Harness({ onCreate = () => {} }: { onCreate?: (date: string) => void }): React.JSX.Element {
   const [focusedDay, setFocusedDay] = useState(10)
   const [selected, setSelected] = useState<string | null>(null)
   return (
@@ -28,7 +28,7 @@ function Harness(): React.JSX.Element {
         onFocusDay={setFocusedDay}
         onSelectDay={(day) => setSelected(isoDate(YEAR, MONTH, day))}
         onOpenEvent={() => {}}
-        onCreate={() => {}}
+        onCreate={onCreate}
         drag={null}
       />
       <button type="button">After</button>
@@ -105,5 +105,14 @@ describe('MonthGrid', () => {
     await user.keyboard('{ArrowRight} ')
     expect(cell(11)).toHaveAttribute('aria-selected', 'true')
     expect(cell(10)).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('creates on the day of the first press, though the second lands on the next', () => {
+    const onCreate = vi.fn()
+    renderWithI18n(<Harness onCreate={onCreate} />)
+    fireEvent.click(cell(10), { detail: 1 })
+    fireEvent.click(cell(11), { detail: 2 })
+    fireEvent.dblClick(cell(11), { detail: 2 })
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith(isoDate(YEAR, MONTH, 10))
   })
 })
