@@ -279,6 +279,11 @@ Standard electron-vite three-process layout:
     class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
     use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers. jsdom lays nothing
     out, so layout and visual checks (gutters, outlines, drag previews) are out of their reach.
+    Hooks with logic of their own have `*.test.ts` beside them under `hooks/`, which the
+    `components` project takes from `renderer` for its DOM. They run through `renderHook`,
+    stub with `vi.stubGlobal` only the `window.api` members they use (and `matchMedia`, which
+    jsdom lacks, per test), and feed pushed state from `fakePushedSource`
+    (`test/pushed-source.ts`), whose `get()` waits until the test answers.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as

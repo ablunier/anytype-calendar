@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 // Matches the alias in apps/desktop/electron.vite.config.ts: tests run against package
 // sources, so no build step is needed before `npm test`.
@@ -29,6 +29,9 @@ const rendererAlias = [
   workspaceAlias,
 ]
 
+// Hooks render, so their tests need the DOM of the components project, though they hold no JSX.
+const hookTests = 'apps/desktop/src/renderer/src/hooks/**/*.test.ts'
+
 // The lib/ modules under test are pure functions with no DOM dependency, so `node` is enough.
 const rendererProject = {
   resolve: { alias: rendererAlias },
@@ -37,17 +40,18 @@ const rendererProject = {
     root: __dirname,
     environment: 'node' as const,
     include: ['apps/desktop/src/renderer/src/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, hookTests],
   },
 }
 
-// React components, driven by role and by real key and pointer sequences under jsdom.
+// React components, driven by role and by real key and pointer sequences under jsdom, and hooks.
 const componentsProject = {
   resolve: { alias: rendererAlias },
   test: {
     name: 'components',
     root: __dirname,
     environment: 'jsdom' as const,
-    include: ['apps/desktop/src/renderer/src/**/*.test.tsx'],
+    include: ['apps/desktop/src/renderer/src/**/*.test.tsx', hookTests],
     setupFiles: ['apps/desktop/src/renderer/src/test/setup.ts'],
   },
 }
