@@ -12,6 +12,7 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { keyEvents, mouseClick } from './input.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '../../..')
 const UNIT = path.join(ROOT, 'apps/desktop')
@@ -123,40 +124,35 @@ const clickTextExpr = (text) => `(() => {
 /**
  * Real input, sent from main with `webContents.sendInputEvent`: it activates buttons, steps
  * radios and fires `click.detail`, which CDP `insertText` and DOM `el.click()` don't. Chromium
- * drops it unless the window is focused, so it is focused first.
+ * drops it unless the window is focused, and `focus()` is asynchronous on most window managers,
+ * so it waits for the `focus` event (at most 500 ms) first. Mouse coordinates arrive in CSS
+ * pixels and are scaled by the zoom factor to the DIPs `sendInputEvent` expects.
  */
 async function sendInput(events) {
   const session = await main()
   try {
     await evaluate(
       session,
-      `(() => {
+      `(async () => {
         const win = process.mainModule.require('electron').BrowserWindow.getAllWindows()[0]
-        if (!win.isFocused()) win.focus()
-        for (const event of ${JSON.stringify(events)}) win.webContents.sendInputEvent(event)
-      })()`
+        if (!win) throw new Error('no app window; is the app still running?')
+        if (!win.isFocused()) {
+          await new Promise((resolve) => {
+            const timer = setTimeout(resolve, 500)
+            win.once('focus', () => { clearTimeout(timer); resolve() })
+            win.focus()
+          })
+        }
+        const zoom = win.webContents.getZoomFactor()
+        for (const event of ${JSON.stringify(events)}) {
+          win.webContents.sendInputEvent('x' in event ? { ...event, x: Math.round(event.x * zoom), y: Math.round(event.y * zoom) } : event)
+        }
+      })()`,
     )
   } finally {
     session.close()
   }
 }
-
-/** Electron's key names, plus the `char` event Enter, Space and printable keys need to act. */
-function keyEvents(key) {
-  const names = { Enter: 'Return', ArrowLeft: 'Left', ArrowRight: 'Right', ArrowUp: 'Up', ArrowDown: 'Down' }
-  const keyCode = names[key] ?? key
-  const char = keyCode === 'Return' || keyCode === 'Space' || keyCode.length === 1
-  return [
-    { type: 'keyDown', keyCode },
-    ...(char ? [{ type: 'char', keyCode: keyCode === 'Space' ? ' ' : keyCode }] : []),
-    { type: 'keyUp', keyCode }
-  ]
-}
-
-const mouseClick = (x, y) => [
-  { type: 'mouseDown', x, y, button: 'left', clickCount: 1 },
-  { type: 'mouseUp', x, y, button: 'left', clickCount: 1 }
-]
 
 function print(value) {
   console.log(typeof value === 'string' ? value : JSON.stringify(value, null, 2))
@@ -285,14 +281,17 @@ const commands = {
     print('OK')
   },
 
-  /** A real mouse click at the centre of the selector's first match, in CSS pixels. */
+  /**
+   * A real mouse click at the centre of the selector's first match, in CSS pixels. Prints
+   * `OBSCURED`, and clicks nothing, when another element covers that point.
+   */
   click: (selector) =>
     withPage(async (session) => {
       const point = await evaluate(
         session,
-        `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); return [Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2)] })()`
+        `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'NOT_FOUND'; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); const x = Math.round(r.left + r.width / 2); const y = Math.round(r.top + r.height / 2); const hit = document.elementFromPoint(x, y); return hit && el.contains(hit) ? [x, y] : 'OBSCURED' })()`
       )
-      if (!point) return print('NOT_FOUND')
+      if (typeof point === 'string') return print(point)
       await sendInput(mouseClick(...point))
       await sleep(300)
       print(`OK at ${point.join(',')}`)
@@ -300,8 +299,11 @@ const commands = {
 
   /** A real mouse click at window coordinates, in CSS pixels. */
   async 'click-at'(x, y) {
-    if (x === undefined || y === undefined) throw new Error('click-at <x> <y>')
-    await sendInput(mouseClick(Number(x), Number(y)))
+    const [px, py] = [Number(x), Number(y)]
+    if (x === undefined || y === undefined || !Number.isFinite(px) || !Number.isFinite(py)) {
+      throw new Error('click-at <x> <y>, both numbers')
+    }
+    await sendInput(mouseClick(px, py))
     await sleep(300)
     print('OK')
   },

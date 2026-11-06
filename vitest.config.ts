@@ -71,6 +71,16 @@ const mainProject = {
   },
 }
 
+// The agent skills' pure helpers, e.g. run-desktop's input events. Plain .mjs, no aliases.
+const skillsProject = {
+  test: {
+    name: 'skills',
+    root: __dirname,
+    environment: 'node' as const,
+    include: ['.agents/skills/**/*.test.mjs'],
+  },
+}
+
 export default defineConfig({
   test: {
     // Contexts are scaffolded before they have tests; an empty project is not a failure.
@@ -82,6 +92,7 @@ export default defineConfig({
       rendererProject,
       componentsProject,
       mainProject,
+      skillsProject,
     ],
   },
 })
