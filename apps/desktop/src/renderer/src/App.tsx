@@ -17,16 +17,7 @@ import { useUpdate } from './hooks/useUpdate'
 import { useWeekNumbers } from './hooks/useWeekNumbers'
 import { useWeekStart } from './hooks/useWeekStart'
 import { withDates } from './lib/calendar'
-import {
-  anchorOf,
-  eventsFor,
-  localDate,
-  shiftSpan,
-  shownSpanFor,
-  spanFor,
-  spanStatusFor,
-  switchDateFor,
-} from './lib/events'
+import { eventsFor, localDate, shiftSpan, shownSpanFor, spanFor, spanStatusFor, switchDateFor } from './lib/events'
 import { feedEventsFor, feedsFor, mergedEvents } from './lib/feeds'
 import {
   collectionsBySpaceFor,
@@ -231,7 +222,6 @@ function App(): React.JSX.Element | null {
   return (
     <TimeFormatContext value={timeFormat}>
       <CalendarScreen
-        key={`${span.kind}-${anchorOf(span)}`}
         span={span}
         events={calendarEvents}
         status={status}

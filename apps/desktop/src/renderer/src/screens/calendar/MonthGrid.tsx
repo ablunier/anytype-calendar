@@ -89,8 +89,11 @@ export function MonthGrid({
   const lastDay = cells.filter((cell) => !cell.outside).length
 
   const moveFocus = (delta: number): void => {
+    const target = Math.min(Math.max(focusedDay + delta, 1), lastDay)
+    // Flagged only for a move that happens: a flag left up would take focus on a later span change.
+    if (target === focusedDay) return
     shouldRefocus.current = true
-    onFocusDay(Math.min(Math.max(focusedDay + delta, 1), lastDay))
+    onFocusDay(target)
   }
 
   const handleKeyDown = (event: React.KeyboardEvent, day: number): void => {
