@@ -277,7 +277,9 @@ Standard electron-vite three-process layout:
     `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role
     and by real key and pointer sequences, and asserted on roles, names and states, never on
     class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
-    use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers. jsdom lays nothing
+    use the visible copy, `test/fixtures.ts` builds an `ObjectType` keyed as main keys it, and
+    `test/setup.ts` adds the `jest-dom` matchers. Screens take everything as props, so they are
+    rendered with no fake `window.api`; `App` and the hooks are not tested here. jsdom lays nothing
     out, so layout and visual checks (gutters, outlines, drag previews) are out of their reach.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
