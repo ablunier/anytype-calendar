@@ -109,7 +109,7 @@ module.exports = {
     {
       name: 'renderer-no-test-helpers',
       comment:
-        'The component test helpers and Testing Library are for *.test.tsx only, which ' +
+        'The component test helpers and Testing Library are for tests only, which ' +
         "options.exclude keeps out of the graph; an app module importing either would ship " +
         'them in the renderer bundle.',
       severity: 'error',
