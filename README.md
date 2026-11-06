@@ -24,7 +24,7 @@ a `Meeting` with a start and an end, and a `Note` with a creation date all show 
 place. Your data stays in Anytype and is never copied anywhere else.
 
 > [!NOTE]
-> The app is in **beta** (`1.0.0-beta.2`). It uses Anytype's pre-release local API v2, so
+> The app is in **beta** (`1.0.0-beta.3`). It uses Anytype's pre-release local API v2, so
 > it needs an Anytype desktop release recent enough to serve that API.
 
 ## Features
