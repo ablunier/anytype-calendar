@@ -277,8 +277,10 @@ Standard electron-vite three-process layout:
     `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role
     and by real key and pointer sequences, and asserted on roles, names and states, never on
     class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
-    use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers. jsdom lays nothing
-    out, so layout and visual checks (gutters, outlines, drag previews) are out of their reach.
+    use the visible copy, and `test/setup.ts` adds the `jest-dom` matchers and stubs the
+    scrolling jsdom leaves out (`scrollTo`, `scrollIntoView`). jsdom lays nothing out, so
+    layout and visual checks (gutters, outlines, drag previews, where a popup is placed) are
+    out of their reach.
   - Import convention: anything outside the importing file's own directory is reached
     through the `@renderer/*` alias (`@renderer/lib/calendar`), never `../..`;
     same-directory imports stay relative (`./EventChip`). The IPC contract is reached as

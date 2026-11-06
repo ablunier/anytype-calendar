@@ -45,8 +45,8 @@ export function AuthCode({ challengeId, expiresAt, onCancel, onVerify }: AuthCod
         value={code}
         inputMode="numeric"
         autoComplete="one-time-code"
-        maxLength={4}
         onChange={(event) => {
+          // Capped here, not by maxLength: that cuts a pasted `12-34` to `12-3` before the dash goes.
           const next = event.target.value.replace(/\D/g, '').slice(0, 4)
           setCode(next)
           setActiveIndex(Math.min(event.target.selectionStart ?? next.length, next.length))
