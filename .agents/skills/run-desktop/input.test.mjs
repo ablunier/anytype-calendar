@@ -33,6 +33,18 @@ describe('keyEvents', () => {
       { type: 'keyUp', keyCode: 'a' },
     ])
   })
+
+  it('holds Shift through every event of an uppercase letter', () => {
+    expect(keyEvents('A')).toEqual([
+      { type: 'keyDown', keyCode: 'A', modifiers: ['shift'] },
+      { type: 'char', keyCode: 'A', modifiers: ['shift'] },
+      { type: 'keyUp', keyCode: 'A', modifiers: ['shift'] },
+    ])
+  })
+
+  it('adds no modifier to digits and symbols, which have no case', () => {
+    expect(keyEvents('7').every((event) => !('modifiers' in event))).toBe(true)
+  })
 })
 
 describe('mouseClick', () => {

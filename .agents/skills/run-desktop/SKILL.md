@@ -80,10 +80,10 @@ with `RUN_DESKTOP_PAGE_PORT` / `RUN_DESKTOP_MAIN_PORT`.
 | `eval <expr>` | Evaluates an expression in the page (promises are awaited) and prints the result. |
 | `click-text <text>` | Clicks a button or link by text. Prints `OK`, `NOT_FOUND` or `DISABLED`. |
 | `focus <selector>` / `type <text>` | Focuses an element / inserts text into the focused one. |
-| `press <key>` | A real key press to whatever has focus: `Enter`, `Space`, `Escape`, `Tab`, `End`, `Home`, `ArrowLeft`…, or one character. |
+| `press <key>` | A real key press to whatever has focus: `Enter`, `Space`, `Escape`, `Tab`, `End`, `Home`, `ArrowLeft`…, or one character (an uppercase letter is sent with Shift). |
 | `click <selector>` | A real mouse click at the centre of the first match. Prints `OK at x,y`, `NOT_FOUND`, or `OBSCURED` when something covers that point. |
 | `click-at <x> <y>` | A real mouse click at window coordinates, in CSS pixels. |
-| `focused` | Describes `document.activeElement`: tag, role, `data-day`, and name. |
+| `focused` | Describes `document.activeElement`: tag, role, `data-day`, and a name from `aria-labelledby`, `aria-label`, its labels (wrapping or `for=`) or its text, in that order. |
 | `wait-text <text> [ms]` | Polls the body text. Prints `found` or `TIMEOUT` (default 10 s). |
 | `main-eval <expr>` | Evaluates an expression in the Electron main process. |
 
@@ -150,6 +150,8 @@ and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:set
   `click` and `click-at` send real input from main with `webContents.sendInputEvent`.
 - **Real input focuses the window first**, because Chromium drops it otherwise, and waits up
   to 500 ms for the window's `focus` event. That focus can start the re-read described above.
+  It goes to the window whose URL is the driven page's, and fails rather than guess if
+  several windows show that URL.
 - **`click` and `click-at` take CSS pixels.** The driver multiplies them by the page's zoom
   factor before sending, so they stay accurate after Ctrl+= or Ctrl+-.
 - **The input events are unit-tested; the plumbing isn't.** `input.mjs` builds the events

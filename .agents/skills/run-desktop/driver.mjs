@@ -38,7 +38,7 @@ async function targets(port) {
   return response.json()
 }
 
-async function connect(port, pick) {
+async function findTarget(port, pick) {
   let list
   try {
     list = await targets(port)
@@ -47,6 +47,11 @@ async function connect(port, pick) {
   }
   const target = list.find(pick)
   if (!target) throw new Error(`no matching target on ${port}: ${JSON.stringify(list)}`)
+  return target
+}
+
+async function connect(port, pick) {
+  const target = await findTarget(port, pick)
   const ws = new WebSocket(target.webSocketDebuggerUrl)
   await new Promise((resolve, reject) => {
     ws.addEventListener('open', resolve, { once: true })
@@ -65,14 +70,15 @@ async function connect(port, pick) {
     new Promise((resolve, reject) => {
       const id = ++nextId
       pending.set(id, (message) =>
-        message.error ? reject(new Error(`${method}: ${message.error.message}`)) : resolve(message.result)
+        message.error ? reject(new Error(`${method}: ${message.error.message}`)) : resolve(message.result),
       )
       ws.send(JSON.stringify({ id, method, params }))
     })
   return { send, close: () => ws.close() }
 }
 
-const page = () => connect(PAGE_PORT, (t) => t.type === 'page' && !t.url.startsWith('devtools://'))
+const isAppPage = (t) => t.type === 'page' && !t.url.startsWith('devtools://')
+const page = () => connect(PAGE_PORT, isAppPage)
 const main = () => connect(MAIN_PORT, () => true)
 
 /**
@@ -83,7 +89,7 @@ async function evaluate(session, expression) {
   const result = await session.send('Runtime.evaluate', {
     expression: `(async () => (${expression}))()`,
     awaitPromise: true,
-    returnByValue: true
+    returnByValue: true,
   })
   if (result.exceptionDetails) {
     throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text)
@@ -126,16 +132,23 @@ const clickTextExpr = (text) => `(() => {
  * radios and fires `click.detail`, which CDP `insertText` and DOM `el.click()` don't. Chromium
  * drops it unless the window is focused, and `focus()` is asynchronous on most window managers,
  * so it waits for the `focus` event (at most 500 ms) first. Mouse coordinates arrive in CSS
- * pixels and are scaled by the zoom factor to the DIPs `sendInputEvent` expects.
+ * pixels and are scaled by the zoom factor to the DIPs `sendInputEvent` expects. The input goes
+ * to the window showing the page the other commands drive, found by URL because main has no
+ * public way to map a CDP target to its `webContents`.
  */
 async function sendInput(events) {
+  const { url } = await findTarget(PAGE_PORT, isAppPage)
   const session = await main()
   try {
     await evaluate(
       session,
       `(async () => {
-        const win = process.mainModule.require('electron').BrowserWindow.getAllWindows()[0]
-        if (!win) throw new Error('no app window; is the app still running?')
+        const url = ${JSON.stringify(url)}
+        const wins = process.mainModule.require('electron').BrowserWindow.getAllWindows()
+          .filter((w) => w.webContents.getURL() === url)
+        if (wins.length === 0) throw new Error('no app window shows ' + url + '; is the app still running?')
+        if (wins.length > 1) throw new Error(wins.length + ' windows show ' + url + '; close all but one')
+        const win = wins[0]
         if (!win.isFocused()) {
           await new Promise((resolve) => {
             const timer = setTimeout(resolve, 500)
@@ -188,11 +201,11 @@ const commands = {
     if (fake) env.ANYTYPE_CALENDAR_FAKE_AUTH = '1'
     else delete env.ANYTYPE_CALENDAR_FAKE_AUTH
 
-    const child = spawn(
-      ELECTRON,
-      [`--inspect=${MAIN_PORT}`, UNIT, `--remote-debugging-port=${PAGE_PORT}`],
-      { env, detached: true, stdio: ['ignore', log, log] }
-    )
+    const child = spawn(ELECTRON, [`--inspect=${MAIN_PORT}`, UNIT, `--remote-debugging-port=${PAGE_PORT}`], {
+      env,
+      detached: true,
+      stdio: ['ignore', log, log],
+    })
     child.unref()
     fs.writeFileSync(PID_FILE, String(child.pid))
 
@@ -232,7 +245,7 @@ const commands = {
         width: 900,
         height: 670,
         deviceScaleFactor: 1,
-        mobile: false
+        mobile: false,
       })
       const { data } = await session.send('Page.captureScreenshot', { format: 'png' })
       fs.writeFileSync(file, Buffer.from(data, 'base64'))
@@ -247,24 +260,23 @@ const commands = {
           session,
           selector
             ? `document.querySelector(${JSON.stringify(selector)})?.innerText ?? '(no match)'`
-            : 'document.body.innerText'
-        )
-      )
+            : 'document.body.innerText',
+        ),
+      ),
     ),
 
   eval: (...expression) => withPage(async (session) => print(await evaluate(session, expression.join(' ')))),
 
-  'click-text': (...text) =>
-    withPage(async (session) => print(await evaluate(session, clickTextExpr(text.join(' '))))),
+  'click-text': (...text) => withPage(async (session) => print(await evaluate(session, clickTextExpr(text.join(' '))))),
 
   focus: (selector) =>
     withPage(async (session) =>
       print(
         await evaluate(
           session,
-          `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'NOT_FOUND'; el.focus(); return 'OK' })()`
-        )
-      )
+          `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'NOT_FOUND'; el.focus(); return 'OK' })()`,
+        ),
+      ),
     ),
 
   type: (...text) =>
@@ -289,7 +301,7 @@ const commands = {
     withPage(async (session) => {
       const point = await evaluate(
         session,
-        `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'NOT_FOUND'; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); const x = Math.round(r.left + r.width / 2); const y = Math.round(r.top + r.height / 2); const hit = document.elementFromPoint(x, y); return hit && el.contains(hit) ? [x, y] : 'OBSCURED' })()`
+        `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'NOT_FOUND'; el.scrollIntoView({ block: 'nearest' }); const r = el.getBoundingClientRect(); const x = Math.round(r.left + r.width / 2); const y = Math.round(r.top + r.height / 2); const hit = document.elementFromPoint(x, y); return hit && el.contains(hit) ? [x, y] : 'OBSCURED' })()`,
       )
       if (typeof point === 'string') return print(point)
       await sendInput(mouseClick(...point))
@@ -314,9 +326,9 @@ const commands = {
       print(
         await evaluate(
           session,
-          `(() => { const el = document.activeElement; if (!el || el === document.body) return 'BODY'; const name = el.getAttribute('aria-label') ?? el.closest('label')?.textContent.trim() ?? el.textContent.trim().slice(0, 40); return el.tagName.toLowerCase() + (el.getAttribute('role') ? '[role=' + el.getAttribute('role') + ']' : '') + (el.dataset.day ? '[data-day=' + el.dataset.day + ']' : '') + ' ' + JSON.stringify(name) })()`
-        )
-      )
+          `(() => { const el = document.activeElement; if (!el || el === document.body) return 'BODY'; const labelledBy = el.getAttribute('aria-labelledby')?.split(/\\s+/).map((id) => document.getElementById(id)?.textContent.trim()).filter(Boolean).join(' '); const name = labelledBy || el.getAttribute('aria-label') || [...(el.labels ?? [])].map((l) => l.textContent.trim()).filter(Boolean).join(' ') || el.textContent.trim().slice(0, 40); return el.tagName.toLowerCase() + (el.getAttribute('role') ? '[role=' + el.getAttribute('role') + ']' : '') + (el.dataset.day ? '[data-day=' + el.dataset.day + ']' : '') + ' ' + JSON.stringify(name) })()`,
+        ),
+      ),
     ),
 
   'wait-text': (text, timeoutMs = '10000') =>
@@ -328,9 +340,9 @@ const commands = {
       print(
         await evaluate(
           session,
-          'Promise.all([window.api.session.get(), window.api.schema.get()]).then(([session, schema]) => ({ session, schema }))'
-        )
-      )
+          'Promise.all([window.api.session.get(), window.api.schema.get()]).then(([session, schema]) => ({ session, schema }))',
+        ),
+      ),
     ),
 
   /**
@@ -372,7 +384,7 @@ const commands = {
     } finally {
       session.close()
     }
-  }
+  },
 }
 
 const [name, ...args] = process.argv.slice(2)
