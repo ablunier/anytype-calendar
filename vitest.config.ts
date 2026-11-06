@@ -40,6 +40,7 @@ const rendererProject = {
     root: __dirname,
     environment: 'node' as const,
     include: ['apps/desktop/src/renderer/src/**/*.test.ts'],
+    // A hook test outside hooks/ lands here and fails for want of a DOM, not with a clear error.
     exclude: [...configDefaults.exclude, hookTests],
   },
 }
