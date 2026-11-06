@@ -27,12 +27,11 @@ export function useTheme(): [Theme, () => void] {
     document.documentElement.style.colorScheme = theme
   }, [theme])
 
+  // Saved outside a state updater, which React may run twice (StrictMode), saving twice.
   const toggleTheme = (): void => {
-    setTheme((current) => {
-      const next = current === 'dark' ? 'light' : 'dark'
-      void window.api.theme.save(next)
-      return next
-    })
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    void window.api.theme.save(next)
   }
 
   return [theme, toggleTheme]
