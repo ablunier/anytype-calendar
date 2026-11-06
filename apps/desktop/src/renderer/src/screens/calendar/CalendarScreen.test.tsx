@@ -220,6 +220,43 @@ describe('CalendarScreen detail panel', () => {
   })
 })
 
+describe('CalendarScreen changing span', () => {
+  const december = { kind: 'month', year: 2026, month: 11 } as const
+  // The mini month has arrows of the same name; the navigator's come first.
+  const nextButton = (): HTMLElement => screen.getAllByRole('button', { name: 'Next month' })[0] as HTMLElement
+
+  it('keeps focus on Next, so pressing it again moves on again', async () => {
+    const { user, props, update } = renderCalendar()
+    nextButton().focus()
+    await user.keyboard('{Enter}')
+    update({ span: december })
+    expect(nextButton()).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(props.onNext).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps focus in the view switcher, so the arrows keep moving through it', async () => {
+    const onView = vi.fn()
+    const { user, update } = renderCalendar({ onView })
+    await user.click(screen.getByRole('radio', { name: 'Month' }))
+    await user.keyboard('{ArrowLeft}')
+    expect(onView).toHaveBeenLastCalledWith('week')
+    update({ span: { kind: 'week', start: { year: 2026, month: 10, day: 1 } } })
+    expect(screen.getByRole('radio', { name: 'Week' })).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(onView).toHaveBeenLastCalledWith('day')
+  })
+
+  it('starts the new span with no day selected and no panel', async () => {
+    const { user, update } = renderCalendar()
+    await user.click(day(11))
+    expect(screen.getByRole('complementary', { name: 'Day detail' })).toBeInTheDocument()
+    update({ span: december, events: [] })
+    expect(screen.queryByRole('complementary', { name: 'Day detail' })).not.toBeInTheDocument()
+    expect(within(grid()).queryAllByRole('gridcell', { selected: true })).toEqual([])
+  })
+})
+
 describe('CalendarScreen empty states', () => {
   it('with nothing tracked, points to Settings', async () => {
     const { user, props } = renderCalendar({ tracksAnything: false, events: [] })

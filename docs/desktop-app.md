@@ -128,9 +128,9 @@ Standard electron-vite three-process layout:
     Settings (`screens/config`) saves each change as it is made, and `SaveSchemaSelection`
     runs those saves one at a time, in order. Both screens start their picks only once the
     account has been read: over no types, every saved date would fall back to a default.
-    The calendar's arrows, Today and view switcher only ask main for a span, and
-    `CalendarScreen` is keyed by the span main pushes back, so another span starts with no day
-    selected and no panel open. Switching view saves the preference *and* asks for the new
+    The calendar's arrows, Today and view switcher only ask main for a span. When the span main
+    pushes back is another, `CalendarScreen` clears its selected day, panel and create dialog
+    during render; it is not keyed by the span, so the control that asked keeps focus. Switching view saves the preference *and* asks for the new
     span in one handler: the preference is only what the next launch opens on, while
     `span.kind` is what this window draws. The new span is built around `switchDateFor` —
     today when the span on screen covers it, so switching from this month lands on this week,
@@ -148,7 +148,7 @@ Standard electron-vite three-process layout:
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
     not the last one pushed, so two toggles in a row both count. The mini month follows the span on
-    screen (the screen is keyed by it, so it starts over on it), steps through months on its own, and a
+    screen (it starts over on the span's anchor whenever that changes), steps through months on its own, and a
     clicked day asks main for `spanFor(span.kind, date)`; it marks no days that hold objects.
     The theme toggle lives in the
     calendar's top bar only; other screens follow the system theme until it is used.

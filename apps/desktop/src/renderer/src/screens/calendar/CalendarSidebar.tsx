@@ -9,7 +9,7 @@ import { FeedList, SourceTree } from './SourceTree'
 export interface CalendarSidebarProps {
   /**
    * What the main calendar draws: the mini month marks the days it covers and opens on it, and
-   * since the screen is keyed by the span, starts over on it whenever that changes.
+   * starts over on it whenever that changes.
    */
   span: EventsSpan
   /** `YYYY-MM-DD`. */

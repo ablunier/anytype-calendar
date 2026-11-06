@@ -47,6 +47,26 @@ describe('MiniMonth', () => {
     expect(early).toBeDisabled()
   })
 
+  it('goes back to the month of the day it opens on when that changes, keeping focus', async () => {
+    const { user, rerender, onSelectDate } = renderMiniMonth()
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await user.click(screen.getByRole('button', { name: 'December 2, 2026' }))
+    expect(onSelectDate).toHaveBeenCalledWith('2026-12-02')
+    rerender(
+      <MiniMonth
+        label="Pick a day"
+        opensOn="2026-12-02"
+        marked={{ first: '2026-12-02', last: '2026-12-02' }}
+        today="2026-11-11"
+        weekStart={0}
+        showWeekNumbers={false}
+        onSelectDate={onSelectDate}
+      />,
+    )
+    expect(screen.getByRole('grid', { name: 'December 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'December 2, 2026' })).toHaveFocus()
+  })
+
   it('steps to the next month', async () => {
     const { user } = renderMiniMonth()
     await user.click(screen.getByRole('button', { name: 'Next month' }))

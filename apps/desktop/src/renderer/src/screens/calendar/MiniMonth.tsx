@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 export interface MiniMonthProps {
   label: string
-  /** `YYYY-MM-DD`: the month first shown is this day's. */
+  /** `YYYY-MM-DD`: the month shown is this day's, again whenever it changes. */
   opensOn: string
   /** The days marked as chosen, `YYYY-MM-DD`, both included. */
   marked: { first: string; last: string }
@@ -23,9 +23,9 @@ export interface MiniMonthProps {
 
 /**
  * One month to pick a day from: the sidebar's, to get around by, and a date field's. Its
- * arrows step through months on their own; it opens on the month of `opensOn` and does not
- * follow it later, so whoever wants it to start over keys it. It marks no day that holds
- * objects, which would mean reading months that are not on screen.
+ * arrows step through months on their own, and it goes back to the month of `opensOn` when
+ * that changes. It is not keyed for that, so a day just picked keeps focus. It marks no day
+ * that holds objects, which would mean reading months that are not on screen.
  */
 export function MiniMonth({
   label,
@@ -39,6 +39,11 @@ export function MiniMonth({
 }: MiniMonthProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const [shown, setShown] = useState<CalendarMonth>(() => monthOfDate(opensOn))
+  const [shownFor, setShownFor] = useState(opensOn)
+  if (opensOn !== shownFor) {
+    setShownFor(opensOn)
+    setShown(monthOfDate(opensOn))
+  }
 
   const weeks = chunkWeeks(buildMonthGrid(shown.year, shown.month, weekStart))
   const step = (delta: number): void => {

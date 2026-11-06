@@ -97,7 +97,8 @@ export interface CalendarScreenProps {
 }
 
 /**
- * Draws one span. Keyed by it, so another span starts with no day selected and no panel.
+ * Draws one span. Another span starts with no day selected, no panel and no create dialog;
+ * the screen is not remounted for it, so the control that changed the span keeps focus.
  *
  * The subscribed calendars' events are drawn among Anytype's objects, in their colours, and are
  * never moved, ticked or created here: they belong to whoever publishes them.
@@ -185,9 +186,21 @@ export function CalendarScreen({
 
   const [openDetail, setDetail] = useState<DetailTarget | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [focusedDay, setFocusedDay] = useState(
-    () => cells.find((cell) => !cell.outside && cell.date === today)?.day ?? 1,
-  )
+  const firstFocusedDay = (): number => cells.find((cell) => !cell.outside && cell.date === today)?.day ?? 1
+  const [focusedDay, setFocusedDay] = useState(firstFocusedDay)
+  const [creating, setCreating] = useState<CalendarSlot | null>(null)
+
+  /* Reset during render rather than in an effect, so no frame draws the old span's selection on
+   * the new one. The toast is kept: it reports an edit, wherever the calendar has moved since. */
+  const spanKey = `${span.kind}-${anchor}`
+  const [shownSpanKey, setShownSpanKey] = useState(spanKey)
+  if (spanKey !== shownSpanKey) {
+    setShownSpanKey(spanKey)
+    setDetail(null)
+    setSelectedDate(null)
+    setFocusedDay(firstFocusedDay())
+    setCreating(null)
+  }
 
   /* An object whose source is hidden has gone from the grid, so its panel goes too. One the
    * span no longer holds at all is a different case — moved out of it — and stays as opened. */
@@ -218,7 +231,6 @@ export function CalendarScreen({
   }
 
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null)
-  const [creating, setCreating] = useState<CalendarSlot | null>(null)
   const readOnly = readOnlyText(t, editAccess)
   const canEdit = readOnly === null
 
