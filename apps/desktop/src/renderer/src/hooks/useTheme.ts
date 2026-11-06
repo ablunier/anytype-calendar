@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePushedState } from './usePushedState'
 
 export type Theme = 'light' | 'dark'
@@ -27,9 +27,13 @@ export function useTheme(): [Theme, () => void] {
     document.documentElement.style.colorScheme = theme
   }, [theme])
 
-  // Saved outside a state updater, which React may run twice (StrictMode), saving twice.
+  /* Flips the latest theme set, not the last one drawn, so two toggles before a render both
+   * count; and saves outside a state updater, which React may run twice (StrictMode). */
+  const latest = useRef(theme)
+  latest.current = theme
   const toggleTheme = (): void => {
-    const next = theme === 'dark' ? 'light' : 'dark'
+    const next = latest.current === 'dark' ? 'light' : 'dark'
+    latest.current = next
     setTheme(next)
     void window.api.theme.save(next)
   }

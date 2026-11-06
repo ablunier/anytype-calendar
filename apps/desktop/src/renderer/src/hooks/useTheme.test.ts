@@ -63,4 +63,16 @@ describe('useTheme', () => {
     expect(result.current[0]).toBe('light')
     expect(save).toHaveBeenLastCalledWith('light')
   })
+
+  it('counts two toggles made before a render', () => {
+    const { save } = stubTheme('light')
+    const { result } = renderHook(() => useTheme())
+    act(() => {
+      const [, toggle] = result.current
+      toggle()
+      toggle()
+    })
+    expect(result.current[0]).toBe('light')
+    expect(save.mock.calls).toEqual([['dark'], ['light']])
+  })
 })
