@@ -6,3 +6,5 @@ dist
 CLAUDE.md
 .claude/*
 !.claude/skills/
+.claude/skills/*
+!.claude/skills/run-desktop
