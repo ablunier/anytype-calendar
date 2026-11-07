@@ -105,10 +105,12 @@ Standard electron-vite three-process layout:
   renderer receives (none carries the API key), and `CalendarApi`. The span on screen is
   main's: `events.showSpan` asks for one (validated with `toEventsSpan`), and the
   `EventsSnapshot` pushed back says which span it holds. An `EventsSpan` is a discriminated
-  union — `{ kind: 'month', year, month }`, or `{ kind: 'week' | 'day', start }` — so each
-  kind carries only what pins it down and no two of its fields can disagree; its window
-  (`eventsSpanWindow`) reads a month with a week of slack either side, enough to cover the
-  grid's padding rows whichever day the week starts on.
+  union — `{ kind: 'month', year, month }`, or `{ kind: 'week' | 'day' | 'agenda', start }` — so
+  each kind carries only what pins it down and no two of its fields can disagree; an agenda is
+  always `AGENDA_DAYS` (14) days, fixed in the domain. Its window (`eventsSpanWindow`) reads a
+  month with a week of slack either side, enough to cover the grid's padding rows whichever
+  day the week starts on, and the other kinds from their first day to the end of their last,
+  counted in calendar days so a change of the clocks does not shift it.
 - `src/preload` — exposes `CalendarApi` to the renderer as `window.api` (plus
   `@electron-toolkit/preload`'s default API as `window.electron`). `index.d.ts` types
   `window.api` for the renderer too — `tsconfig.web.json` includes it.
@@ -135,6 +137,8 @@ Standard electron-vite three-process layout:
     `span.kind` is what this window draws. The new span is built around `switchDateFor` —
     today when the span on screen covers it, so switching from this month lands on this week,
     and otherwise the day the span is anchored on, so a reader of another month stays there.
+    An agenda starts on the day it is asked for, so from this month it starts today and from
+    another on the 1st.
     The calendar's sidebar (`screens/calendar/CalendarSidebar`) holds a mini month and the sources the
     calendar holds: the chosen spaces, each with its chosen types and then queries (`SourceTree`),
     then the subscribed calendars in their saved order (`FeedList`), every one with a toggle. Hiding is renderer-only: a hidden source is still read, and
@@ -167,8 +171,8 @@ Standard electron-vite three-process layout:
     section (`main/preferences/time-format.ts`) as `'24h'` or `'12h'`. Times stay `HH:MM` in the view model;
     `formatTime` (`lib/calendar.ts`) draws them, reading the format from `TimeFormatContext`.
     The view a launch opens on (Settings → Calendar, the month by default) is saved the same
-    way, in the `calendarView` section (`main/preferences/calendar-view.ts`) as `'month' | 'week' | 'day'` —
-    the same three names an `EventsSpan`'s `kind` uses, so there is one vocabulary for them.
+    way, in the `calendarView` section (`main/preferences/calendar-view.ts`) as `'month' | 'week' | 'day' | 'agenda'` —
+    the same names an `EventsSpan`'s `kind` uses, so there is one vocabulary for them.
     The app is localized into English, Spanish and Galician (`react-i18next`, resources under
     `renderer/src/i18n/locales/`). The language (Settings → Calendar) follows the OS language
     by default: `LanguageSnapshot` (`main/preferences/language.ts`, saved in the `language` section of
@@ -209,14 +213,15 @@ Standard electron-vite three-process layout:
     chips treat both alike. `typesInSpace` and `queriesInSpace` (`lib/calendar.ts`) split them.
     A result kept from another span is never drawn on this one. It also owns the span algebra
     the renderer needs: `spanFor` (the span a view wants around a date), `anchorOf` (the date
-    a span is anchored on — the first of a month, the first day of a week, the day itself),
+    a span is anchored on — the first of a month, the first day of a week or an agenda, the day itself),
     `shiftSpan` (one step in the span's own units) and `switchDateFor`.
   - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
     `ObjectType`, `Space`), deliberately kept out of the packages' domain layers — they
     describe what a component needs to draw, not what the calendar means.
   - `screens/<flow>/` — one directory per screen (`auth`, `onboarding`, `config`, `calendar`),
-    each with its own subcomponents. `screens/calendar` holds all three views: `CalendarScreen`
-    keeps the chrome and switches on `span.kind` between `MonthGrid` and `TimeGrid`, and
+    each with its own subcomponents. `screens/calendar` holds all four views: `CalendarScreen`
+    keeps the chrome and switches on `span.kind` between `MonthGrid`, `TimeGrid` and
+    `AgendaList`, and
     `TimeGrid` serves the week and the day alike — they differ only in how many columns it
     draws, so it takes `days: DayColumn[]`, seven of them or one. Every drag in the views —
     a bar in the month grid or the all-day band, a box or its bottom edge in the hour grid —
@@ -245,7 +250,7 @@ Standard electron-vite three-process layout:
     colour, so a space is marked by its initial in neutral ink.
   - `lib/calendar.ts` — calendar grid/date math for every view, over local `YYYY-MM-DD`
     dates, which compare in order as strings: `buildMonthGrid`, `buildWeek`, `addDays`, and
-    the `monthLabel`/`weekLabel`/`dayLabel` formatters. `weekLabel` uses
+    the `monthLabel`/`rangeLabel`/`dayLabel` formatters. `rangeLabel`, for a week or an agenda, uses
     `Intl.DateTimeFormat`'s `formatRange`, which says only what changes between the two dates
     — the month once inside one, twice across two, the year twice only across New Year — in
     the locale's own order.
@@ -261,6 +266,13 @@ Standard electron-vite three-process layout:
     positioned against the week row, whose columns it has to span (`event-span` in
     `styles/index.css`, which reads `--columns` and `--lane-top` from the row it sits in, so
     the same utility serves a seven-column month row and a one-column day band).
+  - `lib/agenda.ts` — `buildAgenda` turns an agenda's events into the days it lists: only
+    those holding something, plus today wherever the agenda covers it; all-day rows first,
+    then by start time, then by name; a range on each day it covers, with which day of how
+    many it is and what its time column says (its start on the first day, its end on the
+    last, all day between); and where today's "now" line falls. `AgendaList` draws the result
+    and takes nothing of the screen's chrome, so another window could reuse it. A list has no
+    slots, so nothing is dragged onto or created from it; objects are edited in their panel.
   - `lib/time-grid.ts` — where the week and day views put a day's timed objects.
     `splitDayEvents` first sends everything an hour grid cannot place to the all-day band:
     all-day objects, and ranges crossing midnight, which belong to several days at once and

@@ -30,6 +30,7 @@ describe('ViewSwitcher', () => {
     expect(screen.getByRole('radio', { name: 'Week' })).toBeChecked()
     expect(screen.getByRole('radio', { name: 'Day' })).not.toBeChecked()
     expect(screen.getByRole('radio', { name: 'Month' })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Agenda' })).not.toBeChecked()
   })
 
   it('is one tab stop, on the checked view', async () => {
@@ -52,7 +53,10 @@ describe('ViewSwitcher', () => {
     expect(screen.getByRole('radio', { name: 'Month' })).toBeChecked()
     expect(screen.getByRole('radio', { name: 'Month' })).toHaveFocus()
 
-    await user.keyboard('{ArrowLeft}{ArrowLeft}')
+    await user.keyboard('{ArrowRight}')
+    expect(onChange).toHaveBeenLastCalledWith('agenda')
+
+    await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}')
     expect(onChange).toHaveBeenLastCalledWith('day')
     expect(screen.getByRole('radio', { name: 'Day' })).toBeChecked()
   })

@@ -23,12 +23,12 @@ import {
   offersDates,
   parseTime,
   queriesInSpace,
+  rangeLabel,
   shortDate,
   spacesByKeys,
   typesInSpace,
   weekdayNames,
   weekdaysFrom,
-  weekLabel,
   withDates,
 } from './calendar'
 
@@ -595,9 +595,9 @@ describe('dayLabel', () => {
   })
 })
 
-describe('weekLabel', () => {
+describe('rangeLabel', () => {
   // Intl separates a range with thin spaces around the dash, which are not worth asserting.
-  const label = (start: string, end: string): string => weekLabel(start, end, 'en').replace(/\s+/g, ' ')
+  const label = (start: string, end: string): string => rangeLabel(start, end, 'en').replace(/\s+/g, ' ')
 
   test('names the month once for a week inside one', () => {
     expect(label('2026-09-21', '2026-09-27')).toBe('Sep 21 – 27, 2026')
@@ -609,6 +609,10 @@ describe('weekLabel', () => {
 
   test('names both years across New Year', () => {
     expect(label('2026-12-28', '2027-01-03')).toBe('Dec 28, 2026 – Jan 3, 2027')
+  })
+
+  test("spans an agenda's fourteen days", () => {
+    expect(label('2026-10-21', '2026-11-03')).toBe('Oct 21 – Nov 3, 2026')
   })
 })
 

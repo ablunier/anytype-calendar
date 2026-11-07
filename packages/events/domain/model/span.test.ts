@@ -55,6 +55,24 @@ describe('eventsSpanWindow', () => {
     })
   })
 
+  test('runs an agenda from its first day to the last instant of its fourteenth', () => {
+    expect(eventsSpanWindow({ kind: 'agenda', start: { year: 2026, month: 9, day: 21 } }, UTC)).toEqual({
+      start: Date.UTC(2026, 9, 21),
+      end: Date.UTC(2026, 10, 4) - 1,
+    })
+  })
+
+  test('runs an agenda across the end of a month, and of a year', () => {
+    expect(eventsSpanWindow({ kind: 'agenda', start: { year: 2026, month: 1, day: 20 } }, UTC)).toEqual({
+      start: Date.UTC(2026, 1, 20),
+      end: Date.UTC(2026, 2, 6) - 1,
+    })
+    expect(eventsSpanWindow({ kind: 'agenda', start: { year: 2026, month: 11, day: 25 } }, UTC)).toEqual({
+      start: Date.UTC(2026, 11, 25),
+      end: Date.UTC(2027, 0, 8) - 1,
+    })
+  })
+
   test("follows the zone's days, e.g. a week whose clocks change", () => {
     // A zone two hours ahead of UTC until 25 October, one hour ahead from then.
     const zone: EventsTimeZone = {
@@ -71,6 +89,10 @@ describe('eventsSpanWindow', () => {
       start: Date.UTC(2026, 9, 19) - 2 * HOUR_MS,
       end: Date.UTC(2026, 9, 26) - HOUR_MS - 1,
     })
+    expect(eventsSpanWindow({ kind: 'agenda', start: { year: 2026, month: 9, day: 19 } }, zone)).toEqual({
+      start: Date.UTC(2026, 9, 19) - 2 * HOUR_MS,
+      end: Date.UTC(2026, 10, 2) - HOUR_MS - 1,
+    })
   })
 })
 
@@ -78,6 +100,7 @@ describe('sameEventsSpan', () => {
   test('tells the kinds apart, even over the same day', () => {
     const start = { year: 2026, month: 8, day: 21 }
     expect(sameEventsSpan({ kind: 'week', start }, { kind: 'day', start })).toBe(false)
+    expect(sameEventsSpan({ kind: 'agenda', start }, { kind: 'week', start })).toBe(false)
   })
 
   test('compares a month by year and month', () => {
@@ -85,6 +108,12 @@ describe('sameEventsSpan', () => {
     expect(sameEventsSpan(span, { kind: 'month', year: 2026, month: 8 })).toBe(true)
     expect(sameEventsSpan(span, { kind: 'month', year: 2026, month: 9 })).toBe(false)
     expect(sameEventsSpan(span, { kind: 'month', year: 2027, month: 8 })).toBe(false)
+  })
+
+  test('compares an agenda by its first date', () => {
+    const span: EventsSpan = { kind: 'agenda', start: { year: 2026, month: 9, day: 21 } }
+    expect(sameEventsSpan(span, { kind: 'agenda', start: { year: 2026, month: 9, day: 21 } })).toBe(true)
+    expect(sameEventsSpan(span, { kind: 'agenda', start: { year: 2026, month: 9, day: 22 } })).toBe(false)
   })
 
   test('compares a week and a day by their first date', () => {
@@ -110,6 +139,10 @@ describe('toEventsSpan', () => {
       kind: 'day',
       start: { year: 2026, month: 8, day: 21 },
     })
+    expect(toEventsSpan({ kind: 'agenda', start: { year: 2026, month: 9, day: 21 }, days: 30 })).toEqual({
+      kind: 'agenda',
+      start: { year: 2026, month: 9, day: 21 },
+    })
   })
 
   test.each([
@@ -120,6 +153,7 @@ describe('toEventsSpan', () => {
     ['a month out of range', { kind: 'month', year: 2026, month: 12 }],
     ['a week with no start', { kind: 'week' }],
     ['a week whose start is a month', { kind: 'week', start: { year: 2026, month: 8 } }],
+    ['an agenda with no start', { kind: 'agenda' }],
     ['a day with a day out of range', { kind: 'day', start: { year: 2026, month: 8, day: 0 } }],
   ])('rejects %s', (_, value) => {
     expect(toEventsSpan(value)).toBeNull()

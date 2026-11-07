@@ -249,12 +249,14 @@
       "prev": {
         "month": "Previous month",
         "week": "Previous week",
-        "day": "Previous day"
+        "day": "Previous day",
+        "agenda": "Previous 2 weeks"
       },
       "next": {
         "month": "Next month",
         "week": "Next week",
-        "day": "Next day"
+        "day": "Next day",
+        "agenda": "Next 2 weeks"
       },
       "view": "Calendar view"
     },
@@ -294,7 +296,8 @@
     "view": {
       "month": "Month",
       "week": "Week",
-      "day": "Day"
+      "day": "Day",
+      "agenda": "Agenda"
     },
     "grid": {
       "month": "Month",
@@ -357,6 +360,18 @@
       "description": "Description",
       "readOnlyNotice": "From {{calendar}}, a subscribed calendar. It's read-only here: change it where it's published, and it updates on the next read.",
       "openLink": "Open link"
+    },
+    "agenda": {
+      "label": "Agenda",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "nothingElseToday": "Nothing else today",
+      "rangeDay": "Day {{day}} of {{of}}",
+      "until": "Until {{time}}",
+      "nextTwoWeeks": "Next 2 weeks",
+      "nothingSoon": "Nothing in the next 2 weeks",
+      "nothingIn": "Nothing in {{span}}",
+      "nothingDescription": "Events of the types you track appear here once one of their dates falls in these two weeks."
     }
   },
   "updates": {

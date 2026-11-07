@@ -267,8 +267,8 @@ export interface MonthCell extends DayColumn {
   day: number
 }
 
-/** Which of the three the calendar is drawing. Named for the spans they read. */
-export type CalendarView = 'month' | 'week' | 'day'
+/** Which of the four the calendar is drawing. Named for the spans they read. */
+export type CalendarView = 'month' | 'week' | 'day' | 'agenda'
 
 /**
  * Chosen locally once the session is connected; until then the auth session in main decides

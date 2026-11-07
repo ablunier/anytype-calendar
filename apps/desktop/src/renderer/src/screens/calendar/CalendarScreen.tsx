@@ -1,13 +1,14 @@
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { Button, EmptyState, Toast } from '@renderer/components/ui'
+import { buildAgenda } from '@renderer/lib/agenda'
 import {
   buildMonthGrid,
   buildWeek,
   dayLabel,
   indexBy,
   monthLabel,
+  rangeLabel,
   spacesByKeys,
-  weekLabel,
 } from '@renderer/lib/calendar'
 import { editFailureText, notAddedText, readOnlyText } from '@renderer/lib/edit-text'
 import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
@@ -28,6 +29,7 @@ import type {
 import type { EventsCreateRequest, EventsEditResult, EventsRescheduleRequest, EventsSetDoneRequest } from '@shared/ipc'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AgendaList } from './AgendaList'
 import { CalendarSidebar } from './CalendarSidebar'
 import { CalendarTopBar } from './CalendarTopBar'
 import { CreateEventDialog } from './CreateEventDialog'
@@ -38,7 +40,7 @@ import { TimeGrid } from './TimeGrid'
 import { useCalendarDrag } from './useCalendarDrag'
 
 export interface CalendarScreenProps {
-  /** What is on screen, which main holds: a month, a week or a day. */
+  /** What is on screen, which main holds: a month, a week, a day or an agenda. */
   span: EventsSpan
   /** Null until the span has been read. */
   events: CalendarEvent[] | null
@@ -104,7 +106,8 @@ export interface CalendarScreenProps {
  * never moved, ticked or created here: they belong to whoever publishes them.
  *
  * Where the session can write, objects are moved by dragging them, created by double-clicking
- * an empty day or hour, and ticked done from their panel; an edit that fails says why in a
+ * an empty day or hour, and ticked done from their panel — the agenda, a list with no slots,
+ * leaves only the panel; an edit that fails says why in a
  * toast, since the object has already gone back to where it was. Where it cannot, dragging is
  * off and a double-click says why.
  */
@@ -177,8 +180,14 @@ export function CalendarScreen({
     [span.kind, anchor, weekStart],
   )
 
+  const agenda = useMemo(
+    () => (span.kind === 'agenda' && events !== null ? buildAgenda(events, anchor, today, nowMinute) : null),
+    [span.kind, events, anchor, today, nowMinute],
+  )
+
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
-  const label = labelFor(span, days, i18n.language)
+  const shown = spanDays(span)
+  const label = labelFor(span, days, shown, i18n.language)
   const showsToday =
     span.kind === 'month'
       ? cells.some((cell) => !cell.outside && cell.date === today)
@@ -371,6 +380,39 @@ export function CalendarScreen({
                 }
               />
             </Centered>
+          ) : span.kind === 'agenda' ? (
+            agenda === null ? null : agenda.every((day) => day.rows.length === 0) ? (
+              <Centered>
+                <EmptyState
+                  icon="list"
+                  title={
+                    anchor === today
+                      ? t('calendar.agenda.nothingSoon')
+                      : t('calendar.agenda.nothingIn', { span: label })
+                  }
+                  description={t('calendar.agenda.nothingDescription')}
+                  action={
+                    anchor === today ? undefined : (
+                      <Button variant="secondary" size="sm" onClick={onToday}>
+                        {t('calendar.backToToday')}
+                      </Button>
+                    )
+                  }
+                />
+              </Centered>
+            ) : (
+              <AgendaList
+                days={agenda}
+                start={anchor}
+                today={today}
+                typesByKey={typesByKey}
+                spacesByKey={spacesByKey}
+                selectedDate={selectedDate}
+                onOpenEvent={openEvent}
+                onSelectDay={selectDate}
+                onNext={onNext}
+              />
+            )
           ) : span.kind === 'month' ? (
             <MonthGrid
               cells={cells}
@@ -412,7 +454,7 @@ export function CalendarScreen({
             spacesByKey={spacesByKey}
             readOnlyReason={readOnly}
             picker={{ today, weekStart, showWeekNumbers }}
-            shownDays={spanDays(span)}
+            shownDays={shown}
             onClose={() => setDetail(null)}
             onOpenEvent={openEvent}
             onSetDone={(event, done) => void edit(onSetDone({ spaceId: event.space, id: event.id, done }))}
@@ -444,10 +486,16 @@ function sameObject(a: CalendarEvent, b: CalendarEvent): boolean {
   return a.id === b.id && a.space === b.space
 }
 
-function labelFor(span: EventsSpan, days: { date: string }[], locale: string): string {
+function labelFor(
+  span: EventsSpan,
+  days: { date: string }[],
+  shown: { first: string; last: string },
+  locale: string,
+): string {
   if (span.kind === 'month') return monthLabel(span.year, span.month, locale)
   if (span.kind === 'day') return dayLabel(days[0]?.date ?? '', locale)
-  return weekLabel(days[0]?.date ?? '', days[days.length - 1]?.date ?? '', locale)
+  if (span.kind === 'agenda') return rangeLabel(shown.first, shown.last, locale)
+  return rangeLabel(days[0]?.date ?? '', days[days.length - 1]?.date ?? '', locale)
 }
 
 function Centered({ children }: { children: React.ReactNode }): React.JSX.Element {

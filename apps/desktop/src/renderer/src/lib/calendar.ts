@@ -191,11 +191,11 @@ export function dayLabel(date: string, locale: string): string {
 }
 
 /**
- * The range a week covers, `YYYY-MM-DD` both ends. `formatRange` says only what changes
- * between the two dates — the month once when the week sits inside one, twice when it
+ * The range a week or an agenda covers, `YYYY-MM-DD` both ends. `formatRange` says only what
+ * changes between the two dates — the month once when the range sits inside one, twice when it
  * straddles two, the year twice only across New Year — in the locale's own order.
  */
-export function weekLabel(start: string, end: string, locale: string): string {
+export function rangeLabel(start: string, end: string, locale: string): string {
   const [startYear, startMonth = 1, startDay = 1] = start.split('-').map(Number)
   const [endYear, endMonth = 1, endDay = 1] = end.split('-').map(Number)
   const from = new Date(startYear, startMonth - 1, startDay)

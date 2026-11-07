@@ -1,6 +1,6 @@
 import type { EventsTimeZone } from '../gateways/time-zone'
 import type { EventsDay } from './month'
-import type { EventsSpan } from './span'
+import { AGENDA_DAYS, type EventsSpan } from './span'
 
 /** Epoch milliseconds, both ends inclusive. */
 export interface EventsWindow {
@@ -25,7 +25,7 @@ export function eventsSpanWindow(span: EventsSpan, zone: EventsTimeZone): Events
       zone,
     )
   }
-  const days = span.kind === 'week' ? 7 : 1
+  const days = span.kind === 'agenda' ? AGENDA_DAYS : span.kind === 'week' ? 7 : 1
   return between(span.start, { ...span.start, day: span.start.day + days }, zone)
 }
 

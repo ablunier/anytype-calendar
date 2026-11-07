@@ -1,16 +1,21 @@
 import { type EventsDay, type EventsMonth, sameEventsMonth, toEventsDay, toEventsMonth } from './month'
 
+/** How many days an agenda lists, from its `start`. Fixed, so a span never carries a length. */
+export const AGENDA_DAYS = 14
+
 /**
  * The stretch of calendar on screen. Each kind carries only what pins it down — a month needs
- * no length, a week and a day no end — so no two fields of a span can ever disagree.
+ * no length, a week, a day and an agenda no end — so no two fields of a span can ever disagree.
  *
  * `week` names the seven days from `start`, whichever weekday that is: which day a week opens
- * on is the user's preference, settled before the span is asked for.
+ * on is the user's preference, settled before the span is asked for. `agenda` names the
+ * `AGENDA_DAYS` days from `start`.
  */
 export type EventsSpan =
   | ({ kind: 'month' } & EventsMonth)
   | { kind: 'week'; start: EventsDay }
   | { kind: 'day'; start: EventsDay }
+  | { kind: 'agenda'; start: EventsDay }
 
 export type EventsSpanKind = EventsSpan['kind']
 
@@ -30,7 +35,7 @@ export function toEventsSpan(value: unknown): EventsSpan | null {
     const month = toEventsMonth(value)
     return month && { kind, ...month }
   }
-  if (kind === 'week' || kind === 'day') {
+  if (kind === 'week' || kind === 'day' || kind === 'agenda') {
     const start = toEventsDay((value as Record<string, unknown>).start)
     return start && { kind, start }
   }
