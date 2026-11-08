@@ -270,7 +270,8 @@ Standard electron-vite three-process layout:
     those holding something, plus today wherever the agenda covers it; all-day rows first,
     then by start time, then by name; a range on each day it covers, with which day of how
     many it is and what its time column says (its start on the first day, its end on the
-    last, all day between); and where today's "now" line falls. `AgendaList` draws the result
+    last, all day between), a timed range that ends at midnight not reaching the day it ends
+    on; and where today's "now" line falls. `AgendaList` draws the result
     and takes nothing of the screen's chrome, so another window could reuse it. A list has no
     slots, so nothing is dragged onto or created from it; objects are edited in their panel.
   - `lib/time-grid.ts` — where the week and day views put a day's timed objects.

@@ -94,6 +94,30 @@ describe('buildAgenda', () => {
     ])
   })
 
+  test('keeps a timed range that ends at midnight off the day it ends on', () => {
+    const evening = event({ title: 'Evening', allDay: false, time: '22:00', until: '2026-10-22', end: '00:00' })
+    const night = event({
+      title: 'Night',
+      allDay: false,
+      date: '2026-10-23',
+      time: '20:00',
+      until: '2026-10-25',
+      end: '00:00',
+    })
+    const days = buildAgenda([evening, night], START, '2026-12-01', NOON)
+    expect(days.map(({ date, rows }) => [date, rows[0]?.time, rows[0]?.range])).toEqual([
+      ['2026-10-21', { kind: 'at', start: '22:00', end: '00:00' }, undefined],
+      ['2026-10-23', { kind: 'at', start: '20:00' }, { day: 1, of: 2 }],
+      ['2026-10-24', { kind: 'all-day' }, { day: 2, of: 2 }],
+    ])
+  })
+
+  test('keeps a range that ends at midnight running until the day is out', () => {
+    const evening = event({ title: 'Evening', allDay: false, time: '22:00', until: '2026-10-22', end: '00:00' })
+    expect(buildAgenda([evening], START, START, 23 * 60 + 59)[0]?.rows[0]?.ended).toBe(false)
+    expect(buildAgenda([evening], START, '2026-10-22', 0)[0]?.rows[0]?.ended).toBe(true)
+  })
+
   test('reads an all-day range as all day on each of its days', () => {
     const days = buildAgenda([event({ title: 'Fair', until: '2026-10-22' })], START, '2026-12-01', NOON)
     expect(days.map(({ rows }) => [rows[0]?.time, rows[0]?.range])).toEqual([

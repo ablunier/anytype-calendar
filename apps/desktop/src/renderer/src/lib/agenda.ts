@@ -49,7 +49,7 @@ export function buildAgenda(events: CalendarEvent[], start: string, today: strin
   const days: AgendaDay[] = []
   for (let date = start; date <= last; date = addDays(date, 1)) {
     const rows = events
-      .filter((event) => event.date <= date && date <= (event.until ?? event.date))
+      .filter((event) => event.date <= date && date <= lastDayOf(event))
       .map((event) => rowFor(event, date, today, nowMinute))
       .sort(compareRows)
     const isToday = date === today
@@ -60,7 +60,7 @@ export function buildAgenda(events: CalendarEvent[], start: string, today: strin
 }
 
 function rowFor(event: CalendarEvent, date: string, today: string, nowMinute: number): AgendaRow {
-  const until = event.until ?? event.date
+  const until = lastDayOf(event)
   const of = daysBetween(event.date, until) + 1
   const ended = endedBy(event, today, nowMinute)
   if (of === 1) {
@@ -75,7 +75,7 @@ function rowFor(event: CalendarEvent, date: string, today: string, nowMinute: nu
       ? { kind: 'all-day' }
       : date === event.date
         ? { kind: 'at', start: event.time }
-        : date === until && event.end !== undefined
+        : date === until && event.end !== undefined && !endsAtMidnight(event)
           ? { kind: 'until', end: event.end }
           : { kind: 'all-day' }
   return { event, time, range: { day: daysBetween(event.date, date) + 1, of }, ended }
@@ -86,11 +86,24 @@ function rowFor(event: CalendarEvent, date: string, today: string, nowMinute: nu
  * last day; a timed one with no end of its own is over once it has started.
  */
 function endedBy(event: CalendarEvent, today: string, nowMinute: number): boolean {
-  const until = event.until ?? event.date
+  const until = lastDayOf(event)
   if (until !== today) return until < today
-  if (event.allDay) return false
+  if (event.allDay || endsAtMidnight(event)) return false
   const end = event.end ?? (event.until === undefined ? event.time : undefined)
   return end !== undefined && minutesOf(end) <= nowMinute
+}
+
+/**
+ * The last day the object takes any of. A timed range that ends at midnight holds none of the
+ * day it ends on: subscribed calendars often end an evening that way.
+ */
+function lastDayOf(event: CalendarEvent): string {
+  const until = event.until ?? event.date
+  return endsAtMidnight(event) ? addDays(until, -1) : until
+}
+
+function endsAtMidnight(event: CalendarEvent): boolean {
+  return !event.allDay && event.until !== undefined && event.until > event.date && event.end === '00:00'
 }
 
 /**
