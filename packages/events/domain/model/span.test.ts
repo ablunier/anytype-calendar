@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import type { EventsTimeZone } from '../gateways/time-zone'
-import { type EventsSpan, sameEventsSpan, toEventsSpan } from './span'
+import { AGENDA_DAYS, type EventsSpan, eventsSpanLength, sameEventsSpan, toEventsSpan } from './span'
 import { eventsSpanWindow } from './window'
 
 const UTC: EventsTimeZone = {
@@ -157,5 +157,14 @@ describe('toEventsSpan', () => {
     ['a day with a day out of range', { kind: 'day', start: { year: 2026, month: 8, day: 0 } }],
   ])('rejects %s', (_, value) => {
     expect(toEventsSpan(value)).toBeNull()
+  })
+})
+
+describe('eventsSpanLength', () => {
+  test('counts a day, a week and an agenda in days', () => {
+    const start = { year: 2026, month: 2, day: 9 }
+    expect(eventsSpanLength({ kind: 'day', start })).toBe(1)
+    expect(eventsSpanLength({ kind: 'week', start })).toBe(7)
+    expect(eventsSpanLength({ kind: 'agenda', start })).toBe(AGENDA_DAYS)
   })
 })

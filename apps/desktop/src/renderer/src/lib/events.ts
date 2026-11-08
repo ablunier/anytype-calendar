@@ -3,7 +3,6 @@
  * the span in. */
 
 import {
-  AGENDA_DAYS,
   DEFAULT_EVENTS_DURATION_MINUTES,
   type EventsDatedObject,
   type EventsDetail,
@@ -12,6 +11,7 @@ import {
   type EventsSpan,
   type EventsSpanResult,
   eventsSourceHasEnd,
+  eventsSpanLength,
   sameEventsSpan,
   shownEventsSpan,
 } from '@anytype-calendar/events/domain'
@@ -48,7 +48,7 @@ export function spanDays(span: EventsSpan): { first: string; last: string } {
   if (span.kind === 'month') {
     return { first, last: isoDate(span.year, span.month, new Date(span.year, span.month + 1, 0).getDate()) }
   }
-  return { first, last: addDays(first, spanLength(span) - 1) }
+  return { first, last: addDays(first, eventsSpanLength(span) - 1) }
 }
 
 /** The span a view wants around `date` (`YYYY-MM-DD`), given the user's first day of the week. */
@@ -90,7 +90,7 @@ export function switchDateFor(span: EventsSpan, today: string): string {
     span.kind === 'month'
       ? // Both are `YYYY-MM-DD`, so the same month is the same first seven characters.
         anchor.slice(0, 7) === today.slice(0, 7)
-      : anchor <= today && today <= addDays(anchor, spanLength(span) - 1)
+      : anchor <= today && today <= addDays(anchor, eventsSpanLength(span) - 1)
   return covers ? today : anchor
 }
 
@@ -100,7 +100,7 @@ export function shiftSpan(span: EventsSpan, delta: number): EventsSpan {
     const index = span.year * 12 + span.month + delta
     return { kind: 'month', year: Math.floor(index / 12), month: ((index % 12) + 12) % 12 }
   }
-  const moved = addDays(anchorOf(span), delta * spanLength(span))
+  const moved = addDays(anchorOf(span), delta * eventsSpanLength(span))
   const [year, month = 1, day = 1] = moved.split('-').map(Number)
   return { kind: span.kind, start: { year, month: month - 1, day } }
 }
@@ -215,11 +215,6 @@ function rescheduleRequestFor(event: CalendarEvent, change: EventsReschedule): E
 function eventsSlotOf({ date, minute }: CalendarSlot): EventsSlot {
   const [year, month = 1, day = 1] = date.split('-').map(Number)
   return { day: { year, month: month - 1, day }, minute }
-}
-
-/** In days, for every kind but a month, whose length depends on which month it is. */
-function spanLength(span: Exclude<EventsSpan, { kind: 'month' }>): number {
-  return span.kind === 'agenda' ? AGENDA_DAYS : span.kind === 'week' ? 7 : 1
 }
 
 function resultFor(snapshot: EventsSnapshot, span: EventsSpan): EventsSpanResult | undefined {

@@ -19,6 +19,11 @@ export type EventsSpan =
 
 export type EventsSpanKind = EventsSpan['kind']
 
+/** In days, for every kind but a month, whose length depends on which month it is. */
+export function eventsSpanLength(span: Exclude<EventsSpan, { kind: 'month' }>): number {
+  return span.kind === 'agenda' ? AGENDA_DAYS : span.kind === 'week' ? 7 : 1
+}
+
 export function sameEventsSpan(a: EventsSpan, b: EventsSpan): boolean {
   if (a.kind !== b.kind) return false
   if (a.kind === 'month') return sameEventsMonth(a, b as EventsMonth)
