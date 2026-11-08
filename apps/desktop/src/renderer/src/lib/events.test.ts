@@ -17,6 +17,7 @@ import {
   resizeRequestFor,
   shiftSpan,
   shownSpanFor,
+  spanCovers,
   spanDays,
   spanFor,
   spanStatusFor,
@@ -404,6 +405,21 @@ describe('switchDateFor', () => {
     expect(spanFor('month', switchDateFor(agenda, TODAY), 0)).toEqual({ kind: 'month', year: 2026, month: 10 })
     expect(spanFor('week', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('week', '2026-11-30', 0))
     expect(spanFor('day', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('day', '2026-11-30', 0))
+  })
+})
+
+describe('spanCovers', () => {
+  test("covers a month's own days, not the padding its grid borrows", () => {
+    expect(spanCovers(SEPTEMBER, '2026-09-01')).toBe(true)
+    expect(spanCovers(SEPTEMBER, '2026-09-30')).toBe(true)
+    expect(spanCovers(SEPTEMBER, '2026-10-01')).toBe(false)
+  })
+
+  test('covers an agenda from its first day to its fourteenth', () => {
+    const agenda = spanFor('agenda', '2026-09-10', 0)
+    expect(spanCovers(agenda, '2026-09-09')).toBe(false)
+    expect(spanCovers(agenda, '2026-09-23')).toBe(true)
+    expect(spanCovers(agenda, '2026-09-24')).toBe(false)
   })
 })
 

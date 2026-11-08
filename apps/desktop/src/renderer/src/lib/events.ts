@@ -85,13 +85,13 @@ export function anchorOf(span: EventsSpan): string {
  * other month stays where they were looking.
  */
 export function switchDateFor(span: EventsSpan, today: string): string {
-  const anchor = anchorOf(span)
-  const covers =
-    span.kind === 'month'
-      ? // Both are `YYYY-MM-DD`, so the same month is the same first seven characters.
-        anchor.slice(0, 7) === today.slice(0, 7)
-      : anchor <= today && today <= addDays(anchor, eventsSpanLength(span) - 1)
-  return covers ? today : anchor
+  return spanCovers(span, today) ? today : anchorOf(span)
+}
+
+/** Whether `date` (`YYYY-MM-DD`) is one of the span's own days: not a month's padding days. */
+export function spanCovers(span: EventsSpan, date: string): boolean {
+  const { first, last } = spanDays(span)
+  return first <= date && date <= last
 }
 
 /** The span one step on from this one, in its own units. */

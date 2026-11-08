@@ -372,6 +372,12 @@ describe('CalendarScreen agenda', () => {
     expect(props.onNext).toHaveBeenCalledTimes(1)
   })
 
+  it('with nothing in two weeks that take in today, names them without sending the reader back', () => {
+    renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } }, events: [] })
+    expect(screen.getByText(/Nothing in Nov 1\s*–\s*14, 2026/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back to today' })).not.toBeInTheDocument()
+  })
+
   it('with nothing in the next two weeks, says so', () => {
     renderCalendar({ span: agenda, events: [] })
     expect(screen.getByText('Nothing in the next 2 weeks')).toBeInTheDocument()

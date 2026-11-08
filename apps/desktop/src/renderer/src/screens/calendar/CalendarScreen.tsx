@@ -11,7 +11,14 @@ import {
   spacesByKeys,
 } from '@renderer/lib/calendar'
 import { editFailureText, notAddedText, readOnlyText } from '@renderer/lib/edit-text'
-import { anchorOf, createRequestFor, moveRequestFor, resizeRequestFor, spanDays } from '@renderer/lib/events'
+import {
+  anchorOf,
+  createRequestFor,
+  moveRequestFor,
+  resizeRequestFor,
+  spanCovers,
+  spanDays,
+} from '@renderer/lib/events'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import { allHidden, visibleEvents } from '@renderer/lib/visibility'
 import type {
@@ -188,10 +195,7 @@ export function CalendarScreen({
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
   const shown = spanDays(span)
   const label = labelFor(span, days, shown, i18n.language)
-  const showsToday =
-    span.kind === 'month'
-      ? cells.some((cell) => !cell.outside && cell.date === today)
-      : days.some((day) => day.date === today)
+  const showsToday = spanCovers(span, today)
 
   const [openDetail, setDetail] = useState<DetailTarget | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -392,7 +396,7 @@ export function CalendarScreen({
                   }
                   description={t('calendar.agenda.nothingDescription')}
                   action={
-                    anchor === today ? undefined : (
+                    showsToday ? undefined : (
                       <Button variant="secondary" size="sm" onClick={onToday}>
                         {t('calendar.backToToday')}
                       </Button>
