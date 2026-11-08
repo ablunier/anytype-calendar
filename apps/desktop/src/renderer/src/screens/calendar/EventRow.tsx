@@ -9,11 +9,10 @@ export interface EventRowProps {
   title: string
   category: CategoryHue
   time?: string
-  /**
-   * Drawn in the time column instead of `time`, already formatted, in a column wide enough
-   * for a start and an end.
-   */
+  /** Drawn in the time column instead of `time`, already formatted. */
   timeText?: string
+  /** Widens the time column to fit a start and an end. */
+  wideTime?: boolean
   /** Drawn after the title, e.g. which day of a range the row is. */
   note?: string
   /** A second line under the title. */
@@ -32,6 +31,7 @@ export function EventRow({
   category,
   time,
   timeText,
+  wideTime = false,
   note,
   subtitle,
   done = false,
@@ -57,7 +57,7 @@ export function EventRow({
       <span
         className={[
           'shrink-0 font-mono text-tiny tabular-nums',
-          timeText === undefined ? 'w-64' : 'w-116',
+          wideTime ? 'w-116' : 'w-64',
           timed ? 'text-ink-secondary' : 'text-ink-tertiary',
         ].join(' ')}
       >
@@ -69,7 +69,8 @@ export function EventRow({
           <span
             className={[
               'min-w-0 truncate type-body text-small text-ink-body',
-              done ? 'line-through opacity-60' : '',
+              // A dimmed row is faded whole already.
+              done ? (dimmed ? 'line-through' : 'line-through opacity-60') : '',
             ].join(' ')}
           >
             {title}

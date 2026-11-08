@@ -372,6 +372,17 @@ describe('CalendarScreen agenda', () => {
     expect(props.onNext).toHaveBeenCalledTimes(1)
   })
 
+  it('draws an all-day row muted, as the day panel does, and a done row that is over faded once', () => {
+    const over = { ...call, date: '2026-11-03', until: '2026-11-03', time: '08:00', end: '09:00', done: true }
+    renderCalendar({ span: agenda, events: [minutes, over] })
+    const allDay = within(list()).getByRole('button', { name: /all-day/ })
+    expect(within(allDay).getByText('all-day')).toHaveClass('text-ink-tertiary')
+    const title = within(list()).getByText('Call the bank')
+    expect(title).toHaveClass('line-through')
+    expect(title).not.toHaveClass('opacity-60')
+    expect(title.closest('button')).toHaveClass('opacity-60')
+  })
+
   it('with nothing in two weeks that take in today, names them without sending the reader back', () => {
     renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } }, events: [] })
     expect(screen.getByText(/Nothing in Nov 1\s*–\s*14, 2026/)).toBeInTheDocument()

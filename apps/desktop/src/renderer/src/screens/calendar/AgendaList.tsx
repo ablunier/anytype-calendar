@@ -54,7 +54,8 @@ export function AgendaList({
   })
   useEffect(() => scrollToToday(start), [start])
 
-  const time = (value: AgendaTime): string => timeText(t, value, (hhmm) => formatTime(hhmm, timeFormat, i18n.language))
+  const time = (value: TimedAgendaTime): string =>
+    timeText(t, value, (hhmm) => formatTime(hhmm, timeFormat, i18n.language))
 
   return (
     <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto">
@@ -111,7 +112,8 @@ export function AgendaList({
                       <EventRow
                         title={row.event.title || t('common.untitled')}
                         category={eventHue(row.event, typesByKey.get(row.event.type))}
-                        timeText={time(row.time)}
+                        {...(row.time.kind === 'all-day' ? {} : { timeText: time(row.time) })}
+                        wideTime
                         {...(row.range
                           ? { note: t('calendar.agenda.rangeDay', { day: row.range.day, of: row.range.of }) }
                           : {})}
@@ -143,10 +145,11 @@ export function AgendaList({
   )
 }
 
-function timeText(t: TFunction, time: AgendaTime, format: (hhmm: string) => string): string {
+/** All-day rows are left to `EventRow`, which says so the way the day panel does. */
+type TimedAgendaTime = Exclude<AgendaTime, { kind: 'all-day' }>
+
+function timeText(t: TFunction, time: TimedAgendaTime, format: (hhmm: string) => string): string {
   switch (time.kind) {
-    case 'all-day':
-      return t('calendar.eventRow.allDay')
     case 'until':
       return t('calendar.agenda.until', { time: format(time.end) })
     case 'at':
