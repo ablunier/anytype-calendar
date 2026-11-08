@@ -17,7 +17,7 @@ export interface ViewSwitcherProps {
 }
 
 /**
- * A segmented control, so every view stay visible and one click apart. Native radios
+ * A segmented control, so every view stays visible and one click apart. Native radios
  * give it one tab stop and the arrow keys between views.
  */
 export function ViewSwitcher({ view, onChange }: ViewSwitcherProps): React.JSX.Element {
