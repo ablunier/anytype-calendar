@@ -383,6 +383,27 @@ describe('CalendarScreen agenda', () => {
     expect(title.closest('button')).toHaveClass('opacity-60')
   })
 
+  it('opens scrolled to today when the agenda starts before it, and at the top when it starts today', () => {
+    // jsdom lays nothing out, so today's day is given a place of its own.
+    const offsetTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.hasAttribute('data-today') ? 240 : 0
+    })
+    const scrollTo = vi.spyOn(Element.prototype, 'scrollTo')
+    const { unmount } = renderCalendar({
+      span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } },
+      events: [call],
+    })
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 240 })
+    unmount()
+
+    renderCalendar({ span: agenda, events: [call] })
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0 })
+    scrollTo.mockRestore()
+    offsetTop.mockRestore()
+  })
+
   it('with nothing in two weeks that take in today, names them without sending the reader back', () => {
     renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } }, events: [] })
     expect(screen.getByText(/Nothing in Nov 1\s*–\s*14, 2026/)).toBeInTheDocument()
