@@ -1,5 +1,5 @@
 import { TypeTile } from '@renderer/components/app/TypeTile'
-import { Button, Icon } from '@renderer/components/ui'
+import { Icon } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import type { AgendaDay, AgendaRow, AgendaTime } from '@renderer/lib/agenda'
 import { addDays, eventHue, formatTime, shortDate } from '@renderer/lib/calendar'
@@ -23,7 +23,6 @@ export interface AgendaListProps {
   /** `date` is the day the row was clicked on, `YYYY-MM-DD`. */
   onOpenEvent: (event: CalendarEvent, date: string) => void
   onSelectDay: (date: string) => void
-  onNext: () => void
 }
 
 /**
@@ -39,7 +38,6 @@ export function AgendaList({
   selectedDate,
   onOpenEvent,
   onSelectDay,
-  onNext,
 }: AgendaListProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
   const timeFormat = useTimeFormatValue()
@@ -136,11 +134,6 @@ export function AgendaList({
           )
         })}
       </ol>
-      <div className="flex justify-center pb-24">
-        <Button variant="secondary" size="sm" iconRight="chevron-right" onClick={onNext}>
-          {t('calendar.agenda.nextTwoWeeks')}
-        </Button>
-      </div>
     </div>
   )
 }

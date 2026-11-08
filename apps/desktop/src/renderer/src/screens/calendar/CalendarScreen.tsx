@@ -414,7 +414,6 @@ export function CalendarScreen({
                 selectedDate={selectedDate}
                 onOpenEvent={openEvent}
                 onSelectDay={selectDate}
-                onNext={onNext}
               />
             )
           ) : span.kind === 'month' ? (

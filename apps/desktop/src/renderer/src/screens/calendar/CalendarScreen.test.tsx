@@ -364,14 +364,6 @@ describe('CalendarScreen agenda', () => {
     expect(within(panel).getByRole('heading', { name: 'November 5, 2026' })).toBeInTheDocument()
   })
 
-  it('moves on two weeks from the end of the list', async () => {
-    const { user, props } = renderCalendar({ span: agenda, events: [call] })
-    // The forward arrow has the same name; this is the one under the list.
-    const [, below] = screen.getAllByRole('button', { name: 'Next 2 weeks' })
-    await user.click(below as HTMLElement)
-    expect(props.onNext).toHaveBeenCalledTimes(1)
-  })
-
   it('draws an all-day row muted, as the day panel does, and a done row that is over faded once', () => {
     const over = { ...call, date: '2026-11-03', until: '2026-11-03', time: '08:00', end: '09:00', done: true }
     renderCalendar({ span: agenda, events: [minutes, over] })

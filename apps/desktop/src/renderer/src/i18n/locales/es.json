@@ -368,7 +368,6 @@
       "nothingElseToday": "Nada más hoy",
       "rangeDay": "Día {{day}} de {{of}}",
       "until": "Hasta {{time}}",
-      "nextTwoWeeks": "2 semanas siguientes",
       "nothingSoon": "Nada en las próximas 2 semanas",
       "nothingIn": "Nada en {{span}}",
       "nothingDescription": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en estas dos semanas."
