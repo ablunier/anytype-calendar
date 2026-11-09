@@ -13,6 +13,11 @@ describe('defaultEventsSpan', () => {
     expect(defaultEventsSpan('day', TODAY, 0)).toEqual({ kind: 'day', start: TODAY })
   })
 
+  test('opens an agenda on today, whatever weekday it is', () => {
+    expect(defaultEventsSpan('agenda', TODAY, 0)).toEqual({ kind: 'agenda', start: TODAY })
+    expect(defaultEventsSpan('agenda', TODAY, 6)).toEqual({ kind: 'agenda', start: TODAY })
+  })
+
   test("opens a week view on the user's own first day of the week", () => {
     expect(defaultEventsSpan('week', TODAY, 0)).toEqual({
       kind: 'week',

@@ -235,6 +235,7 @@ function Settings({
                   { value: 'day', label: t('calendar.view.day') },
                   { value: 'week', label: t('calendar.view.week') },
                   { value: 'month', label: t('calendar.view.month') },
+                  { value: 'agenda', label: t('calendar.view.agenda') },
                 ]}
                 value={calendarView}
                 onChange={(value) => onCalendarView(value as CalendarView)}

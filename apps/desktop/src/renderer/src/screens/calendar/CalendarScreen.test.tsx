@@ -301,3 +301,120 @@ describe('CalendarScreen empty states', () => {
     expect(screen.queryByRole('grid', { name: 'Month' })).not.toBeInTheDocument()
   })
 })
+
+describe('CalendarScreen agenda', () => {
+  // Today, 3 November, is the agenda's first day; it runs to the 16th.
+  const agenda = { kind: 'agenda', start: { year: 2026, month: 10, day: 3 } } as const
+  const call: CalendarEvent = {
+    id: 'obj-call',
+    title: 'Call the bank',
+    type: task.key,
+    space: 'work',
+    rank: 0,
+    date: '2026-11-05',
+    time: '10:30',
+    until: '2026-11-05',
+    end: '11:00',
+    allDay: false,
+    location: 'Office',
+    done: false,
+    details: [],
+  }
+  const list = (): HTMLElement => screen.getByRole('list', { name: 'Agenda' })
+  const header = (name: RegExp): HTMLElement => within(list()).getByRole('button', { name })
+
+  it('lists today and the days that hold something, in order', () => {
+    renderCalendar({ span: agenda, events: [report, minutes, call] })
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Nov 3\s*–\s*16, 2026/)
+    const days = within(list())
+      .getAllByRole('button')
+      .filter((button) => button.closest('h2'))
+      .map((button) => button.textContent)
+    expect(days).toEqual(['TodayTue, Nov 3', 'Thu, Nov 52 events', 'Wed, Nov 111 event', 'Thu, Nov 121 event'])
+    expect(screen.getByText('Nothing else today')).toBeInTheDocument()
+  })
+
+  it("draws a row's times, type, space, place and day of a range", () => {
+    renderCalendar({ span: agenda, events: [report, call] })
+    const row = within(list()).getByRole('button', { name: /Call the bank/ })
+    expect(row).toHaveTextContent('10:30 – 11:00')
+    expect(row).toHaveTextContent('Task · Work')
+    expect(row).toHaveTextContent('Office')
+    expect(
+      within(list())
+        .getAllByRole('button', { name: /Write the report/ })
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Day 1 of 2'), expect.stringContaining('Day 2 of 2')])
+  })
+
+  it('opens the panel of a row, where ticking it done updates the list', async () => {
+    const { user, props, update } = renderCalendar({ span: agenda, events: [call] })
+    await user.click(within(list()).getByRole('button', { name: /Call the bank/ }))
+    await user.click(within(eventPanel() as HTMLElement).getByRole('switch', { name: 'Done' }))
+    expect(props.onSetDone).toHaveBeenCalledWith({ spaceId: 'work', id: call.id, done: true })
+
+    update({ events: [{ ...call, done: true }] })
+    expect(within(list()).getByText('Call the bank')).toHaveClass('line-through')
+  })
+
+  it("opens a day's panel from its header", async () => {
+    const { user } = renderCalendar({ span: agenda, events: [call] })
+    await user.click(header(/Thu, Nov 5/))
+    const panel = screen.getByRole('complementary', { name: 'Day detail' })
+    expect(within(panel).getByRole('heading', { name: 'November 5, 2026' })).toBeInTheDocument()
+  })
+
+  it('draws an all-day row muted, as the day panel does, and a done row that is over faded once', () => {
+    const over = { ...call, date: '2026-11-03', until: '2026-11-03', time: '08:00', end: '09:00', done: true }
+    renderCalendar({ span: agenda, events: [minutes, over] })
+    const allDay = within(list()).getByRole('button', { name: /all-day/ })
+    expect(within(allDay).getByText('all-day')).toHaveClass('text-ink-tertiary')
+    const title = within(list()).getByText('Call the bank')
+    expect(title).toHaveClass('line-through')
+    expect(title).not.toHaveClass('opacity-60')
+    expect(title.closest('button')).toHaveClass('opacity-60')
+  })
+
+  it('opens scrolled to today when the agenda starts before it, and at the top when it starts today', () => {
+    // jsdom lays nothing out, so today's day is given a place of its own.
+    const offsetTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.hasAttribute('data-today') ? 240 : 0
+    })
+    const scrollTo = vi.spyOn(Element.prototype, 'scrollTo')
+    const { unmount } = renderCalendar({
+      span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } },
+      events: [call],
+    })
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 240 })
+    unmount()
+
+    renderCalendar({ span: agenda, events: [call] })
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0 })
+    scrollTo.mockRestore()
+    offsetTop.mockRestore()
+  })
+
+  it('with nothing in two weeks that take in today, names them without sending the reader back', () => {
+    renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } }, events: [] })
+    expect(screen.getByText(/Nothing in Nov 1\s*–\s*14, 2026/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back to today' })).not.toBeInTheDocument()
+  })
+
+  it('with nothing in the next two weeks, says so', () => {
+    renderCalendar({ span: agenda, events: [] })
+    expect(screen.getByText('Nothing in the next 2 weeks')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back to today' })).not.toBeInTheDocument()
+  })
+
+  it('with nothing in two weeks elsewhere, names them and offers to go back to today', async () => {
+    const { user, props } = renderCalendar({
+      span: { kind: 'agenda', start: { year: 2026, month: 11, day: 1 } },
+      events: [],
+    })
+    expect(screen.getByText(/Nothing in Dec 1\s*–\s*14, 2026/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to today' }))
+    expect(props.onToday).toHaveBeenCalledTimes(1)
+  })
+})

@@ -249,12 +249,14 @@
       "prev": {
         "month": "Mes anterior",
         "week": "Semana anterior",
-        "day": "Día anterior"
+        "day": "Día anterior",
+        "agenda": "2 semanas anteriores"
       },
       "next": {
         "month": "Mes seguinte",
         "week": "Semana seguinte",
-        "day": "Día seguinte"
+        "day": "Día seguinte",
+        "agenda": "2 semanas seguintes"
       },
       "view": "Vista do calendario"
     },
@@ -294,7 +296,8 @@
     "view": {
       "month": "Mes",
       "week": "Semana",
-      "day": "Día"
+      "day": "Día",
+      "agenda": "Axenda"
     },
     "grid": {
       "month": "Mes",
@@ -357,6 +360,17 @@
       "description": "Descrición",
       "readOnlyNotice": "De {{calendar}}, un calendario subscrito. Aquí é só de lectura: cámbiao onde se publica e actualizarase na seguinte lectura.",
       "openLink": "Abrir ligazón"
+    },
+    "agenda": {
+      "label": "Axenda",
+      "today": "Hoxe",
+      "tomorrow": "Mañá",
+      "nothingElseToday": "Nada máis hoxe",
+      "rangeDay": "Día {{day}} de {{of}}",
+      "until": "Ata {{time}}",
+      "nothingSoon": "Nada nas próximas 2 semanas",
+      "nothingIn": "Nada en {{span}}",
+      "nothingDescription": "Os eventos dos tipos que segues aparecerán aquí en canto unha das súas datas caia nestas dúas semanas."
     }
   },
   "updates": {

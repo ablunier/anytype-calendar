@@ -11,6 +11,7 @@ import {
   type EventsSpan,
   type EventsSpanResult,
   eventsSourceHasEnd,
+  eventsSpanLength,
   sameEventsSpan,
   shownEventsSpan,
 } from '@anytype-calendar/events/domain'
@@ -47,7 +48,7 @@ export function spanDays(span: EventsSpan): { first: string; last: string } {
   if (span.kind === 'month') {
     return { first, last: isoDate(span.year, span.month, new Date(span.year, span.month + 1, 0).getDate()) }
   }
-  return { first, last: span.kind === 'week' ? addDays(first, 6) : first }
+  return { first, last: addDays(first, eventsSpanLength(span) - 1) }
 }
 
 /** The span a view wants around `date` (`YYYY-MM-DD`), given the user's first day of the week. */
@@ -57,7 +58,8 @@ export function spanFor(view: CalendarView, date: string, weekStart: number): Ev
     case 'month':
       return { kind: 'month', year, month: month - 1 }
     case 'day':
-      return { kind: 'day', start: { year, month: month - 1, day } }
+    case 'agenda':
+      return { kind: view, start: { year, month: month - 1, day } }
     case 'week': {
       const first = buildWeek(date, weekStart)[0]?.date ?? date
       const [weekYear, weekMonth = 1, weekDay = 1] = first.split('-').map(Number)
@@ -68,7 +70,7 @@ export function spanFor(view: CalendarView, date: string, weekStart: number): Ev
 
 /**
  * The date a span is anchored on, `YYYY-MM-DD`: the day a day view draws, the first day of a
- * week, or the first of a month. Navigation and the label are worked out from it.
+ * week or an agenda, or the first of a month. Navigation and the label are worked out from it.
  */
 export function anchorOf(span: EventsSpan): string {
   return span.kind === 'month'
@@ -83,13 +85,13 @@ export function anchorOf(span: EventsSpan): string {
  * other month stays where they were looking.
  */
 export function switchDateFor(span: EventsSpan, today: string): string {
-  const anchor = anchorOf(span)
-  const covers =
-    span.kind === 'month'
-      ? // Both are `YYYY-MM-DD`, so the same month is the same first seven characters.
-        anchor.slice(0, 7) === today.slice(0, 7)
-      : anchor <= today && today <= addDays(anchor, span.kind === 'week' ? 6 : 0)
-  return covers ? today : anchor
+  return spanCovers(span, today) ? today : anchorOf(span)
+}
+
+/** Whether `date` (`YYYY-MM-DD`) is one of the span's own days: not a month's padding days. */
+export function spanCovers(span: EventsSpan, date: string): boolean {
+  const { first, last } = spanDays(span)
+  return first <= date && date <= last
 }
 
 /** The span one step on from this one, in its own units. */
@@ -98,7 +100,7 @@ export function shiftSpan(span: EventsSpan, delta: number): EventsSpan {
     const index = span.year * 12 + span.month + delta
     return { kind: 'month', year: Math.floor(index / 12), month: ((index % 12) + 12) % 12 }
   }
-  const moved = addDays(anchorOf(span), delta * (span.kind === 'week' ? 7 : 1))
+  const moved = addDays(anchorOf(span), delta * eventsSpanLength(span))
   const [year, month = 1, day = 1] = moved.split('-').map(Number)
   return { kind: span.kind, start: { year, month: month - 1, day } }
 }

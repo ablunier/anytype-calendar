@@ -50,11 +50,11 @@ describe('Galician calendar fallback', () => {
     expect(dayLabel('2026-09-23', 'gl')).toBe('mércores, 23 de setembro de 2026')
   })
 
-  test('weekLabel names the month once inside one, and both across two', async () => {
-    const { weekLabel } = await import('./calendar')
-    expect(weekLabel('2026-09-21', '2026-09-27', 'gl')).toBe('21–27 de set. de 2026')
-    expect(weekLabel('2026-09-28', '2026-10-04', 'gl')).toBe('28 de set.–4 de out. de 2026')
-    expect(weekLabel('2026-12-28', '2027-01-03', 'gl')).toBe('28 de dec. de 2026–3 de xan. de 2027')
+  test('rangeLabel names the month once inside one, and both across two', async () => {
+    const { rangeLabel } = await import('./calendar')
+    expect(rangeLabel('2026-09-21', '2026-09-27', 'gl')).toBe('21–27 de set. de 2026')
+    expect(rangeLabel('2026-09-28', '2026-10-04', 'gl')).toBe('28 de set.–4 de out. de 2026')
+    expect(rangeLabel('2026-12-28', '2027-01-03', 'gl')).toBe('28 de dec. de 2026–3 de xan. de 2027')
   })
 
   test('formatTime uses a.m./p.m. and leaves 24h untouched', async () => {

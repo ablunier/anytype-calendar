@@ -3,11 +3,12 @@ import type { CalendarView, IconName } from '@renderer/types'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 
-/** Shortest span first, so the three read as one scale widening to the right. */
+/** Shortest span first, so the views read as one scale widening to the right. */
 const VIEWS: { view: CalendarView; icon: IconName }[] = [
   { view: 'day', icon: 'calendar' },
   { view: 'week', icon: 'columns-3' },
   { view: 'month', icon: 'calendar-days' },
+  { view: 'agenda', icon: 'list' },
 ]
 
 export interface ViewSwitcherProps {
@@ -16,7 +17,7 @@ export interface ViewSwitcherProps {
 }
 
 /**
- * A segmented control, so all three views stay visible and one click apart. Native radios
+ * A segmented control, so every view stays visible and one click apart. Native radios
  * give it one tab stop and the arrow keys between views.
  */
 export function ViewSwitcher({ view, onChange }: ViewSwitcherProps): React.JSX.Element {

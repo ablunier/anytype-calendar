@@ -12,7 +12,8 @@ export function defaultEventsSpan(view: EventsSpanKind, today: EventsDay, weekSt
     case 'month':
       return { kind: 'month', year: today.year, month: today.month }
     case 'day':
-      return { kind: 'day', start: today }
+    case 'agenda':
+      return { kind: view, start: today }
     case 'week':
       return { kind: 'week', start: startOfWeek(today, weekStart) }
   }
