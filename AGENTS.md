@@ -10,7 +10,7 @@ Electron + React desktop calendar over the Anytype local API. npm workspaces mon
 
 ## Commands
 
-Run from the repo root. CI runs lint, typecheck, tests and `lint:arch`.
+Run from the repo root. CI runs lint, typecheck, tests, `lint:arch` and a gitleaks scan of the whole history; allowlist a false positive in `.gitleaks.toml`.
 
 | Task                  | Command                                                                |
 | --------------------- | ---------------------------------------------------------------------- |

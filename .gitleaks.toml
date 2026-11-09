@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+# generic-api-key reads a 24-hex Anytype object id under a `key` field as a secret.
+[[allowlists]]
+description = "Anytype object ids in test fixtures"
+condition = "AND"
+paths = ['''\.test\.tsx?$''']
+regexes = ['''^[0-9a-f]{24}$''']
+
+[[allowlists]]
+description = "The fake API key of the credential tests"
+regexes = ['''^ak_0123456789abcdef''']
