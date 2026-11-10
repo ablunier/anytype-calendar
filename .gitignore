@@ -3,10 +3,6 @@ out
 dist
 *.tsbuildinfo
 *.log
-CLAUDE.md
-.claude
-!/.claude/
 /.claude/*
-!/.claude/skills/
-/.claude/skills/*
-!/.claude/skills/run-desktop
+!/.claude/settings.json
+!/.claude/skills
