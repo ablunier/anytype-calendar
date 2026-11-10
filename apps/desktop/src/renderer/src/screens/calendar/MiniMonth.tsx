@@ -116,7 +116,7 @@ export function MiniMonth({
                         disabled
                           ? 'cursor-not-allowed bg-transparent text-ink-muted opacity-50'
                           : isToday
-                            ? 'bg-surface-accent text-ink-inverse'
+                            ? 'bg-today-ink text-stone-000'
                             : inSpan
                               ? 'bg-surface-sunken text-ink-primary hover:bg-surface-active'
                               : [
