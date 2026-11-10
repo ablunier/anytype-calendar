@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '26.8.1'
           cache: npm
@@ -36,7 +36,7 @@ jobs:
       # From the release's gitleaks_8.30.1_checksums.txt, for gitleaks_8.30.1_linux_x64.tar.gz.
       GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # gitleaks scans every commit, not just the checked-out tree.
           fetch-depth: 0
