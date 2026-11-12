@@ -1,9 +1,10 @@
 /* The agenda as a list: the days of a span that hold something, each with its rows in the
  * order they are read. Pure and translation-free; `AgendaList` draws it. */
 
-import { AGENDA_DAYS } from '@anytype-calendar/events/domain'
+import type { EventsSpan } from '@anytype-calendar/events/domain'
 import type { CalendarEvent } from '@renderer/types'
 import { addDays, daysBetween } from './calendar'
+import { spanDays } from './events'
 import { minutesOf } from './time-grid'
 
 /** What a row's time column says. Times are `HH:MM`. */
@@ -36,18 +37,19 @@ export interface AgendaDay {
   nowBefore: number | null
 }
 
+export type AgendaSpan = Extract<EventsSpan, { kind: 'agenda' }>
+
 /**
- * The days from `start` (`YYYY-MM-DD`) that `AGENDA_DAYS` covers and that hold at least one
- * row, plus today wherever it falls among them, so the reader can tell where today is. An
- * object that covers several days is a row on each of them. `nowMinute` is minutes from
- * midnight of `today`.
+ * The span's days that hold at least one row, plus today wherever it falls among them, so the
+ * reader can tell where today is. An object that covers several days is a row on each of them.
+ * `nowMinute` is minutes from midnight of `today`.
  *
  * `events` are those to draw, each object once: `visibleEvents` has already picked them.
  */
-export function buildAgenda(events: CalendarEvent[], start: string, today: string, nowMinute: number): AgendaDay[] {
-  const last = addDays(start, AGENDA_DAYS - 1)
+export function buildAgenda(events: CalendarEvent[], span: AgendaSpan, today: string, nowMinute: number): AgendaDay[] {
+  const { first, last } = spanDays(span)
   const days: AgendaDay[] = []
-  for (let date = start; date <= last; date = addDays(date, 1)) {
+  for (let date = first; date <= last; date = addDays(date, 1)) {
     const rows = events
       .filter((event) => event.date <= date && date <= lastDayOf(event))
       .map((event) => rowFor(event, date, today, nowMinute))

@@ -4,7 +4,13 @@ import type {
   CreateEventsObjectInput,
   RescheduleEventsObjectInput,
 } from '@anytype-calendar/events/application'
-import type { EventsEditOutcome, EventsSpan, EventsSpanKind, EventsSpanLoad } from '@anytype-calendar/events/domain'
+import type {
+  EventsAgendaDays,
+  EventsEditOutcome,
+  EventsSpan,
+  EventsSpanKind,
+  EventsSpanLoad,
+} from '@anytype-calendar/events/domain'
 import type { AddFeedsSubscriptionInput, EditFeedsSubscriptionInput } from '@anytype-calendar/feeds/application'
 import type { FeedsAddOutcome, FeedsEditOutcome, FeedsState } from '@anytype-calendar/feeds/domain'
 import type { SchemaSelection, SchemaSelectionState, SchemaSync } from '@anytype-calendar/schema/domain'
@@ -85,6 +91,9 @@ export type WeekStartSnapshot = number
 
 export type TimeFormatSnapshot = '24h' | '12h'
 
+/** How many days an agenda opened from now lists: one, two or four weeks. */
+export type AgendaDaysSnapshot = EventsAgendaDays
+
 export interface UpdateSnapshot {
   /** The running app's version. */
   current: string
@@ -140,6 +149,9 @@ export const IpcChannel = {
   calendarViewGet: 'calendarView:get',
   calendarViewChanged: 'calendarView:changed',
   calendarViewSave: 'calendarView:save',
+  agendaDaysGet: 'agendaDays:get',
+  agendaDaysChanged: 'agendaDays:changed',
+  agendaDaysSave: 'agendaDays:save',
   feedsGet: 'feeds:get',
   feedsChanged: 'feeds:changed',
   feedsAdd: 'feeds:add',
@@ -267,6 +279,15 @@ export interface CalendarApi {
     onChange(listener: (view: CalendarViewSnapshot) => void): () => void
     /** Rejects when the value is not one of the three views. */
     save(view: CalendarViewSnapshot): Promise<void>
+  }
+  agendaDays: {
+    get(): Promise<AgendaDaysSnapshot>
+    onChange(listener: (days: AgendaDaysSnapshot) => void): () => void
+    /**
+     * An agenda on screen is read again from its first day at the new length. Rejects when the
+     * value is not 7, 14 or 28.
+     */
+    save(days: AgendaDaysSnapshot): Promise<void>
   }
   update: {
     get(): Promise<UpdateSnapshot>

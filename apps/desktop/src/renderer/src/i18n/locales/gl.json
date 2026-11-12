@@ -160,6 +160,9 @@
     "language": "Idioma",
     "languageSystem": "Predeterminado do sistema",
     "defaultView": "Vista predeterminada",
+    "agendaDays": "A axenda amosa",
+    "agendaWeeks_one": "{{count}} semana",
+    "agendaWeeks_other": "{{count}} semanas",
     "firstDayOfWeek": "Primeiro día da semana",
     "timeFormat": "Formato de hora",
     "timeFormat24h": "24 horas (13:30)",
@@ -250,13 +253,15 @@
         "month": "Mes anterior",
         "week": "Semana anterior",
         "day": "Día anterior",
-        "agenda": "2 semanas anteriores"
+        "agenda_one": "Semana anterior",
+        "agenda_other": "{{count}} semanas anteriores"
       },
       "next": {
         "month": "Mes seguinte",
         "week": "Semana seguinte",
         "day": "Día seguinte",
-        "agenda": "2 semanas seguintes"
+        "agenda_one": "Semana seguinte",
+        "agenda_other": "{{count}} semanas seguintes"
       },
       "view": "Vista do calendario"
     },
@@ -368,9 +373,11 @@
       "nothingElseToday": "Nada máis hoxe",
       "rangeDay": "Día {{day}} de {{of}}",
       "until": "Ata {{time}}",
-      "nothingSoon": "Nada nas próximas 2 semanas",
+      "nothingSoon_one": "Nada na próxima semana",
+      "nothingSoon_other": "Nada nas próximas {{count}} semanas",
       "nothingIn": "Nada en {{span}}",
-      "nothingDescription": "Os eventos dos tipos que segues aparecerán aquí en canto unha das súas datas caia nestas dúas semanas."
+      "nothingDescription_one": "Os eventos dos tipos que segues aparecerán aquí en canto unha das súas datas caia nesta semana.",
+      "nothingDescription_other": "Os eventos dos tipos que segues aparecerán aquí en canto unha das súas datas caia nestas {{count}} semanas."
     }
   },
   "updates": {

@@ -160,6 +160,9 @@
     "language": "Idioma",
     "languageSystem": "Predeterminado del sistema",
     "defaultView": "Vista predeterminada",
+    "agendaDays": "La agenda muestra",
+    "agendaWeeks_one": "{{count}} semana",
+    "agendaWeeks_other": "{{count}} semanas",
     "firstDayOfWeek": "Primer día de la semana",
     "timeFormat": "Formato de hora",
     "timeFormat24h": "24 horas (13:30)",
@@ -250,13 +253,15 @@
         "month": "Mes anterior",
         "week": "Semana anterior",
         "day": "Día anterior",
-        "agenda": "2 semanas anteriores"
+        "agenda_one": "Semana anterior",
+        "agenda_other": "{{count}} semanas anteriores"
       },
       "next": {
         "month": "Mes siguiente",
         "week": "Semana siguiente",
         "day": "Día siguiente",
-        "agenda": "2 semanas siguientes"
+        "agenda_one": "Semana siguiente",
+        "agenda_other": "{{count}} semanas siguientes"
       },
       "view": "Vista del calendario"
     },
@@ -368,9 +373,11 @@
       "nothingElseToday": "Nada más hoy",
       "rangeDay": "Día {{day}} de {{of}}",
       "until": "Hasta {{time}}",
-      "nothingSoon": "Nada en las próximas 2 semanas",
+      "nothingSoon_one": "Nada en la próxima semana",
+      "nothingSoon_other": "Nada en las próximas {{count}} semanas",
       "nothingIn": "Nada en {{span}}",
-      "nothingDescription": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en estas dos semanas."
+      "nothingDescription_one": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en esta semana.",
+      "nothingDescription_other": "Los eventos de los tipos que sigues aparecerán aquí en cuanto una de sus fechas caiga en estas {{count}} semanas."
     }
   },
   "updates": {

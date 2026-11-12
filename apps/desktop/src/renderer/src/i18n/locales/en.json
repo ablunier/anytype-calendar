@@ -160,6 +160,9 @@
     "language": "Language",
     "languageSystem": "System default",
     "defaultView": "Default view",
+    "agendaDays": "Agenda shows",
+    "agendaWeeks_one": "{{count}} week",
+    "agendaWeeks_other": "{{count}} weeks",
     "firstDayOfWeek": "First day of the week",
     "timeFormat": "Time format",
     "timeFormat24h": "24-hour (13:30)",
@@ -250,13 +253,15 @@
         "month": "Previous month",
         "week": "Previous week",
         "day": "Previous day",
-        "agenda": "Previous 2 weeks"
+        "agenda_one": "Previous week",
+        "agenda_other": "Previous {{count}} weeks"
       },
       "next": {
         "month": "Next month",
         "week": "Next week",
         "day": "Next day",
-        "agenda": "Next 2 weeks"
+        "agenda_one": "Next week",
+        "agenda_other": "Next {{count}} weeks"
       },
       "view": "Calendar view"
     },
@@ -368,9 +373,11 @@
       "nothingElseToday": "Nothing else today",
       "rangeDay": "Day {{day}} of {{of}}",
       "until": "Until {{time}}",
-      "nothingSoon": "Nothing in the next 2 weeks",
+      "nothingSoon_one": "Nothing in the next week",
+      "nothingSoon_other": "Nothing in the next {{count}} weeks",
       "nothingIn": "Nothing in {{span}}",
-      "nothingDescription": "Events of the types you track appear here once one of their dates falls in these two weeks."
+      "nothingDescription_one": "Events of the types you track appear here once one of their dates falls in this week.",
+      "nothingDescription_other": "Events of the types you track appear here once one of their dates falls in these {{count}} weeks."
     }
   },
   "updates": {

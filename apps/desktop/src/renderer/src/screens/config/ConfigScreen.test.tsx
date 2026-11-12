@@ -34,6 +34,8 @@ function configProps(overrides: Partial<ConfigScreenProps> = {}): ConfigScreenPr
     onWeekStart: vi.fn(),
     calendarView: 'month',
     onCalendarView: vi.fn(),
+    agendaDays: 14,
+    onAgendaDays: vi.fn(),
     timeFormat: '24h',
     onTimeFormat: vi.fn(),
     onBack: vi.fn(),
@@ -140,5 +142,24 @@ describe('ConfigScreen sync errors', () => {
 
     await user.click(screen.getByRole('button', { name: 'Try again' }))
     expect(props.onReread).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ConfigScreen agenda length', () => {
+  it('offers one, two or four weeks, and saves the one chosen in days', async () => {
+    const props = configProps()
+    const { user } = renderWithI18n(<ConfigScreen {...props} />)
+    const select = screen.getByRole('combobox', { name: 'Agenda shows' })
+    expect(select).toHaveValue('14')
+    expect(Array.from((select as HTMLSelectElement).options, (option) => option.text)).toEqual([
+      '1 week',
+      '2 weeks',
+      '4 weeks',
+    ])
+
+    await user.selectOptions(select, '1 week')
+    expect(props.onAgendaDays).toHaveBeenLastCalledWith(7)
+    await user.selectOptions(select, '4 weeks')
+    expect(props.onAgendaDays).toHaveBeenLastCalledWith(28)
   })
 })

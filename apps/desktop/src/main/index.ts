@@ -60,10 +60,10 @@ app.whenReady().then(async () => {
   registerPreferencesIpc(preferences)
   registerShellIpc()
   registerUpdateIpc(updates)
-  // The span a launch opens on is read from these two, and restoring the session is what
+  // The span a launch opens on is read from these three, and restoring the session is what
   // starts that first load, so they have to be in place before it runs. The feeds are drawn
   // over that span too, before Anytype has been asked anything.
-  await Promise.all([preferences.calendarView.load(), preferences.weekStart.load()])
+  await Promise.all([preferences.calendarView.load(), preferences.weekStart.load(), preferences.agendaDays.load()])
   feeds.showFeedsForSpan()
   // All settle before the first window asks, so it never draws a state about to change.
   await Promise.all([

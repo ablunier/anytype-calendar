@@ -188,12 +188,13 @@ export function CalendarScreen({
   )
 
   const agenda = useMemo(
-    () => (span.kind === 'agenda' && events !== null ? buildAgenda(events, anchor, today, nowMinute) : null),
-    [span.kind, events, anchor, today, nowMinute],
+    () => (span.kind === 'agenda' && events !== null ? buildAgenda(events, span, today, nowMinute) : null),
+    [span, events, today, nowMinute],
   )
 
   const trackedSpaces = spacesByKeys(spaces, trackedSpaceKeys)
   const shown = spanDays(span)
+  const agendaWeeks = span.kind === 'agenda' ? span.days / 7 : 0
   const label = labelFor(span, days, shown, i18n.language)
   const showsToday = spanCovers(span, today)
 
@@ -296,7 +297,15 @@ export function CalendarScreen({
         onDismissUpdate={onDismissUpdate}
       />
 
-      <DateNavigator title={label} view={span.kind} onView={onView} onPrev={onPrev} onNext={onNext} onToday={onToday} />
+      <DateNavigator
+        title={label}
+        view={span.kind}
+        agendaWeeks={agendaWeeks}
+        onView={onView}
+        onPrev={onPrev}
+        onNext={onNext}
+        onToday={onToday}
+      />
 
       <div className="flex min-h-0 flex-1">
         <CalendarSidebar
@@ -391,10 +400,10 @@ export function CalendarScreen({
                   icon="list"
                   title={
                     anchor === today
-                      ? t('calendar.agenda.nothingSoon')
+                      ? t('calendar.agenda.nothingSoon', { count: agendaWeeks })
                       : t('calendar.agenda.nothingIn', { span: label })
                   }
-                  description={t('calendar.agenda.nothingDescription')}
+                  description={t('calendar.agenda.nothingDescription', { count: agendaWeeks })}
                   action={
                     showsToday ? undefined : (
                       <Button variant="secondary" size="sm" onClick={onToday}>

@@ -1,5 +1,6 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import {
+  type AgendaDaysSnapshot,
   type CalendarApi,
   type CalendarViewSnapshot,
   type CalendarVisibilitySnapshot,
@@ -165,6 +166,17 @@ const api: CalendarApi = {
       }
     },
     save: (view) => ipcRenderer.invoke(IpcChannel.calendarViewSave, view),
+  },
+  agendaDays: {
+    get: () => ipcRenderer.invoke(IpcChannel.agendaDaysGet),
+    onChange: (listener) => {
+      const forward = (_event: IpcRendererEvent, days: AgendaDaysSnapshot): void => listener(days)
+      ipcRenderer.on(IpcChannel.agendaDaysChanged, forward)
+      return () => {
+        ipcRenderer.removeListener(IpcChannel.agendaDaysChanged, forward)
+      }
+    },
+    save: (days) => ipcRenderer.invoke(IpcChannel.agendaDaysSave, days),
   },
   update: {
     get: () => ipcRenderer.invoke(IpcChannel.updateGet),

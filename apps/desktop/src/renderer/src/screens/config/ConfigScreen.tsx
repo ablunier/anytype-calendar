@@ -1,3 +1,4 @@
+import { EVENTS_AGENDA_LENGTHS } from '@anytype-calendar/events/domain'
 import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
@@ -14,7 +15,7 @@ import type {
   SyncView,
   TypePicks,
 } from '@renderer/types'
-import type { LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
+import type { AgendaDaysSnapshot, LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AboutSection } from './AboutSection'
@@ -44,6 +45,8 @@ export interface ConfigScreenProps {
   /** Which view a launch opens on; what is on screen now is the shown span's own kind. */
   calendarView: CalendarView
   onCalendarView: (view: CalendarView) => void
+  agendaDays: AgendaDaysSnapshot
+  onAgendaDays: (days: AgendaDaysSnapshot) => void
   timeFormat: TimeFormatSnapshot
   onTimeFormat: (format: TimeFormatSnapshot) => void
   onBack: () => void
@@ -89,6 +92,8 @@ function Settings({
   onWeekStart,
   calendarView,
   onCalendarView,
+  agendaDays,
+  onAgendaDays,
   timeFormat,
   onTimeFormat,
   onBack,
@@ -239,6 +244,15 @@ function Settings({
                 ]}
                 value={calendarView}
                 onChange={(value) => onCalendarView(value as CalendarView)}
+              />
+              <Select
+                label={t('config.agendaDays')}
+                options={EVENTS_AGENDA_LENGTHS.map((days) => ({
+                  value: String(days),
+                  label: t('config.agendaWeeks', { count: days / 7 }),
+                }))}
+                value={String(agendaDays)}
+                onChange={(value) => onAgendaDays(Number(value) as AgendaDaysSnapshot)}
               />
               <Select
                 label={t('config.firstDayOfWeek')}

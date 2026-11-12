@@ -1,4 +1,6 @@
+import { DEFAULT_AGENDA_DAYS } from '@anytype-calendar/events/domain'
 import type { AppConfigStore } from '../app-config-file'
+import { toAgendaDays } from './agenda-days'
 import { DEFAULT_CALENDAR_VIEW, toCalendarView } from './calendar-view'
 import { SHOWING_EVERYTHING, sameCalendarVisibility, toCalendarVisibility } from './calendar-visibility'
 import { type LanguageState, toLanguage } from './language'
@@ -31,5 +33,6 @@ export function composePreferences(config: AppConfigStore) {
       parse: toCalendarView,
     }),
     timeFormat: preference({ config, section: 'timeFormat', initial: DEFAULT_TIME_FORMAT, parse: toTimeFormat }),
+    agendaDays: preference({ config, section: 'agendaDays', initial: DEFAULT_AGENDA_DAYS, parse: toAgendaDays }),
   }
 }

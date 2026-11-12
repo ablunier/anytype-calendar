@@ -4,6 +4,7 @@
 
 import {
   DEFAULT_EVENTS_DURATION_MINUTES,
+  type EventsAgendaDays,
   type EventsDatedObject,
   type EventsDetail,
   type EventsReschedule,
@@ -32,8 +33,13 @@ import { minutesOf } from './time-grid'
 const MINUTES_PER_DAY = 1440
 
 /** The span main holds, or before any load the one `now` (epoch milliseconds) opens on. */
-export function shownSpanFor(snapshot: EventsSnapshot, view: CalendarView, now: number): EventsSpan {
-  return shownEventsSpan(snapshot) ?? spanFor(view, localDate(now), 0)
+export function shownSpanFor(
+  snapshot: EventsSnapshot,
+  view: CalendarView,
+  now: number,
+  agendaDays: EventsAgendaDays,
+): EventsSpan {
+  return shownEventsSpan(snapshot) ?? spanFor(view, localDate(now), 0, agendaDays)
 }
 
 /** `instant` is epoch milliseconds. */
@@ -51,15 +57,19 @@ export function spanDays(span: EventsSpan): { first: string; last: string } {
   return { first, last: addDays(first, eventsSpanLength(span) - 1) }
 }
 
-/** The span a view wants around `date` (`YYYY-MM-DD`), given the user's first day of the week. */
-export function spanFor(view: CalendarView, date: string, weekStart: number): EventsSpan {
+/**
+ * The span a view wants around `date` (`YYYY-MM-DD`), given the user's first day of the week
+ * and how many days their agenda lists.
+ */
+export function spanFor(view: CalendarView, date: string, weekStart: number, agendaDays: EventsAgendaDays): EventsSpan {
   const [year, month = 1, day = 1] = date.split('-').map(Number)
   switch (view) {
     case 'month':
       return { kind: 'month', year, month: month - 1 }
     case 'day':
+      return { kind: 'day', start: { year, month: month - 1, day } }
     case 'agenda':
-      return { kind: view, start: { year, month: month - 1, day } }
+      return { kind: 'agenda', start: { year, month: month - 1, day }, days: agendaDays }
     case 'week': {
       const first = buildWeek(date, weekStart)[0]?.date ?? date
       const [weekYear, weekMonth = 1, weekDay = 1] = first.split('-').map(Number)
@@ -94,7 +104,7 @@ export function spanCovers(span: EventsSpan, date: string): boolean {
   return first <= date && date <= last
 }
 
-/** The span one step on from this one, in its own units. */
+/** The span one step on from this one, in its own units: an agenda steps by its own length. */
 export function shiftSpan(span: EventsSpan, delta: number): EventsSpan {
   if (span.kind === 'month') {
     const index = span.year * 12 + span.month + delta
@@ -102,7 +112,8 @@ export function shiftSpan(span: EventsSpan, delta: number): EventsSpan {
   }
   const moved = addDays(anchorOf(span), delta * eventsSpanLength(span))
   const [year, month = 1, day = 1] = moved.split('-').map(Number)
-  return { kind: span.kind, start: { year, month: month - 1, day } }
+  const start = { year, month: month - 1, day }
+  return span.kind === 'agenda' ? { ...span, start } : { kind: span.kind, start }
 }
 
 /**
