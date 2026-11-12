@@ -304,7 +304,7 @@ describe('CalendarScreen empty states', () => {
 
 describe('CalendarScreen agenda', () => {
   // Today, 3 November, is the agenda's first day; it runs to the 16th.
-  const agenda = { kind: 'agenda', start: { year: 2026, month: 10, day: 3 } } as const
+  const agenda = { kind: 'agenda', start: { year: 2026, month: 10, day: 3 }, days: 14 } as const
   const call: CalendarEvent = {
     id: 'obj-call',
     title: 'Call the bank',
@@ -384,7 +384,7 @@ describe('CalendarScreen agenda', () => {
     })
     const scrollTo = vi.spyOn(Element.prototype, 'scrollTo')
     const { unmount } = renderCalendar({
-      span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } },
+      span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 }, days: 14 },
       events: [call],
     })
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 240 })
@@ -397,7 +397,7 @@ describe('CalendarScreen agenda', () => {
   })
 
   it('with nothing in two weeks that take in today, names them without sending the reader back', () => {
-    renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 } }, events: [] })
+    renderCalendar({ span: { kind: 'agenda', start: { year: 2026, month: 10, day: 1 }, days: 14 }, events: [] })
     expect(screen.getByText(/Nothing in Nov 1\s*–\s*14, 2026/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Back to today' })).not.toBeInTheDocument()
   })
@@ -410,11 +410,28 @@ describe('CalendarScreen agenda', () => {
 
   it('with nothing in two weeks elsewhere, names them and offers to go back to today', async () => {
     const { user, props } = renderCalendar({
-      span: { kind: 'agenda', start: { year: 2026, month: 11, day: 1 } },
+      span: { kind: 'agenda', start: { year: 2026, month: 11, day: 1 }, days: 14 },
       events: [],
     })
     expect(screen.getByText(/Nothing in Dec 1\s*–\s*14, 2026/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Back to today' }))
     expect(props.onToday).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    [7, 'Previous week', 'Next week', 'Nothing in the next week'],
+    [14, 'Previous 2 weeks', 'Next 2 weeks', 'Nothing in the next 2 weeks'],
+    [28, 'Previous 4 weeks', 'Next 4 weeks', 'Nothing in the next 4 weeks'],
+  ] as const)('at %i days, names its length on the arrows and when it is empty', (days, previous, next, nothing) => {
+    renderCalendar({ span: { ...agenda, days }, events: [] })
+    expect(screen.getByRole('button', { name: previous })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: next })).toBeInTheDocument()
+    expect(screen.getByText(nothing)).toBeInTheDocument()
+  })
+
+  it('lists only the days its own length covers', () => {
+    renderCalendar({ span: { ...agenda, days: 7 }, events: [report, minutes, call] })
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Nov 3\s*–\s*9, 2026/)
+    expect(within(list()).queryByRole('button', { name: /Wed, Nov 11/ })).not.toBeInTheDocument()
   })
 })

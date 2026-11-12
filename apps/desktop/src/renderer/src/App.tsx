@@ -2,6 +2,7 @@ import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { EMPTY_SCHEMA_SELECTION } from '@anytype-calendar/schema/domain'
 import { useMemo, useState } from 'react'
 import { TimeFormatContext } from './hooks/TimeFormatContext'
+import { useAgendaDays } from './hooks/useAgendaDays'
 import { useCalendarView } from './hooks/useCalendarView'
 import { useCalendarVisibility } from './hooks/useCalendarVisibility'
 import { useEvents } from './hooks/useEvents'
@@ -62,6 +63,7 @@ function App(): React.JSX.Element | null {
   const [weekStart, setWeekStart] = useWeekStart()
   const [timeFormat, setTimeFormat] = useTimeFormat()
   const [calendarView, setCalendarView] = useCalendarView()
+  const [agendaDays, setAgendaDays] = useAgendaDays()
   const [visibility, updateVisibility] = useCalendarVisibility()
   const hiddenSources = useMemo(() => new Set(visibility.hidden), [visibility.hidden])
   const collapsedSpaces = useMemo(() => new Set(visibility.collapsedSpaces), [visibility.collapsedSpaces])
@@ -154,6 +156,8 @@ function App(): React.JSX.Element | null {
         onTimeFormat={setTimeFormat}
         calendarView={calendarView}
         onCalendarView={setCalendarView}
+        agendaDays={agendaDays}
+        onAgendaDays={setAgendaDays}
         onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
         onSave={(picks) => window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))}
@@ -175,7 +179,7 @@ function App(): React.JSX.Element | null {
     )
   }
 
-  const span = shownSpanFor(events, calendarView, now)
+  const span = shownSpanFor(events, calendarView, now, agendaDays)
   const showSpan = (next: EventsSpan): void => {
     void window.api.events.showSpan(next)
   }
@@ -183,7 +187,7 @@ function App(): React.JSX.Element | null {
    * what the next launch opens on, the span is what this window draws. */
   const showView = (view: CalendarView): void => {
     setCalendarView(view)
-    showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart))
+    showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart, agendaDays))
   }
   const types = typesFor(schema)
   const picks = picksFor(selection, types)
@@ -248,7 +252,7 @@ function App(): React.JSX.Element | null {
         onSetSourcesShown={setSourcesShown}
         onToggleSpaceCollapsed={toggleSpaceCollapsed}
         onToggleSidebar={() => updateVisibility((current) => ({ ...current, collapsed: !current.collapsed }))}
-        onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart))}
+        onSelectDate={(date) => showSpan(spanFor(span.kind, date, weekStart, agendaDays))}
         onToggleTheme={toggleTheme}
         onOpenSettings={() => {
           setAddingFeed(false)
@@ -261,7 +265,7 @@ function App(): React.JSX.Element | null {
         onView={showView}
         onPrev={() => showSpan(shiftSpan(span, -1))}
         onNext={() => showSpan(shiftSpan(span, 1))}
-        onToday={() => showSpan(spanFor(span.kind, localDate(Date.now()), weekStart))}
+        onToday={() => showSpan(spanFor(span.kind, localDate(Date.now()), weekStart, agendaDays))}
         onReread={() => {
           void window.api.schema.sync()
           void window.api.feeds.refresh()

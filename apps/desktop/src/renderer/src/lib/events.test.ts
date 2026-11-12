@@ -59,43 +59,48 @@ const loaded = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = S
 
 describe('shownSpanFor', () => {
   test("is the saved view's span around today before main's first load", () => {
-    expect(shownSpanFor({ phase: 'idle' }, 'month', NOW)).toEqual(SEPTEMBER)
-    expect(shownSpanFor({ phase: 'idle' }, 'day', NOW)).toEqual({
+    expect(shownSpanFor({ phase: 'idle' }, 'month', NOW, 14)).toEqual(SEPTEMBER)
+    expect(shownSpanFor({ phase: 'idle' }, 'day', NOW, 14)).toEqual({
       kind: 'day',
       start: { year: 2026, month: 8, day: 14 },
+    })
+    expect(shownSpanFor({ phase: 'idle' }, 'agenda', NOW, 7)).toEqual({
+      kind: 'agenda',
+      start: { year: 2026, month: 8, day: 14 },
+      days: 7,
     })
   })
 
   test('is the span main is loading, even while it holds another', () => {
-    expect(shownSpanFor({ phase: 'loading', span: OCTOBER, last: result([]) }, 'month', NOW)).toEqual(OCTOBER)
+    expect(shownSpanFor({ phase: 'loading', span: OCTOBER, last: result([]) }, 'month', NOW, 14)).toEqual(OCTOBER)
   })
 
   test('is the span main loaded', () => {
-    expect(shownSpanFor(loaded([], OCTOBER), 'month', NOW)).toEqual(OCTOBER)
+    expect(shownSpanFor(loaded([], OCTOBER), 'month', NOW, 14)).toEqual(OCTOBER)
   })
 })
 
 describe('spanFor and anchorOf', () => {
   test('round-trip a month through its first day', () => {
-    expect(spanFor('month', '2026-09-14', 0)).toEqual(SEPTEMBER)
+    expect(spanFor('month', '2026-09-14', 0, 14)).toEqual(SEPTEMBER)
     expect(anchorOf(SEPTEMBER)).toBe('2026-09-01')
   })
 
   test('anchor a day on itself', () => {
-    const span = spanFor('day', '2026-09-14', 0)
+    const span = spanFor('day', '2026-09-14', 0, 14)
     expect(span).toEqual({ kind: 'day', start: { year: 2026, month: 8, day: 14 } })
     expect(anchorOf(span)).toBe('2026-09-14')
   })
 
   test("anchor a week on the user's own first day of the week", () => {
     // 2026-09-23 is a Wednesday.
-    expect(anchorOf(spanFor('week', '2026-09-23', 0))).toBe('2026-09-21')
-    expect(anchorOf(spanFor('week', '2026-09-23', 6))).toBe('2026-09-20')
+    expect(anchorOf(spanFor('week', '2026-09-23', 0, 14))).toBe('2026-09-21')
+    expect(anchorOf(spanFor('week', '2026-09-23', 6, 14))).toBe('2026-09-20')
   })
 
   test('anchor an agenda on the day it is asked for, whatever weekday it is', () => {
-    const span = spanFor('agenda', '2026-09-23', 0)
-    expect(span).toEqual({ kind: 'agenda', start: { year: 2026, month: 8, day: 23 } })
+    const span = spanFor('agenda', '2026-09-23', 0, 14)
+    expect(span).toEqual({ kind: 'agenda', start: { year: 2026, month: 8, day: 23 }, days: 14 })
     expect(anchorOf(span)).toBe('2026-09-23')
   })
 })
@@ -119,7 +124,12 @@ describe('spanDays', () => {
   })
 
   test('is fourteen days for an agenda, across a year', () => {
-    expect(spanDays(spanFor('agenda', '2026-12-25', 0))).toEqual({ first: '2026-12-25', last: '2027-01-07' })
+    expect(spanDays(spanFor('agenda', '2026-12-25', 0, 14))).toEqual({ first: '2026-12-25', last: '2027-01-07' })
+  })
+
+  test("is the agenda's own length, a week or four", () => {
+    expect(spanDays(spanFor('agenda', '2026-12-29', 0, 7))).toEqual({ first: '2026-12-29', last: '2027-01-04' })
+    expect(spanDays(spanFor('agenda', '2026-02-10', 0, 28))).toEqual({ first: '2026-02-10', last: '2026-03-09' })
   })
 })
 
@@ -139,18 +149,24 @@ describe('shiftSpan', () => {
   })
 
   test('moves a week by seven days, across a month and a year', () => {
-    expect(anchorOf(shiftSpan(spanFor('week', '2026-09-28', 0), 1))).toBe('2026-10-05')
-    expect(anchorOf(shiftSpan(spanFor('week', '2026-12-28', 0), 1))).toBe('2027-01-04')
+    expect(anchorOf(shiftSpan(spanFor('week', '2026-09-28', 0, 14), 1))).toBe('2026-10-05')
+    expect(anchorOf(shiftSpan(spanFor('week', '2026-12-28', 0, 14), 1))).toBe('2027-01-04')
   })
 
   test('moves a day by one day', () => {
-    expect(anchorOf(shiftSpan(spanFor('day', '2026-09-30', 0), 1))).toBe('2026-10-01')
-    expect(anchorOf(shiftSpan(spanFor('day', '2026-01-01', 0), -1))).toBe('2025-12-31')
+    expect(anchorOf(shiftSpan(spanFor('day', '2026-09-30', 0, 14), 1))).toBe('2026-10-01')
+    expect(anchorOf(shiftSpan(spanFor('day', '2026-01-01', 0, 14), -1))).toBe('2025-12-31')
   })
 
   test('moves an agenda by fourteen days, either way', () => {
-    expect(shiftSpan(spanFor('agenda', '2026-10-21', 0), 1)).toEqual(spanFor('agenda', '2026-11-04', 0))
-    expect(anchorOf(shiftSpan(spanFor('agenda', '2026-01-05', 0), -1))).toBe('2025-12-22')
+    expect(shiftSpan(spanFor('agenda', '2026-10-21', 0, 14), 1)).toEqual(spanFor('agenda', '2026-11-04', 0, 14))
+    expect(anchorOf(shiftSpan(spanFor('agenda', '2026-01-05', 0, 14), -1))).toBe('2025-12-22')
+  })
+
+  test('moves an agenda by its own length, keeping it', () => {
+    expect(shiftSpan(spanFor('agenda', '2026-10-28', 0, 7), 1)).toEqual(spanFor('agenda', '2026-11-04', 0, 7))
+    expect(shiftSpan(spanFor('agenda', '2026-10-21', 0, 28), 1)).toEqual(spanFor('agenda', '2026-11-18', 0, 28))
+    expect(anchorOf(shiftSpan(spanFor('agenda', '2026-01-05', 0, 28), -1))).toBe('2025-12-08')
   })
 })
 
@@ -173,7 +189,7 @@ describe('eventsFor', () => {
   })
 
   test('tells a week from a month that starts on the same day', () => {
-    const week = spanFor('week', '2026-09-01', 0)
+    const week = spanFor('week', '2026-09-01', 0, 14)
     expect(eventsFor(loaded([object({})], week), SEPTEMBER)).toBeNull()
   })
 
@@ -370,41 +386,41 @@ describe('switchDateFor', () => {
 
   test('stays on today when the span covers it', () => {
     expect(switchDateFor(SEPTEMBER, TODAY)).toBe(TODAY)
-    expect(switchDateFor(spanFor('week', TODAY, 0), TODAY)).toBe(TODAY)
-    expect(switchDateFor(spanFor('day', TODAY, 0), TODAY)).toBe(TODAY)
+    expect(switchDateFor(spanFor('week', TODAY, 0, 14), TODAY)).toBe(TODAY)
+    expect(switchDateFor(spanFor('day', TODAY, 0, 14), TODAY)).toBe(TODAY)
   })
 
   test('keeps the reader where they were when the span is elsewhere', () => {
     expect(switchDateFor(OCTOBER, TODAY)).toBe('2026-10-01')
-    expect(switchDateFor(spanFor('week', '2026-03-10', 0), TODAY)).toBe('2026-03-09')
-    expect(switchDateFor(spanFor('day', '2026-03-10', 0), TODAY)).toBe('2026-03-10')
+    expect(switchDateFor(spanFor('week', '2026-03-10', 0, 14), TODAY)).toBe('2026-03-09')
+    expect(switchDateFor(spanFor('day', '2026-03-10', 0, 14), TODAY)).toBe('2026-03-10')
   })
 
   test('counts the last day of a week as covered', () => {
     // The week of Monday 21 September ends on Sunday the 27th.
-    expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-27')).toBe('2026-09-27')
-    expect(switchDateFor(spanFor('week', '2026-09-21', 0), '2026-09-28')).toBe('2026-09-21')
+    expect(switchDateFor(spanFor('week', '2026-09-21', 0, 14), '2026-09-27')).toBe('2026-09-27')
+    expect(switchDateFor(spanFor('week', '2026-09-21', 0, 14), '2026-09-28')).toBe('2026-09-21')
   })
 
   test('starts an agenda today from this month, and on the 1st from another', () => {
-    expect(spanFor('agenda', switchDateFor(SEPTEMBER, TODAY), 0)).toEqual(spanFor('agenda', TODAY, 0))
-    expect(spanFor('agenda', switchDateFor(OCTOBER, TODAY), 0)).toEqual(spanFor('agenda', '2026-10-01', 0))
+    expect(spanFor('agenda', switchDateFor(SEPTEMBER, TODAY), 0, 14)).toEqual(spanFor('agenda', TODAY, 0, 14))
+    expect(spanFor('agenda', switchDateFor(OCTOBER, TODAY), 0, 14)).toEqual(spanFor('agenda', '2026-10-01', 0, 14))
   })
 
   test('leaves an agenda for today when it covers it, up to its fourteenth day', () => {
-    const agenda = spanFor('agenda', '2026-09-10', 0)
+    const agenda = spanFor('agenda', '2026-09-10', 0, 14)
     expect(switchDateFor(agenda, TODAY)).toBe(TODAY)
     expect(switchDateFor(agenda, '2026-09-24')).toBe('2026-09-10')
-    expect(spanFor('month', switchDateFor(agenda, TODAY), 0)).toEqual(SEPTEMBER)
-    expect(spanFor('week', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('week', TODAY, 0))
-    expect(spanFor('day', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('day', TODAY, 0))
+    expect(spanFor('month', switchDateFor(agenda, TODAY), 0, 14)).toEqual(SEPTEMBER)
+    expect(spanFor('week', switchDateFor(agenda, TODAY), 0, 14)).toEqual(spanFor('week', TODAY, 0, 14))
+    expect(spanFor('day', switchDateFor(agenda, TODAY), 0, 14)).toEqual(spanFor('day', TODAY, 0, 14))
   })
 
   test('leaves an agenda elsewhere for its first day', () => {
-    const agenda = spanFor('agenda', '2026-11-30', 0)
-    expect(spanFor('month', switchDateFor(agenda, TODAY), 0)).toEqual({ kind: 'month', year: 2026, month: 10 })
-    expect(spanFor('week', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('week', '2026-11-30', 0))
-    expect(spanFor('day', switchDateFor(agenda, TODAY), 0)).toEqual(spanFor('day', '2026-11-30', 0))
+    const agenda = spanFor('agenda', '2026-11-30', 0, 14)
+    expect(spanFor('month', switchDateFor(agenda, TODAY), 0, 14)).toEqual({ kind: 'month', year: 2026, month: 10 })
+    expect(spanFor('week', switchDateFor(agenda, TODAY), 0, 14)).toEqual(spanFor('week', '2026-11-30', 0, 14))
+    expect(spanFor('day', switchDateFor(agenda, TODAY), 0, 14)).toEqual(spanFor('day', '2026-11-30', 0, 14))
   })
 })
 
@@ -416,7 +432,7 @@ describe('spanCovers', () => {
   })
 
   test('covers an agenda from its first day to its fourteenth', () => {
-    const agenda = spanFor('agenda', '2026-09-10', 0)
+    const agenda = spanFor('agenda', '2026-09-10', 0, 14)
     expect(spanCovers(agenda, '2026-09-09')).toBe(false)
     expect(spanCovers(agenda, '2026-09-23')).toBe(true)
     expect(spanCovers(agenda, '2026-09-24')).toBe(false)

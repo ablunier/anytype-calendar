@@ -1,19 +1,26 @@
-import type { EventsDay, EventsSpan, EventsSpanKind } from '@anytype-calendar/events/domain'
+import type { EventsAgendaDays, EventsDay, EventsSpan, EventsSpanKind } from '@anytype-calendar/events/domain'
 
 /**
  * The span a launch opens on: the view the user last chose, around today. Without it the first
  * load would read a month, which a week or day view would have to replace the moment the
  * window drew — two reads of Anytype for one screen.
  *
- * `weekStart` is the user's first day of the week, Monday 0 to Sunday 6.
+ * `weekStart` is the user's first day of the week, Monday 0 to Sunday 6; `agendaDays` how many
+ * days an agenda lists.
  */
-export function defaultEventsSpan(view: EventsSpanKind, today: EventsDay, weekStart: number): EventsSpan {
+export function defaultEventsSpan(
+  view: EventsSpanKind,
+  today: EventsDay,
+  weekStart: number,
+  agendaDays: EventsAgendaDays,
+): EventsSpan {
   switch (view) {
     case 'month':
       return { kind: 'month', year: today.year, month: today.month }
     case 'day':
+      return { kind: 'day', start: today }
     case 'agenda':
-      return { kind: view, start: today }
+      return { kind: 'agenda', start: today, days: agendaDays }
     case 'week':
       return { kind: 'week', start: startOfWeek(today, weekStart) }
   }

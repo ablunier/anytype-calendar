@@ -5,6 +5,7 @@ import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
 import { composeAuth } from './auth/compose-auth'
 import { linkContexts } from './context-links'
+import { followAgendaLength } from './events/agenda-length'
 import { composeEvents } from './events/compose-events'
 import { defaultEventsSpan } from './events/default-span'
 import { eventsSourcesFor } from './events/event-sources'
@@ -40,8 +41,14 @@ export function composeServices() {
     // Adapts schema's stores to the selection port events declares.
     sources: { current: () => eventsSourcesFor(schema.schemaSelection.get(), schema.schemaState.get()) },
     defaultSpan: (today) =>
-      defaultEventsSpan(preferences.calendarView.state.get(), today, preferences.weekStart.state.get()),
+      defaultEventsSpan(
+        preferences.calendarView.state.get(),
+        today,
+        preferences.weekStart.state.get(),
+        preferences.agendaDays.state.get(),
+      ),
   })
+  followAgendaLength({ agendaDays: preferences.agendaDays.state, ...events })
   const feeds = composeFeeds({ anytype, shownWindow: events.shownWindow })
   const updates = composeUpdates(appConfig)
 

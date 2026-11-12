@@ -83,7 +83,7 @@ Standard electron-vite three-process layout:
   ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
   `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
   Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
-  from the saved view and week start — which is why `main/index.ts` awaits those two
+  from the saved view, week start and agenda length — which is why `main/index.ts` awaits those three
   preferences before restoring the session, the thing that starts that first load. `ANYTYPE_CALENDAR_FAKE_AUTH=1` swaps in `InMemoryAuthGateway` (accepted code
   `2749`, logged to the terminal, or the API key `ak_fake_2749` pasted directly), a
   separate `credential-fake.bin`,
@@ -105,9 +105,12 @@ Standard electron-vite three-process layout:
   renderer receives (none carries the API key), and `CalendarApi`. The span on screen is
   main's: `events.showSpan` asks for one (validated with `toEventsSpan`), and the
   `EventsSnapshot` pushed back says which span it holds. An `EventsSpan` is a discriminated
-  union — `{ kind: 'month', year, month }`, or `{ kind: 'week' | 'day' | 'agenda', start }` — so
-  each kind carries only what pins it down and no two of its fields can disagree; an agenda is
-  always `AGENDA_DAYS` (14) days, fixed in the domain. Its window (`eventsSpanWindow`) reads a
+  union — `{ kind: 'month', year, month }`, `{ kind: 'week' | 'day', start }`, or
+  `{ kind: 'agenda', start, days }` — so each kind carries only what pins it down and no two of
+  its fields can disagree. An agenda's `days` is one of `EVENTS_AGENDA_LENGTHS` (7, 14 or 28;
+  `DEFAULT_AGENDA_DAYS` is 14), and `toEventsSpan` rejects any other, so main never reads a window
+  the renderer made up. The length is the user's preference but rides in the span, so the span
+  alone still says what to read, and its arrows step by its own `days`. Its window (`eventsSpanWindow`) reads a
   month with a week of slack either side, enough to cover the grid's padding rows whichever
   day the week starts on, and the other kinds from their first day to the end of their last,
   counted in calendar days so a change of the clocks does not shift it.
@@ -173,6 +176,12 @@ Standard electron-vite three-process layout:
     The view a launch opens on (Settings → Calendar, the month by default) is saved the same
     way, in the `calendarView` section (`main/preferences/calendar-view.ts`) as `'month' | 'week' | 'day' | 'agenda'` —
     the same names an `EventsSpan`'s `kind` uses, so there is one vocabulary for them.
+    How many days an agenda lists (Settings → Calendar, "Agenda shows": 1, 2 or 4 weeks, two by
+    default) is saved in the `agendaDays` section (`main/preferences/agenda-days.ts`) as `7 | 14 | 28`;
+    anything else, or nothing, reads as 14. A launch and every agenda the renderer asks for take
+    it from there; changing it while an agenda is shown has main read that agenda again from the
+    same first day at the new length (`events/agenda-length.ts`). The agenda's labels count weeks
+    with i18next plurals (`_one` / `_other`), so a week reads "Next week".
     The app is localized into English, Spanish and Galician (`react-i18next`, resources under
     `renderer/src/i18n/locales/`). The language (Settings → Calendar) follows the OS language
     by default: `LanguageSnapshot` (`main/preferences/language.ts`, saved in the `language` section of
@@ -266,7 +275,8 @@ Standard electron-vite three-process layout:
     positioned against the week row, whose columns it has to span (`event-span` in
     `styles/index.css`, which reads `--columns` and `--lane-top` from the row it sits in, so
     the same utility serves a seven-column month row and a one-column day band).
-  - `lib/agenda.ts` — `buildAgenda` turns an agenda's events into the days it lists: only
+  - `lib/agenda.ts` — `buildAgenda` turns an agenda span's events into the days it lists, as many
+    as the span's `days`: only
     those holding something, plus today wherever the agenda covers it; all-day rows first,
     then by start time, then by name; a range on each day it covers, with which day of how
     many it is and what its time column says (its start on the first day, its end on the

@@ -62,4 +62,9 @@ export function registerPreferencesIpc(preferences: Preferences): void {
     save: IpcChannel.calendarViewSave,
     changed: IpcChannel.calendarViewChanged,
   })
+  registerPreferenceIpc(preferences.agendaDays, {
+    get: IpcChannel.agendaDaysGet,
+    save: IpcChannel.agendaDaysSave,
+    changed: IpcChannel.agendaDaysChanged,
+  })
 }

@@ -32,6 +32,7 @@ describe('composePreferences', () => {
     await preferences.weekStart.load()
     await preferences.calendarView.load()
     await preferences.timeFormat.load()
+    await preferences.agendaDays.load()
     expect(preferences.theme.state.get()).toBeNull()
     expect(preferences.language.state.get()).toBeNull()
     expect(preferences.weekNumbers.state.get()).toBe(false)
@@ -39,6 +40,7 @@ describe('composePreferences', () => {
     expect(preferences.weekStart.state.get()).toBe(0)
     expect(preferences.calendarView.state.get()).toBe('month')
     expect(preferences.timeFormat.state.get()).toBe('24h')
+    expect(preferences.agendaDays.state.get()).toBe(14)
   })
 
   test('saves each preference under its section', async () => {
@@ -51,6 +53,7 @@ describe('composePreferences', () => {
     await preferences.weekStart.save(6)
     await preferences.calendarView.save('week')
     await preferences.timeFormat.save('12h')
+    await preferences.agendaDays.save(28)
     expect(await config.readSection('theme')).toBe('dark')
     expect(await config.readSection('language')).toBe('es')
     expect(await config.readSection('weekNumbers')).toBe(true)
@@ -58,5 +61,13 @@ describe('composePreferences', () => {
     expect(await config.readSection('weekStart')).toBe(6)
     expect(await config.readSection('calendarView')).toBe('week')
     expect(await config.readSection('timeFormat')).toBe('12h')
+    expect(await config.readSection('agendaDays')).toBe(28)
+  })
+
+  test('reads an agenda length that is not one of the three as two weeks', async () => {
+    const { config, preferences } = setup()
+    await config.writeSection('agendaDays', 10)
+    await preferences.agendaDays.load()
+    expect(preferences.agendaDays.state.get()).toBe(14)
   })
 })
