@@ -64,3 +64,17 @@ Run from the repo root. CI runs lint, typecheck, tests, `lint:arch` and a gitlea
 - Read `docs/deps-notes.md` before bumping `vite`, `@vitejs/plugin-react` or `electron`.
 - Do not fold `tools/arch-lint` into the root `devDependencies`.
 - When a change alters behaviour a doc above describes, update that doc in the same change.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `ablunier/anytype-calendar`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context: a root `GLOSSARY-MAP.md` points to one `packages/<context>/GLOSSARY.md` per context. See `docs/agents/domain.md`.
