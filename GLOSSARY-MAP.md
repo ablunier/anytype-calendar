@@ -7,6 +7,9 @@
 
 ## Shared language
 
+**Calendar**:
+The user's calendar in this app, on which every Event is drawn. Never one external calendar on its own: that is a Subscription.
+
 **Event**:
 Anything the calendar draws at a time: a Dated object (Events) or a Feed event (Feeds). It is the user's word, and names the two kinds together.
 _Avoid_: item, entry
