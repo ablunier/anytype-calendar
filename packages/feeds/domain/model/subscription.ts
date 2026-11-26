@@ -77,6 +77,14 @@ export function sameFeedsUrl(a: string, b: string): boolean {
   return comparableUrl(a) === comparableUrl(b)
 }
 
+/** The subscription that already has `url`, as `toFeedsUrl` gives it, if any. */
+export function feedsSubscriptionWithUrl(
+  subscriptions: readonly FeedsSubscription[],
+  url: string,
+): FeedsSubscription | undefined {
+  return subscriptions.find((subscription) => sameFeedsUrl(subscription.url, url))
+}
+
 /** What the user is shown of an address: its host, never the path or credentials that make it secret. */
 export function feedsUrlHost(url: string): string {
   return hostOf(/^[a-z]+:\/\/([^/?#]*)/i.exec(url)?.[1] ?? '')

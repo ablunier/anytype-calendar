@@ -5,9 +5,9 @@ import {
   type FeedsColour,
   type FeedsGateway,
   feedsFetchFailureOf,
+  feedsSubscriptionWithUrl,
   feedsUrlHost,
   nextFeedsColour,
-  sameFeedsUrl,
   toFeedsName,
   toFeedsUrl,
 } from '../domain'
@@ -64,7 +64,7 @@ export class AddFeedsSubscription {
     if (address === null) return { ok: false, failure: 'invalid-url' }
     const given = name.trim() === '' ? null : toFeedsName(name)
     if (name.trim() !== '' && given === null) return { ok: false, failure: 'invalid-name' }
-    const holder = this.#store.subscriptions().find((subscription) => sameFeedsUrl(subscription.url, address))
+    const holder = feedsSubscriptionWithUrl(this.#store.subscriptions(), address)
     if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
 
     const result = await this.#gateway.fetch(address)

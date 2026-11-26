@@ -7,6 +7,7 @@ import {
   type FeedsGateway,
   type FeedsSubscription,
   feedsFetchFailureOf,
+  feedsSubscriptionWithUrl,
   sameFeedsUrl,
   toFeedsUrl,
 } from '../domain'
@@ -59,9 +60,9 @@ export class EditFeedsSubscription {
     if (url !== undefined) {
       const address = toFeedsUrl(url)
       if (address === null) return { ok: false, failure: 'invalid-url' }
-      const own = this.#store.subscription(id)?.url
-      if (own === undefined || !sameFeedsUrl(address, own)) {
-        const holder = this.#store.subscriptions().find((subscription) => sameFeedsUrl(subscription.url, address))
+      const current = this.#store.subscription(id)?.url
+      if (current === undefined || !sameFeedsUrl(address, current)) {
+        const holder = feedsSubscriptionWithUrl(this.#store.subscriptions(), address)
         if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
         const result = await this.#gateway.fetch(address)
         if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }
