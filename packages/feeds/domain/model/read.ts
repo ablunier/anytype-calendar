@@ -7,13 +7,20 @@ export type FeedsReadFailure =
   /** It answered with something that is not an iCalendar feed, e.g. a sign-in page. */
   | { failure: 'not-calendar' }
 
+/** Another subscription, named `name`, already has the address. */
+export type FeedsDuplicateFailure = { failure: 'duplicate'; name: string }
+
 /** Why a subscription was not added: nothing is saved for any of these. */
-export type FeedsAddFailure = FeedsReadFailure | { failure: 'invalid-url' } | { failure: 'invalid-name' }
+export type FeedsAddFailure =
+  | FeedsReadFailure
+  | FeedsDuplicateFailure
+  | { failure: 'invalid-url' }
+  | { failure: 'invalid-name' }
 
 export type FeedsAddOutcome = { ok: true; id: string } | ({ ok: false } & FeedsAddFailure)
 
 /** Why an edit was refused: nothing of it is saved. */
-export type FeedsEditFailure = FeedsReadFailure | { failure: 'invalid-url' }
+export type FeedsEditFailure = FeedsReadFailure | FeedsDuplicateFailure | { failure: 'invalid-url' }
 
 export type FeedsEditOutcome = { ok: true } | ({ ok: false } & FeedsEditFailure)
 

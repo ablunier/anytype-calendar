@@ -7,6 +7,8 @@ import {
   type FeedsGateway,
   type FeedsSubscription,
   feedsFetchFailureOf,
+  feedsSubscriptionWithUrl,
+  sameFeedsUrl,
   toFeedsUrl,
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
@@ -31,8 +33,8 @@ export interface EditFeedsSubscriptionDeps {
 
 /**
  * Renames a subscription, recolours it, or points it at another address. A new address is
- * read before anything is saved, as when adding one, so one that is mistyped, or not a
- * calendar, is refused with why and the subscription keeps the address it had. What the new
+ * read before anything is saved, as when adding one, so one that is mistyped, not a calendar,
+ * or another subscription's, is refused with why and the subscription keeps the address it had. What the new
  * one holds replaces the old copy at once, cached copy included.
  */
 export class EditFeedsSubscription {
@@ -58,7 +60,11 @@ export class EditFeedsSubscription {
     if (url !== undefined) {
       const address = toFeedsUrl(url)
       if (address === null) return { ok: false, failure: 'invalid-url' }
-      if (address !== this.#store.subscription(id)?.url) {
+      const currentUrl = this.#store.subscription(id)?.url
+      if (currentUrl === undefined || !sameFeedsUrl(address, currentUrl)) {
+        // Only spares a pointless read: the check that holds is the one inside the save.
+        const early = feedsSubscriptionWithUrl(this.#store.subscriptions(), address, id)
+        if (early) return { ok: false, failure: 'duplicate', name: early.name }
         const result = await this.#gateway.fetch(address)
         if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }
         const calendar = this.#parser.parse(result.text)
@@ -71,11 +77,13 @@ export class EditFeedsSubscription {
       ...(colour === undefined ? {} : { colour }),
       ...(moved === null ? {} : { url: moved.url }),
     }
-    await this.#save.execute((current) =>
-      current.some((subscription) => subscription.id === id)
-        ? current.map((subscription) => (subscription.id === id ? { ...subscription, ...change } : subscription))
-        : current,
-    )
+    let holder: FeedsSubscription | undefined
+    await this.#save.execute((current) => {
+      holder = moved === null ? undefined : feedsSubscriptionWithUrl(current, moved.url, id)
+      if (holder || !current.some((subscription) => subscription.id === id)) return current
+      return current.map((subscription) => (subscription.id === id ? { ...subscription, ...change } : subscription))
+    })
+    if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
     if (moved !== null && this.#store.subscription(id)) {
       const readAt = this.#now()
       this.#store.update(id, { calendar: moved.calendar, status: { readAt, reading: false, error: null } })

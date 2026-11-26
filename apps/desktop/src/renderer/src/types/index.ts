@@ -233,6 +233,8 @@ export type FeedFailure =
   | { failure: 'not-calendar' }
   | { failure: 'invalid-url' }
   | { failure: 'invalid-name' }
+  /** Another subscription, `name`, already has the address. */
+  | { failure: 'duplicate'; name: string }
 
 /** How the last read of a feed went. Its events are those of the last good read, whatever the latest. */
 export interface FeedStatus {

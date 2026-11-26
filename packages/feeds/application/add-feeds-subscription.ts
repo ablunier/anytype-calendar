@@ -4,7 +4,9 @@ import {
   type FeedsCalendarParser,
   type FeedsColour,
   type FeedsGateway,
+  type FeedsSubscription,
   feedsFetchFailureOf,
+  feedsSubscriptionWithUrl,
   feedsUrlHost,
   nextFeedsColour,
   toFeedsName,
@@ -34,8 +36,9 @@ export interface AddFeedsSubscriptionDeps {
 }
 
 /**
- * The feed is read before anything is saved, so a mistyped address, or one that is not a
- * calendar, is refused with why, and leaves nothing behind. It goes last in the order.
+ * The feed is read before anything is saved, so a mistyped address, one that is not a
+ * calendar, or one another subscription already has, is refused with why, and leaves nothing
+ * behind. It goes last in the order.
  */
 export class AddFeedsSubscription {
   readonly #gateway: FeedsGateway
@@ -62,6 +65,9 @@ export class AddFeedsSubscription {
     if (address === null) return { ok: false, failure: 'invalid-url' }
     const given = name.trim() === '' ? null : toFeedsName(name)
     if (name.trim() !== '' && given === null) return { ok: false, failure: 'invalid-name' }
+    // Only spares a pointless read: the check that holds is the one inside the save.
+    const early = feedsSubscriptionWithUrl(this.#store.subscriptions(), address)
+    if (early) return { ok: false, failure: 'duplicate', name: early.name }
 
     const result = await this.#gateway.fetch(address)
     if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }
@@ -70,15 +76,21 @@ export class AddFeedsSubscription {
 
     const id = this.#newId()
     const readAt = this.#now()
-    await this.#save.execute((current) => [
-      ...current,
-      {
-        id,
-        name: given ?? toFeedsName(calendar.name) ?? feedsUrlHost(address),
-        url: address,
-        colour: colour ?? nextFeedsColour(current.map((subscription) => subscription.colour)),
-      },
-    ])
+    let holder: FeedsSubscription | undefined
+    await this.#save.execute((current) => {
+      holder = feedsSubscriptionWithUrl(current, address)
+      if (holder) return current
+      return [
+        ...current,
+        {
+          id,
+          name: given ?? toFeedsName(calendar.name) ?? feedsUrlHost(address),
+          url: address,
+          colour: colour ?? nextFeedsColour(current.map((subscription) => subscription.colour)),
+        },
+      ]
+    })
+    if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
     this.#store.update(id, { calendar, status: { readAt, reading: false, error: null } })
     await this.#cache.write(id, { text: result.text, readAt }).catch(() => undefined)
     return { ok: true, id }

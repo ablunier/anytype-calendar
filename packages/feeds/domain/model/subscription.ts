@@ -69,6 +69,25 @@ export function toFeedsUrl(input: unknown): string | null {
   return `${read}://${authority}${rest}`
 }
 
+/**
+ * Whether two addresses, each as `toFeedsUrl` gives it, name one feed. The scheme is left out,
+ * since servers serve one calendar over `http` and `https`, and so is the port the scheme uses
+ * by default. Only the host ignores case: a path or query differing in case can be another
+ * secret feed.
+ */
+export function sameFeedsUrl(a: string, b: string): boolean {
+  return comparableUrl(a) === comparableUrl(b)
+}
+
+/** The subscription, other than `exceptId`, that already has `url`, as `toFeedsUrl` gives it. */
+export function feedsSubscriptionWithUrl(
+  subscriptions: readonly FeedsSubscription[],
+  url: string,
+  exceptId?: string,
+): FeedsSubscription | undefined {
+  return subscriptions.find((subscription) => subscription.id !== exceptId && sameFeedsUrl(subscription.url, url))
+}
+
 /** What the user is shown of an address: its host, never the path or credentials that make it secret. */
 export function feedsUrlHost(url: string): string {
   return hostOf(/^[a-z]+:\/\/([^/?#]*)/i.exec(url)?.[1] ?? '')
@@ -79,6 +98,17 @@ export function toFeedsName(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const name = value.trim()
   return name === '' || name.length > MAX_NAME_LENGTH ? null : name
+}
+
+function comparableUrl(url: string): string {
+  const match = /^([a-z]+):\/\/([^/?#]*)(.*)$/is.exec(url)
+  if (!match) return url
+  const [, scheme = '', authority = '', rest = ''] = match
+  const at = authority.lastIndexOf('@') + 1
+  const host = authority.slice(at).toLowerCase()
+  const defaultPort = scheme.toLowerCase() === 'http' ? ':80' : ':443'
+  const bareHost = host.endsWith(defaultPort) ? host.slice(0, -defaultPort.length) : host
+  return `${authority.slice(0, at)}${bareHost}${rest}`
 }
 
 /** Without any `user:password@`, and lowercased, as hosts compare. */

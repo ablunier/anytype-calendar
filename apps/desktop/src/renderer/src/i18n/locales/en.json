@@ -410,7 +410,8 @@
       "http": "The server answered with an error ({{status}}). The address may have changed or been revoked.",
       "notCalendar": "That address isn't an iCal calendar. Look for the link in iCal (.ics) format.",
       "invalidUrl": "That isn't a web address. It should start with https:// or webcal://.",
-      "invalidName": "Give it a name of up to 200 characters."
+      "invalidName": "Give it a name of up to 200 characters.",
+      "duplicate": "This calendar is already subscribed, as “{{name}}”."
     },
     "status": {
       "read": "read {{elapsed}}",

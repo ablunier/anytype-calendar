@@ -129,7 +129,8 @@ and the dependency-cruiser check. `lint:arch` first needs `npm run lint:arch:set
   reads the objects of the saved selection's types (real ones in real mode, a sample seeded
   around the current month in fake mode). A fresh fake account has no types picked, so the
   month says "Choose what goes on the calendar"; pick some in Settings, or save a selection
-  with `eval "window.api.schemaSelection.save({ spaceIds: ['sp_studio'], types: [{ spaceId: 'sp_studio', typeKey: 'project', from: 'start_date', to: 'due_date' }] })"`.
+  with `eval "window.api.schemaSelection.save({ spaceIds: ['sp_studio'], types: [{ spaceId: 'sp_studio', typeKey: 'project', from: 'start_date', to: 'due_date', includesTime: false }] })"`. Every Source needs
+  `includesTime`; without it the save throws "not a schema selection".
   `state` doesn't include the month: read it with `eval "window.api.events.get()"`. The
   arrow buttons have no text, so click them by aria-label (`Previous month`, `Next month`).
 - **Focusing the window re-reads the account and the month**, at most once per 30 s, so

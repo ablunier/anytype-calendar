@@ -78,7 +78,11 @@ Standard electron-vite three-process layout:
   owner-only; without OS encryption both stay in memory, like the key. A `FeedsSnapshot` names
   a subscription only by host, never its URL, so Settings edits an address with an empty field
   that sends one only to replace it; a new address, like an added one, is read before it is
-  saved, and a refresh still reading the old one drops what it reads. The renderer merges the feeds' events into the
+  saved, and a refresh still reading the old one drops what it reads. An address another
+  subscription already has is refused, naming the one that has it (`sameFeedsUrl` leaves out
+  the scheme and a default port, and ignores the host's case but not the path's or query's).
+  It is checked before the read, to spare it, and again inside the save, which is what holds
+  when another change took the address meanwhile; duplicates saved before stay. The renderer merges the feeds' events into the
   span's (`lib/feeds.ts`, keyed by `subscriptionKey`), and they are never dragged, created or
   ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
   `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
