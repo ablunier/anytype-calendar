@@ -39,8 +39,8 @@ describe('feedsUrlHost', () => {
 })
 
 describe('sameFeedsUrl', () => {
-  test('ignores the case of the scheme and the host', () => {
-    expect(sameFeedsUrl('https://Calendar.Google.com/ical/abc', 'HTTPS://calendar.google.com/ical/abc')).toBe(true)
+  test('ignores the case of the host', () => {
+    expect(sameFeedsUrl('https://Calendar.Google.com/ical/abc', 'https://calendar.google.com/ical/abc')).toBe(true)
   })
 
   test('tells apart a path or query that differs only in case, as a secret feed may', () => {
@@ -50,9 +50,18 @@ describe('sameFeedsUrl', () => {
     expect(sameFeedsUrl('https://example.com/feed?token=Ab', 'https://example.com/feed?token=ab')).toBe(false)
   })
 
-  test('tells apart another host, scheme or port', () => {
+  test('ignores the scheme, as servers serve one calendar over http and https', () => {
+    expect(sameFeedsUrl('http://example.com/cal', 'https://example.com/cal')).toBe(true)
+  })
+
+  test('ignores the port its scheme uses by default', () => {
+    expect(sameFeedsUrl('https://example.com:443/cal.ics', 'https://example.com/cal.ics')).toBe(true)
+    expect(sameFeedsUrl('http://example.com:80/cal.ics', 'https://example.com/cal.ics')).toBe(true)
+    expect(sameFeedsUrl('http://example.com:443/cal.ics', 'https://example.com/cal.ics')).toBe(false)
+  })
+
+  test('tells apart another host or port', () => {
     expect(sameFeedsUrl('https://example.com/cal', 'https://example.org/cal')).toBe(false)
-    expect(sameFeedsUrl('http://example.com/cal', 'https://example.com/cal')).toBe(false)
     expect(sameFeedsUrl('https://example.com:8443/cal', 'https://example.com/cal')).toBe(false)
   })
 })
