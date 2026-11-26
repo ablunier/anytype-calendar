@@ -79,7 +79,7 @@ Standard electron-vite three-process layout:
   a subscription only by host, never its URL, so Settings edits an address with an empty field
   that sends one only to replace it; a new address, like an added one, is read before it is
   saved, and a refresh still reading the old one drops what it reads. The renderer merges the feeds' events into the
-  span's (`lib/feeds.ts`, keyed by `feedSourceKey`), and they are never dragged, created or
+  span's (`lib/feeds.ts`, keyed by `subscriptionKey`), and they are never dragged, created or
   ticked; their panel opens a `URL` through `shell.openLink`, and the parser keeps only an
   `http(s)` one. The sidebar's plus beside Calendars opens Settings at the form that adds one.
   Before any load it opens on `defaultEventsSpan` (`events/default-span.ts`), built
@@ -150,7 +150,7 @@ Standard electron-vite three-process layout:
     position in the selection, types first) and only the lowest-ranked visible one is drawn, so a type
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
-    (`typeSourceKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
+    (`typeSourceKey` / `querySourceKey` / `subscriptionKey`, never spaces) and whether the sidebar is collapsed are saved in
     the `calendarVisibility` section (`main/preferences/calendar-visibility.ts`), as are the spaces folded in the tree
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,

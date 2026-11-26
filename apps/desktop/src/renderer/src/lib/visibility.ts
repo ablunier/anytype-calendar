@@ -1,6 +1,6 @@
 /* What the calendar's sidebar hides. A hidden source is still read: its events are dropped
  * here, from what is drawn, so showing it again needs no request to Anytype. The pure part of
- * the sidebar, over source keys (`CalendarSource.key` and `FeedSource.key`, which
+ * the sidebar, over source keys (`CalendarSource.key` and `CalendarSubscription.key`, which
  * `CalendarEvent.type` carries too). */
 
 import type { CalendarEvent, CalendarSelection, CalendarSource } from '@renderer/types'

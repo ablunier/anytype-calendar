@@ -212,8 +212,8 @@ export interface FeedEventDetails {
 }
 
 /** An external calendar subscribed to by its iCalendar address. */
-export interface FeedSource {
-  /** `feedSourceKey`, what its events carry as `CalendarEvent.type`. */
+export interface CalendarSubscription {
+  /** `subscriptionKey`, what its events carry as `CalendarEvent.type`. */
   key: string
   /** The subscription's own id, which main is asked by. */
   id: string

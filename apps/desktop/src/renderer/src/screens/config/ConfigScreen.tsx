@@ -10,8 +10,8 @@ import type {
   ApiKeyView,
   CalendarSelection,
   CalendarSource,
+  CalendarSubscription,
   CalendarView,
-  FeedSource,
   Space,
   SyncView,
 } from '@renderer/types'
@@ -61,7 +61,7 @@ export interface ConfigScreenProps {
   updateAvailable: string | null
   onOpenRelease: () => void
   /** The subscribed calendars, in the user's order. */
-  feeds: FeedSource[]
+  feeds: CalendarSubscription[]
   feedActions: Omit<CalendarsSectionProps, 'feeds' | 'focusAdd'>
   /** Opened to add a calendar: the subscribed calendars' form is scrolled to and focused. */
   focusAddFeed?: boolean

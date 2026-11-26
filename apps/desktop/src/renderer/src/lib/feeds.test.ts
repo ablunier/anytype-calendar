@@ -1,7 +1,7 @@
 import type { CalendarEvent } from '@renderer/types'
 import type { FeedsSnapshot } from '@shared/ipc'
 import { describe, expect, test } from 'vitest'
-import { feedEventsFor, feedSourceKey, feedsFor, mergedEvents, movedOrder } from './feeds'
+import { feedEventsFor, feedsFor, mergedEvents, movedOrder, subscriptionKey } from './feeds'
 
 const at = (date: string, time = '00:00'): number => new Date(`${date}T${time}`).getTime()
 
@@ -84,8 +84,8 @@ describe('feedEventsFor', () => {
       {
         id: 'feed:a1:h1',
         title: 'Holiday',
-        type: feedSourceKey('a1'),
-        space: feedSourceKey('a1'),
+        type: subscriptionKey('a1'),
+        space: subscriptionKey('a1'),
         rank: 0,
         date: '2026-09-11',
         allDay: true,

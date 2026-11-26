@@ -1,5 +1,5 @@
 import { renderWithI18n } from '@renderer/test/render'
-import type { CalendarSource, FeedSource, Space } from '@renderer/types'
+import type { CalendarSource, CalendarSubscription, Space } from '@renderer/types'
 import { screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -88,7 +88,7 @@ describe('SourceTree', () => {
 
 describe('FeedList', () => {
   it('toggles a subscription with Space', async () => {
-    const feed: FeedSource = {
+    const feed: CalendarSubscription = {
       key: 'feed:holidays',
       id: 'holidays',
       name: 'Holidays',

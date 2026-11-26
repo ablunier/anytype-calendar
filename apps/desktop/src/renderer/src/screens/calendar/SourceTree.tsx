@@ -2,7 +2,7 @@ import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { type SourceVisibility, visibilityOf } from '@renderer/lib/visibility'
-import type { CalendarSource, CategoryHue, FeedSource, Space } from '@renderer/types'
+import type { CalendarSource, CalendarSubscription, CategoryHue, Space } from '@renderer/types'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -91,7 +91,7 @@ export function SourceTree({
 
 export interface FeedListProps {
   /** In the user's order, which Settings changes. */
-  feeds: FeedSource[]
+  feeds: CalendarSubscription[]
   hidden: ReadonlySet<string>
   onSetShown: (keys: string[], shown: boolean) => void
 }

@@ -3,14 +3,14 @@ import { Button, Card, catBg, Icon, IconButton, Input } from '@renderer/componen
 import { feedFailureText, feedStatusText } from '@renderer/lib/feed-text'
 import { movedOrder } from '@renderer/lib/feeds'
 import { hueOf } from '@renderer/lib/schema'
-import type { FeedSource } from '@renderer/types'
+import type { CalendarSubscription } from '@renderer/types'
 import type { FeedsAddResult, FeedsEditRequest, FeedsEditResult } from '@shared/ipc'
 import { type DragEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface CalendarsSectionProps {
   /** In the user's order: the sidebar's, and the order events sharing a slot are drawn in. */
-  feeds: FeedSource[]
+  feeds: CalendarSubscription[]
   /** Resolves why the feed was refused, or rejects when it could not be saved. */
   onAdd: (url: string, name: string, colour: FeedsColour) => Promise<FeedsAddResult>
   /** Resolves why a new address was refused, or rejects when the edit could not be saved. */
@@ -135,7 +135,7 @@ export function CalendarsSection({
 }
 
 interface FeedRowProps {
-  feed: FeedSource
+  feed: CalendarSubscription
   first: boolean
   last: boolean
   lifted: boolean
@@ -251,7 +251,7 @@ function FeedRow({
 }
 
 interface FeedEditorProps {
-  feed: FeedSource
+  feed: CalendarSubscription
   onCancel: () => void
   /** Resolves why it was refused, or rejects when it could not be saved; the editor stays open for either. */
   onSave: (request: FeedsEditRequest) => Promise<FeedsEditResult>

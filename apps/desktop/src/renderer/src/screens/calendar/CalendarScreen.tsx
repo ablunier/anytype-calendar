@@ -25,11 +25,11 @@ import type {
   CalendarEvent,
   CalendarSlot,
   CalendarSource,
+  CalendarSubscription,
   CalendarView,
   Collection,
   DetailTarget,
   EditAccess,
-  FeedSource,
   Space,
   SyncView,
 } from '@renderer/types'
@@ -60,7 +60,7 @@ export interface CalendarScreenProps {
   /** The chosen types and queries of the tracked spaces: what the sidebar can hide. */
   sources: CalendarSource[]
   /** The subscribed calendars, which the sidebar can hide too. Their events are read-only. */
-  feeds: FeedSource[]
+  feeds: CalendarSubscription[]
   /** Keys of the sources not drawn. They are read all the same. */
   hiddenSources: ReadonlySet<string>
   sidebarCollapsed: boolean

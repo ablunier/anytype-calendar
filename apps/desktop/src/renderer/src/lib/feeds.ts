@@ -1,22 +1,22 @@
 /* The only renderer module that reads the shape of a feeds snapshot; components get view
  * models. A feed's events become CalendarEvents like Anytype's objects, in the machine's time
- * zone, keyed to their subscription with `feedSourceKey`. */
+ * zone, keyed to their subscription with `subscriptionKey`. */
 
 import type { FeedsPlacedOccurrence, FeedsSubscriptionView } from '@anytype-calendar/feeds/domain'
-import type { CalendarEvent, FeedSource, FeedStatus } from '@renderer/types'
+import type { CalendarEvent, CalendarSubscription, FeedStatus } from '@renderer/types'
 import type { FeedsSnapshot } from '@shared/ipc'
 import { localDate, localTime } from './events'
 import { elapsedSince, hueOf } from './schema'
 
 /** Never a type's or a query's key: those start with a space id, which has no `feed:` in it. */
-export function feedSourceKey(id: string): string {
+export function subscriptionKey(id: string): string {
   return `feed:${id}`
 }
 
 /** The subscriptions, in the user's order. `now` is epoch milliseconds. */
-export function feedsFor(snapshot: FeedsSnapshot, now: number): FeedSource[] {
+export function feedsFor(snapshot: FeedsSnapshot, now: number): CalendarSubscription[] {
   return snapshot.subscriptions.map(({ id, name, colour, host, status }) => ({
-    key: feedSourceKey(id),
+    key: subscriptionKey(id),
     id,
     name,
     category: hueOf(colour),
@@ -69,10 +69,10 @@ function calendarEventFor(
   { name, colour }: FeedsSubscriptionView,
 ): CalendarEvent {
   return {
-    id: `${feedSourceKey(feedId)}:${id}`,
+    id: `${subscriptionKey(feedId)}:${id}`,
     title,
-    type: feedSourceKey(feedId),
-    space: feedSourceKey(feedId),
+    type: subscriptionKey(feedId),
+    space: subscriptionKey(feedId),
     rank,
     date: localDate(start),
     allDay,

@@ -194,7 +194,7 @@ function App(): React.JSX.Element | null {
   const typesOnCalendar = withDates(types, selected.dates)
   const today = localDate(now)
   const sources = sourcesOnCalendar(typesOnCalendar, selected)
-  const feedSources = feedsFor(feeds, now)
+  const subscriptions = feedsFor(feeds, now)
   /* Only keys of sources the calendar still holds are saved, so what the selection dropped,
    * or a subscription removed, since stops being remembered. */
   const setSourcesShown = (keys: string[], shown: boolean): void =>
@@ -202,7 +202,7 @@ function App(): React.JSX.Element | null {
       ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
-        [...sources, ...feedSources].map(({ key }) => key),
+        [...sources, ...subscriptions].map(({ key }) => key),
       ),
     }))
   /* The feeds never wait on Anytype: they are drawn while its read of the span is running, and
@@ -233,11 +233,11 @@ function App(): React.JSX.Element | null {
         spaces={spacesFor(schema)}
         trackedSpaceKeys={selected.spaceKeys}
         sources={sources}
-        feeds={feedSources}
+        feeds={subscriptions}
         hiddenSources={hiddenSources}
         sidebarCollapsed={visibility.collapsed}
         collapsedSpaces={collapsedSpaces}
-        tracksAnything={tracksAnyType(selection) || feedSources.length > 0}
+        tracksAnything={tracksAnyType(selection) || subscriptions.length > 0}
         today={today}
         nowMinute={minutesOf(now)}
         theme={theme}
