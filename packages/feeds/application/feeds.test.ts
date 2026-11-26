@@ -361,6 +361,51 @@ describe('a second subscription to one address', () => {
     expect(stored()).toEqual([subscription('a'), subscription('b')])
   })
 
+  test('is refused when adding, if another subscription took the address while it was read', async () => {
+    let answer: (result: FeedsFetchResult) => void = () => undefined
+    const { stored, store, load, add, edit, cached } = setup({
+      saved: [subscription('a')],
+      answers: { 'https://example.com/x.ics': new Promise((resolve) => (answer = resolve)) },
+    })
+    await load.execute()
+    const editing = edit.execute({ id: 'a', url: 'https://example.com/x.ics' })
+    const adding = add.execute({ url: 'https://example.com/x.ics', name: 'Again' })
+    answer({ ok: true, text: feed([]) })
+    await expect(editing).resolves.toEqual({ ok: true })
+    await expect(adding).resolves.toEqual({ ok: false, failure: 'duplicate', name: 'Feed a' })
+    expect(stored()).toEqual([subscription('a', { url: 'https://example.com/x.ics' })])
+    expect(store.get().subscriptions.map(({ id }) => id)).toEqual(['a'])
+    expect(cached.has('new1')).toBe(false)
+  })
+
+  test('is refused when editing, if another subscription took the address while it was read', async () => {
+    let answer: (result: FeedsFetchResult) => void = () => undefined
+    const { stored, load, add, edit } = setup({
+      saved: [subscription('a')],
+      answers: { 'https://example.com/x.ics': new Promise((resolve) => (answer = resolve)) },
+    })
+    await load.execute()
+    const adding = add.execute({ url: 'https://example.com/x.ics', name: 'New' })
+    const editing = edit.execute({ id: 'a', name: 'Renamed', url: 'https://example.com/x.ics' })
+    answer({ ok: true, text: feed([]) })
+    await expect(adding).resolves.toEqual({ ok: true, id: 'new1' })
+    await expect(editing).resolves.toEqual({ ok: false, failure: 'duplicate', name: 'New' })
+    expect(stored().map(({ id, name, url }) => ({ id, name, url }))).toEqual([
+      { id: 'a', name: 'Feed a', url: 'https://example.com/a.ics' },
+      { id: 'new1', name: 'New', url: 'https://example.com/x.ics' },
+    ])
+  })
+
+  test('is not one with itself when an edit gives its own address in another form', async () => {
+    const { stored, load, edit, gateway } = setup({ saved: [subscription('a')] })
+    await load.execute()
+    await expect(edit.execute({ id: 'a', name: 'Renamed', url: 'http://EXAMPLE.com:80/a.ics' })).resolves.toEqual({
+      ok: true,
+    })
+    expect(gateway.fetch).not.toHaveBeenCalled()
+    expect(stored()).toEqual([subscription('a', { name: 'Renamed' })])
+  })
+
   test('is not one when the path differs in case', async () => {
     const { stored, load, add } = setup({
       saved: [subscription('a', { url: 'https://example.com/private-Ab.ics' })],

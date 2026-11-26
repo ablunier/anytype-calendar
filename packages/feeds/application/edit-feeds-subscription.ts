@@ -60,10 +60,11 @@ export class EditFeedsSubscription {
     if (url !== undefined) {
       const address = toFeedsUrl(url)
       if (address === null) return { ok: false, failure: 'invalid-url' }
-      const current = this.#store.subscription(id)?.url
-      if (current === undefined || !sameFeedsUrl(address, current)) {
-        const holder = feedsSubscriptionWithUrl(this.#store.subscriptions(), address)
-        if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
+      const currentUrl = this.#store.subscription(id)?.url
+      if (currentUrl === undefined || !sameFeedsUrl(address, currentUrl)) {
+        // Only spares a pointless read: the check that holds is the one inside the save.
+        const early = feedsSubscriptionWithUrl(this.#store.subscriptions(), address, id)
+        if (early) return { ok: false, failure: 'duplicate', name: early.name }
         const result = await this.#gateway.fetch(address)
         if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }
         const calendar = this.#parser.parse(result.text)
@@ -76,11 +77,13 @@ export class EditFeedsSubscription {
       ...(colour === undefined ? {} : { colour }),
       ...(moved === null ? {} : { url: moved.url }),
     }
-    await this.#save.execute((current) =>
-      current.some((subscription) => subscription.id === id)
-        ? current.map((subscription) => (subscription.id === id ? { ...subscription, ...change } : subscription))
-        : current,
-    )
+    let holder: FeedsSubscription | undefined
+    await this.#save.execute((current) => {
+      holder = moved === null ? undefined : feedsSubscriptionWithUrl(current, moved.url, id)
+      if (holder || !current.some((subscription) => subscription.id === id)) return current
+      return current.map((subscription) => (subscription.id === id ? { ...subscription, ...change } : subscription))
+    })
+    if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
     if (moved !== null && this.#store.subscription(id)) {
       const readAt = this.#now()
       this.#store.update(id, { calendar: moved.calendar, status: { readAt, reading: false, error: null } })
