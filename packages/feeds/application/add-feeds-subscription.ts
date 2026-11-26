@@ -7,6 +7,7 @@ import {
   feedsFetchFailureOf,
   feedsUrlHost,
   nextFeedsColour,
+  sameFeedsUrl,
   toFeedsName,
   toFeedsUrl,
 } from '../domain'
@@ -34,8 +35,9 @@ export interface AddFeedsSubscriptionDeps {
 }
 
 /**
- * The feed is read before anything is saved, so a mistyped address, or one that is not a
- * calendar, is refused with why, and leaves nothing behind. It goes last in the order.
+ * The feed is read before anything is saved, so a mistyped address, one that is not a
+ * calendar, or one another subscription already has, is refused with why, and leaves nothing
+ * behind. It goes last in the order.
  */
 export class AddFeedsSubscription {
   readonly #gateway: FeedsGateway
@@ -62,6 +64,8 @@ export class AddFeedsSubscription {
     if (address === null) return { ok: false, failure: 'invalid-url' }
     const given = name.trim() === '' ? null : toFeedsName(name)
     if (name.trim() !== '' && given === null) return { ok: false, failure: 'invalid-name' }
+    const holder = this.#store.subscriptions().find((subscription) => sameFeedsUrl(subscription.url, address))
+    if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
 
     const result = await this.#gateway.fetch(address)
     if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }

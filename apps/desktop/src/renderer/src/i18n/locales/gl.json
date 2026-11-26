@@ -410,7 +410,8 @@
       "http": "O servidor respondeu cun erro ({{status}}). Pode que o enderezo cambiase ou se revogase.",
       "notCalendar": "Ese enderezo non é un calendario iCal. Busca a ligazón en formato iCal (.ics).",
       "invalidUrl": "Iso non é un enderezo web. Debe comezar por https:// ou webcal://.",
-      "invalidName": "Ponlle un nome de ata 200 caracteres."
+      "invalidName": "Ponlle un nome de ata 200 caracteres.",
+      "duplicate": "Este calendario xa está subscrito, como «{{name}}»."
     },
     "status": {
       "read": "lido {{elapsed}}",

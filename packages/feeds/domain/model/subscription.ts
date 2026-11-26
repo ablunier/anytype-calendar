@@ -69,6 +69,14 @@ export function toFeedsUrl(input: unknown): string | null {
   return `${read}://${authority}${rest}`
 }
 
+/**
+ * Whether two addresses, each as `toFeedsUrl` gives it, name one feed. Only the scheme and the
+ * host ignore case: a path or query differing in case can be another secret feed.
+ */
+export function sameFeedsUrl(a: string, b: string): boolean {
+  return comparableUrl(a) === comparableUrl(b)
+}
+
 /** What the user is shown of an address: its host, never the path or credentials that make it secret. */
 export function feedsUrlHost(url: string): string {
   return hostOf(/^[a-z]+:\/\/([^/?#]*)/i.exec(url)?.[1] ?? '')
@@ -79,6 +87,14 @@ export function toFeedsName(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const name = value.trim()
   return name === '' || name.length > MAX_NAME_LENGTH ? null : name
+}
+
+function comparableUrl(url: string): string {
+  const match = /^([a-z]+:\/\/)([^/?#]*)(.*)$/is.exec(url)
+  if (!match) return url
+  const [, scheme = '', authority = '', rest = ''] = match
+  const at = authority.lastIndexOf('@') + 1
+  return `${scheme.toLowerCase()}${authority.slice(0, at)}${authority.slice(at).toLowerCase()}${rest}`
 }
 
 /** Without any `user:password@`, and lowercased, as hosts compare. */

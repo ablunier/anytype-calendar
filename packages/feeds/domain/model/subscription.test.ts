@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { FEEDS_COLOURS, feedsUrlHost, nextFeedsColour, toFeedsName, toFeedsUrl } from './subscription'
+import { FEEDS_COLOURS, feedsUrlHost, nextFeedsColour, sameFeedsUrl, toFeedsName, toFeedsUrl } from './subscription'
 
 describe('toFeedsUrl', () => {
   test.each([
@@ -35,6 +35,25 @@ describe('feedsUrlHost', () => {
   test('is the host alone, without the credentials or the secret path', () => {
     expect(feedsUrlHost('https://me:pw@Calendar.Example.com/private-abc/basic.ics')).toBe('calendar.example.com')
     expect(feedsUrlHost('https://example.com:8443/x')).toBe('example.com:8443')
+  })
+})
+
+describe('sameFeedsUrl', () => {
+  test('ignores the case of the scheme and the host', () => {
+    expect(sameFeedsUrl('https://Calendar.Google.com/ical/abc', 'HTTPS://calendar.google.com/ical/abc')).toBe(true)
+  })
+
+  test('tells apart a path or query that differs only in case, as a secret feed may', () => {
+    expect(sameFeedsUrl('https://example.com/private-AbC/basic.ics', 'https://example.com/private-abc/basic.ics')).toBe(
+      false,
+    )
+    expect(sameFeedsUrl('https://example.com/feed?token=Ab', 'https://example.com/feed?token=ab')).toBe(false)
+  })
+
+  test('tells apart another host, scheme or port', () => {
+    expect(sameFeedsUrl('https://example.com/cal', 'https://example.org/cal')).toBe(false)
+    expect(sameFeedsUrl('http://example.com/cal', 'https://example.com/cal')).toBe(false)
+    expect(sameFeedsUrl('https://example.com:8443/cal', 'https://example.com/cal')).toBe(false)
   })
 })
 

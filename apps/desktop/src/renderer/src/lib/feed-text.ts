@@ -15,6 +15,8 @@ export function feedFailureText(t: TFunction, { failure, ...rest }: FeedFailure)
       return t('feeds.failure.invalidUrl')
     case 'invalid-name':
       return t('feeds.failure.invalidName')
+    case 'duplicate':
+      return t('feeds.failure.duplicate', { name: 'name' in rest ? rest.name : '' })
   }
 }
 

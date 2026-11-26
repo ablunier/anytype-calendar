@@ -334,6 +334,46 @@ describe('adding a subscription', () => {
   })
 })
 
+describe('a second subscription to one address', () => {
+  test('is refused when adding, before any read, naming the subscription that has it', async () => {
+    const { stored, load, add, gateway, repository } = setup({
+      saved: [subscription('a', { name: 'Work', url: 'https://calendar.example.com/private-Ab/basic.ics' })],
+    })
+    await load.execute()
+    await expect(
+      add.execute({ url: 'webcal://Calendar.Example.com/private-Ab/basic.ics', name: 'Again' }),
+    ).resolves.toEqual({ ok: false, failure: 'duplicate', name: 'Work' })
+    expect(gateway.fetch).not.toHaveBeenCalled()
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(stored()).toHaveLength(1)
+  })
+
+  test('is refused when pointing another subscription at it, saving nothing of the edit', async () => {
+    const { stored, load, edit, gateway, repository } = setup({ saved: [subscription('a'), subscription('b')] })
+    await load.execute()
+    await expect(edit.execute({ id: 'b', name: 'Renamed', url: 'HTTPS://EXAMPLE.COM/a.ics' })).resolves.toEqual({
+      ok: false,
+      failure: 'duplicate',
+      name: 'Feed a',
+    })
+    expect(gateway.fetch).not.toHaveBeenCalled()
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(stored()).toEqual([subscription('a'), subscription('b')])
+  })
+
+  test('is not one when the path differs in case', async () => {
+    const { stored, load, add } = setup({
+      saved: [subscription('a', { url: 'https://example.com/private-Ab.ics' })],
+      answers: { 'https://example.com/private-ab.ics': { ok: true, text: feed([]) } },
+    })
+    await load.execute()
+    await expect(add.execute({ url: 'https://example.com/private-ab.ics', name: 'Other' })).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(stored()).toHaveLength(2)
+  })
+})
+
 describe('editing the subscriptions', () => {
   test('renames and recolours one, keeping the rest', async () => {
     const { stored, load, edit, store } = setup({ saved: [subscription('a'), subscription('b')] })

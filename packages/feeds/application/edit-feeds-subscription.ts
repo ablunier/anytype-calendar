@@ -7,6 +7,7 @@ import {
   type FeedsGateway,
   type FeedsSubscription,
   feedsFetchFailureOf,
+  sameFeedsUrl,
   toFeedsUrl,
 } from '../domain'
 import type { FeedsStore } from './feeds-store'
@@ -31,8 +32,8 @@ export interface EditFeedsSubscriptionDeps {
 
 /**
  * Renames a subscription, recolours it, or points it at another address. A new address is
- * read before anything is saved, as when adding one, so one that is mistyped, or not a
- * calendar, is refused with why and the subscription keeps the address it had. What the new
+ * read before anything is saved, as when adding one, so one that is mistyped, not a calendar,
+ * or another subscription's, is refused with why and the subscription keeps the address it had. What the new
  * one holds replaces the old copy at once, cached copy included.
  */
 export class EditFeedsSubscription {
@@ -58,7 +59,10 @@ export class EditFeedsSubscription {
     if (url !== undefined) {
       const address = toFeedsUrl(url)
       if (address === null) return { ok: false, failure: 'invalid-url' }
-      if (address !== this.#store.subscription(id)?.url) {
+      const own = this.#store.subscription(id)?.url
+      if (own === undefined || !sameFeedsUrl(address, own)) {
+        const holder = this.#store.subscriptions().find((subscription) => sameFeedsUrl(subscription.url, address))
+        if (holder) return { ok: false, failure: 'duplicate', name: holder.name }
         const result = await this.#gateway.fetch(address)
         if (!result.ok) return { ok: false, ...feedsFetchFailureOf(result) }
         const calendar = this.#parser.parse(result.text)
