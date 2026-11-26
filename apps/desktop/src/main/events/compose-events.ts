@@ -59,7 +59,7 @@ export function composeEvents({ anytype, apiKeys, sources, defaultSpan }: Events
     resetEventsSpan: new ResetEventsSpan(eventsState),
     rescheduleEventsObject: new RescheduleEventsObject(editDeps),
     createEventsObject: new CreateEventsObject(editDeps),
-    completeEventsObject: new SetEventsObjectDone(editDeps),
+    setEventsObjectDone: new SetEventsObjectDone(editDeps),
     /** The span on screen, or before any, the one a launch opens on. */
     shownWindow: (): EventsWindow => eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone),
   }

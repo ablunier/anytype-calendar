@@ -12,7 +12,7 @@ import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
 export type EventsIpcLinks = Pick<Auth, 'authSession' | 'checkAuthAccess'> & Pick<Schema, 'schemaSync'>
 
 export function registerEventsIpc(
-  { eventsState, loadEventsSpan, rescheduleEventsObject, createEventsObject, completeEventsObject }: Events,
+  { eventsState, loadEventsSpan, rescheduleEventsObject, createEventsObject, setEventsObjectDone }: Events,
   { authSession, checkAuthAccess, schemaSync }: EventsIpcLinks,
 ): void {
   const connected = (): boolean => authSession.get().phase === 'connected'
@@ -41,7 +41,7 @@ export function registerEventsIpc(
   )
   ipcMain.handle(
     IpcChannel.eventsSetDone,
-    edit(toSetDoneRequest, (request) => completeEventsObject.execute(request)),
+    edit(toSetDoneRequest, (request) => setEventsObjectDone.execute(request)),
   )
 
   ipcMain.handle(IpcChannel.eventsGet, () => eventsState.shown())

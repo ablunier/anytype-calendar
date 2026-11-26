@@ -29,22 +29,22 @@ export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSy
   const spaceOf = (spaceId: string): SchemaSpace | undefined => synced?.spaces.find(({ id }) => id === spaceId)
 
   const typeSources = types
-    .filter((choice) => spaceIds.includes(choice.spaceId))
-    .map((choice) => {
-      const { spaceId, typeKey } = choice
+    .filter((chosen) => spaceIds.includes(chosen.spaceId))
+    .map((chosen) => {
+      const { spaceId, typeKey } = chosen
       const type = spaceOf(spaceId)?.types.find(({ key }) => key === typeKey)
-      const source: EventsSource = { kind: 'type', spaceId, typeKey, ...datesOf(choice, type) }
-      return type ? withDetails(source, type, choice) : source
+      const source: EventsSource = { kind: 'type', spaceId, typeKey, ...datesOf(chosen, type) }
+      return type ? withDetails(source, type, chosen) : source
     })
   const querySources = queries
-    .filter((choice) => spaceIds.includes(choice.spaceId))
-    .map((choice) => {
-      const { spaceId, queryId, viewId } = choice
+    .filter((chosen) => spaceIds.includes(chosen.spaceId))
+    .map((chosen) => {
+      const { spaceId, queryId, viewId } = chosen
       const space = spaceOf(spaceId)
       const typeKey = space?.queries.find(({ id }) => id === queryId)?.typeKey
       const type = space?.types.find(({ key }) => key === typeKey)
-      const source: EventsSource = { kind: 'query', spaceId, queryId, viewId, ...datesOf(choice, type) }
-      return type ? withDetails(source, type, choice) : source
+      const source: EventsSource = { kind: 'query', spaceId, queryId, viewId, ...datesOf(chosen, type) }
+      return type ? withDetails(source, type, chosen) : source
     })
   return [...typeSources, ...querySources]
 }

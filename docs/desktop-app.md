@@ -129,9 +129,9 @@ Standard electron-vite three-process layout:
     together, so a transient phase like `verifying` may never be drawn. One rule overrides
     the local screen: until a selection is saved (`unset`), every screen past the success
     card is onboarding, so a restored key that never finished it still gets it. Continue
-    saves the picks; Skip saves an empty selection on first run and saves nothing later.
+    saves the Selection; Skip saves an empty selection on first run and saves nothing later.
     Settings (`screens/config`) saves each change as it is made, and `SaveSchemaSelection`
-    runs those saves one at a time, in order. Both screens start their picks only once the
+    runs those saves one at a time, in order. Both screens start their Selection only once the
     account has been read: over no types, every saved date would fall back to a default.
     The calendar's arrows, Today and view switcher only ask main for a span. When the span main
     pushes back is another, `CalendarScreen` clears its selected day, panel and create dialog
@@ -213,12 +213,12 @@ Standard electron-vite three-process layout:
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`
     (`hooks/useSchemaSelection.ts`): it turns them into `Space[]`, `CalendarSource[]`, a
-    `SyncView` and `CalendarSelection`, and turns picks back into the `SchemaSelection` to save.
+    `SyncView` and `CalendarSelection`, and turns the Selection back into the `SchemaSelection` to save.
     `lib/events.ts` does the same for an `EventsSnapshot` (`hooks/useEvents.ts`): the span
     on screen, its status, and its objects as `CalendarEvent`s in local `YYYY-MM-DD` dates
     and `HH:MM` times, keyed to their `CalendarSource` with `lib/schema.ts`'s `typeSourceKey`, or
     `querySourceKey` for one read through a query: a query is an `CalendarSource` too, with
-    `query` set (its views) and its type's hue and dates, so the pickers, the picks and the
+    `query` set (its views) and its type's hue and dates, so the pickers, the Selection and the
     chips treat both alike. `typesInSpace` and `queriesInSpace` (`lib/calendar.ts`) split them.
     A result kept from another span is never drawn on this one. It also owns the span algebra
     the renderer needs: `spanFor` (the span a view wants around a date), `anchorOf` (the date
