@@ -9,7 +9,7 @@ The user's saved answer to what goes on the calendar: the spaces they chose, and
 _Avoid_: picks, settings, schema
 
 **Source**:
-One dated type or one Query the user put on the calendar, with how its objects are drawn: their From and To, whether those carry a time, what colours them and what the detail panel shows. The same type in two spaces is two Sources.
+One dated type or one Query the user put on the calendar, with how its objects are drawn: their From and To, whether those carry a time, what ticks them done, where they take place, what colours them and what the detail panel shows. The same type in two spaces is two Sources.
 _Avoid_: choice, pick, type (when a Query may be meant), calendar
 
 **Dated type**:

@@ -19,6 +19,10 @@ _Avoid_: item, entry
 A stretch of time Events are read for. It covers at least the Span on screen, and may reach past it so the grid's padding days are filled too.
 _Avoid_: range, visible range, span (for the time read)
 
+**Location**:
+Where an Event takes place, as text: a Dated object's from its Source's Location property, a Feed event's from its Feed.
+_Avoid_: place, venue, address (a Subscription's address is its iCalendar one)
+
 **Hidden**:
 A Source or Subscription the user turned off in the sidebar. It stays in the Selection, or subscribed, and is only not drawn.
 _Avoid_: unselected, removed, disabled
