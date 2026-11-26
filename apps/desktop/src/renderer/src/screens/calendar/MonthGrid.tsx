@@ -1,6 +1,6 @@
 import { isoWeekNumber, isWeekendColumn, weekdaysFrom } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
-import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, MonthCell } from '@renderer/types'
 import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MonthDayCell } from './MonthDayCell'
@@ -10,7 +10,7 @@ import { useDoubleClickSlot } from './useDoubleClickSlot'
 export interface MonthGridProps {
   cells: MonthCell[]
   events: CalendarEvent[]
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   /** `YYYY-MM-DD`. */
   today: string
   showWeekNumbers: boolean

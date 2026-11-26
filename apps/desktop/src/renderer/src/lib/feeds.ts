@@ -2,7 +2,7 @@
  * models. A feed's events become CalendarEvents like Anytype's objects, in the machine's time
  * zone, keyed to their subscription with `feedSourceKey`. */
 
-import type { FeedsEvent, FeedsSubscriptionView } from '@anytype-calendar/feeds/domain'
+import type { FeedsPlacedOccurrence, FeedsSubscriptionView } from '@anytype-calendar/feeds/domain'
 import type { CalendarEvent, FeedSource, FeedStatus } from '@renderer/types'
 import type { FeedsSnapshot } from '@shared/ipc'
 import { localDate, localTime } from './events'
@@ -65,7 +65,7 @@ function statusFor({ readAt, reading, error }: FeedsSubscriptionView['status'], 
 
 /** An occurrence's id is unique within its feed only, so the key is made of both. */
 function calendarEventFor(
-  { id, feedId, rank, title, start, end, allDay, location, description, url }: FeedsEvent,
+  { id, feedId, rank, title, start, end, allDay, location, description, url }: FeedsPlacedOccurrence,
   { name, colour }: FeedsSubscriptionView,
 ): CalendarEvent {
   return {

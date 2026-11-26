@@ -4,7 +4,15 @@
  * Recurrence is deliberately absent; overlap is resolved into lanes by `month-layout.ts`.
  */
 
-import type { CalendarEvent, CategoryHue, DateMapping, DayColumn, MonthCell, ObjectType, Space } from '@renderer/types'
+import type {
+  CalendarEvent,
+  CalendarSource,
+  CategoryHue,
+  DateMapping,
+  DayColumn,
+  MonthCell,
+  Space,
+} from '@renderer/types'
 
 const FIRST_WEEKEND_INDEX = 5
 
@@ -225,30 +233,30 @@ export function indexBy<T extends { key: string }>(items: T[]): Map<string, T> {
 }
 
 /** The space's types, leaving out its queries. */
-export function typesInSpace(types: ObjectType[], spaceKey: string): ObjectType[] {
+export function typesInSpace(types: CalendarSource[], spaceKey: string): CalendarSource[] {
   return types.filter((type) => type.space === spaceKey && type.query === undefined)
 }
 
-export function queriesInSpace(types: ObjectType[], spaceKey: string): ObjectType[] {
+export function queriesInSpace(types: CalendarSource[], spaceKey: string): CalendarSource[] {
   return types.filter((type) => type.space === spaceKey && type.query !== undefined)
 }
 
-export function viewOptions(type: ObjectType): { value: string; label: string }[] {
+export function viewOptions(type: CalendarSource): { value: string; label: string }[] {
   return (type.query?.views ?? []).map(({ key, label }) => ({ value: key, label }))
 }
 
 /** Its colour-by option's hue, else its type's; neutral for a type no longer read. */
-export function eventHue(event: CalendarEvent, type: ObjectType | undefined): CategoryHue {
+export function eventHue(event: CalendarEvent, type: CalendarSource | undefined): CategoryHue {
   return event.category ?? type?.category ?? 'graphite'
 }
 
 /** Falls back to the key for a property the type no longer has. */
-export function dateLabel(type: ObjectType, key: string): string {
+export function dateLabel(type: CalendarSource, key: string): string {
   return type.props.find((prop) => prop.key === key)?.label ?? key
 }
 
 /** False when the mapping names a date the type does not have, e.g. one a re-read took away. */
-export function offersDates(type: ObjectType, { from, to }: DateMapping): boolean {
+export function offersDates(type: CalendarSource, { from, to }: DateMapping): boolean {
   const offers = (key: string): boolean => type.props.some((prop) => prop.key === key)
   return offers(from) && (to === null || offers(to))
 }
@@ -260,7 +268,7 @@ export function offersDates(type: ObjectType, { from, to }: DateMapping): boolea
  * without the properties that are — none alone is reason to forget the dates. The mapping
  * itself when the type offers all of it.
  */
-export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapping | null {
+export function offeredMapping(type: CalendarSource, mapping: DateMapping): DateMapping | null {
   if (!offersDates(type, mapping)) return null
   const { colourBy, view, panel, done, location } = mapping
   const has = (properties: readonly { key: string }[], key: string | null): boolean =>
@@ -286,7 +294,7 @@ export function offeredMapping(type: ObjectType, mapping: DateMapping): DateMapp
  * How `type` is drawn: its entry in `dates`, or its own mapping. A query with no entry shows in
  * its panel what its type's entry does, and is ticked done and placed by the same properties.
  */
-export function mappingIn(dates: Record<string, DateMapping>, type: ObjectType): DateMapping {
+export function mappingIn(dates: Record<string, DateMapping>, type: CalendarSource): DateMapping {
   const own = dates[type.key]
   if (own) return own
   const { from, to, includesTime, colourBy, panel, done, location } = type
@@ -296,7 +304,7 @@ export function mappingIn(dates: Record<string, DateMapping>, type: ObjectType):
 }
 
 /** Each type with the dates in `dates` where it has an entry, and its own where it has none. */
-export function withDates(types: ObjectType[], dates: Record<string, DateMapping>): ObjectType[] {
+export function withDates(types: CalendarSource[], dates: Record<string, DateMapping>): CalendarSource[] {
   return types.map((type) => {
     const mapping = dates[type.key]
     return mapping
@@ -311,24 +319,24 @@ export function withDates(types: ObjectType[], dates: Record<string, DateMapping
   })
 }
 
-export function dateOptions(type: ObjectType): { value: string; label: string }[] {
+export function dateOptions(type: CalendarSource): { value: string; label: string }[] {
   return type.props.map(({ key, label }) => ({ value: key, label }))
 }
 
-export function colourOptions(type: ObjectType): { value: string; label: string }[] {
+export function colourOptions(type: CalendarSource): { value: string; label: string }[] {
   return type.selects.map(({ key, label }) => ({ value: key, label }))
 }
 
-export function doneOptions(type: ObjectType): { value: string; label: string }[] {
+export function doneOptions(type: CalendarSource): { value: string; label: string }[] {
   return type.checkboxes.map(({ key, label }) => ({ value: key, label }))
 }
 
-export function locationOptions(type: ObjectType): { value: string; label: string }[] {
+export function locationOptions(type: CalendarSource): { value: string; label: string }[] {
   return type.texts.map(({ key, label }) => ({ value: key, label }))
 }
 
 /** Falls back to the key for a property the type no longer has. */
-export function panelLabel(type: ObjectType, key: string): string {
+export function panelLabel(type: CalendarSource, key: string): string {
   return type.panelProps.find((prop) => prop.key === key)?.label ?? key
 }
 

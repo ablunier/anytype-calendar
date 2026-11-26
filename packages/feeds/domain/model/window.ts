@@ -1,4 +1,4 @@
-/** Epoch milliseconds, both ends inclusive: the stretch of calendar on screen. */
+/** Epoch milliseconds, both ends inclusive: the stretch of time occurrences are expanded over. */
 export interface FeedsWindow {
   start: number
   end: number

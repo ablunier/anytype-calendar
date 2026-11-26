@@ -1,11 +1,11 @@
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Checkbox, Select } from '@renderer/components/ui'
 import { dateOptions, viewOptions } from '@renderer/lib/calendar'
-import type { ObjectType } from '@renderer/types'
+import type { CalendarSource } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 
 export interface TypeCardProps {
-  type: ObjectType
+  type: CalendarSource
   checked: boolean
   from: string
   to: string | null

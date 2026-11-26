@@ -8,7 +8,7 @@ import type {
   EventsWriteResult,
   EventsWriter,
 } from '../domain'
-import { CompleteEventsObject, CreateEventsObject, RescheduleEventsObject } from './edit-events-object'
+import { CreateEventsObject, RescheduleEventsObject, SetEventsObjectDone } from './edit-events-object'
 import { EventsSpanStore } from './events-span-store'
 import { LoadEventsSpan } from './load-events-span'
 
@@ -103,7 +103,7 @@ async function setup({
     },
     reschedule: new RescheduleEventsObject(deps),
     create: new CreateEventsObject(deps),
-    complete: new CompleteEventsObject(deps),
+    complete: new SetEventsObjectDone(deps),
   }
 }
 

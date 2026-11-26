@@ -9,7 +9,7 @@ import {
   type TimedSegment,
   timeOfMinute,
 } from '@renderer/lib/time-grid'
-import type { CalendarEvent, CalendarSlot, DayColumn, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSlot, CalendarSource, DayColumn } from '@renderer/types'
 import { type CSSProperties, type DragEvent, type MouseEvent, useEffect, useEffectEvent, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AllDayBand } from './AllDayBand'
@@ -33,7 +33,7 @@ export interface TimeGridProps {
   /** Seven days for a week, one for a day. */
   days: DayColumn[]
   events: CalendarEvent[]
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   /** `YYYY-MM-DD`. */
   today: string
   /** Minutes from midnight, for the line marking the current time. */

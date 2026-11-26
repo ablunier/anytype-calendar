@@ -1,12 +1,12 @@
 import { Button, Checkbox, Dialog, Select } from '@renderer/components/ui'
 import { colourOptions, dateOptions, doneOptions, locationOptions, viewOptions } from '@renderer/lib/calendar'
-import type { DateMapping, ObjectType } from '@renderer/types'
+import type { CalendarSource, DateMapping } from '@renderer/types'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PanelPropertyList } from './PanelPropertyList'
 
 export interface TypeSettingsDialogProps {
-  type: ObjectType
+  type: CalendarSource
   open: boolean
   mapping: DateMapping
   onClose: () => void

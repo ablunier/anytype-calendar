@@ -3,7 +3,7 @@ import { Button, Icon, Tag } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import { dateLabel, formatTime, shortDate } from '@renderer/lib/calendar'
 import { addEndRequestFor, clearEndRequestFor, endRequestFor, hasOwnEnd, startRequestFor } from '@renderer/lib/events'
-import type { CalendarEvent, FeedEventDetails, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, FeedEventDetails, Space } from '@renderer/types'
 import type { EventsRescheduleRequest } from '@shared/ipc'
 import { useTranslation } from 'react-i18next'
 import { DateField, type DateFieldProps } from './DateField'
@@ -116,7 +116,7 @@ function DetailToggle({ checked, label, onChange }: DetailToggleProps): React.JS
 
 export interface EventDetailProps {
   event: CalendarEvent
-  type: ObjectType | undefined
+  type: CalendarSource | undefined
   spacesByKey: Map<string, Space>
   /** Why this panel cannot write to Anytype; null when it can. */
   readOnlyReason: string | null

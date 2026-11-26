@@ -1,4 +1,4 @@
-import type { CalendarEvent, ObjectType, TypePicks } from '@renderer/types'
+import type { CalendarEvent, CalendarSelection, CalendarSource } from '@renderer/types'
 import { describe, expect, test } from 'vitest'
 import { allHidden, prunedHidden, sourcesOnCalendar, visibilityOf, visibleEvents, withVisibility } from './visibility'
 
@@ -85,10 +85,10 @@ describe('prunedHidden', () => {
 })
 
 describe('sourcesOnCalendar and allHidden', () => {
-  const type = (key: string, space: string, query = false): ObjectType =>
-    ({ key, space, ...(query ? { query: { typeLabel: '', views: [] } } : {}) }) as ObjectType
+  const type = (key: string, space: string, query = false): CalendarSource =>
+    ({ key, space, ...(query ? { query: { typeLabel: '', views: [] } } : {}) }) as CalendarSource
   const types = [type(TASK, 'sp_1'), type(OPEN, 'sp_1', true), type('sp_1:note', 'sp_1'), type('sp_2:task', 'sp_2')]
-  const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [TASK, OPEN, 'sp_2:task'], dates: {} }
+  const picks: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: [TASK, OPEN, 'sp_2:task'], dates: {} }
 
   test('are the chosen types and queries of chosen spaces', () => {
     expect(sourcesOnCalendar(types, picks).map(({ key }) => key)).toEqual([TASK, OPEN])

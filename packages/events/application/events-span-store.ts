@@ -1,4 +1,4 @@
-import { type EventsDatedObject, type EventsSpanLoad, withEventsEdits } from '../domain'
+import { type EventsPlacement, type EventsSpanLoad, withEventsEdits } from '../domain'
 
 export type EventsSpanListener = (shown: EventsSpanLoad) => void
 
@@ -9,7 +9,7 @@ export type EventsSpanListener = (shown: EventsSpanLoad) => void
 export class EventsSpanStore {
   #state: EventsSpanLoad
   /** In the order they were made, so a later edit of an object wins. */
-  #edits: EventsDatedObject[] = []
+  #edits: EventsPlacement[] = []
   #shown: EventsSpanLoad
   readonly #listeners = new Set<EventsSpanListener>()
 
@@ -35,7 +35,7 @@ export class EventsSpanStore {
   }
 
   /** Draws `edit` in place of the object it edits until the returned release is called. */
-  hold(edit: EventsDatedObject): () => void {
+  hold(edit: EventsPlacement): () => void {
     this.#edits = [...this.#edits, edit]
     this.#publish()
     return () => {

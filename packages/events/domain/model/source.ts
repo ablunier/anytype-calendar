@@ -1,6 +1,6 @@
 import type { EventsOption, EventsPanelProperty } from './detail'
 
-/** Which pick a source is: a type, or a query over one. */
+/** Which Source it is: a type, or a query over one. */
 export type EventsSourceKey = { kind: 'type'; typeKey: string } | { kind: 'query'; queryId: string }
 
 /**

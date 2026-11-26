@@ -6,7 +6,7 @@ v2 (pre-release: it may change without a new version; spec at
 these out, and its `README.md` repeats the ones its users need; a new fact about the wire
 belongs there too:
 - Nothing marks a date as date-only. One set without a time is stored as the first instant
-  of that day where it was set (22:00 UTC for a day in UTC+2), so `toEventsDatedObject`
+  of that day where it was set (22:00 UTC for a day in UTC+2), so `toEventsPlacement`
   reads a date on the first instant of a local day as all-day.
 - Spaces are served by a six-character short reference unless `?ids=full` is asked for; the
   client always asks, since the saved selection stores full ids. Both spellings are accepted

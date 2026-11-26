@@ -1,7 +1,7 @@
 import type { EventsSpan } from '@anytype-calendar/events/domain'
 import { IconButton } from '@renderer/components/ui'
 import { anchorOf, spanDays } from '@renderer/lib/events'
-import type { FeedSource, ObjectType, Space } from '@renderer/types'
+import type { CalendarSource, FeedSource, Space } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 import { MiniMonth } from './MiniMonth'
 import { FeedList, SourceTree } from './SourceTree'
@@ -20,7 +20,7 @@ export interface CalendarSidebarProps {
   onSelectDate: (date: string) => void
   collapsed: boolean
   spaces: Space[]
-  sources: ObjectType[]
+  sources: CalendarSource[]
   /** The subscribed calendars, in the user's order. */
   feeds: FeedSource[]
   hidden: ReadonlySet<string>

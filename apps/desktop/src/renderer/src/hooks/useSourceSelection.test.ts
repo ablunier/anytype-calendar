@@ -1,9 +1,9 @@
-import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
+import type { CalendarSelection, CalendarSource, DateMapping } from '@renderer/types'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { useTypeSelection } from './useTypeSelection'
+import { useSourceSelection } from './useSourceSelection'
 
-const TASK: ObjectType = {
+const TASK: CalendarSource = {
   key: 'sp_1:task',
   space: 'sp_1',
   label: 'Task',
@@ -27,8 +27,8 @@ const TASK: ObjectType = {
   location: null,
 }
 
-const NOTE: ObjectType = { ...TASK, key: 'sp_1:note', label: 'Note' }
-const MEETING: ObjectType = { ...TASK, key: 'sp_2:meeting', space: 'sp_2', label: 'Meeting' }
+const NOTE: CalendarSource = { ...TASK, key: 'sp_1:note', label: 'Note' }
+const MEETING: CalendarSource = { ...TASK, key: 'sp_2:meeting', space: 'sp_2', label: 'Meeting' }
 
 const RANGE: DateMapping = {
   from: 'start_date',
@@ -41,13 +41,13 @@ const RANGE: DateMapping = {
   view: null,
 }
 
-const NOTHING_PICKED: TypePicks = { spaceKeys: [], typeKeys: [], dates: {} }
+const NOTHING_PICKED: CalendarSelection = { spaceKeys: [], typeKeys: [], dates: {} }
 
-function renderSelection(types: ObjectType[], initial: TypePicks = NOTHING_PICKED) {
-  return renderHook(({ types }) => useTypeSelection(types, initial), { initialProps: { types } })
+function renderSelection(types: CalendarSource[], initial: CalendarSelection = NOTHING_PICKED) {
+  return renderHook(({ types }) => useSourceSelection(types, initial), { initialProps: { types } })
 }
 
-describe('useTypeSelection', () => {
+describe('useSourceSelection', () => {
   it('adds a space or a type on toggle, and removes it on the next', () => {
     const { result } = renderSelection([TASK])
     act(() => result.current.toggleSpace('sp_1'))
@@ -83,7 +83,7 @@ describe('useTypeSelection', () => {
 
   it('drops an entry whose date a re-read takes away, so the type falls back to its own dates', () => {
     const { result, rerender } = renderSelection([TASK], { ...NOTHING_PICKED, dates: { 'sp_1:task': RANGE } })
-    const withoutEnd: ObjectType = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
+    const withoutEnd: CalendarSource = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
     rerender({ types: [withoutEnd] })
     expect(result.current.picks.dates).toEqual({})
     expect(result.current.mappingFor(withoutEnd)).toMatchObject({ from: 'due_date', to: null })
@@ -94,7 +94,7 @@ describe('useTypeSelection', () => {
       ...NOTHING_PICKED,
       dates: { 'sp_1:task': RANGE, 'sp_1:note': RANGE },
     })
-    const withoutEnd: ObjectType = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
+    const withoutEnd: CalendarSource = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
     rerender({ types: [withoutEnd] })
     expect(result.current.picks.dates).toEqual({ 'sp_1:note': RANGE })
   })

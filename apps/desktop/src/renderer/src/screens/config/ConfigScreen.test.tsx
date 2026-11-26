@@ -1,6 +1,6 @@
 import { objectType } from '@renderer/test/fixtures'
 import { renderWithI18n } from '@renderer/test/render'
-import type { TypePicks } from '@renderer/types'
+import type { CalendarSelection } from '@renderer/types'
 import { screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -100,8 +100,8 @@ describe('ConfigScreen saving', () => {
 describe('ConfigScreen first read', () => {
   it('starts the picks from the saved selection over the read types', async () => {
     // Before the read, App has no types to read the saved dates over, so it hands on none.
-    const unread: TypePicks = { spaceKeys: ['work'], typeKeys: [task.key], dates: {} }
-    const saved: TypePicks = {
+    const unread: CalendarSelection = { spaceKeys: ['work'], typeKeys: [task.key], dates: {} }
+    const saved: CalendarSelection = {
       ...unread,
       dates: {
         [task.key]: {

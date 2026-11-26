@@ -1,5 +1,5 @@
 import { eventHue, longDate } from '@renderer/lib/calendar'
-import type { CalendarEvent, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSource } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 import { EventRow } from './EventRow'
 
@@ -7,7 +7,7 @@ export interface DayDetailProps {
   /** `YYYY-MM-DD`. */
   date: string
   events: CalendarEvent[]
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   onOpenEvent: (event: CalendarEvent) => void
 }
 

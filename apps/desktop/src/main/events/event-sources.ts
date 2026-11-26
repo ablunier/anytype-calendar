@@ -1,11 +1,11 @@
 import type { EventsSource } from '@anytype-calendar/events/domain'
 import type {
-  SchemaQueryChoice,
+  SchemaQuerySource,
   SchemaSelectionState,
   SchemaSpace,
   SchemaSync,
   SchemaType,
-  SchemaTypeChoice,
+  SchemaTypeSource,
 } from '@anytype-calendar/schema/domain'
 
 /**
@@ -19,7 +19,7 @@ import type {
  * object of the type. Before that read, each is read by its dates alone.
  *
  * A saved From or To the synced type no longer has is read as the type's own dates, which is how
- * the renderer draws and offers it (see `picksFor`): Anytype matches nothing on a key it does
+ * the renderer draws and offers it (see `selectionFor`): Anytype matches nothing on a key it does
  * not have, so the saved one would empty the type with no failure to show.
  */
 export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSync): EventsSource[] {
@@ -51,7 +51,7 @@ export function eventsSourcesFor(selection: SchemaSelectionState, sync: SchemaSy
 
 /** The type's own dates are the renderer's `defaultMapping`: its first date, single and all-day. */
 function datesOf(
-  { from, to, includesTime }: SchemaTypeChoice | SchemaQueryChoice,
+  { from, to, includesTime }: SchemaTypeSource | SchemaQuerySource,
   type: SchemaType | undefined,
 ): Pick<EventsSource, 'from' | 'to' | 'includesTime'> {
   const has = (key: string): boolean => type?.dateProperties.some((property) => property.key === key) === true
@@ -63,7 +63,7 @@ function datesOf(
 function withDetails(
   source: EventsSource,
   type: SchemaType,
-  { colourBy, panel, done, location }: SchemaTypeChoice | SchemaQueryChoice,
+  { colourBy, panel, done, location }: SchemaTypeSource | SchemaQuerySource,
 ): EventsSource {
   const detailed = { ...source }
   const checkbox = type.checkboxProperties.find(({ key }) => key === done)

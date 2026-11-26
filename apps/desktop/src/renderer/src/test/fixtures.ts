@@ -1,4 +1,4 @@
-import type { ObjectType } from '@renderer/types'
+import type { CalendarSource } from '@renderer/types'
 
 /**
  * A type of `space` keyed as main keys it, `space:typeKey`, with a Start date and an End date,
@@ -8,8 +8,8 @@ export function objectType(
   space: string,
   typeKey: string,
   label: string,
-  overrides: Partial<ObjectType> = {},
-): ObjectType {
+  overrides: Partial<CalendarSource> = {},
+): CalendarSource {
   return {
     key: `${space}:${typeKey}`,
     space,

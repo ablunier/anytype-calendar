@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import type { EventsTimeZone } from '../gateways/time-zone'
-import type { EventsDatedObject } from './dated-object'
 import {
   eventsSourceHasEnd,
   newEventsObjectDates,
-  rescheduleEventsDatedObject,
+  rescheduleEventsPlacement,
   toEventsReschedule,
   toEventsSlot,
   withEventsEdits,
 } from './edit'
+import type { EventsPlacement } from './placement'
 import type { EventsTypeSource } from './source'
 import type { EventsSpanLoad } from './span-load'
 
@@ -40,7 +40,7 @@ const march = (day: number) => ({ year: 2026, month: 2, day })
 /** Epoch milliseconds of a local wall-clock time in March 2026. */
 const local = (day: number, hours = 0, minutes = 0): number => ZONE.at(march(day), hours * 60 + minutes)
 
-const object = (fields: Partial<EventsDatedObject>): EventsDatedObject => ({
+const object = (fields: Partial<EventsPlacement>): EventsPlacement => ({
   id: 'obj_1',
   spaceId: 'sp_1',
   source: { kind: 'type', typeKey: 'meeting' },
@@ -54,7 +54,7 @@ const object = (fields: Partial<EventsDatedObject>): EventsDatedObject => ({
 
 describe('moving a timed object', () => {
   test('lands on the clock time asked for and keeps how long it lasts, across a change of the clocks', () => {
-    const moved = rescheduleEventsDatedObject(
+    const moved = rescheduleEventsPlacement(
       object({}),
       { kind: 'move', start: { day: march(29), minute: 10 * 60 } },
       ZONE,
@@ -66,11 +66,11 @@ describe('moving a timed object', () => {
   test('keeps its time of day when moved to a slot with no minute, whichever way the clocks went', () => {
     const springDay = object({ start: local(29, 10), end: null })
     expect(
-      rescheduleEventsDatedObject(springDay, { kind: 'move', start: { day: march(30), minute: null } }, ZONE),
+      rescheduleEventsPlacement(springDay, { kind: 'move', start: { day: march(30), minute: null } }, ZONE),
     ).toMatchObject({ start: local(30, 10), end: null })
 
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'move', start: { day: march(29), minute: null } }, ZONE),
+      rescheduleEventsPlacement(object({}), { kind: 'move', start: { day: march(29), minute: null } }, ZONE),
     ).toMatchObject({ start: local(29, 10), end: local(29, 11) })
   })
 })
@@ -79,25 +79,25 @@ describe('moving an all-day object', () => {
   test('writes the first instant of the new day, and keeps how many days a range covers', () => {
     const range = object({ allDay: true, start: local(27), end: local(29) })
     expect(
-      rescheduleEventsDatedObject(range, { kind: 'move', start: { day: march(28), minute: null } }, ZONE),
+      rescheduleEventsPlacement(range, { kind: 'move', start: { day: march(28), minute: null } }, ZONE),
     ).toMatchObject({ start: local(28), end: local(30) })
   })
 
   test('drops whatever time of day a date carried, and ignores a minute', () => {
     const odd = object({ allDay: true, start: local(27, 13, 20), end: null })
-    expect(
-      rescheduleEventsDatedObject(odd, { kind: 'move', start: { day: march(2), minute: 600 } }, ZONE),
-    ).toMatchObject({ start: local(2), end: null })
+    expect(rescheduleEventsPlacement(odd, { kind: 'move', start: { day: march(2), minute: 600 } }, ZONE)).toMatchObject(
+      { start: local(2), end: null },
+    )
   })
 })
 
 describe('resizing', () => {
   test('moves the To date alone', () => {
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 12 * 60 + 15 } }, ZONE),
+      rescheduleEventsPlacement(object({}), { kind: 'resize', end: { day: march(28), minute: 12 * 60 + 15 } }, ZONE),
     ).toMatchObject({ start: local(28, 10), end: local(28, 12, 15) })
     expect(
-      rescheduleEventsDatedObject(
+      rescheduleEventsPlacement(
         object({ allDay: true, start: local(27), end: null }),
         { kind: 'resize', end: { day: march(30), minute: null } },
         ZONE,
@@ -107,30 +107,30 @@ describe('resizing', () => {
 
   test('refuses a To before the From', () => {
     expect(
-      rescheduleEventsDatedObject(object({}), { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
+      rescheduleEventsPlacement(object({}), { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
     ).toBeNull()
   })
 
   test('gives a timed object with no To one, measured from its From, across a change of the clocks', () => {
     const moment = object({ start: local(28, 10), end: null })
     expect(
-      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(29), minute: 11 * 60 } }, ZONE),
+      rescheduleEventsPlacement(moment, { kind: 'resize', end: { day: march(29), minute: 11 * 60 } }, ZONE),
     ).toMatchObject({ start: local(28, 10), end: local(29, 11) })
     // No minute keeps the From's time of day, though 29 March is 23 hours long.
-    const kept = rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(29), minute: null } }, ZONE)
+    const kept = rescheduleEventsPlacement(moment, { kind: 'resize', end: { day: march(29), minute: null } }, ZONE)
     expect(kept).toMatchObject({ end: local(29, 10) })
     expect(kept?.end).toBe(Date.UTC(2026, 2, 29, 8))
     expect(
-      rescheduleEventsDatedObject(moment, { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
+      rescheduleEventsPlacement(moment, { kind: 'resize', end: { day: march(28), minute: 9 * 60 } }, ZONE),
     ).toBeNull()
   })
 
   test('gives an all-day object with no To one on the first instant of its day, across a change of the clocks', () => {
     const day = object({ allDay: true, start: local(28), end: null })
     expect(
-      rescheduleEventsDatedObject(day, { kind: 'resize', end: { day: march(28), minute: null } }, ZONE),
+      rescheduleEventsPlacement(day, { kind: 'resize', end: { day: march(28), minute: null } }, ZONE),
     ).toMatchObject({ start: local(28), end: local(28) })
-    const after = rescheduleEventsDatedObject(day, { kind: 'resize', end: { day: march(30), minute: 600 } }, ZONE)
+    const after = rescheduleEventsPlacement(day, { kind: 'resize', end: { day: march(30), minute: 600 } }, ZONE)
     expect(after).toMatchObject({ end: local(30) })
     expect(after?.end).toBe(Date.UTC(2026, 2, 29, 22))
   })
@@ -138,12 +138,12 @@ describe('resizing', () => {
 
 describe('clearing the To date', () => {
   test('leaves the object its From alone, timed or all-day', () => {
-    expect(rescheduleEventsDatedObject(object({}), { kind: 'clear-end' }, ZONE)).toMatchObject({
+    expect(rescheduleEventsPlacement(object({}), { kind: 'clear-end' }, ZONE)).toMatchObject({
       start: local(28, 10),
       end: null,
     })
     expect(
-      rescheduleEventsDatedObject(
+      rescheduleEventsPlacement(
         object({ allDay: true, start: local(27), end: local(29) }),
         { kind: 'clear-end' },
         ZONE,

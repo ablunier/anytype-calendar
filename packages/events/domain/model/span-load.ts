@@ -1,4 +1,4 @@
-import type { EventsDatedObject } from './dated-object'
+import type { EventsPlacement } from './placement'
 import type { EventsSpan } from './span'
 
 export type EventsLoadFailure =
@@ -12,10 +12,10 @@ export type EventsLoadFailure =
 export interface EventsSpanResult {
   span: EventsSpan
   /**
-   * In the order of compareEventsDatedObjects. An object that several picks bring (a type and
-   * a query over it) is here once per pick, each as that pick places it.
+   * In the order of compareEventsPlacements. An object that several Sources bring (a type and
+   * a query over it) is here once per Source, each as that Source places it.
    */
-  objects: EventsDatedObject[]
+  objects: EventsPlacement[]
   /** Epoch milliseconds. */
   loadedAt: number
 }
@@ -35,7 +35,7 @@ export type EventsSpanLoadPhase = EventsSpanLoad['phase']
 
 export type EventsSpanLoadEvent =
   | { type: 'load-started'; span: EventsSpan }
-  | { type: 'load-succeeded'; objects: EventsDatedObject[]; at: number }
+  | { type: 'load-succeeded'; objects: EventsPlacement[]; at: number }
   | { type: 'load-failed'; failure: EventsLoadFailure; at: number }
   | { type: 'reset' }
 

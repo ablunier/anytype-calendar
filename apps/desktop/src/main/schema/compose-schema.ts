@@ -8,7 +8,7 @@ import {
   SchemaSyncStore,
   SyncSchema,
 } from '@anytype-calendar/schema/application'
-import type { SchemaApiKeySource } from '@anytype-calendar/schema/domain'
+import type { SchemaApiKeys } from '@anytype-calendar/schema/domain'
 import {
   AnytypeSchemaGateway,
   InMemorySchemaGateway,
@@ -20,7 +20,7 @@ import { selectionFileAt } from './selection-storage'
 
 export interface SchemaDeps {
   anytype: Anytype
-  apiKeys: SchemaApiKeySource
+  apiKeys: SchemaApiKeys
   appConfig: AppConfigStore
 }
 

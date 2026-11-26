@@ -1,7 +1,7 @@
 // The pure center of the schema context: no other layer, no other context, no npm runtime
 // deps, no Node core modules.
 
-export * from './gateways/api-key-source'
+export * from './gateways/api-keys'
 export * from './gateways/schema-gateway'
 export * from './model/collection'
 export * from './model/date-property'

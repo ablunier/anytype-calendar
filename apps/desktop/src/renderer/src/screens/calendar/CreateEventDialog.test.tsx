@@ -1,5 +1,5 @@
 import { renderWithI18n } from '@renderer/test/render'
-import type { CalendarSlot, Collection, ObjectType, Space } from '@renderer/types'
+import type { CalendarSlot, CalendarSource, Collection, Space } from '@renderer/types'
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { CreateEventDialog } from './CreateEventDialog'
@@ -8,7 +8,7 @@ const work: Space = { key: 'work', name: 'Work' }
 const home: Space = { key: 'home', name: 'Home' }
 const side: Space = { key: 'side', name: 'Side' }
 
-function objectType(key: string, label: string, space: Space, includesTime = false): ObjectType {
+function objectType(key: string, label: string, space: Space, includesTime = false): CalendarSource {
   return {
     key,
     space: space.key,
@@ -49,7 +49,7 @@ function renderDialog({
   slot = { date: '2026-11-10', minute: null },
   created = true,
 }: {
-  types?: ObjectType[]
+  types?: CalendarSource[]
   slot?: CalendarSlot
   created?: boolean
 } = {}) {

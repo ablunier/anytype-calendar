@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest'
-import { compareFeedsEvents, type FeedsEvent } from './event'
+import { compareFeedsPlacedOccurrences, type FeedsPlacedOccurrence } from './placed-occurrence'
 
-const event = (id: string, start: number, rank: number, title = 'Meeting'): FeedsEvent => ({
+const event = (id: string, start: number, rank: number, title = 'Meeting'): FeedsPlacedOccurrence => ({
   id,
   feedId: `feed_${rank}`,
   rank,
@@ -18,6 +18,6 @@ test('orders by start, then by the subscription order, then title, then id', () 
     event('b', 2, 0, 'A'),
     event('a', 1, 3),
     event('e', 2, 0, 'A'),
-  ].sort(compareFeedsEvents)
+  ].sort(compareFeedsPlacedOccurrences)
   expect(sorted.map(({ id }) => id)).toEqual(['a', 'b', 'e', 'c', 'd'])
 })

@@ -3,7 +3,7 @@ import { Icon } from '@renderer/components/ui'
 import { useTimeFormatValue } from '@renderer/hooks/TimeFormatContext'
 import type { AgendaDay, AgendaRow, AgendaTime } from '@renderer/lib/agenda'
 import { addDays, eventHue, formatTime, shortDate } from '@renderer/lib/calendar'
-import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, Space } from '@renderer/types'
 import type { TFunction } from 'i18next'
 import { useEffect, useEffectEvent, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,7 +16,7 @@ export interface AgendaListProps {
   start: string
   /** `YYYY-MM-DD`. */
   today: string
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   spacesByKey: Map<string, Space>
   /** `YYYY-MM-DD` of the day whose panel is open, if any. */
   selectedDate: string | null
@@ -157,7 +157,7 @@ function RowSubtitle({
   spacesByKey,
 }: {
   row: AgendaRow
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   spacesByKey: Map<string, Space>
 }): React.JSX.Element {
   const type = typesByKey.get(event.type)

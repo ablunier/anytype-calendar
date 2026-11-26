@@ -2,18 +2,18 @@ import { EVENTS_AGENDA_LENGTHS } from '@anytype-calendar/events/domain'
 import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
-import { type TypeSelection, useTypeSelection } from '@renderer/hooks/useTypeSelection'
+import { type SourceSelection, useSourceSelection } from '@renderer/hooks/useSourceSelection'
 import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import type {
   ApiAccessView,
   ApiKeyView,
+  CalendarSelection,
+  CalendarSource,
   CalendarView,
   FeedSource,
-  ObjectType,
   Space,
   SyncView,
-  TypePicks,
 } from '@renderer/types'
 import type { AgendaDaysSnapshot, LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -25,12 +25,12 @@ import { SpaceTypesCard } from './SpaceTypesCard'
 
 export interface ConfigScreenProps {
   spaces: Space[]
-  types: ObjectType[]
+  types: CalendarSource[]
   sync: SyncView
   /** The key's grant leaves some of the account's spaces out of `spaces`. */
   hasNotGrantedSpaces: boolean
   /** Read once, when the account has first been read. */
-  initial: TypePicks
+  initial: CalendarSelection
   apiKey: ApiKeyView
   /** Null until Anytype has been asked what the key reaches. */
   access: ApiAccessView | null
@@ -52,7 +52,7 @@ export interface ConfigScreenProps {
   onBack: () => void
   onReread: () => void
   /** Rejects when the picks could not be saved. */
-  onSave: (picks: TypePicks) => Promise<void>
+  onSave: (picks: CalendarSelection) => Promise<void>
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
   /** Null until main has answered. */
@@ -109,11 +109,11 @@ function Settings({
   focusAddFeed = false,
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const selection = useTypeSelection(types, initial)
+  const selection = useSourceSelection(types, initial)
   const [saveFailed, setSaveFailed] = useState(false)
 
   const save = useCallback(
-    (picks: TypePicks): void => {
+    (picks: CalendarSelection): void => {
       // Saves land in order, and each carries every pick, so the last to settle has the say.
       onSave(picks).then(
         () => setSaveFailed(false),
@@ -292,8 +292,8 @@ function Settings({
 
 interface SpacesAndTypesProps {
   spaces: Space[]
-  types: ObjectType[]
-  selection: TypeSelection
+  types: CalendarSource[]
+  selection: SourceSelection
   syncing: boolean
   saveFailed: boolean
   onReread: () => void

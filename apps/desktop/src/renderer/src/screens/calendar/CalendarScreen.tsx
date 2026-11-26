@@ -24,12 +24,12 @@ import { allHidden, visibleEvents } from '@renderer/lib/visibility'
 import type {
   CalendarEvent,
   CalendarSlot,
+  CalendarSource,
   CalendarView,
   Collection,
   DetailTarget,
   EditAccess,
   FeedSource,
-  ObjectType,
   Space,
   SyncView,
 } from '@renderer/types'
@@ -54,11 +54,11 @@ export interface CalendarScreenProps {
   /** How the latest read of the span went. */
   status: SyncView
   /** Placed by the dates the selection saved for them. */
-  types: ObjectType[]
+  types: CalendarSource[]
   spaces: Space[]
   trackedSpaceKeys: string[]
   /** The chosen types and queries of the tracked spaces: what the sidebar can hide. */
-  sources: ObjectType[]
+  sources: CalendarSource[]
   /** The subscribed calendars, which the sidebar can hide too. Their events are read-only. */
   feeds: FeedSource[]
   /** Keys of the sources not drawn. They are read all the same. */
@@ -79,7 +79,7 @@ export interface CalendarScreenProps {
   weekStart: number
   editAccess: EditAccess
   /** The types a new object can be created as. */
-  creatableTypes: ObjectType[]
+  creatableTypes: CalendarSource[]
   /** By space key, the collections a new object can be added to. */
   collectionsBySpace: Map<string, Collection[]>
   onReschedule: (request: EventsRescheduleRequest) => Promise<EventsEditResult>

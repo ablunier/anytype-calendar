@@ -1,6 +1,6 @@
 import { Icon, Tag } from '@renderer/components/ui'
 import { formatNumber, panelLabel } from '@renderer/lib/calendar'
-import type { CalendarEvent, EventDetail, IconName, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, EventDetail, IconName } from '@renderer/types'
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,7 +17,7 @@ const LINK_CLASS =
 
 export interface EventDetailsProps {
   event: CalendarEvent
-  type: ObjectType | undefined
+  type: CalendarSource | undefined
 }
 
 /** One row per property, in the order its type's panel shows them, each named above its value. */

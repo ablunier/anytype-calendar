@@ -25,8 +25,8 @@ import {
   creatableTypesFor,
   hasNotGrantedSpaces,
   isOnboarded,
-  picksFor,
   schemaSelectionFor,
+  selectionFor,
   spacesFor,
   syncViewFor,
   tracksAnyType,
@@ -126,7 +126,7 @@ function App(): React.JSX.Element | null {
         types={types}
         sync={syncViewFor(schema, now)}
         hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
-        initial={picksFor(selection, types)}
+        initial={selectionFor(selection, types)}
         onRetrySync={() => void window.api.schema.sync()}
         onContinue={(picks) => void save(schemaSelectionFor(schema, picks, selection))}
         // Skipping on first run saves an empty selection; later, it keeps what was saved.
@@ -143,7 +143,7 @@ function App(): React.JSX.Element | null {
         types={types}
         sync={syncViewFor(schema, now)}
         hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
-        initial={picksFor(selection, types)}
+        initial={selectionFor(selection, types)}
         apiKey={apiKey}
         access={apiAccessFor(session)}
         language={language}
@@ -190,7 +190,7 @@ function App(): React.JSX.Element | null {
     showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart, agendaDays))
   }
   const types = typesFor(schema)
-  const picks = picksFor(selection, types)
+  const picks = selectionFor(selection, types)
   const typesOnCalendar = withDates(types, picks.dates)
   const today = localDate(now)
   const sources = sourcesOnCalendar(typesOnCalendar, picks)

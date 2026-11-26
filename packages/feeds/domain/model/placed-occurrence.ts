@@ -19,15 +19,16 @@ export interface FeedsOccurrence {
   url?: string
 }
 
-export interface FeedsEvent extends FeedsOccurrence {
+/** An Occurrence tagged with the Subscription it was read from. */
+export interface FeedsPlacedOccurrence extends FeedsOccurrence {
   /** The subscription it was read from. */
   feedId: string
   /** Where that subscription stands in the user's order. */
   rank: number
 }
 
-/** Earliest first; events starting together by their subscription's place, then title, then id. */
-export function compareFeedsEvents(a: FeedsEvent, b: FeedsEvent): number {
+/** Earliest first; occurrences starting together by their subscription's place, then title, then id. */
+export function compareFeedsPlacedOccurrences(a: FeedsPlacedOccurrence, b: FeedsPlacedOccurrence): number {
   if (a.start !== b.start) return a.start - b.start
   if (a.rank !== b.rank) return a.rank - b.rank
   if (a.title !== b.title) return a.title < b.title ? -1 : 1

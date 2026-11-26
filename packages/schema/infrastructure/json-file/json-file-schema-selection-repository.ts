@@ -8,15 +8,15 @@ export interface SchemaSelectionFile {
 }
 
 /**
- * Bumped when the stored shape changes. Bumped to 2 when `SchemaTypeChoice` gained
+ * Bumped when the stored shape changes. Bumped to 2 when `SchemaTypeSource` gained
  * `includesTime`, to 3 when it gained `colourBy`, to 4 when the selection gained `queries`, and
- * to 5 when a choice gained `panel`, `done` and `location`.
+ * to 5 when a Source gained `panel`, `done` and `location`.
  */
 const FORMAT_VERSION = 5
 
 /**
- * Versions still read, besides the current one: a version-2 choice lacks `colourBy`, a
- * version-3 selection `queries` too, and a version-4 choice `panel`, `done` and `location`,
+ * Versions still read, besides the current one: a version-2 Source lacks `colourBy`, a
+ * version-3 selection `queries` too, and a version-4 Source `panel`, `done` and `location`,
  * which toSchemaSelection reads as drawn before they existed. A file of any other version
  * loads as none.
  */

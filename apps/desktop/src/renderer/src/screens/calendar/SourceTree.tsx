@@ -2,7 +2,7 @@ import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { catBg, catText, Icon } from '@renderer/components/ui'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { type SourceVisibility, visibilityOf } from '@renderer/lib/visibility'
-import type { CategoryHue, FeedSource, ObjectType, Space } from '@renderer/types'
+import type { CalendarSource, CategoryHue, FeedSource, Space } from '@renderer/types'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -10,7 +10,7 @@ export interface SourceTreeProps {
   /** In the order Settings lists them. A space none of whose sources are chosen is left out. */
   spaces: Space[]
   /** The chosen types and queries of those spaces. */
-  sources: ObjectType[]
+  sources: CalendarSource[]
   hidden: ReadonlySet<string>
   /** Spaces whose types and queries are folded away; their toggle still hides them all. */
   collapsedSpaces: ReadonlySet<string>

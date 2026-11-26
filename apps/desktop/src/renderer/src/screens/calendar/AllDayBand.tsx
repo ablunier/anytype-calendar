@@ -1,6 +1,6 @@
 import { eventHue } from '@renderer/lib/calendar'
 import { layOutWeek } from '@renderer/lib/month-layout'
-import type { CalendarEvent, DayColumn, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, DayColumn } from '@renderer/types'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
@@ -13,7 +13,7 @@ export interface AllDayBandProps {
   days: DayColumn[]
   /** Per day, in the same order: what `splitDayEvents` sent to the band. */
   eventsByDay: CalendarEvent[][]
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   onOpenEvent: (event: CalendarEvent, date: string) => void
   /** Null where objects cannot be moved. */
   drag: CalendarDrag | null

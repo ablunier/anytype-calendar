@@ -16,7 +16,7 @@ Standard electron-vite three-process layout:
   (`EncryptedFileCredentialRepository`). Without OS encryption it falls back to the
   in-memory repository; on Linux's `basic_text` backend it persists anyway, with a
   warning. Every context's Anytype gateway shares one `AnytypeClient`. Schema and events
-  each read the key through their own port (`SchemaApiKeySource`, `EventsApiKeySource`),
+  each read the key through their own port (`SchemaApiKeys`, `EventsApiKeys`),
   which `compose-auth.ts` adapts from auth's credential repository as `apiKeys`; events reads
   which types go on the calendar through `EventsSourceSelection`, adapted from schema's
   selection store (`events/event-sources.ts`: only the chosen types and queries of chosen
@@ -39,7 +39,7 @@ Standard electron-vite three-process layout:
   connected session's `access` is `{ grant }`; a null `grant` is a legacy key, paired before
   grants existed, which reaches every space with write access. `LoadEventsSpan` lets the
   newest load win, so leaving a span or changing Settings mid-load never draws a stale
-  result. Edits (`RescheduleEventsObject`, `CreateEventsObject`, `CompleteEventsObject`) write
+  result. Edits (`RescheduleEventsObject`, `CreateEventsObject`, `SetEventsObjectDone`) write
   through `EventsWriter` — `AnytypeEventsWriter`, or in fake mode the same
   `InMemoryEventsGateway` that reads, so an edit shows on the next read — and then re-run
   `LoadEventsSpan`. Meanwhile the moved or ticked object is held in `EventsSpanStore` as an
@@ -50,7 +50,7 @@ Standard electron-vite three-process layout:
   read/write grant, or no grant of its own. The renderer reads the same rule as an
   `EditAccess` (`editAccessFor`, `lib/session.ts`), which turns dragging off and has a
   double-click say why; every failed edit is a toast (`lib/edit-text.ts`). A move is
-  worked out in the domain (`rescheduleEventsDatedObject`): an all-day date is written as the
+  worked out in the domain (`rescheduleEventsPlacement`): an all-day date is written as the
   first instant of its day and a range keeps its day count, a timed one lands on the wall-clock
   minute asked for (`EventsTimeZone.at`, which a DST day would put an hour off as
   `startOfDay` plus minutes) and keeps its length. A `resize` moves the To alone, and gives one
@@ -150,7 +150,7 @@ Standard electron-vite three-process layout:
     position in the selection, types first) and only the lowest-ranked visible one is drawn, so a type
     hidden leaves an object a visible query brings drawn as the query places it. Hidden types are not
     offered by `CreateEventDialog`, and an open panel for a hidden object closes. The hidden keys
-    (`objectTypeKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
+    (`typeSourceKey` / `querySourceKey` / `feedSourceKey`, never spaces) and whether the sidebar is collapsed are saved in
     the `calendarVisibility` section (`main/preferences/calendar-visibility.ts`), as are the spaces folded in the tree
     (`collapsedSpaces`; folding only hides the rows, never the sources); keys no longer in the selection are
     dropped on the next save. `useCalendarVisibility` works each change out from the latest value saved,
@@ -212,12 +212,12 @@ Standard electron-vite three-process layout:
   - `lib/session.ts` is the only renderer module that reads a `SessionSnapshot`'s shape;
     components receive the UI-local `AuthView` instead. `lib/schema.ts` does the same for a
     `SchemaSnapshot` (`hooks/useSchemaSync.ts`) and a `SchemaSelectionSnapshot`
-    (`hooks/useSchemaSelection.ts`): it turns them into `Space[]`, `ObjectType[]`, a
-    `SyncView` and `TypePicks`, and turns picks back into the `SchemaSelection` to save.
+    (`hooks/useSchemaSelection.ts`): it turns them into `Space[]`, `CalendarSource[]`, a
+    `SyncView` and `CalendarSelection`, and turns picks back into the `SchemaSelection` to save.
     `lib/events.ts` does the same for an `EventsSnapshot` (`hooks/useEvents.ts`): the span
     on screen, its status, and its objects as `CalendarEvent`s in local `YYYY-MM-DD` dates
-    and `HH:MM` times, keyed to their `ObjectType` with `lib/schema.ts`'s `objectTypeKey`, or
-    `querySourceKey` for one read through a query: a query is an `ObjectType` too, with
+    and `HH:MM` times, keyed to their `CalendarSource` with `lib/schema.ts`'s `typeSourceKey`, or
+    `querySourceKey` for one read through a query: a query is an `CalendarSource` too, with
     `query` set (its views) and its type's hue and dates, so the pickers, the picks and the
     chips treat both alike. `typesInSpace` and `queriesInSpace` (`lib/calendar.ts`) split them.
     A result kept from another span is never drawn on this one. It also owns the span algebra
@@ -225,7 +225,7 @@ Standard electron-vite three-process layout:
     a span is anchored on — the first of a month, the first day of a week or an agenda, the day itself),
     `shiftSpan` (one step in the span's own units) and `switchDateFor`.
   - `types/index.ts` holds UI-local view-model types (e.g. `AuthView`, `CalendarEvent`,
-    `ObjectType`, `Space`), deliberately kept out of the packages' domain layers — they
+    `CalendarSource`, `Space`), deliberately kept out of the packages' domain layers — they
     describe what a component needs to draw, not what the calendar means.
   - `screens/<flow>/` — one directory per screen (`auth`, `onboarding`, `config`, `calendar`),
     each with its own subcomponents. `screens/calendar` holds all four views: `CalendarScreen`
@@ -300,7 +300,7 @@ Standard electron-vite three-process layout:
     `jsdom`, driven with `@testing-library/react` and `@testing-library/user-event` by role
     and by real key and pointer sequences, and asserted on roles, names and states, never on
     class names. `renderWithI18n` (`test/render.tsx`) renders on the `en` locale, so queries
-    use the visible copy, `test/fixtures.ts` builds an `ObjectType` keyed as main keys it, and
+    use the visible copy, `test/fixtures.ts` builds an `CalendarSource` keyed as main keys it, and
     `test/setup.ts` adds the `jest-dom` matchers and stubs the scrolling jsdom leaves out
     (`scrollTo`, `scrollIntoView`). Screens take everything as props, so they are rendered
     with no fake `window.api`. jsdom lays nothing out, so layout and visual checks (gutters,

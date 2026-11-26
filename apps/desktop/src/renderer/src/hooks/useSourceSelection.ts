@@ -1,15 +1,15 @@
 import { indexBy, mappingIn, offeredMapping } from '@renderer/lib/calendar'
-import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
+import type { CalendarSelection, CalendarSource, DateMapping } from '@renderer/types'
 import { useMemo, useState } from 'react'
 
-export interface TypeSelection {
+export interface SourceSelection {
   spaceKeys: string[]
   typeKeys: string[]
   /** Types that are both selected and inside a selected space. */
-  activeTypes: ObjectType[]
+  activeTypes: CalendarSource[]
   /** The picks as they stand, e.g. to save them. The same object until a pick changes. */
-  picks: TypePicks
-  mappingFor: (type: ObjectType) => DateMapping
+  picks: CalendarSelection
+  mappingFor: (type: CalendarSource) => DateMapping
   toggleSpace: (key: string) => void
   toggleType: (key: string) => void
   setFrom: (key: string, value: string) => void
@@ -31,7 +31,7 @@ const toggle = (keys: string[], key: string): string[] =>
  * on mount. A type with no entry in `dates` uses its own `from`/`to`, which also covers
  * types that arrive after mount.
  */
-export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeSelection {
+export function useSourceSelection(types: CalendarSource[], initial: CalendarSelection): SourceSelection {
   const [picks, setPicks] = useState(() => withOfferedDates(initial, types))
   const { spaceKeys, typeKeys, dates } = picks
 
@@ -85,7 +85,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
  * The same object when nothing changes, so an unchanged read is not a change. Entries of types
  * missing from `types` are kept, for when the type comes back.
  */
-function withOfferedDates(picks: TypePicks, types: ObjectType[]): TypePicks {
+function withOfferedDates(picks: CalendarSelection, types: CalendarSource[]): CalendarSelection {
   const byKey = indexBy(types)
   let changed = false
   const offered = Object.entries(picks.dates).flatMap(([key, mapping]): [string, DateMapping][] => {

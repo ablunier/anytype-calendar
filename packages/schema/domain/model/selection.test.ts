@@ -2,15 +2,15 @@ import { describe, expect, test } from 'vitest'
 import {
   EMPTY_SCHEMA_SELECTION,
   rekeySchemaSelection,
-  type SchemaQueryChoice,
+  type SchemaQuerySource,
   type SchemaSelection,
-  type SchemaTypeChoice,
+  type SchemaTypeSource,
   toSchemaSelection,
 } from './selection'
 import type { SchemaSpace } from './space'
 import type { SchemaType } from './type'
 
-const TASK: SchemaTypeChoice = {
+const TASK: SchemaTypeSource = {
   spaceId: 'sp_1',
   typeKey: 'task',
   from: 'due_date',
@@ -21,7 +21,7 @@ const TASK: SchemaTypeChoice = {
   done: 'done',
   location: null,
 }
-const PROJECT: SchemaTypeChoice = {
+const PROJECT: SchemaTypeSource = {
   spaceId: 'sp_1',
   typeKey: 'project',
   from: 'start_date',
@@ -33,7 +33,7 @@ const PROJECT: SchemaTypeChoice = {
   location: 'venue',
 }
 
-const OPEN_TASKS: SchemaQueryChoice = {
+const OPEN_TASKS: SchemaQuerySource = {
   spaceId: 'sp_1',
   queryId: 'bafyquery',
   viewId: '63194',
@@ -160,7 +160,7 @@ describe('toSchemaSelection', () => {
 
 describe('rekeySchemaSelection', () => {
   const SPACE = 'bafy.space'
-  const choice = (typeKey: string, from: string, to: string | null = null): SchemaTypeChoice => ({
+  const choice = (typeKey: string, from: string, to: string | null = null): SchemaTypeSource => ({
     spaceId: SPACE,
     typeKey,
     from,
@@ -171,7 +171,7 @@ describe('rekeySchemaSelection', () => {
     done: null,
     location: null,
   })
-  const selectionOf = (...types: SchemaTypeChoice[]): SchemaSelection => ({
+  const selectionOf = (...types: SchemaTypeSource[]): SchemaSelection => ({
     spaceIds: [SPACE],
     types,
     queries: [],
@@ -255,7 +255,7 @@ describe('rekeySchemaSelection', () => {
   })
 
   test('leaves query choices alone, and keeps them through a rewrite of the types', () => {
-    const query: SchemaQueryChoice = {
+    const query: SchemaQuerySource = {
       spaceId: SPACE,
       queryId: 'bafyquery',
       viewId: null,
