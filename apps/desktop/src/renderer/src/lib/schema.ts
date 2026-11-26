@@ -223,7 +223,7 @@ export function tracksAnyType(selection: SchemaSelectionSnapshot): boolean {
 }
 
 /**
- * The saved selection as picks over `types`. A saved date the type no longer has is left
+ * The saved selection as a Selection over `types`. A saved date the type no longer has is left
  * out, so the type falls back to its own dates rather than showing a choice it cannot offer;
  * so is a property it no longer colours by, and a view a query no longer has.
  */
@@ -254,7 +254,7 @@ export function selectionFor(selection: SchemaSelectionSnapshot, types: Calendar
 }
 
 /**
- * The picks over the synced spaces, types and queries, as the selection to save: only what
+ * The Selection over the synced spaces, types and queries, as the selection to save: only what
  * the user can see is rewritten. Choices this sync did not see — in another account's space,
  * a space since left, or a type or query since deleted or stripped of its dates — are carried
  * over from `previous` untouched, so they are there again if it comes back. A seen type or
@@ -262,7 +262,7 @@ export function selectionFor(selection: SchemaSelectionSnapshot, types: Calendar
  */
 export function schemaSelectionFor(
   snapshot: SchemaSnapshot,
-  picks: CalendarSelection,
+  selected: CalendarSelection,
   previous: SchemaSelectionSnapshot,
 ): SchemaSelection {
   const spaces = syncedSpaces(snapshot)
@@ -273,8 +273,8 @@ export function schemaSelectionFor(
   /** How a seen, ticked type or query is drawn; null for one not seen or not ticked. */
   const drawn = (key: string): DateMapping | null => {
     const type = offered.get(key)
-    if (!type || !picks.typeKeys.includes(key)) return null
-    return offeredMapping(type, mappingIn(picks.dates, type)) ?? mappingIn({}, type)
+    if (!type || !selected.typeKeys.includes(key)) return null
+    return offeredMapping(type, mappingIn(selected.dates, type)) ?? mappingIn({}, type)
   }
 
   const types = spaces.flatMap((space) =>
@@ -297,7 +297,7 @@ export function schemaSelectionFor(
   return {
     spaceIds: [
       ...kept.spaceIds.filter((id) => !seenSpaces.has(id)),
-      ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id),
+      ...spaces.filter((space) => selected.spaceKeys.includes(space.id)).map((space) => space.id),
     ],
     types: [...kept.types.filter((choice) => !offered.has(typeSourceKey(choice.spaceId, choice.typeKey))), ...types],
     queries: [
@@ -325,9 +325,10 @@ export function anytypeTypeKeyOf(type: CalendarSource): string {
  * The types a new object can be created as: the chosen ones of chosen spaces. Not queries,
  * whose objects are those of a type, created as that type.
  */
-export function creatableTypesFor(types: CalendarSource[], picks: CalendarSelection): CalendarSource[] {
+export function creatableTypesFor(types: CalendarSource[], selected: CalendarSelection): CalendarSource[] {
   return types.filter(
-    (type) => type.query === undefined && picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space),
+    (type) =>
+      type.query === undefined && selected.typeKeys.includes(type.key) && selected.spaceKeys.includes(type.space),
   )
 }
 

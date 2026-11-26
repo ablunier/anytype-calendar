@@ -88,14 +88,14 @@ describe('sourcesOnCalendar and allHidden', () => {
   const type = (key: string, space: string, query = false): CalendarSource =>
     ({ key, space, ...(query ? { query: { typeLabel: '', views: [] } } : {}) }) as CalendarSource
   const types = [type(TASK, 'sp_1'), type(OPEN, 'sp_1', true), type('sp_1:note', 'sp_1'), type('sp_2:task', 'sp_2')]
-  const picks: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: [TASK, OPEN, 'sp_2:task'], dates: {} }
+  const selected: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: [TASK, OPEN, 'sp_2:task'], dates: {} }
 
   test('are the chosen types and queries of chosen spaces', () => {
-    expect(sourcesOnCalendar(types, picks).map(({ key }) => key)).toEqual([TASK, OPEN])
+    expect(sourcesOnCalendar(types, selected).map(({ key }) => key)).toEqual([TASK, OPEN])
   })
 
   test('says everything is hidden only when there is something to hide', () => {
-    const sources = sourcesOnCalendar(types, picks)
+    const sources = sourcesOnCalendar(types, selected)
     expect(allHidden(sources, new Set([TASK, OPEN]))).toBe(true)
     expect(allHidden(sources, new Set([TASK]))).toBe(false)
     expect(allHidden([], new Set())).toBe(false)

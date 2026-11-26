@@ -115,7 +115,7 @@ function App(): React.JSX.Element | null {
 
   if (screen === 'onboarding' || !isOnboarded(selection)) {
     const types = typesFor(schema)
-    // A failed save rejects and leaves the user here, picks intact, to try again.
+    // A failed save rejects and leaves the user here, Selection intact, to try again.
     const save = async (next = EMPTY_SCHEMA_SELECTION): Promise<void> => {
       await window.api.schemaSelection.save(next)
       setScreen('calendar')
@@ -128,7 +128,7 @@ function App(): React.JSX.Element | null {
         hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
         initial={selectionFor(selection, types)}
         onRetrySync={() => void window.api.schema.sync()}
-        onContinue={(picks) => void save(schemaSelectionFor(schema, picks, selection))}
+        onContinue={(selected) => void save(schemaSelectionFor(schema, selected, selection))}
         // Skipping on first run saves an empty selection; later, it keeps what was saved.
         onSkip={() => (isOnboarded(selection) ? setScreen('calendar') : void save())}
       />
@@ -160,7 +160,7 @@ function App(): React.JSX.Element | null {
         onAgendaDays={setAgendaDays}
         onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
-        onSave={(picks) => window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))}
+        onSave={(selected) => window.api.schemaSelection.save(schemaSelectionFor(schema, selected, selection))}
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
         appVersion={update?.current ?? null}
@@ -190,10 +190,10 @@ function App(): React.JSX.Element | null {
     showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart, agendaDays))
   }
   const types = typesFor(schema)
-  const picks = selectionFor(selection, types)
-  const typesOnCalendar = withDates(types, picks.dates)
+  const selected = selectionFor(selection, types)
+  const typesOnCalendar = withDates(types, selected.dates)
   const today = localDate(now)
-  const sources = sourcesOnCalendar(typesOnCalendar, picks)
+  const sources = sourcesOnCalendar(typesOnCalendar, selected)
   const feedSources = feedsFor(feeds, now)
   /* Only keys of sources the calendar still holds are saved, so what the selection dropped,
    * or a subscription removed, since stops being remembered. */
@@ -231,7 +231,7 @@ function App(): React.JSX.Element | null {
         status={status}
         types={typesOnCalendar}
         spaces={spacesFor(schema)}
-        trackedSpaceKeys={picks.spaceKeys}
+        trackedSpaceKeys={selected.spaceKeys}
         sources={sources}
         feeds={feedSources}
         hiddenSources={hiddenSources}
@@ -244,7 +244,7 @@ function App(): React.JSX.Element | null {
         showWeekNumbers={showWeekNumbers}
         weekStart={weekStart}
         editAccess={editAccessFor(session)}
-        creatableTypes={creatableTypesFor(typesOnCalendar, picks)}
+        creatableTypes={creatableTypesFor(typesOnCalendar, selected)}
         collectionsBySpace={collectionsBySpaceFor(schema)}
         onReschedule={(request) => window.api.events.reschedule(request)}
         onCreate={(request) => window.api.events.create(request)}

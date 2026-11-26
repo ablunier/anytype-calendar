@@ -8,8 +8,8 @@ import type { CalendarEvent, CalendarSelection, CalendarSource } from '@renderer
 export type SourceVisibility = 'shown' | 'hidden' | 'mixed'
 
 /** The chosen types and queries of the chosen spaces: what the calendar holds, and so what it can hide. */
-export function sourcesOnCalendar(types: CalendarSource[], picks: CalendarSelection): CalendarSource[] {
-  return types.filter((type) => picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space))
+export function sourcesOnCalendar(types: CalendarSource[], selected: CalendarSelection): CalendarSource[] {
+  return types.filter((type) => selected.typeKeys.includes(type.key) && selected.spaceKeys.includes(type.space))
 }
 
 /**

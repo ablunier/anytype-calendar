@@ -4,6 +4,7 @@
 export * from './gateways/calendar-parser'
 export * from './gateways/feeds-gateway'
 export * from './gateways/time-zone'
+export * from './model/occurrence'
 export * from './model/placed-occurrence'
 export * from './model/read'
 export * from './model/state'

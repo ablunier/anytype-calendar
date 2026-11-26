@@ -98,7 +98,7 @@ describe('ConfigScreen saving', () => {
 })
 
 describe('ConfigScreen first read', () => {
-  it('starts the picks from the saved selection over the read types', async () => {
+  it('starts the Selection from the saved selection over the read types', async () => {
     // Before the read, App has no types to read the saved dates over, so it hands on none.
     const unread: CalendarSelection = { spaceKeys: ['work'], typeKeys: [task.key], dates: {} }
     const saved: CalendarSelection = {

@@ -85,7 +85,7 @@ describe('useSourceSelection', () => {
     const { result, rerender } = renderSelection([TASK], { ...NOTHING_PICKED, dates: { 'sp_1:task': RANGE } })
     const withoutEnd: CalendarSource = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
     rerender({ types: [withoutEnd] })
-    expect(result.current.picks.dates).toEqual({})
+    expect(result.current.selected.dates).toEqual({})
     expect(result.current.mappingFor(withoutEnd)).toMatchObject({ from: 'due_date', to: null })
   })
 
@@ -96,13 +96,13 @@ describe('useSourceSelection', () => {
     })
     const withoutEnd: CalendarSource = { ...TASK, props: TASK.props.filter((prop) => prop.key !== 'end_date') }
     rerender({ types: [withoutEnd] })
-    expect(result.current.picks.dates).toEqual({ 'sp_1:note': RANGE })
+    expect(result.current.selected.dates).toEqual({ 'sp_1:note': RANGE })
   })
 
-  it('leaves the picks the same object when a re-read changes nothing', () => {
+  it('leaves the Selection the same object when a re-read changes nothing', () => {
     const { result, rerender } = renderSelection([TASK, NOTE], { ...NOTHING_PICKED, dates: { 'sp_1:task': RANGE } })
-    const before = result.current.picks
+    const before = result.current.selected
     rerender({ types: [{ ...TASK }, { ...NOTE }] })
-    expect(result.current.picks).toBe(before)
+    expect(result.current.selected).toBe(before)
   })
 })

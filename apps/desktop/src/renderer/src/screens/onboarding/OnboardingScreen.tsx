@@ -19,7 +19,7 @@ export interface OnboardingScreenProps {
   /** Read once, when the account has first been read. */
   initial: CalendarSelection
   onRetrySync: () => void
-  onContinue: (picks: CalendarSelection) => void
+  onContinue: (selected: CalendarSelection) => void
   onSkip: () => void
 }
 
@@ -82,7 +82,7 @@ interface PickerProps {
   hasNotGrantedSpaces: boolean
   types: CalendarSource[]
   initial: CalendarSelection
-  onContinue: (picks: CalendarSelection) => void
+  onContinue: (selected: CalendarSelection) => void
   onSkip: () => void
 }
 
@@ -179,7 +179,7 @@ function Picker({ spaces, hasNotGrantedSpaces, types, initial, onContinue, onSki
         <Button variant="ghost" size="md" onClick={onSkip}>
           {t('onboarding.skipForNow')}
         </Button>
-        <Button variant="primary" size="md" iconRight="chevron-right" onClick={() => onContinue(selection.picks)}>
+        <Button variant="primary" size="md" iconRight="chevron-right" onClick={() => onContinue(selection.selected)}>
           {t('onboarding.continue')}
         </Button>
       </footer>

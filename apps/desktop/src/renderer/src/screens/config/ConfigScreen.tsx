@@ -51,8 +51,8 @@ export interface ConfigScreenProps {
   onTimeFormat: (format: TimeFormatSnapshot) => void
   onBack: () => void
   onReread: () => void
-  /** Rejects when the picks could not be saved. */
-  onSave: (picks: CalendarSelection) => Promise<void>
+  /** Rejects when the Selection could not be saved. */
+  onSave: (selected: CalendarSelection) => Promise<void>
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
   /** Null until main has answered. */
@@ -68,7 +68,7 @@ export interface ConfigScreenProps {
 }
 
 /**
- * The picks start from the saved selection over the synced types, so they must not start
+ * The Selection starts from the saved selection over the synced types, so it must not start
  * before the account has been read: over no types every saved date would fall back, and
  * the first save would write those fallbacks. The first read remounts the screen instead.
  */
@@ -113,9 +113,9 @@ function Settings({
   const [saveFailed, setSaveFailed] = useState(false)
 
   const save = useCallback(
-    (picks: CalendarSelection): void => {
+    (selected: CalendarSelection): void => {
       // Saves land in order, and each carries every pick, so the last to settle has the say.
-      onSave(picks).then(
+      onSave(selected).then(
         () => setSaveFailed(false),
         () => setSaveFailed(true),
       )
@@ -123,14 +123,14 @@ function Settings({
     [onSave],
   )
 
-  /* Every change is saved as it is made. Keyed on the picks object rather than on a first-run
+  /* Every change is saved as it is made. Keyed on the Selection object rather than on a first-run
    * flag, so StrictMode running the effect twice on mount saves nothing. */
-  const sent = useRef(selection.picks)
+  const sent = useRef(selection.selected)
   useEffect(() => {
-    if (selection.picks === sent.current) return
-    sent.current = selection.picks
-    save(selection.picks)
-  }, [selection.picks, save])
+    if (selection.selected === sent.current) return
+    sent.current = selection.selected
+    save(selection.selected)
+  }, [selection.selected, save])
 
   const read = sync.hasResult
   const syncing = sync.state === 'syncing'
@@ -188,7 +188,7 @@ function Settings({
                 syncing={syncing}
                 saveFailed={saveFailed}
                 onReread={onReread}
-                onRetrySave={() => save(selection.picks)}
+                onRetrySave={() => save(selection.selected)}
               />
             ) : (
               <Card>

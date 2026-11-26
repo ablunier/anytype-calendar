@@ -1,4 +1,4 @@
-import type { FeedsOccurrence } from '../model/placed-occurrence'
+import type { FeedsOccurrence } from '../model/occurrence'
 import type { FeedsWindow } from '../model/window'
 
 /** A feed read once, which can then be expanded over any window without being read again. */
