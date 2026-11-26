@@ -2,18 +2,18 @@ import { EVENTS_AGENDA_LENGTHS } from '@anytype-calendar/events/domain'
 import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesHint'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, Card, Checkbox, EmptyState, Icon, Select, SyncStatus } from '@renderer/components/ui'
-import { type TypeSelection, useTypeSelection } from '@renderer/hooks/useTypeSelection'
+import { type SourceSelection, useSourceSelection } from '@renderer/hooks/useSourceSelection'
 import { queriesInSpace, typesInSpace, weekdayNames } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
 import type {
   ApiAccessView,
   ApiKeyView,
+  CalendarSelection,
+  CalendarSource,
+  CalendarSubscription,
   CalendarView,
-  FeedSource,
-  ObjectType,
   Space,
   SyncView,
-  TypePicks,
 } from '@renderer/types'
 import type { AgendaDaysSnapshot, LanguageSnapshot, TimeFormatSnapshot } from '@shared/ipc'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -25,12 +25,12 @@ import { SpaceTypesCard } from './SpaceTypesCard'
 
 export interface ConfigScreenProps {
   spaces: Space[]
-  types: ObjectType[]
+  types: CalendarSource[]
   sync: SyncView
   /** The key's grant leaves some of the account's spaces out of `spaces`. */
   hasNotGrantedSpaces: boolean
   /** Read once, when the account has first been read. */
-  initial: TypePicks
+  initial: CalendarSelection
   apiKey: ApiKeyView
   /** Null until Anytype has been asked what the key reaches. */
   access: ApiAccessView | null
@@ -51,8 +51,8 @@ export interface ConfigScreenProps {
   onTimeFormat: (format: TimeFormatSnapshot) => void
   onBack: () => void
   onReread: () => void
-  /** Rejects when the picks could not be saved. */
-  onSave: (picks: TypePicks) => Promise<void>
+  /** Rejects when the Selection could not be saved. */
+  onSave: (selected: CalendarSelection) => Promise<void>
   onCopyKey: () => Promise<boolean>
   onSignOut: () => void
   /** Null until main has answered. */
@@ -61,14 +61,14 @@ export interface ConfigScreenProps {
   updateAvailable: string | null
   onOpenRelease: () => void
   /** The subscribed calendars, in the user's order. */
-  feeds: FeedSource[]
+  feeds: CalendarSubscription[]
   feedActions: Omit<CalendarsSectionProps, 'feeds' | 'focusAdd'>
   /** Opened to add a calendar: the subscribed calendars' form is scrolled to and focused. */
   focusAddFeed?: boolean
 }
 
 /**
- * The picks start from the saved selection over the synced types, so they must not start
+ * The Selection starts from the saved selection over the synced types, so it must not start
  * before the account has been read: over no types every saved date would fall back, and
  * the first save would write those fallbacks. The first read remounts the screen instead.
  */
@@ -109,13 +109,13 @@ function Settings({
   focusAddFeed = false,
 }: ConfigScreenProps): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const selection = useTypeSelection(types, initial)
+  const selection = useSourceSelection(types, initial)
   const [saveFailed, setSaveFailed] = useState(false)
 
   const save = useCallback(
-    (picks: TypePicks): void => {
+    (selected: CalendarSelection): void => {
       // Saves land in order, and each carries every pick, so the last to settle has the say.
-      onSave(picks).then(
+      onSave(selected).then(
         () => setSaveFailed(false),
         () => setSaveFailed(true),
       )
@@ -123,14 +123,14 @@ function Settings({
     [onSave],
   )
 
-  /* Every change is saved as it is made. Keyed on the picks object rather than on a first-run
+  /* Every change is saved as it is made. Keyed on the Selection object rather than on a first-run
    * flag, so StrictMode running the effect twice on mount saves nothing. */
-  const sent = useRef(selection.picks)
+  const sent = useRef(selection.selected)
   useEffect(() => {
-    if (selection.picks === sent.current) return
-    sent.current = selection.picks
-    save(selection.picks)
-  }, [selection.picks, save])
+    if (selection.selected === sent.current) return
+    sent.current = selection.selected
+    save(selection.selected)
+  }, [selection.selected, save])
 
   const read = sync.hasResult
   const syncing = sync.state === 'syncing'
@@ -188,7 +188,7 @@ function Settings({
                 syncing={syncing}
                 saveFailed={saveFailed}
                 onReread={onReread}
-                onRetrySave={() => save(selection.picks)}
+                onRetrySave={() => save(selection.selected)}
               />
             ) : (
               <Card>
@@ -292,8 +292,8 @@ function Settings({
 
 interface SpacesAndTypesProps {
   spaces: Space[]
-  types: ObjectType[]
-  selection: TypeSelection
+  types: CalendarSource[]
+  selection: SourceSelection
   syncing: boolean
   saveFailed: boolean
   onReread: () => void

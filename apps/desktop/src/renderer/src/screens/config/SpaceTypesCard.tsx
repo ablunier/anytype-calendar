@@ -1,21 +1,21 @@
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Card, Checkbox } from '@renderer/components/ui'
-import type { TypeSelection } from '@renderer/hooks/useTypeSelection'
-import type { ObjectType, Space } from '@renderer/types'
+import type { SourceSelection } from '@renderer/hooks/useSourceSelection'
+import type { CalendarSource, Space } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 import { TypeConfigRow } from './TypeConfigRow'
 
 export interface SpaceTypesCardProps {
   space: Space
-  types: ObjectType[]
-  queries: ObjectType[]
-  selection: TypeSelection
+  types: CalendarSource[]
+  queries: CalendarSource[]
+  selection: SourceSelection
 }
 
 export function SpaceTypesCard({ space, types, queries, selection }: SpaceTypesCardProps): React.JSX.Element {
   const { t } = useTranslation()
   const on = selection.spaceKeys.includes(space.key)
-  const row = (type: ObjectType, last: boolean): React.JSX.Element => (
+  const row = (type: CalendarSource, last: boolean): React.JSX.Element => (
     <TypeConfigRow
       key={type.key}
       type={type}

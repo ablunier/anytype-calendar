@@ -3,7 +3,7 @@ import {
   namedProperties,
   nextSchemaSync,
   panelProperties,
-  type SchemaApiKeySource,
+  type SchemaApiKeys,
   type SchemaGateway,
   type SchemaGatewayResult,
   type SchemaPanelProperty,
@@ -23,7 +23,7 @@ import type { SchemaSyncStore } from './schema-sync-store'
 
 export interface SyncSchemaDeps {
   gateway: SchemaGateway
-  apiKeys: SchemaApiKeySource
+  apiKeys: SchemaApiKeys
   store: SchemaSyncStore
   now?: () => number
 }
@@ -45,7 +45,7 @@ class Refused extends Error {
  */
 export class SyncSchema {
   readonly #gateway: SchemaGateway
-  readonly #apiKeys: SchemaApiKeySource
+  readonly #apiKeys: SchemaApiKeys
   readonly #guard: DispatchGuard<SchemaSync, SchemaSyncEvent>
   readonly #now: () => number
 

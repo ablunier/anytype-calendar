@@ -1,5 +1,5 @@
-import type { EventsDatedObject, EventsSpanResult } from '@anytype-calendar/events/domain'
-import type { CalendarEvent, ObjectType } from '@renderer/types'
+import type { EventsPlacement, EventsSpanResult } from '@anytype-calendar/events/domain'
+import type { CalendarEvent, CalendarSource } from '@renderer/types'
 import type { EventsSnapshot } from '@shared/ipc'
 import { describe, expect, test } from 'vitest'
 import {
@@ -33,7 +33,7 @@ const SEPTEMBER = { kind: 'month', year: 2026, month: 8 } as const
 const OCTOBER = { kind: 'month', year: 2026, month: 9 } as const
 const NOW = local(8, 14, 9, 30)
 
-const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
+const object = (overrides: Partial<EventsPlacement>): EventsPlacement => ({
   id: 'obj_1',
   spaceId: 'sp_1',
   source: { kind: 'type', typeKey: 'task' },
@@ -46,13 +46,13 @@ const object = (overrides: Partial<EventsDatedObject>): EventsDatedObject => ({
   ...overrides,
 })
 
-const result = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSpanResult => ({
+const result = (objects: EventsPlacement[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSpanResult => ({
   span,
   objects,
   loadedAt: local(8, 14, 9, 28),
 })
 
-const loaded = (objects: EventsDatedObject[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSnapshot => ({
+const loaded = (objects: EventsPlacement[], span: EventsSpanResult['span'] = SEPTEMBER): EventsSnapshot => ({
   phase: 'loaded',
   last: result(objects, span),
 })
@@ -501,14 +501,14 @@ describe('edit requests', () => {
   })
 
   test('add or remove an end only where the type has a To apart from its From', () => {
-    const type = (from: string, to: string | null) => ({ from, to }) as ObjectType
+    const type = (from: string, to: string | null) => ({ from, to }) as CalendarSource
     expect(hasOwnEnd(type('start_date', 'end_date'))).toBe(true)
     expect(hasOwnEnd(type('due_date', null))).toBe(false)
     expect(hasOwnEnd(type('due_date', 'due_date'))).toBe(false)
   })
 
   test("create the type Anytype knows, in the type's space", () => {
-    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as ObjectType
+    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as CalendarSource
     expect(createRequestFor(type, 'Retro', { date: '2026-09-18', minute: null })).toEqual({
       spaceId: 'bafy.space',
       typeKey: 'meeting',
@@ -518,7 +518,7 @@ describe('edit requests', () => {
   })
 
   test('carry the collection picked, and none when None is', () => {
-    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as ObjectType
+    const type = { key: 'bafy.space:meeting', space: 'bafy.space' } as CalendarSource
     const slot = { date: '2026-09-18', minute: null }
     expect(createRequestFor(type, 'Retro', slot, 'bafycol')).toMatchObject({ collectionId: 'bafycol' })
     expect(createRequestFor(type, 'Retro', slot, null)).not.toHaveProperty('collectionId')

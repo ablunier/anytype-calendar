@@ -1,15 +1,15 @@
 import { indexBy, mappingIn, offeredMapping } from '@renderer/lib/calendar'
-import type { DateMapping, ObjectType, TypePicks } from '@renderer/types'
+import type { CalendarSelection, CalendarSource, DateMapping } from '@renderer/types'
 import { useMemo, useState } from 'react'
 
-export interface TypeSelection {
+export interface SourceSelection {
   spaceKeys: string[]
   typeKeys: string[]
   /** Types that are both selected and inside a selected space. */
-  activeTypes: ObjectType[]
-  /** The picks as they stand, e.g. to save them. The same object until a pick changes. */
-  picks: TypePicks
-  mappingFor: (type: ObjectType) => DateMapping
+  activeTypes: CalendarSource[]
+  /** The Selection as it stands, e.g. to save it. The same object until it changes. */
+  selected: CalendarSelection
+  mappingFor: (type: CalendarSource) => DateMapping
   toggleSpace: (key: string) => void
   toggleType: (key: string) => void
   setFrom: (key: string, value: string) => void
@@ -31,9 +31,9 @@ const toggle = (keys: string[], key: string): string[] =>
  * on mount. A type with no entry in `dates` uses its own `from`/`to`, which also covers
  * types that arrive after mount.
  */
-export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeSelection {
-  const [picks, setPicks] = useState(() => withOfferedDates(initial, types))
-  const { spaceKeys, typeKeys, dates } = picks
+export function useSourceSelection(types: CalendarSource[], initial: CalendarSelection): SourceSelection {
+  const [selected, setSelected] = useState(() => withOfferedDates(initial, types))
+  const { spaceKeys, typeKeys, dates } = selected
 
   /* A re-read can take away a date a type's entry names. The entry is dropped, not just
    * hidden, so the type is drawn — and saved — with its own dates from then on, and the date
@@ -43,7 +43,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
   const [typesSeen, setTypesSeen] = useState(types)
   if (types !== typesSeen) {
     setTypesSeen(types)
-    setPicks((current) => withOfferedDates(current, types))
+    setSelected((current) => withOfferedDates(current, types))
   }
 
   const activeTypes = useMemo(
@@ -54,7 +54,7 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
   const update = (key: string, change: (mapping: DateMapping) => DateMapping): void => {
     const type = types.find((candidate) => candidate.key === key)
     if (!type) return
-    setPicks((current) => ({
+    setSelected((current) => ({
       ...current,
       dates: { ...current.dates, [key]: change(mappingIn(current.dates, type)) },
     }))
@@ -64,10 +64,10 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
     spaceKeys,
     typeKeys,
     activeTypes,
-    picks,
+    selected,
     mappingFor: (type) => mappingIn(dates, type),
-    toggleSpace: (key) => setPicks((current) => ({ ...current, spaceKeys: toggle(current.spaceKeys, key) })),
-    toggleType: (key) => setPicks((current) => ({ ...current, typeKeys: toggle(current.typeKeys, key) })),
+    toggleSpace: (key) => setSelected((current) => ({ ...current, spaceKeys: toggle(current.spaceKeys, key) })),
+    toggleType: (key) => setSelected((current) => ({ ...current, typeKeys: toggle(current.typeKeys, key) })),
     // A range from a date to itself is not a selection main accepts, so it becomes one date.
     setFrom: (key, value) =>
       update(key, (mapping) => ({ ...mapping, from: value, to: mapping.to === value ? null : mapping.to })),
@@ -85,14 +85,14 @@ export function useTypeSelection(types: ObjectType[], initial: TypePicks): TypeS
  * The same object when nothing changes, so an unchanged read is not a change. Entries of types
  * missing from `types` are kept, for when the type comes back.
  */
-function withOfferedDates(picks: TypePicks, types: ObjectType[]): TypePicks {
+function withOfferedDates(selected: CalendarSelection, types: CalendarSource[]): CalendarSelection {
   const byKey = indexBy(types)
   let changed = false
-  const offered = Object.entries(picks.dates).flatMap(([key, mapping]): [string, DateMapping][] => {
+  const offered = Object.entries(selected.dates).flatMap(([key, mapping]): [string, DateMapping][] => {
     const type = byKey.get(key)
     const kept = type === undefined ? mapping : offeredMapping(type, mapping)
     if (kept !== mapping) changed = true
     return kept === null ? [] : [[key, kept]]
   })
-  return changed ? { ...picks, dates: Object.fromEntries(offered) } : picks
+  return changed ? { ...selected, dates: Object.fromEntries(offered) } : selected
 }

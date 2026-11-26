@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  compareEventsDatedObjects,
-  type EventsDatedObject,
-  overlapsEventsWindow,
-  toEventsDatedObject,
-} from './dated-object'
+import { compareEventsPlacements, type EventsPlacement, overlapsEventsWindow, toEventsPlacement } from './placement'
 import type { EventsSource } from './source'
 
 const HOUR_MS = 3_600_000
@@ -20,11 +15,11 @@ const ALL_DAY_SOURCE: EventsSource = {
 }
 const TIMED_SOURCE: EventsSource = { ...ALL_DAY_SOURCE, includesTime: true }
 
-describe('toEventsDatedObject', () => {
+describe('toEventsPlacement', () => {
   test("carries the ref's id, title and dates, and the source's space and type", () => {
     const start = 1_000
     const end = 2_000
-    expect(toEventsDatedObject({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE, 3)).toEqual({
+    expect(toEventsPlacement({ id: 'obj_1', title: 'Launch', start, end }, ALL_DAY_SOURCE, 3)).toEqual({
       id: 'obj_1',
       spaceId: 'sp_1',
       source: { kind: 'type', typeKey: 'project' },
@@ -47,7 +42,7 @@ describe('toEventsDatedObject', () => {
       to: null,
       includesTime: false,
     }
-    expect(toEventsDatedObject({ id: 'o', title: '', start: 1, end: null }, source, 0).source).toEqual({
+    expect(toEventsPlacement({ id: 'o', title: '', start: 1, end: null }, source, 0).source).toEqual({
       kind: 'query',
       queryId: 'bafyquery',
     })
@@ -55,12 +50,12 @@ describe('toEventsDatedObject', () => {
 
   test('carries whether it is done, and its location', () => {
     const ref = { id: 'o', title: '', start: 1, end: null, done: true, location: 'Room 4' }
-    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE, 0)).toMatchObject({ done: true, location: 'Room 4' })
+    expect(toEventsPlacement(ref, ALL_DAY_SOURCE, 0)).toMatchObject({ done: true, location: 'Room 4' })
   })
 
   test('leaves out an empty location', () => {
     const ref = { id: 'o', title: '', start: 1, end: null, location: '' }
-    expect(toEventsDatedObject(ref, ALL_DAY_SOURCE, 0)).not.toHaveProperty('location')
+    expect(toEventsPlacement(ref, ALL_DAY_SOURCE, 0)).not.toHaveProperty('location')
   })
 
   test("colours it by its option's colour", () => {
@@ -69,32 +64,32 @@ describe('toEventsDatedObject', () => {
       colourBy: { key: 'priority', options: [{ name: 'P1', color: 'red' }] },
     }
     const ref = (option: string) => ({ id: 'o', title: '', start: 1, end: null, option })
-    expect(toEventsDatedObject(ref('P1'), source, 0).colour).toBe('red')
-    expect(toEventsDatedObject(ref('Gone'), source)).not.toHaveProperty('colour')
-    expect(toEventsDatedObject(ref('P1'), ALL_DAY_SOURCE, 0)).not.toHaveProperty('colour')
+    expect(toEventsPlacement(ref('P1'), source, 0).colour).toBe('red')
+    expect(toEventsPlacement(ref('Gone'), source)).not.toHaveProperty('colour')
+    expect(toEventsPlacement(ref('P1'), ALL_DAY_SOURCE, 0)).not.toHaveProperty('colour')
   })
 
   test('reads all-day from a source with no time, regardless of the instant', () => {
     const start = Date.parse('2026-09-08T14:20:39Z')
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, ALL_DAY_SOURCE, 0)
+    const object = toEventsPlacement({ id: 'o', title: '', start, end: null }, ALL_DAY_SOURCE, 0)
     expect(object.allDay).toBe(true)
   })
 
   test('reads timed from a source with a time, regardless of the instant', () => {
     const start = Date.parse('2026-09-13T22:00:00Z')
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: null }, TIMED_SOURCE)
+    const object = toEventsPlacement({ id: 'o', title: '', start, end: null }, TIMED_SOURCE)
     expect(object.allDay).toBe(false)
   })
 
   test('drops an end before the start, keeping the object on its start', () => {
     const start = 10_000
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: start - DAY_MS }, ALL_DAY_SOURCE)
+    const object = toEventsPlacement({ id: 'o', title: '', start, end: start - DAY_MS }, ALL_DAY_SOURCE)
     expect(object).toMatchObject({ start, end: null, allDay: true })
   })
 
   test('keeps an end equal to the start', () => {
     const start = 10_000 + 9 * HOUR_MS
-    const object = toEventsDatedObject({ id: 'o', title: '', start, end: start }, TIMED_SOURCE)
+    const object = toEventsPlacement({ id: 'o', title: '', start, end: start }, TIMED_SOURCE)
     expect(object).toMatchObject({ start, end: start, allDay: false })
   })
 })
@@ -119,13 +114,13 @@ describe('overlapsEventsWindow', () => {
   })
 
   test('an object whose end was dropped overlaps by its start alone', () => {
-    const object = toEventsDatedObject({ id: 'o', title: '', start: 2_500, end: 1_500 }, ALL_DAY_SOURCE)
+    const object = toEventsPlacement({ id: 'o', title: '', start: 2_500, end: 1_500 }, ALL_DAY_SOURCE)
     expect(overlapsEventsWindow(object, window)).toBe(false)
   })
 })
 
-describe('compareEventsDatedObjects', () => {
-  const object = (id: string, title: string, start: number): EventsDatedObject => ({
+describe('compareEventsPlacements', () => {
+  const object = (id: string, title: string, start: number): EventsPlacement => ({
     id,
     spaceId: 'sp_1',
     source: { kind: 'type', typeKey: 'task' },
@@ -142,12 +137,12 @@ describe('compareEventsDatedObjects', () => {
       object('b', 'Alpha', 2),
       object('z', 'Zed', 1),
       object('a', 'Alpha', 2),
-    ].sort(compareEventsDatedObjects)
+    ].sort(compareEventsPlacements)
     expect(sorted.map(({ id }) => id)).toEqual(['z', 'a', 'b', 'c'])
   })
 
   test('puts the copy a lower-ranked pick reads first when all else is equal', () => {
     const query = { ...object('a', 'Alpha', 2), rank: 1 }
-    expect([query, object('a', 'Alpha', 2)].sort(compareEventsDatedObjects).map(({ rank }) => rank)).toEqual([0, 1])
+    expect([query, object('a', 'Alpha', 2)].sort(compareEventsPlacements).map(({ rank }) => rank)).toEqual([0, 1])
   })
 })

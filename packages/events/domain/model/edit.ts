@@ -1,7 +1,7 @@
 import type { EventsWriteFailure } from '../gateways/events-writer'
 import type { EventsTimeZone } from '../gateways/time-zone'
-import { compareEventsDatedObjects, type EventsDatedObject } from './dated-object'
 import { type EventsDay, toEventsDay } from './month'
+import { compareEventsPlacements, type EventsPlacement } from './placement'
 import type { EventsSource, EventsTypeSource } from './source'
 import type { EventsSpanLoad } from './span-load'
 
@@ -40,7 +40,7 @@ export type EventsEditFailure =
   | EventsWriteFailure
   /** Anytype did not answer, or answered with something unusable. */
   | { failure: 'unreachable' }
-  /** The object, or the pick it was read through, is no longer on the calendar. */
+  /** The object, or the Source it was read through, is no longer on the calendar. */
   | { failure: 'gone' }
   /** The change cannot be made to this object, e.g. a To date before its From. */
   | { failure: 'invalid' }
@@ -89,11 +89,11 @@ export function eventsSourceHasEnd({ from, to }: Pick<EventsSource, 'from' | 'to
  * timed one how long it lasts. A timed object moved to a slot with no minute keeps its time of
  * day, and its To pulled to one keeps the To's, or the From's where it had no To.
  */
-export function rescheduleEventsDatedObject(
-  object: EventsDatedObject,
+export function rescheduleEventsPlacement(
+  object: EventsPlacement,
   change: EventsReschedule,
   zone: EventsTimeZone,
-): EventsDatedObject | null {
+): EventsPlacement | null {
   const { start, end, allDay } = object
 
   if (change.kind === 'clear-end') return { ...object, end: null }
@@ -134,10 +134,10 @@ export function newEventsObjectDates(
  * The load as it will be once the writes in flight land: each object in `edits` drawn in place
  * of the one it edits, so a dragged object does not snap back to where it was while Anytype
  * is being asked. A later edit of the same object wins. Only the copy read through the same
- * pick is replaced, since each pick places the object by its own dates. The same load when none
+ * Source is replaced, since each Source places the object by its own dates. The same load when none
  * of them is in its result.
  */
-export function withEventsEdits(load: EventsSpanLoad, edits: readonly EventsDatedObject[]): EventsSpanLoad {
+export function withEventsEdits(load: EventsSpanLoad, edits: readonly EventsPlacement[]): EventsSpanLoad {
   if (load.phase === 'idle' || !load.last || edits.length === 0) return load
   const byObject = new Map(edits.map((edit) => [copyKey(edit), edit]))
   let changed = false
@@ -148,23 +148,23 @@ export function withEventsEdits(load: EventsSpanLoad, edits: readonly EventsDate
     return edit
   })
   if (!changed) return load
-  return { ...load, last: { ...load.last, objects: objects.sort(compareEventsDatedObjects) } }
+  return { ...load, last: { ...load.last, objects: objects.sort(compareEventsPlacements) } }
 }
 
 export function sameEventsObject(
-  a: Pick<EventsDatedObject, 'spaceId' | 'id'>,
-  b: Pick<EventsDatedObject, 'spaceId' | 'id'>,
+  a: Pick<EventsPlacement, 'spaceId' | 'id'>,
+  b: Pick<EventsPlacement, 'spaceId' | 'id'>,
 ): boolean {
   return a.spaceId === b.spaceId && a.id === b.id
 }
 
-function copyKey(object: Pick<EventsDatedObject, 'spaceId' | 'id' | 'source'>): string {
+function copyKey(object: Pick<EventsPlacement, 'spaceId' | 'id' | 'source'>): string {
   const { source } = object
   return `${objectKey(object)}\n${source.kind === 'type' ? `type\n${source.typeKey}` : `query\n${source.queryId}`}`
 }
 
 /** Space ids and object ids never contain a newline, so the pair cannot collide. */
-function objectKey({ spaceId, id }: Pick<EventsDatedObject, 'spaceId' | 'id'>): string {
+function objectKey({ spaceId, id }: Pick<EventsPlacement, 'spaceId' | 'id'>): string {
   return `${spaceId}\n${id}`
 }
 

@@ -1,4 +1,4 @@
-import type { FeedsEvent } from './event'
+import type { FeedsPlacedOccurrence } from './placed-occurrence'
 import type { FeedsReadStatus } from './read'
 import type { FeedsColour } from './subscription'
 import type { FeedsWindow } from './window'
@@ -15,10 +15,10 @@ export interface FeedsSubscriptionView {
 export interface FeedsState {
   /** In the user's order. */
   subscriptions: FeedsSubscriptionView[]
-  /** The window `events` covers; null until one was asked for. */
+  /** The window `events` are expanded over; null until one was asked for. */
   window: FeedsWindow | null
-  /** In the order of compareFeedsEvents. */
-  events: FeedsEvent[]
+  /** In the order of compareFeedsPlacedOccurrences. */
+  events: FeedsPlacedOccurrence[]
 }
 
 export const NO_FEEDS: FeedsState = { subscriptions: [], window: null, events: [] }

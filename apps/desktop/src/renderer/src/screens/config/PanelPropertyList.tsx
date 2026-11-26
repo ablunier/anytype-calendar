@@ -1,10 +1,10 @@
 import { Checkbox, IconButton } from '@renderer/components/ui'
-import type { ObjectType, PanelProperty } from '@renderer/types'
+import type { CalendarSource, PanelProperty } from '@renderer/types'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export interface PanelPropertyListProps {
-  type: ObjectType
+  type: CalendarSource
   /** Keys, in the order the panel shows them. */
   panel: string[]
   onChange: (panel: string[]) => void

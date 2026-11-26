@@ -1,8 +1,8 @@
-import type { SchemaQueryChoice, SchemaSync, SchemaTypeChoice } from '@anytype-calendar/schema/domain'
+import type { SchemaQuerySource, SchemaSync, SchemaTypeSource } from '@anytype-calendar/schema/domain'
 import { expect, test } from 'vitest'
 import { eventsSourcesFor } from './event-sources'
 
-const TASK: SchemaTypeChoice = {
+const TASK: SchemaTypeSource = {
   spaceId: 'sp_1',
   typeKey: 'task',
   from: 'due_date',
@@ -14,7 +14,7 @@ const TASK: SchemaTypeChoice = {
   location: 'location',
 }
 
-const OPEN_TASKS: SchemaQueryChoice = {
+const OPEN_TASKS: SchemaQuerySource = {
   spaceId: 'sp_1',
   queryId: 'q_open',
   viewId: '63194',

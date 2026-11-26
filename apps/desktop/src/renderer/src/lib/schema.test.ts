@@ -1,5 +1,5 @@
-import type { SchemaQueryChoice, SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
-import type { Collection, ObjectType, TypePicks } from '@renderer/types'
+import type { SchemaQuerySource, SchemaSpace, SchemaType } from '@anytype-calendar/schema/domain'
+import type { CalendarSelection, CalendarSource, Collection } from '@renderer/types'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import { describe, expect, test } from 'vitest'
 import {
@@ -11,13 +11,13 @@ import {
   elapsedSince,
   hasNotGrantedSpaces,
   isOnboarded,
-  objectTypeKey,
-  picksFor,
   querySourceKey,
   schemaSelectionFor,
+  selectionFor,
   spacesFor,
   syncViewFor,
   tracksAnyType,
+  typeSourceKey,
   typesFor,
 } from './schema'
 
@@ -116,21 +116,21 @@ describe('tracksAnyType', () => {
   })
 })
 
-describe('objectTypeKey', () => {
+describe('typeSourceKey', () => {
   test('is the key typesFor gives the type', () => {
-    expect(objectTypeKey('sp_1', 'task')).toBe(typesFor(SYNCED)[0]?.key)
+    expect(typeSourceKey('sp_1', 'task')).toBe(typesFor(SYNCED)[0]?.key)
   })
 
   test("is undone by anytypeTypeKeyOf, even for a space id with dots and a key that is Anytype's own", () => {
     const [task] = typesFor(SYNCED)
     expect(task && anytypeTypeKeyOf(task)).toBe('task')
-    const minted = { space: 'bafy.a:b', key: objectTypeKey('bafy.a:b', '6a67272659c08021576f3127') }
-    expect(anytypeTypeKeyOf(minted as ObjectType)).toBe('6a67272659c08021576f3127')
+    const minted = { space: 'bafy.a:b', key: typeSourceKey('bafy.a:b', '6a67272659c08021576f3127') }
+    expect(anytypeTypeKeyOf(minted as CalendarSource)).toBe('6a67272659c08021576f3127')
   })
 })
 
 describe('creatableTypesFor', () => {
-  const query: SchemaQueryChoice['queryId'] = 'q_1'
+  const query: SchemaQuerySource['queryId'] = 'q_1'
   const space: SchemaSpace = {
     ...SPACE,
     queries: [{ id: query, name: 'Open tasks', typeKey: 'task', views: [{ id: 'v_1', name: 'All' }] }],
@@ -138,13 +138,13 @@ describe('creatableTypesFor', () => {
   const types = typesFor({ phase: 'synced', last: { spaces: [space], hasNotGrantedSpaces: false, syncedAt: 0 } })
 
   test('offers the chosen types of chosen spaces, never a query', () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
-      typeKeys: [objectTypeKey('sp_1', 'task'), querySourceKey('sp_1', query)],
+      typeKeys: [typeSourceKey('sp_1', 'task'), querySourceKey('sp_1', query)],
       dates: {},
     }
-    expect(creatableTypesFor(types, picks).map(({ key }) => key)).toEqual([objectTypeKey('sp_1', 'task')])
-    expect(creatableTypesFor(types, { ...picks, spaceKeys: [] })).toEqual([])
+    expect(creatableTypesFor(types, selected).map(({ key }) => key)).toEqual([typeSourceKey('sp_1', 'task')])
+    expect(creatableTypesFor(types, { ...selected, spaceKeys: [] })).toEqual([])
   })
 })
 
@@ -313,8 +313,8 @@ describe('isOnboarded', () => {
   })
 })
 
-describe('picksFor', () => {
-  const TYPES: ObjectType[] = [
+describe('selectionFor', () => {
+  const TYPES: CalendarSource[] = [
     {
       key: 'sp_1:task',
       space: 'sp_1',
@@ -338,7 +338,7 @@ describe('picksFor', () => {
   ]
 
   test('is empty before onboarding is done', () => {
-    expect(picksFor({ phase: 'unset' }, TYPES)).toEqual({ spaceKeys: [], typeKeys: [], dates: {} })
+    expect(selectionFor({ phase: 'unset' }, TYPES)).toEqual({ spaceKeys: [], typeKeys: [], dates: {} })
   })
 
   test('carries a saved pick whose dates the type still offers', () => {
@@ -360,7 +360,7 @@ describe('picksFor', () => {
         queries: [],
       },
     }
-    expect(picksFor(selection, TYPES)).toEqual({
+    expect(selectionFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {
@@ -388,8 +388,8 @@ describe('picksFor', () => {
         queries: [],
       },
     })
-    expect(picksFor(saved('priority'), TYPES).dates['sp_1:task']?.colourBy).toBe('priority')
-    expect(picksFor(saved('gone'), TYPES).dates['sp_1:task']).toEqual({
+    expect(selectionFor(saved('priority'), TYPES).dates['sp_1:task']?.colourBy).toBe('priority')
+    expect(selectionFor(saved('gone'), TYPES).dates['sp_1:task']).toEqual({
       from: 'due_date',
       to: null,
       includesTime: false,
@@ -418,7 +418,7 @@ describe('picksFor', () => {
         queries: [],
       },
     }
-    expect(picksFor(selection, TYPES)).toEqual({
+    expect(selectionFor(selection, TYPES)).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {},
@@ -444,7 +444,7 @@ describe('picksFor', () => {
         queries: [],
       },
     }
-    expect(picksFor(selection, TYPES)).toEqual({
+    expect(selectionFor(selection, TYPES)).toEqual({
       spaceKeys: [],
       typeKeys: ['sp_1:ghost'],
       dates: {},
@@ -454,8 +454,8 @@ describe('picksFor', () => {
 
 describe('schemaSelectionFor', () => {
   test('saves a picked type on its own dates by default', () => {
-    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
-    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
+    const selected: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
+    expect(schemaSelectionFor(SYNCED, selected, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
       types: [
         {
@@ -473,14 +473,14 @@ describe('schemaSelectionFor', () => {
   })
 
   test('honors a picked date mapping the type still offers', () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {
         'sp_1:task': { from: 'start_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS },
       },
     }
-    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
+    expect(schemaSelectionFor(SYNCED, selected, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
       types: [
         {
@@ -498,7 +498,7 @@ describe('schemaSelectionFor', () => {
   })
 
   test('saves the property a type is coloured by', () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {
@@ -512,18 +512,18 @@ describe('schemaSelectionFor', () => {
         },
       },
     }
-    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]?.colourBy).toBe('priority')
+    expect(schemaSelectionFor(SYNCED, selected, { phase: 'unset' }).types[0]?.colourBy).toBe('priority')
   })
 
   test("falls back to the type's own dates when the picked mapping no longer applies", () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {
         'sp_1:task': { from: 'gone_date', to: null, includesTime: true, colourBy: null, view: null, ...TASK_DETAILS },
       },
     }
-    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' })).toEqual({
+    expect(schemaSelectionFor(SYNCED, selected, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
       types: [
         {
@@ -541,7 +541,7 @@ describe('schemaSelectionFor', () => {
   })
 
   test('saves the panel, Done and Location picked for a type', () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task'],
       dates: {
@@ -557,7 +557,7 @@ describe('schemaSelectionFor', () => {
         },
       },
     }
-    expect(schemaSelectionFor(SYNCED, picks, { phase: 'unset' }).types[0]).toMatchObject({
+    expect(schemaSelectionFor(SYNCED, selected, { phase: 'unset' }).types[0]).toMatchObject({
       panel: ['project', 'venue'],
       done: null,
       location: 'venue',
@@ -592,9 +592,9 @@ describe('schemaSelectionFor', () => {
         queries: [],
       },
     }
-    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
+    const selected: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: ['sp_1:task'], dates: {} }
 
-    expect(schemaSelectionFor(SYNCED, picks, previous)).toEqual({
+    expect(schemaSelectionFor(SYNCED, selected, previous)).toEqual({
       spaceIds: ['sp_9', 'sp_1'],
       types: [
         {
@@ -641,7 +641,7 @@ describe('queries', () => {
     last: { spaces: [QUERY_SPACE], hasNotGrantedSpaces: false, syncedAt: SYNCED_AT },
   }
   const QUERY_KEY = 'sp_1:query:q_open'
-  const OPEN_TASKS: SchemaQueryChoice = {
+  const OPEN_TASKS: SchemaQuerySource = {
     spaceId: 'sp_1',
     queryId: 'q_open',
     viewId: 'v_all',
@@ -651,7 +651,7 @@ describe('queries', () => {
     colourBy: 'priority',
     ...TASK_DETAILS,
   }
-  const saved = (...queries: SchemaQueryChoice[]): SchemaSelectionSnapshot => ({
+  const saved = (...queries: SchemaQuerySource[]): SchemaSelectionSnapshot => ({
     phase: 'saved',
     selection: { spaceIds: ['sp_1'], types: [], queries },
   })
@@ -698,7 +698,7 @@ describe('queries', () => {
   })
 
   test('carries a saved query as a pick, with its view', () => {
-    expect(picksFor(saved(OPEN_TASKS), typesFor(WITH_QUERY))).toEqual({
+    expect(selectionFor(saved(OPEN_TASKS), typesFor(WITH_QUERY))).toEqual({
       spaceKeys: ['sp_1'],
       typeKeys: [QUERY_KEY],
       dates: {
@@ -715,12 +715,12 @@ describe('queries', () => {
   })
 
   test('reads the first view once the chosen one is gone, keeping the dates', () => {
-    const picks = picksFor(saved({ ...OPEN_TASKS, viewId: 'v_gone' }), typesFor(WITH_QUERY))
-    expect(picks.dates[QUERY_KEY]).toMatchObject({ from: 'start_date', view: null })
+    const selected = selectionFor(saved({ ...OPEN_TASKS, viewId: 'v_gone' }), typesFor(WITH_QUERY))
+    expect(selected.dates[QUERY_KEY]).toMatchObject({ from: 'start_date', view: null })
   })
 
   test('saves a picked query with its view', () => {
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: [QUERY_KEY],
       dates: {
@@ -734,7 +734,7 @@ describe('queries', () => {
         },
       },
     }
-    expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' })).toEqual({
+    expect(schemaSelectionFor(WITH_QUERY, selected, { phase: 'unset' })).toEqual({
       spaceIds: ['sp_1'],
       types: [],
       queries: [OPEN_TASKS],
@@ -742,8 +742,8 @@ describe('queries', () => {
   })
 
   test('saves a picked query with no view picked as reading its first, on its own dates', () => {
-    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [QUERY_KEY], dates: {} }
-    expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' }).queries).toEqual([
+    const selected: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: [QUERY_KEY], dates: {} }
+    expect(schemaSelectionFor(WITH_QUERY, selected, { phase: 'unset' }).queries).toEqual([
       { ...OPEN_TASKS, viewId: null, from: 'due_date', includesTime: false, colourBy: null },
     ])
   })
@@ -759,12 +759,12 @@ describe('queries', () => {
       done: null,
       location: 'venue',
     }
-    const picks: TypePicks = {
+    const selected: CalendarSelection = {
       spaceKeys: ['sp_1'],
       typeKeys: ['sp_1:task', QUERY_KEY],
       dates: { 'sp_1:task': typeMapping },
     }
-    expect(schemaSelectionFor(WITH_QUERY, picks, { phase: 'unset' }).queries[0]).toMatchObject({
+    expect(schemaSelectionFor(WITH_QUERY, selected, { phase: 'unset' }).queries[0]).toMatchObject({
       panel: ['project'],
       done: null,
       location: 'venue',
@@ -773,8 +773,8 @@ describe('queries', () => {
 
   test('drops an unticked query this sync saw, but keeps one it did not see untouched', () => {
     const unseen = { ...OPEN_TASKS, queryId: 'q_ghost' }
-    const picks: TypePicks = { spaceKeys: ['sp_1'], typeKeys: [], dates: {} }
-    expect(schemaSelectionFor(WITH_QUERY, picks, saved(OPEN_TASKS, unseen)).queries).toEqual([unseen])
+    const selected: CalendarSelection = { spaceKeys: ['sp_1'], typeKeys: [], dates: {} }
+    expect(schemaSelectionFor(WITH_QUERY, selected, saved(OPEN_TASKS, unseen)).queries).toEqual([unseen])
   })
 })
 

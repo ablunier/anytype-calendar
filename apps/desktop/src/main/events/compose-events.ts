@@ -1,15 +1,15 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import type { AnytypeClient } from '@ablunier/anytype-client'
 import {
-  CompleteEventsObject,
   CreateEventsObject,
   EventsSpanStore,
   LoadEventsSpan,
   RescheduleEventsObject,
   ResetEventsSpan,
+  SetEventsObjectDone,
 } from '@anytype-calendar/events/application'
 import {
-  type EventsApiKeySource,
+  type EventsApiKeys,
   type EventsDay,
   type EventsGateway,
   type EventsSourceSelection,
@@ -30,7 +30,7 @@ import type { Anytype } from '../anytype/compose-anytype'
 
 export interface EventsDeps {
   anytype: Anytype
-  apiKeys: EventsApiKeySource
+  apiKeys: EventsApiKeys
   sources: EventsSourceSelection
   /** The span a launch opens on, around `today`. */
   defaultSpan: (today: EventsDay) => EventsSpan
@@ -59,7 +59,7 @@ export function composeEvents({ anytype, apiKeys, sources, defaultSpan }: Events
     resetEventsSpan: new ResetEventsSpan(eventsState),
     rescheduleEventsObject: new RescheduleEventsObject(editDeps),
     createEventsObject: new CreateEventsObject(editDeps),
-    completeEventsObject: new CompleteEventsObject(editDeps),
+    setEventsObjectDone: new SetEventsObjectDone(editDeps),
     /** The span on screen, or before any, the one a launch opens on. */
     shownWindow: (): EventsWindow => eventsSpanWindow(shownEventsSpan(eventsState.get()) ?? openingSpan(), zone),
   }

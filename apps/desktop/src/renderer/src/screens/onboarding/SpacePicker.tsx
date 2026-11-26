@@ -1,12 +1,12 @@
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Checkbox } from '@renderer/components/ui'
 import { typesInSpace } from '@renderer/lib/calendar'
-import type { ObjectType, Space } from '@renderer/types'
+import type { CalendarSource, Space } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 
 export interface SpacePickerProps {
   spaces: Space[]
-  types: ObjectType[]
+  types: CalendarSource[]
   selectedKeys: string[]
   onToggle: (key: string) => void
 }

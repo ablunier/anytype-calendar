@@ -1,6 +1,6 @@
 import { IconButton } from '@renderer/components/ui'
 import { eventsOnDay } from '@renderer/lib/calendar'
-import type { CalendarEvent, DetailTarget, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, DetailTarget, Space } from '@renderer/types'
 import type { EventsRescheduleRequest } from '@shared/ipc'
 import { useTranslation } from 'react-i18next'
 import { DayDetail } from './DayDetail'
@@ -9,7 +9,7 @@ import { type DatePickerSettings, EventDetail, FeedEventDetail } from './EventDe
 export interface DetailPanelProps {
   detail: DetailTarget
   events: CalendarEvent[]
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   spacesByKey: Map<string, Space>
   /** Why the calendar cannot write to Anytype; null when it can. */
   readOnlyReason: string | null

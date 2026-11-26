@@ -85,11 +85,11 @@ export interface QueryView {
 }
 
 /**
- * What makes an ObjectType a query: its objects are those of the type it runs over, read
+ * What makes a CalendarSource a query: its objects are those of the type it runs over, read
  * through one of its views, and drawn by that type's dates.
  */
 export interface QuerySource {
-  /** The `ObjectType.key` of the type it runs over. */
+  /** The `CalendarSource.key` of the type it runs over. */
   typeKey: string
   /** The label of the type it runs over. */
   typeLabel: string
@@ -98,11 +98,11 @@ export interface QuerySource {
 }
 
 /**
- * What can be put on the calendar: a type, or a query over one (`query` set), which is drawn
- * in its type's hue. Scoped to a single space: the same Anytype type in two spaces is two
+ * A Source: what can be put on the calendar, a type or a query over one (`query` set), which
+ * is drawn in its type's hue. Scoped to a single space: the same Anytype type in two spaces is two
  * entries.
  */
-export interface ObjectType {
+export interface CalendarSource {
   key: string
   space: string
   label: string
@@ -151,10 +151,10 @@ export interface DateMapping {
   view: string | null
 }
 
-/** What the user has ticked, keyed by `Space.key` and `ObjectType.key`. */
-export interface TypePicks {
+/** The Selection: what the user has ticked, keyed by `Space.key` and `CalendarSource.key`. */
+export interface CalendarSelection {
   spaceKeys: string[]
-  /** Queries' too, since each is an ObjectType. */
+  /** Queries' too, since each is a CalendarSource. */
   typeKeys: string[]
   /** Only types whose dates differ from their own `from`/`to` need an entry. */
   dates: Record<string, DateMapping>
@@ -171,13 +171,13 @@ export interface CalendarEvent {
   /** Anytype's object id, the same on every read. */
   id: string
   title: string
-  /** Key of the ObjectType it was read through: its type, or a query. */
+  /** Key of the CalendarSource it was read through: its type, or a query. */
   type: string
   /** Key of the owning Space. */
   space: string
   /**
    * Where the source it was read through stands in the selection, types first. An object two
-   * sources bring is two events, and only the one of the lowest-ranked visible source is drawn.
+   * sources bring is one Event read twice, and only its lowest-ranked visible reading is drawn.
    */
   rank: number
   date: string
@@ -212,8 +212,8 @@ export interface FeedEventDetails {
 }
 
 /** An external calendar subscribed to by its iCalendar address. */
-export interface FeedSource {
-  /** `feedSourceKey`, what its events carry as `CalendarEvent.type`. */
+export interface CalendarSubscription {
+  /** `subscriptionKey`, what its events carry as `CalendarEvent.type`. */
   key: string
   /** The subscription's own id, which main is asked by. */
   id: string

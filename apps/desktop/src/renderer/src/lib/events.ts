@@ -5,8 +5,8 @@
 import {
   DEFAULT_EVENTS_DURATION_MINUTES,
   type EventsAgendaDays,
-  type EventsDatedObject,
   type EventsDetail,
+  type EventsPlacement,
   type EventsReschedule,
   type EventsSlot,
   type EventsSpan,
@@ -20,14 +20,14 @@ import type {
   CalendarEvent,
   CalendarMonth,
   CalendarSlot,
+  CalendarSource,
   CalendarView,
   EventDetail,
-  ObjectType,
   SyncView,
 } from '@renderer/types'
 import type { EventsCreateRequest, EventsRescheduleRequest, EventsSnapshot } from '@shared/ipc'
 import { addDays, buildWeek, isoDate } from './calendar'
-import { anytypeTypeKeyOf, elapsedSince, hueOf, objectTypeKey, querySourceKey } from './schema'
+import { anytypeTypeKeyOf, elapsedSince, hueOf, querySourceKey, typeSourceKey } from './schema'
 import { minutesOf } from './time-grid'
 
 const MINUTES_PER_DAY = 1440
@@ -201,7 +201,7 @@ export function clearEndRequestFor(event: CalendarEvent): EventsRescheduleReques
 }
 
 /** Whether the type's objects have an end of their own to add or remove: a To apart from their From. */
-export function hasOwnEnd(type: ObjectType): boolean {
+export function hasOwnEnd(type: CalendarSource): boolean {
   return eventsSourceHasEnd(type)
 }
 
@@ -210,7 +210,7 @@ export function hasOwnEnd(type: ObjectType): boolean {
  * create. `collectionId` is a collection of the type's space to add the object to.
  */
 export function createRequestFor(
-  type: ObjectType,
+  type: CalendarSource,
   name: string,
   slot: CalendarSlot,
   collectionId: string | null = null,
@@ -247,11 +247,11 @@ function calendarEventFor({
   location,
   colour,
   details,
-}: EventsDatedObject): CalendarEvent {
+}: EventsPlacement): CalendarEvent {
   return {
     id,
     title,
-    type: source.kind === 'type' ? objectTypeKey(spaceId, source.typeKey) : querySourceKey(spaceId, source.queryId),
+    type: source.kind === 'type' ? typeSourceKey(spaceId, source.typeKey) : querySourceKey(spaceId, source.queryId),
     space: spaceId,
     rank,
     date: localDate(start),

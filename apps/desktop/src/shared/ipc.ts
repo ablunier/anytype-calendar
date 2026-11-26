@@ -1,8 +1,8 @@
 import type { AuthSession } from '@anytype-calendar/auth/domain'
 import type {
-  CompleteEventsObjectInput,
   CreateEventsObjectInput,
   RescheduleEventsObjectInput,
+  SetEventsObjectDoneInput,
 } from '@anytype-calendar/events/application'
 import type {
   EventsAgendaDays,
@@ -32,7 +32,7 @@ export type EventsRescheduleRequest = RescheduleEventsObjectInput
 /** Creates an object of a chosen type, placed by that type's dates. */
 export type EventsCreateRequest = CreateEventsObjectInput
 
-export type EventsSetDoneRequest = CompleteEventsObjectInput
+export type EventsSetDoneRequest = SetEventsObjectDoneInput
 
 /** How an edit went; a failure the renderer shows, since nothing else will. */
 export type EventsEditResult = EventsEditOutcome
@@ -74,7 +74,7 @@ export type LanguageSnapshot = 'en' | 'es' | 'gl' | null
 export type WeekNumbersSnapshot = boolean
 
 /**
- * What the calendar's sidebar keeps. `hidden` holds source keys (`objectTypeKey`,
+ * What the calendar's sidebar keeps. `hidden` holds source keys (`typeSourceKey`,
  * `querySourceKey`), never spaces, which follow from their sources; one no longer in the
  * selection is harmless and dropped by the next save.
  */

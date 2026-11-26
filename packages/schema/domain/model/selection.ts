@@ -2,7 +2,7 @@ import { SCHEMA_DONE_KEY, SCHEMA_LOCATION_KEY } from './select-property'
 import type { SchemaSpace } from './space'
 
 /** A type put on the calendar, with the date properties (keys) its objects are drawn by. */
-export interface SchemaTypeChoice {
+export interface SchemaTypeSource {
   spaceId: string
   typeKey: string
   from: string
@@ -10,7 +10,7 @@ export interface SchemaTypeChoice {
   to: string | null
   /**
    * Whether From/To carry a time of day. The local API never says, since a date set with no
-   * time is stored the same way as midnight (see the events context's dated-object model), so
+   * time is stored the same way as midnight (see the events context's placement model), so
    * the user states it instead.
    */
   includesTime: boolean
@@ -30,9 +30,9 @@ export interface SchemaTypeChoice {
 
 /**
  * A query put on the calendar, read through one of its views. Its dates and colour-by
- * property are its type's, chosen as for a type (see SchemaTypeChoice).
+ * property are its type's, chosen as for a type (see SchemaTypeSource).
  */
-export interface SchemaQueryChoice {
+export interface SchemaQuerySource {
   spaceId: string
   queryId: string
   /** Null reads the query's first view, whichever that is at the time. */
@@ -47,15 +47,15 @@ export interface SchemaQueryChoice {
 }
 
 /**
- * Keyed by Anytype ids only, so a choice whose space, type, query or property is gone from
+ * Keyed by Anytype ids only, so a Source whose space, type, query or property is gone from
  * the account is kept rather than dropped: it is simply matched by nothing until it returns.
  * A type or query chosen inside an unchosen space is kept too, for when the space is chosen
  * again.
  */
 export interface SchemaSelection {
   spaceIds: string[]
-  types: SchemaTypeChoice[]
-  queries: SchemaQueryChoice[]
+  types: SchemaTypeSource[]
+  queries: SchemaQuerySource[]
 }
 
 export const EMPTY_SCHEMA_SELECTION: SchemaSelection = { spaceIds: [], types: [], queries: [] }
@@ -67,7 +67,7 @@ export type SchemaSelectionState = { phase: 'unset' } | { phase: 'saved'; select
  * Null unless `value` is a well-formed selection: non-empty ids, a `to` that differs from
  * `from`, and no type or query chosen twice. Spaces, and panel properties, listed twice are
  * collapsed. What a selection saved before it existed lacks reads as what it drew then: a
- * choice with no `colourBy` colours by nothing, one with no `panel` shows nothing more, one with
+ * Source with no `colourBy` colours by nothing, one with no `panel` shows nothing more, one with
  * no `done` or `location` uses Anytype's own Done and Location, and a selection with no
  * `queries` chooses none.
  */
@@ -75,34 +75,34 @@ export function toSchemaSelection(value: unknown): SchemaSelection | null {
   if (typeof value !== 'object' || value === null) return null
   const { spaceIds, types, queries = [] } = value as Record<string, unknown>
   if (!Array.isArray(spaceIds) || !spaceIds.every(isId)) return null
-  const typeChoices = toChoices(types, toTypeChoice, (choice) => choice.typeKey)
-  const queryChoices = toChoices(queries, toQueryChoice, (choice) => choice.queryId)
-  if (!typeChoices || !queryChoices) return null
-  return { spaceIds: [...new Set(spaceIds)], types: typeChoices, queries: queryChoices }
+  const typeSources = toSources(types, toTypeSource, (source) => source.typeKey)
+  const querySources = toSources(queries, toQuerySource, (source) => source.queryId)
+  if (!typeSources || !querySources) return null
+  return { spaceIds: [...new Set(spaceIds)], types: typeSources, queries: querySources }
 }
 
-/** Null when any item is not a choice, or two name the same thing in the same space. */
-function toChoices<T extends { spaceId: string }>(
+/** Null when any item is not a Source, or two name the same thing in the same space. */
+function toSources<T extends { spaceId: string }>(
   items: unknown,
-  toChoice: (item: unknown) => T | null,
-  idOf: (choice: T) => string,
+  toSource: (item: unknown) => T | null,
+  idOf: (source: T) => string,
 ): T[] | null {
   if (!Array.isArray(items)) return null
-  const choices: T[] = []
+  const sources: T[] = []
   const seen = new Set<string>()
   for (const item of items) {
-    const choice = toChoice(item)
-    if (!choice) return null
+    const source = toSource(item)
+    if (!source) return null
     // Space ids, type keys and object ids never contain a newline, so the pair cannot collide.
-    const pair = `${choice.spaceId}\n${idOf(choice)}`
+    const pair = `${source.spaceId}\n${idOf(source)}`
     if (seen.has(pair)) return null
     seen.add(pair)
-    choices.push(choice)
+    sources.push(source)
   }
-  return choices
+  return sources
 }
 
-function toTypeChoice(value: unknown): SchemaTypeChoice | null {
+function toTypeSource(value: unknown): SchemaTypeSource | null {
   if (typeof value !== 'object' || value === null) return null
   const { spaceId, typeKey } = value as Record<string, unknown>
   const drawn = toDrawing(value)
@@ -110,7 +110,7 @@ function toTypeChoice(value: unknown): SchemaTypeChoice | null {
   return { spaceId, typeKey, ...drawn }
 }
 
-function toQueryChoice(value: unknown): SchemaQueryChoice | null {
+function toQuerySource(value: unknown): SchemaQuerySource | null {
   if (typeof value !== 'object' || value === null) return null
   const { spaceId, queryId, viewId } = value as Record<string, unknown>
   const drawn = toDrawing(value)
@@ -119,8 +119,8 @@ function toQueryChoice(value: unknown): SchemaQueryChoice | null {
   return { spaceId, queryId, viewId, ...drawn }
 }
 
-/** How a choice's objects are drawn: the fields type and query choices share. */
-function toDrawing(value: object): Omit<SchemaTypeChoice, 'spaceId' | 'typeKey'> | null {
+/** How a Source's objects are drawn: the fields type and query Sources share. */
+function toDrawing(value: object): Omit<SchemaTypeSource, 'spaceId' | 'typeKey'> | null {
   const {
     from,
     to,
@@ -150,12 +150,12 @@ function isId(value: unknown): value is string {
  * A selection saved while the app read through v1 of Anytype's API names a type the way v1
  * spelled it. v2 spells some differently — a user's type whose v1 key collides with one Anytype
  * bundles is served by its internal key (`6a67…`), and refused by the old one as ambiguous — so
- * each such choice is rewritten to the key the account now serves. Returns `selection` itself
+ * each such Source is rewritten to the key the account now serves. Returns `selection` itself
  * when nothing needed rewriting.
  *
- * A choice whose type is already chosen under its current key is dropped: it is the same type.
+ * A Source whose type is already chosen under its current key is dropped: it is the same type.
  * Its properties are left alone: their v1 keys were known only to v1, so one that no longer
- * resolves falls back as any stale property does. Query choices are left alone too: only v2
+ * resolves falls back as any stale property does. Query Sources are left alone too: only v2
  * serves queries, so they were chosen by v2's keys.
  */
 export function rekeySchemaSelection(selection: SchemaSelection, spaces: readonly SchemaSpace[]): SchemaSelection {
@@ -163,13 +163,13 @@ export function rekeySchemaSelection(selection: SchemaSelection, spaces: readonl
   const chosen = new Set(selection.types.map(({ spaceId, typeKey }) => `${spaceId}\n${typeKey}`))
 
   let changed = false
-  const types = selection.types.flatMap((choice) => {
-    const candidates = typesBySpace.get(choice.spaceId) ?? []
-    if (candidates.some(({ key }) => key === choice.typeKey)) return [choice]
-    const type = candidates.find(({ formerKey }) => formerKey === choice.typeKey)
-    if (!type) return [choice]
+  const types = selection.types.flatMap((source) => {
+    const candidates = typesBySpace.get(source.spaceId) ?? []
+    if (candidates.some(({ key }) => key === source.typeKey)) return [source]
+    const type = candidates.find(({ formerKey }) => formerKey === source.typeKey)
+    if (!type) return [source]
     changed = true
-    return chosen.has(`${choice.spaceId}\n${type.key}`) ? [] : [{ ...choice, typeKey: type.key }]
+    return chosen.has(`${source.spaceId}\n${type.key}`) ? [] : [{ ...source, typeKey: type.key }]
   })
   return changed ? { ...selection, types } : selection
 }

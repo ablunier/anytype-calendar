@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import type { EventsDatedObject } from './dated-object'
+import type { EventsPlacement } from './placement'
 import { type EventsSpanLoad, type EventsSpanResult, nextEventsSpanLoad, shownEventsSpan } from './span-load'
 
 const MARCH = { kind: 'month', year: 2026, month: 2 } as const
 const APRIL = { kind: 'month', year: 2026, month: 3 } as const
 
-const OBJECT: EventsDatedObject = {
+const OBJECT: EventsPlacement = {
   id: 'obj_1',
   spaceId: 'sp_1',
   typeKey: 'task',

@@ -8,7 +8,7 @@ import type {
   EventsWriteResult,
   EventsWriter,
 } from '../domain'
-import { CompleteEventsObject, CreateEventsObject, RescheduleEventsObject } from './edit-events-object'
+import { CreateEventsObject, RescheduleEventsObject, SetEventsObjectDone } from './edit-events-object'
 import { EventsSpanStore } from './events-span-store'
 import { LoadEventsSpan } from './load-events-span'
 
@@ -103,7 +103,7 @@ async function setup({
     },
     reschedule: new RescheduleEventsObject(deps),
     create: new CreateEventsObject(deps),
-    complete: new CompleteEventsObject(deps),
+    setDone: new SetEventsObjectDone(deps),
   }
 }
 
@@ -381,9 +381,9 @@ describe('creating', () => {
 describe('completing', () => {
   test("ticks the source's Done checkbox, drawing the object done while Anytype is asked", async () => {
     const pending = deferred<EventsWriteResult>()
-    const { complete, writer, store } = await setup({ write: () => pending.promise })
+    const { setDone, writer, store } = await setup({ write: () => pending.promise })
 
-    const result = complete.execute({ spaceId: 'sp_1', id: 'obj_2', done: true })
+    const result = setDone.execute({ spaceId: 'sp_1', id: 'obj_2', done: true })
     expect(objectsIn(store.shown())).toContainEqual(expect.objectContaining({ id: 'obj_2', done: true }))
     await vi.waitFor(() => expect(writer.setDone).toHaveBeenCalled())
     expect(writer.setDone).toHaveBeenCalledWith(API_KEY, { spaceId: 'sp_1', id: 'obj_2' }, 'done', true)
@@ -394,8 +394,8 @@ describe('completing', () => {
   })
 
   test('refuses an object whose source has no Done', async () => {
-    const { complete, writer } = await setup()
-    await expect(complete.execute({ spaceId: 'sp_1', id: 'obj_1', done: true })).resolves.toEqual({
+    const { setDone, writer } = await setup()
+    await expect(setDone.execute({ spaceId: 'sp_1', id: 'obj_1', done: true })).resolves.toEqual({
       ok: false,
       failure: 'invalid',
     })

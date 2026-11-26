@@ -1,4 +1,4 @@
-import type { CalendarEvent, ObjectType, Space } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, Space } from '@renderer/types'
 import { describe, expect, test } from 'vitest'
 import {
   addDays,
@@ -32,7 +32,7 @@ import {
   withDates,
 } from './calendar'
 
-const TASK: ObjectType = {
+const TASK: CalendarSource = {
   key: 'sp_1:task',
   space: 'sp_1',
   label: 'Task',
@@ -242,7 +242,7 @@ describe('monthLabel', () => {
 
 describe('indexBy', () => {
   test('keys items by their key field', () => {
-    const other: ObjectType = { ...TASK, key: 'sp_1:project' }
+    const other: CalendarSource = { ...TASK, key: 'sp_1:project' }
     const map = indexBy([TASK, other])
     expect(map.get(TASK.key)).toBe(TASK)
     expect(map.get(other.key)).toBe(other)
@@ -251,8 +251,8 @@ describe('indexBy', () => {
 })
 
 describe('typesInSpace and queriesInSpace', () => {
-  const other: ObjectType = { ...TASK, key: 'sp_2:task', space: 'sp_2' }
-  const query: ObjectType = {
+  const other: CalendarSource = { ...TASK, key: 'sp_2:task', space: 'sp_2' }
+  const query: CalendarSource = {
     ...TASK,
     key: 'sp_1:query:q',
     query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] },
@@ -337,7 +337,7 @@ describe('offeredMapping', () => {
   })
 
   test("keeps a view the query has, and reads the query's first once it is gone", () => {
-    const query: ObjectType = {
+    const query: CalendarSource = {
       ...TASK,
       query: { typeKey: 'sp_1:task', typeLabel: 'Task', views: [{ key: 'v_all', label: 'All' }] },
     }
@@ -381,7 +381,7 @@ describe('offeredMapping of Done, Location and the panel', () => {
 })
 
 describe('mappingIn', () => {
-  const query: ObjectType = {
+  const query: CalendarSource = {
     ...TASK,
     key: 'sp_1:query:q',
     query: { typeKey: TASK.key, typeLabel: 'Task', views: [{ key: 'v', label: 'All' }] },
@@ -448,7 +448,7 @@ describe('eventHue', () => {
 })
 
 describe('withDates', () => {
-  const other: ObjectType = { ...TASK, key: 'sp_1:project' }
+  const other: CalendarSource = { ...TASK, key: 'sp_1:project' }
 
   test('gives a type with an entry those dates, and leaves the rest as they are', () => {
     const [task, project] = withDates([TASK, other], {

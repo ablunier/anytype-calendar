@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import type { SchemaQueryChoice, SchemaSelection, SchemaTypeChoice } from '../../domain'
+import type { SchemaQuerySource, SchemaSelection, SchemaTypeSource } from '../../domain'
 import { JsonFileSchemaSelectionRepository, type SchemaSelectionFile } from './json-file-schema-selection-repository'
 
 /** How a choice saved before `panel`, `done` and `location` existed reads. */
@@ -60,7 +60,7 @@ test('writes the selection under a format version', async () => {
 })
 
 const [{ colourBy: _, panel: _panel, done: _done, location: _location, ...V2_CHOICE }] = SELECTION.types as [
-  SchemaTypeChoice,
+  SchemaTypeSource,
 ]
 const V3_CHOICE = { ...V2_CHOICE, colourBy: 'status' }
 
@@ -87,7 +87,7 @@ test('loads a version-3 file as choosing no query', async () => {
 })
 
 test("loads a version-4 file as showing nothing more, with Anytype's own Done and Location", async () => {
-  const { panel: _p, done: _d, location: _l, ...query } = SELECTION.queries[0] as SchemaQueryChoice
+  const { panel: _p, done: _d, location: _l, ...query } = SELECTION.queries[0] as SchemaQuerySource
   const { repository } = setup(
     JSON.stringify({
       version: 4,

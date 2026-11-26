@@ -1,6 +1,6 @@
 import { eventHue } from '@renderer/lib/calendar'
 import type { EventSegment } from '@renderer/lib/month-layout'
-import type { CalendarEvent, MonthCell, ObjectType } from '@renderer/types'
+import type { CalendarEvent, CalendarSource, MonthCell } from '@renderer/types'
 import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EventChip } from './EventChip'
@@ -15,7 +15,7 @@ export interface MonthDayCellProps {
   lanes: number
   /** Events the week's lane cap dropped on this day. */
   hidden: number
-  typesByKey: Map<string, ObjectType>
+  typesByKey: Map<string, CalendarSource>
   isToday: boolean
   isSelected: boolean
   isWeekend: boolean

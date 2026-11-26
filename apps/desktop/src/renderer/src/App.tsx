@@ -25,8 +25,8 @@ import {
   creatableTypesFor,
   hasNotGrantedSpaces,
   isOnboarded,
-  picksFor,
   schemaSelectionFor,
+  selectionFor,
   spacesFor,
   syncViewFor,
   tracksAnyType,
@@ -115,7 +115,7 @@ function App(): React.JSX.Element | null {
 
   if (screen === 'onboarding' || !isOnboarded(selection)) {
     const types = typesFor(schema)
-    // A failed save rejects and leaves the user here, picks intact, to try again.
+    // A failed save rejects and leaves the user here, Selection intact, to try again.
     const save = async (next = EMPTY_SCHEMA_SELECTION): Promise<void> => {
       await window.api.schemaSelection.save(next)
       setScreen('calendar')
@@ -126,9 +126,9 @@ function App(): React.JSX.Element | null {
         types={types}
         sync={syncViewFor(schema, now)}
         hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
-        initial={picksFor(selection, types)}
+        initial={selectionFor(selection, types)}
         onRetrySync={() => void window.api.schema.sync()}
-        onContinue={(picks) => void save(schemaSelectionFor(schema, picks, selection))}
+        onContinue={(selected) => void save(schemaSelectionFor(schema, selected, selection))}
         // Skipping on first run saves an empty selection; later, it keeps what was saved.
         onSkip={() => (isOnboarded(selection) ? setScreen('calendar') : void save())}
       />
@@ -143,7 +143,7 @@ function App(): React.JSX.Element | null {
         types={types}
         sync={syncViewFor(schema, now)}
         hasNotGrantedSpaces={hasNotGrantedSpaces(schema)}
-        initial={picksFor(selection, types)}
+        initial={selectionFor(selection, types)}
         apiKey={apiKey}
         access={apiAccessFor(session)}
         language={language}
@@ -160,7 +160,7 @@ function App(): React.JSX.Element | null {
         onAgendaDays={setAgendaDays}
         onBack={() => setScreen('calendar')}
         onReread={() => void window.api.schema.sync()}
-        onSave={(picks) => window.api.schemaSelection.save(schemaSelectionFor(schema, picks, selection))}
+        onSave={(selected) => window.api.schemaSelection.save(schemaSelectionFor(schema, selected, selection))}
         onCopyKey={() => window.api.auth.copyKey()}
         onSignOut={() => void window.api.auth.signOut()}
         appVersion={update?.current ?? null}
@@ -190,11 +190,11 @@ function App(): React.JSX.Element | null {
     showSpan(spanFor(view, switchDateFor(span, localDate(now)), weekStart, agendaDays))
   }
   const types = typesFor(schema)
-  const picks = picksFor(selection, types)
-  const typesOnCalendar = withDates(types, picks.dates)
+  const selected = selectionFor(selection, types)
+  const typesOnCalendar = withDates(types, selected.dates)
   const today = localDate(now)
-  const sources = sourcesOnCalendar(typesOnCalendar, picks)
-  const feedSources = feedsFor(feeds, now)
+  const sources = sourcesOnCalendar(typesOnCalendar, selected)
+  const subscriptions = feedsFor(feeds, now)
   /* Only keys of sources the calendar still holds are saved, so what the selection dropped,
    * or a subscription removed, since stops being remembered. */
   const setSourcesShown = (keys: string[], shown: boolean): void =>
@@ -202,7 +202,7 @@ function App(): React.JSX.Element | null {
       ...rest,
       hidden: prunedHidden(
         withVisibility(new Set(hidden), keys, shown),
-        [...sources, ...feedSources].map(({ key }) => key),
+        [...sources, ...subscriptions].map(({ key }) => key),
       ),
     }))
   /* The feeds never wait on Anytype: they are drawn while its read of the span is running, and
@@ -231,20 +231,20 @@ function App(): React.JSX.Element | null {
         status={status}
         types={typesOnCalendar}
         spaces={spacesFor(schema)}
-        trackedSpaceKeys={picks.spaceKeys}
+        trackedSpaceKeys={selected.spaceKeys}
         sources={sources}
-        feeds={feedSources}
+        feeds={subscriptions}
         hiddenSources={hiddenSources}
         sidebarCollapsed={visibility.collapsed}
         collapsedSpaces={collapsedSpaces}
-        tracksAnything={tracksAnyType(selection) || feedSources.length > 0}
+        tracksAnything={tracksAnyType(selection) || subscriptions.length > 0}
         today={today}
         nowMinute={minutesOf(now)}
         theme={theme}
         showWeekNumbers={showWeekNumbers}
         weekStart={weekStart}
         editAccess={editAccessFor(session)}
-        creatableTypes={creatableTypesFor(typesOnCalendar, picks)}
+        creatableTypes={creatableTypesFor(typesOnCalendar, selected)}
         collectionsBySpace={collectionsBySpaceFor(schema)}
         onReschedule={(request) => window.api.events.reschedule(request)}
         onCreate={(request) => window.api.events.create(request)}

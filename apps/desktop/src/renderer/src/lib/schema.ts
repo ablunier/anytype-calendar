@@ -6,13 +6,15 @@ import {
   SCHEMA_DONE_KEY,
   SCHEMA_LOCATION_KEY,
   type SchemaQuery,
-  type SchemaQueryChoice,
+  type SchemaQuerySource,
   type SchemaSelection,
   type SchemaSpace,
   type SchemaType,
-  type SchemaTypeChoice,
+  type SchemaTypeSource,
 } from '@anytype-calendar/schema/domain'
 import type {
+  CalendarSelection,
+  CalendarSource,
   CategoryHue,
   Collection,
   CollectionChoice,
@@ -21,10 +23,8 @@ import type {
   DateMapping,
   Elapsed,
   IconName,
-  ObjectType,
   Space,
   SyncView,
-  TypePicks,
 } from '@renderer/types'
 import type { SchemaSelectionSnapshot, SchemaSnapshot } from '@shared/ipc'
 import { mappingIn, offeredMapping } from './calendar'
@@ -174,12 +174,12 @@ export function hasNotGrantedSpaces(snapshot: SchemaSnapshot): boolean {
  * Every dated type of the last successful sync, then the queries over them, space by space;
  * empty until there is one.
  */
-export function typesFor(snapshot: SchemaSnapshot): ObjectType[] {
+export function typesFor(snapshot: SchemaSnapshot): CalendarSource[] {
   return syncedSpaces(snapshot).flatMap((space) => [
-    ...space.types.map((type) => objectTypeFor(space, type)),
+    ...space.types.map((type) => typeSourceFor(space, type)),
     ...space.queries.flatMap((query) => {
       const type = space.types.find(({ key }) => key === query.typeKey)
-      return type ? [queryTypeFor(space, query, type)] : []
+      return type ? [querySourceFor(space, query, type)] : []
     }),
   ])
 }
@@ -223,16 +223,16 @@ export function tracksAnyType(selection: SchemaSelectionSnapshot): boolean {
 }
 
 /**
- * The saved selection as picks over `types`. A saved date the type no longer has is left
+ * The saved selection as a Selection over `types`. A saved date the type no longer has is left
  * out, so the type falls back to its own dates rather than showing a choice it cannot offer;
  * so is a property it no longer colours by, and a view a query no longer has.
  */
-export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]): TypePicks {
+export function selectionFor(selection: SchemaSelectionSnapshot, types: CalendarSource[]): CalendarSelection {
   if (selection.phase === 'unset') return { spaceKeys: [], typeKeys: [], dates: {} }
   const byKey = new Map(types.map((type) => [type.key, type]))
   const chosen = [
     ...selection.selection.types.map(({ spaceId, typeKey, ...drawn }) => ({
-      key: objectTypeKey(spaceId, typeKey),
+      key: typeSourceKey(spaceId, typeKey),
       mapping: { ...drawn, view: null },
     })),
     ...selection.selection.queries.map(({ spaceId, queryId, viewId, ...drawn }) => ({
@@ -254,7 +254,7 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
 }
 
 /**
- * The picks over the synced spaces, types and queries, as the selection to save: only what
+ * The Selection over the synced spaces, types and queries, as the selection to save: only what
  * the user can see is rewritten. Choices this sync did not see — in another account's space,
  * a space since left, or a type or query since deleted or stripped of its dates — are carried
  * over from `previous` untouched, so they are there again if it comes back. A seen type or
@@ -262,7 +262,7 @@ export function picksFor(selection: SchemaSelectionSnapshot, types: ObjectType[]
  */
 export function schemaSelectionFor(
   snapshot: SchemaSnapshot,
-  picks: TypePicks,
+  selected: CalendarSelection,
   previous: SchemaSelectionSnapshot,
 ): SchemaSelection {
   const spaces = syncedSpaces(snapshot)
@@ -273,20 +273,20 @@ export function schemaSelectionFor(
   /** How a seen, ticked type or query is drawn; null for one not seen or not ticked. */
   const drawn = (key: string): DateMapping | null => {
     const type = offered.get(key)
-    if (!type || !picks.typeKeys.includes(key)) return null
-    return offeredMapping(type, mappingIn(picks.dates, type)) ?? mappingIn({}, type)
+    if (!type || !selected.typeKeys.includes(key)) return null
+    return offeredMapping(type, mappingIn(selected.dates, type)) ?? mappingIn({}, type)
   }
 
   const types = spaces.flatMap((space) =>
-    space.types.flatMap((type): SchemaTypeChoice[] => {
-      const mapping = drawn(objectTypeKey(space.id, type.key))
+    space.types.flatMap((type): SchemaTypeSource[] => {
+      const mapping = drawn(typeSourceKey(space.id, type.key))
       if (!mapping) return []
       const { view: _, ...choice } = mapping
       return [{ spaceId: space.id, typeKey: type.key, ...choice }]
     }),
   )
   const queries = spaces.flatMap((space) =>
-    space.queries.flatMap((query): SchemaQueryChoice[] => {
+    space.queries.flatMap((query): SchemaQuerySource[] => {
       const mapping = drawn(querySourceKey(space.id, query.id))
       if (!mapping) return []
       const { view, ...choice } = mapping
@@ -297,9 +297,9 @@ export function schemaSelectionFor(
   return {
     spaceIds: [
       ...kept.spaceIds.filter((id) => !seenSpaces.has(id)),
-      ...spaces.filter((space) => picks.spaceKeys.includes(space.id)).map((space) => space.id),
+      ...spaces.filter((space) => selected.spaceKeys.includes(space.id)).map((space) => space.id),
     ],
-    types: [...kept.types.filter((choice) => !offered.has(objectTypeKey(choice.spaceId, choice.typeKey))), ...types],
+    types: [...kept.types.filter((choice) => !offered.has(typeSourceKey(choice.spaceId, choice.typeKey))), ...types],
     queries: [
       ...kept.queries.filter((choice) => !offered.has(querySourceKey(choice.spaceId, choice.queryId))),
       ...queries,
@@ -311,13 +311,13 @@ function syncedSpaces(snapshot: SchemaSnapshot): SchemaSpace[] {
   return snapshot.phase === 'idle' ? [] : (snapshot.last?.spaces ?? [])
 }
 
-/** The key of the ObjectType for a type of a space. */
-export function objectTypeKey(spaceId: string, typeKey: string): string {
+/** The key of the CalendarSource for a type of a space. */
+export function typeSourceKey(spaceId: string, typeKey: string): string {
   return `${spaceId}:${typeKey}`
 }
 
-/** The key Anytype knows a type by, from the ObjectType of one: the inverse of objectTypeKey. */
-export function anytypeTypeKeyOf(type: ObjectType): string {
+/** The key Anytype knows a type by, from the CalendarSource of one: the inverse of typeSourceKey. */
+export function anytypeTypeKeyOf(type: CalendarSource): string {
   return type.key.slice(type.space.length + 1)
 }
 
@@ -325,23 +325,24 @@ export function anytypeTypeKeyOf(type: ObjectType): string {
  * The types a new object can be created as: the chosen ones of chosen spaces. Not queries,
  * whose objects are those of a type, created as that type.
  */
-export function creatableTypesFor(types: ObjectType[], picks: TypePicks): ObjectType[] {
+export function creatableTypesFor(types: CalendarSource[], selected: CalendarSelection): CalendarSource[] {
   return types.filter(
-    (type) => type.query === undefined && picks.typeKeys.includes(type.key) && picks.spaceKeys.includes(type.space),
+    (type) =>
+      type.query === undefined && selected.typeKeys.includes(type.key) && selected.spaceKeys.includes(type.space),
   )
 }
 
 /**
- * The key of the ObjectType for a query of a space. Neither a type key nor an object id holds
+ * The key of the CalendarSource for a query of a space. Neither a type key nor an object id holds
  * a colon, so it cannot be taken for a type's.
  */
 export function querySourceKey(spaceId: string, queryId: string): string {
   return `${spaceId}:query:${queryId}`
 }
 
-function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
+function typeSourceFor(space: SchemaSpace, type: SchemaType): CalendarSource {
   return {
-    key: objectTypeKey(space.id, type.key),
+    key: typeSourceKey(space.id, type.key),
     space: space.id,
     label: type.name,
     category: type.icon ? hueOf(type.icon.color) : 'graphite',
@@ -356,14 +357,14 @@ function objectTypeFor(space: SchemaSpace, type: SchemaType): ObjectType {
 }
 
 /** Drawn in its type's hue, since its objects are that type's; its icon says it is a query. */
-function queryTypeFor(space: SchemaSpace, query: SchemaQuery, type: SchemaType): ObjectType {
+function querySourceFor(space: SchemaSpace, query: SchemaQuery, type: SchemaType): CalendarSource {
   return {
-    ...objectTypeFor(space, type),
+    ...typeSourceFor(space, type),
     key: querySourceKey(space.id, query.id),
     label: query.name,
     icon: 'funnel',
     query: {
-      typeKey: objectTypeKey(space.id, type.key),
+      typeKey: typeSourceKey(space.id, type.key),
       typeLabel: type.name,
       views: query.views.map(({ id, name }) => ({ key: id, label: name })),
     },

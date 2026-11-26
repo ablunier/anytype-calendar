@@ -1,12 +1,12 @@
 import { catBgSoft, catText, Icon } from '@renderer/components/ui'
-import type { ObjectType } from '@renderer/types'
+import type { CalendarSource } from '@renderer/types'
 
 export type TypeTileSize = 'sm' | 'md'
 
 const boxClass: Record<TypeTileSize, string> = { sm: 'size-control-sm', md: 'size-30' }
 
 export interface TypeTileProps {
-  type: ObjectType
+  type: CalendarSource
   size?: TypeTileSize
 }
 

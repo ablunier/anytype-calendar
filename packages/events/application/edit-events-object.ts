@@ -1,10 +1,10 @@
 import {
-  type EventsApiKeySource,
+  type EventsApiKeys,
   type EventsCollectionTarget,
   type EventsDateChanges,
-  type EventsDatedObject,
   type EventsEditFailure,
   type EventsEditOutcome,
+  type EventsPlacement,
   type EventsReschedule,
   type EventsSlot,
   type EventsSource,
@@ -15,7 +15,7 @@ import {
   type EventsWriter,
   eventsSourceKey,
   newEventsObjectDates,
-  rescheduleEventsDatedObject,
+  rescheduleEventsPlacement,
   sameEventsObject,
 } from '../domain'
 import type { EventsSpanStore } from './events-span-store'
@@ -23,7 +23,7 @@ import type { LoadEventsSpan } from './load-events-span'
 
 export interface EditEventsObjectDeps {
   writer: EventsWriter
-  apiKeys: EventsApiKeySource
+  apiKeys: EventsApiKeys
   sources: EventsSourceSelection
   zone: EventsTimeZone
   store: EventsSpanStore
@@ -46,7 +46,7 @@ export interface CreateEventsObjectInput {
   collectionId?: string
 }
 
-export interface CompleteEventsObjectInput {
+export interface SetEventsObjectDoneInput {
   spaceId: string
   id: string
   done: boolean
@@ -70,7 +70,7 @@ export class RescheduleEventsObject {
     const found = shownObject(this.#deps, spaceId, id)
     if (!found) return GONE
     const { object, source } = found
-    const moved = rescheduleEventsDatedObject(object, change, this.#deps.zone)
+    const moved = rescheduleEventsPlacement(object, change, this.#deps.zone)
     if (!moved) return INVALID
 
     const { from, to } = source
@@ -118,14 +118,14 @@ export class CreateEventsObject {
 }
 
 /** Ticks or clears an object's Done, drawing it so while Anytype is asked. */
-export class CompleteEventsObject {
+export class SetEventsObjectDone {
   readonly #deps: EditEventsObjectDeps
 
   constructor(deps: EditEventsObjectDeps) {
     this.#deps = deps
   }
 
-  async execute({ spaceId, id, done }: CompleteEventsObjectInput): Promise<EventsEditOutcome> {
+  async execute({ spaceId, id, done }: SetEventsObjectDoneInput): Promise<EventsEditOutcome> {
     const found = shownObject(this.#deps, spaceId, id)
     if (!found) return GONE
     const { object, source } = found
@@ -156,19 +156,19 @@ async function addToCollection(
 
 /**
  * The object as shown — a second drag starts where the first left it, not where Anytype last
- * had it — and the pick it was read through, which names its dates.
+ * had it — and the Source it was read through, which names its dates.
  */
 function shownObject(
   { store, sources }: EditEventsObjectDeps,
   spaceId: string,
   id: string,
-): { object: EventsDatedObject; source: EventsSource } | null {
+): { object: EventsPlacement; source: EventsSource } | null {
   const shown = store.shown()
   const objects = shown.phase === 'idle' ? [] : (shown.last?.objects ?? [])
-  // Of the copies a type and a query each read, the one the lowest-ranked pick places.
+  // Of the copies a type and a query each read, the one the lowest-ranked Source places.
   const object = objects
     .filter((candidate) => sameEventsObject(candidate, { spaceId, id }))
-    .reduce<EventsDatedObject | null>((first, copy) => (first && first.rank <= copy.rank ? first : copy), null)
+    .reduce<EventsPlacement | null>((first, copy) => (first && first.rank <= copy.rank ? first : copy), null)
   if (!object) return null
   const source = sources
     .current()
@@ -189,7 +189,7 @@ function sameSourceKey(a: EventsSourceKey, b: EventsSourceKey): boolean {
  */
 async function writeThenLoad<T>(
   { apiKeys, store, load }: EditEventsObjectDeps,
-  edit: EventsDatedObject | null,
+  edit: EventsPlacement | null,
   write: (apiKey: string) => Promise<EventsWriteResult<T>>,
   then?: (apiKey: string, written: T) => Promise<EventsEditFailure | null>,
 ): Promise<EventsEditOutcome> {

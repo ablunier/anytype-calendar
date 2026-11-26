@@ -1,7 +1,7 @@
 import { TypeTile } from '@renderer/components/app/TypeTile'
 import { Button, Checkbox } from '@renderer/components/ui'
 import { dateLabel } from '@renderer/lib/calendar'
-import type { DateMapping, ObjectType } from '@renderer/types'
+import type { CalendarSource, DateMapping } from '@renderer/types'
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,7 +10,7 @@ import { TypeSettingsDialog, type TypeSettingsDialogProps } from './TypeSettings
 export type TypeSettingsHandlers = Omit<TypeSettingsDialogProps, 'type' | 'open' | 'mapping' | 'onClose'>
 
 export interface TypeConfigRowProps extends TypeSettingsHandlers {
-  type: ObjectType
+  type: CalendarSource
   checked: boolean
   mapping: DateMapping
   last: boolean
@@ -74,7 +74,7 @@ export function TypeConfigRow({
 }
 
 /** e.g. `Start date → End date · With time · Coloured by Priority · 2 properties in the panel`. */
-function summaryOf(type: ObjectType, mapping: DateMapping, t: TFunction): string {
+function summaryOf(type: CalendarSource, mapping: DateMapping, t: TFunction): string {
   const { from, to, includesTime, colourBy, view, panel } = mapping
   const parts = [
     to === null

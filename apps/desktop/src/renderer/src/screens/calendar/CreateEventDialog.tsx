@@ -3,7 +3,7 @@ import { longDate } from '@renderer/lib/calendar'
 import { localDate } from '@renderer/lib/events'
 import { collectionChoices, collectionPicksFor } from '@renderer/lib/schema'
 import { timeOfMinute } from '@renderer/lib/time-grid'
-import type { CalendarSlot, Collection, CollectionHint, ObjectType, Space } from '@renderer/types'
+import type { CalendarSlot, CalendarSource, Collection, CollectionHint, Space } from '@renderer/types'
 import type { TFunction } from 'i18next'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,7 +14,7 @@ const DEFAULT_MINUTE = 9 * 60
 export interface CreateEventDialogProps {
   slot: CalendarSlot
   /** Never empty: the calendar only offers creating when there is a type to create. */
-  types: ObjectType[]
+  types: CalendarSource[]
   spacesByKey: Map<string, Space>
   /** By space key; a space with none offers no Collection field. */
   collectionsBySpace: Map<string, Collection[]>
@@ -23,7 +23,7 @@ export interface CreateEventDialogProps {
    * Resolves whether the object was created; the dialog stays open, as filled in, when not.
    * `collectionId` is null for None.
    */
-  onCreate: (type: ObjectType, name: string, slot: CalendarSlot, collectionId: string | null) => Promise<boolean>
+  onCreate: (type: CalendarSource, name: string, slot: CalendarSlot, collectionId: string | null) => Promise<boolean>
 }
 
 /**

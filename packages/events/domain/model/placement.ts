@@ -3,14 +3,15 @@ import { type EventsDetail, type EventsLinkedObject, toEventsDetails } from './d
 import { type EventsSource, type EventsSourceKey, eventsSourceKey } from './source'
 import type { EventsWindow } from './window'
 
-export interface EventsDatedObject {
+/** One Source's reading of a Dated object: the object itself is one Event however many Sources bring it. */
+export interface EventsPlacement {
   /** Anytype's object id. */
   id: string
   spaceId: string
-  /** The pick it was read through. */
+  /** The Source it was read through. */
   source: EventsSourceKey
   /**
-   * Where that pick stands in the selection, types first. An object several picks bring is
+   * Where that Source stands in the Selection, types first. An object several Sources bring is
    * read once through each, and of those the lowest rank is the one that places it.
    */
   rank: number
@@ -39,15 +40,15 @@ export interface EventsDatedObject {
  * A To date before the From date, which Anytype allows, is dropped rather than drawn as a
  * range running backwards: the object shows on its From date alone.
  */
-export function toEventsDatedObject(
+export function toEventsPlacement(
   { id, title, start, end, done, location, option, details = [] }: EventsObjectRef,
   source: EventsSource,
   rank: number,
   linked: (id: string) => EventsLinkedObject | undefined = () => undefined,
-): EventsDatedObject {
+): EventsPlacement {
   const { spaceId, includesTime, colourBy, panel = [] } = source
   const kept = end !== null && end >= start ? end : null
-  const object: EventsDatedObject = {
+  const object: EventsPlacement = {
     id,
     spaceId,
     source: eventsSourceKey(source),
@@ -66,14 +67,14 @@ export function toEventsDatedObject(
 }
 
 export function overlapsEventsWindow(
-  { start, end }: Pick<EventsDatedObject, 'start' | 'end'>,
+  { start, end }: Pick<EventsPlacement, 'start' | 'end'>,
   window: EventsWindow,
 ): boolean {
   return start <= window.end && (end ?? start) >= window.start
 }
 
 /** Earliest first; objects starting together by title, then id, then rank, so the order is stable. */
-export function compareEventsDatedObjects(a: EventsDatedObject, b: EventsDatedObject): number {
+export function compareEventsPlacements(a: EventsPlacement, b: EventsPlacement): number {
   if (a.start !== b.start) return a.start - b.start
   if (a.title !== b.title) return a.title < b.title ? -1 : 1
   if (a.id !== b.id) return a.id < b.id ? -1 : 1

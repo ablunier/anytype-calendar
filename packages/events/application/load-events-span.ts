@@ -1,11 +1,11 @@
 import { DispatchGuard } from '@anytype-calendar/kernel/application'
 import {
-  compareEventsDatedObjects,
-  type EventsApiKeySource,
-  type EventsDatedObject,
+  compareEventsPlacements,
+  type EventsApiKeys,
   type EventsGateway,
   type EventsLinkedObject,
   type EventsObjectRef,
+  type EventsPlacement,
   type EventsSource,
   type EventsSourceSelection,
   type EventsSpan,
@@ -17,13 +17,13 @@ import {
   nextEventsSpanLoad,
   overlapsEventsWindow,
   shownEventsSpan,
-  toEventsDatedObject,
+  toEventsPlacement,
 } from '../domain'
 import type { EventsSpanStore } from './events-span-store'
 
 export interface LoadEventsSpanDeps {
   gateway: EventsGateway
-  apiKeys: EventsApiKeySource
+  apiKeys: EventsApiKeys
   sources: EventsSourceSelection
   zone: EventsTimeZone
   store: EventsSpanStore
@@ -53,7 +53,7 @@ class Refused extends Error {
  */
 export class LoadEventsSpan {
   readonly #gateway: EventsGateway
-  readonly #apiKeys: EventsApiKeySource
+  readonly #apiKeys: EventsApiKeys
   readonly #sources: EventsSourceSelection
   readonly #zone: EventsTimeZone
   readonly #guard: DispatchGuard<EventsSpanLoad, EventsSpanLoadEvent>
@@ -75,7 +75,7 @@ export class LoadEventsSpan {
     const target = span ?? shownEventsSpan(this.#guard.current()) ?? this.#openingSpan()
     const loading = this.#guard.dispatch({ type: 'load-started', span: target })
 
-    let objects: EventsDatedObject[]
+    let objects: EventsPlacement[]
     try {
       objects = await this.#fetchObjects(target)
     } catch (error) {
@@ -90,7 +90,7 @@ export class LoadEventsSpan {
     }
   }
 
-  async #fetchObjects(span: EventsSpan): Promise<EventsDatedObject[]> {
+  async #fetchObjects(span: EventsSpan): Promise<EventsPlacement[]> {
     const window = eventsSpanWindow(span, this.#zone)
     const sources = this.#sources.current()
     const apiKey = await this.#apiKeys.current()
@@ -106,10 +106,10 @@ export class LoadEventsSpan {
     const linked = await this.#fetchLinked(apiKey, perSource)
     const objects = perSource.flatMap(({ source, rank, refs }) =>
       refs
-        .map((ref) => toEventsDatedObject(ref, source, rank, (id) => linked.get(`${source.spaceId}\n${id}`)))
+        .map((ref) => toEventsPlacement(ref, source, rank, (id) => linked.get(`${source.spaceId}\n${id}`)))
         .filter((object) => overlapsEventsWindow(object, window)),
     )
-    return objects.sort(compareEventsDatedObjects)
+    return objects.sort(compareEventsPlacements)
   }
 
   /**

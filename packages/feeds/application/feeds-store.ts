@@ -1,8 +1,8 @@
 import {
-  compareFeedsEvents,
+  compareFeedsPlacedOccurrences,
   type FeedsCalendar,
-  type FeedsEvent,
   type FeedsOccurrence,
+  type FeedsPlacedOccurrence,
   type FeedsReadStatus,
   type FeedsState,
   type FeedsSubscription,
@@ -95,14 +95,14 @@ export class FeedsStore {
     for (const listener of this.#listeners) listener(this.#state)
   }
 
-  #events(): FeedsEvent[] {
+  #events(): FeedsPlacedOccurrence[] {
     const window = this.#window
     if (window === null) return []
     return this.#subscriptions
       .flatMap(({ id }, rank) =>
         this.#occurrences(id, window).map((occurrence) => ({ ...occurrence, feedId: id, rank })),
       )
-      .sort(compareFeedsEvents)
+      .sort(compareFeedsPlacedOccurrences)
   }
 
   #occurrences(id: string, window: FeedsWindow): FeedsOccurrence[] {

@@ -10,7 +10,7 @@ _Avoid_: picks, settings, schema
 
 **Source**:
 One dated type or one Query the user put on the calendar, with how its objects are drawn: their From and To, whether those carry a time, what ticks them done, where they take place, what colours them and what the detail panel shows. The same type in two spaces is two Sources.
-_Avoid_: choice, pick, type (when a Query may be meant), calendar
+_Avoid_: choice, pick, type (when a Query may be meant), calendar, feed (a Subscription is not a Source)
 
 **Dated type**:
 An Anytype type with a date property of the user's, its own or one its templates show. Only a dated type, or a Query over one, can be a Source.

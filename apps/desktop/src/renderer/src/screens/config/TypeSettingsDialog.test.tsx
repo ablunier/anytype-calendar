@@ -1,10 +1,10 @@
 import { renderWithI18n } from '@renderer/test/render'
-import type { DateMapping, ObjectType } from '@renderer/types'
+import type { CalendarSource, DateMapping } from '@renderer/types'
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { TypeSettingsDialog } from './TypeSettingsDialog'
 
-const task: ObjectType = {
+const task: CalendarSource = {
   key: 'task',
   space: 'work',
   label: 'Task',
@@ -39,7 +39,7 @@ const mapping: DateMapping = {
   view: null,
 }
 
-function renderDialog(type: ObjectType = task) {
+function renderDialog(type: CalendarSource = task) {
   const handlers = {
     onClose: vi.fn(),
     onFromChange: vi.fn(),
@@ -107,7 +107,7 @@ describe('TypeSettingsDialog', () => {
   })
 
   it('offers a query’s views, the first until another is picked', async () => {
-    const query: ObjectType = {
+    const query: CalendarSource = {
       ...task,
       key: 'open-tasks',
       label: 'Open tasks',

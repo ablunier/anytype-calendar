@@ -2,24 +2,24 @@ import { NotGrantedSpacesHint } from '@renderer/components/app/NotGrantedSpacesH
 import { SpaceMonogram } from '@renderer/components/app/SpaceMonogram'
 import { Wordmark } from '@renderer/components/app/Wordmark'
 import { Button, EmptyState } from '@renderer/components/ui'
-import { useTypeSelection } from '@renderer/hooks/useTypeSelection'
+import { useSourceSelection } from '@renderer/hooks/useSourceSelection'
 import { queriesInSpace, typesInSpace } from '@renderer/lib/calendar'
 import { syncDetailText } from '@renderer/lib/sync-text'
-import type { ObjectType, Space, SyncView, TypePicks } from '@renderer/types'
+import type { CalendarSelection, CalendarSource, Space, SyncView } from '@renderer/types'
 import { useTranslation } from 'react-i18next'
 import { SpacePicker } from './SpacePicker'
 import { TypeCard } from './TypeCard'
 
 export interface OnboardingScreenProps {
   spaces: Space[]
-  types: ObjectType[]
+  types: CalendarSource[]
   sync: SyncView
   /** The key's grant leaves some of the account's spaces out of `spaces`. */
   hasNotGrantedSpaces: boolean
   /** Read once, when the account has first been read. */
-  initial: TypePicks
+  initial: CalendarSelection
   onRetrySync: () => void
-  onContinue: (picks: TypePicks) => void
+  onContinue: (selected: CalendarSelection) => void
   onSkip: () => void
 }
 
@@ -80,19 +80,19 @@ export function OnboardingScreen({
 interface PickerProps {
   spaces: Space[]
   hasNotGrantedSpaces: boolean
-  types: ObjectType[]
-  initial: TypePicks
-  onContinue: (picks: TypePicks) => void
+  types: CalendarSource[]
+  initial: CalendarSelection
+  onContinue: (selected: CalendarSelection) => void
   onSkip: () => void
 }
 
 /** Mounted only once the account has been read, so the selection starts from real types. */
 function Picker({ spaces, hasNotGrantedSpaces, types, initial, onContinue, onSkip }: PickerProps): React.JSX.Element {
   const { t } = useTranslation()
-  const selection = useTypeSelection(types, initial)
+  const selection = useSourceSelection(types, initial)
   const chosenSpaces = spaces.filter((space) => selection.spaceKeys.includes(space.key))
   const chosenQueries = selection.activeTypes.filter((type) => type.query !== undefined).length
-  const card = (type: ObjectType): React.JSX.Element => {
+  const card = (type: CalendarSource): React.JSX.Element => {
     const mapping = selection.mappingFor(type)
     return (
       <TypeCard
@@ -179,7 +179,7 @@ function Picker({ spaces, hasNotGrantedSpaces, types, initial, onContinue, onSki
         <Button variant="ghost" size="md" onClick={onSkip}>
           {t('onboarding.skipForNow')}
         </Button>
-        <Button variant="primary" size="md" iconRight="chevron-right" onClick={() => onContinue(selection.picks)}>
+        <Button variant="primary" size="md" iconRight="chevron-right" onClick={() => onContinue(selection.selected)}>
           {t('onboarding.continue')}
         </Button>
       </footer>
