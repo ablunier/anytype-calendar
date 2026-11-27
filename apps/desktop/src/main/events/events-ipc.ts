@@ -1,8 +1,8 @@
 import { authAccessCanWrite } from '@anytype-calendar/auth/domain'
 import { type EventsEditOutcome, toEventsSpan } from '@anytype-calendar/events/domain'
 import { IpcChannel } from '@shared/ipc'
-import { app, BrowserWindow, ipcMain } from 'electron'
 import type { Auth } from '../auth/compose-auth'
+import type { CalendarIpcRegistrar } from '../platform'
 import type { Schema } from '../schema/compose-schema'
 import type { Events } from './compose-events'
 import { toCreateRequest, toRescheduleRequest, toSetDoneRequest } from './edit-requests'
@@ -12,6 +12,7 @@ import { FOCUS_REFRESH_INTERVAL_MS, throttled } from './focus-refresh'
 export type EventsIpcLinks = Pick<Auth, 'authSession' | 'checkAuthAccess'> & Pick<Schema, 'schemaSync'>
 
 export function registerEventsIpc(
+  ipc: CalendarIpcRegistrar,
   { eventsState, loadEventsSpan, rescheduleEventsObject, createEventsObject, setEventsObjectDone }: Events,
   { authSession, checkAuthAccess, schemaSync }: EventsIpcLinks,
 ): void {
@@ -31,21 +32,21 @@ export function registerEventsIpc(
       }
       return run(request)
     }
-  ipcMain.handle(
+  ipc.handle(
     IpcChannel.eventsReschedule,
     edit(toRescheduleRequest, (request) => rescheduleEventsObject.execute(request)),
   )
-  ipcMain.handle(
+  ipc.handle(
     IpcChannel.eventsCreate,
     edit(toCreateRequest, (request) => createEventsObject.execute(request)),
   )
-  ipcMain.handle(
+  ipc.handle(
     IpcChannel.eventsSetDone,
     edit(toSetDoneRequest, (request) => setEventsObjectDone.execute(request)),
   )
 
-  ipcMain.handle(IpcChannel.eventsGet, () => eventsState.shown())
-  ipcMain.handle(IpcChannel.eventsShowSpan, (_event, value: unknown) => {
+  ipc.handle(IpcChannel.eventsGet, () => eventsState.shown())
+  ipc.handle(IpcChannel.eventsShowSpan, (_event, value: unknown) => {
     // Renderer input is untrusted, and this one becomes search filters.
     const span = toEventsSpan(value)
     if (!span) throw new TypeError('not a span')
@@ -53,11 +54,7 @@ export function registerEventsIpc(
     return connected() ? loadEventsSpan.execute(span) : undefined
   })
 
-  eventsState.subscribe((state) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.send(IpcChannel.eventsChanged, state)
-    }
-  })
+  eventsState.subscribe((state) => ipc.broadcast(IpcChannel.eventsChanged, state))
 
   // Counted from now: the first window takes focus right after launch, when being connected
   // has just read everything. The key's grant is asked again too: the user may have been in
@@ -72,7 +69,7 @@ export function registerEventsIpc(
     Date.now,
     Date.now(),
   )
-  app.on('browser-window-focus', () => {
+  ipc.onWindowFocus(() => {
     if (connected()) refresh()
   })
 }

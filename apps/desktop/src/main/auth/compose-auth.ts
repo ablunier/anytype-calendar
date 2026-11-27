@@ -20,15 +20,15 @@ import {
   InMemoryAuthGateway,
   InMemoryCredentialRepository,
 } from '@anytype-calendar/auth/infrastructure'
-import { app, safeStorage } from 'electron'
 import type { Anytype } from '../anytype/compose-anytype'
-import { credentialFileAt, safeStorageCipher } from './credential-storage'
+import { type CalendarPlatform, credentialCipherOf } from '../platform'
+import { credentialFileAt } from './credential-storage'
 
 export type Auth = ReturnType<typeof composeAuth>
 
-export function composeAuth(anytype: Anytype) {
+export function composeAuth(anytype: Anytype, platform: CalendarPlatform) {
   // A fake key gets its own file, so it is never restored against the real Anytype.
-  const credentials = credentialRepository(anytype.kind === 'fake' ? 'credential-fake.bin' : 'credential.bin')
+  const credentials = credentialRepository(platform, anytype.kind === 'fake' ? 'credential-fake.bin' : 'credential.bin')
   const gateway = anytype.kind === 'real' ? new AnytypeAuthGateway(anytype.client) : inMemoryAuthGateway()
   const authSession = new AuthSessionStore()
   return {
@@ -60,18 +60,21 @@ function inMemoryAuthGateway(): AuthGateway {
 }
 
 /** Never writes the key in plaintext: without OS encryption it lasts only until quit. */
-function credentialRepository(fileName: string): CredentialRepository {
-  if (!safeStorage.isEncryptionAvailable()) {
+function credentialRepository(
+  { encryption, os, userDataPath }: CalendarPlatform,
+  fileName: string,
+): CredentialRepository {
+  if (!encryption.isAvailable()) {
     console.warn('[auth] OS encryption is unavailable; the API key will not survive a restart')
     return new InMemoryCredentialRepository()
   }
   // Without a keyring Linux falls back to a hardcoded password — obfuscation, not
   // encryption. Kept anyway, by choice, so the key still survives restarts there.
-  if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text') {
+  if (os === 'linux' && encryption.selectedBackend() === 'basic_text') {
     console.warn('[auth] No keyring found; the API key is stored obfuscated, not encrypted')
   }
   return new EncryptedFileCredentialRepository({
-    cipher: safeStorageCipher,
-    file: credentialFileAt(join(app.getPath('userData'), fileName)),
+    cipher: credentialCipherOf(encryption),
+    file: credentialFileAt(join(userDataPath, fileName)),
   })
 }

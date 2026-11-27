@@ -1,36 +1,36 @@
 import { IpcChannel } from '@shared/ipc'
-import { BrowserWindow, clipboard, ipcMain } from 'electron'
+import type { CalendarIpcRegistrar } from '../platform'
 import type { Auth } from './compose-auth'
 
-export function registerAuthIpc({
-  authSession,
-  startAuthConnection,
-  submitAuthCode,
-  startAuthKeyEntry,
-  submitAuthApiKey,
-  stepBackAuthConnection,
-  signOutOfAuth,
-  copyAuthApiKey,
-}: Auth): void {
-  ipcMain.handle(IpcChannel.sessionGet, () => authSession.get())
-  ipcMain.handle(IpcChannel.authStart, () => startAuthConnection.execute())
-  ipcMain.handle(IpcChannel.authSubmitCode, (_event, code: unknown) => {
+export function registerAuthIpc(
+  ipc: CalendarIpcRegistrar,
+  writeClipboard: (text: string) => void,
+  {
+    authSession,
+    startAuthConnection,
+    submitAuthCode,
+    startAuthKeyEntry,
+    submitAuthApiKey,
+    stepBackAuthConnection,
+    signOutOfAuth,
+    copyAuthApiKey,
+  }: Auth,
+): void {
+  ipc.handle(IpcChannel.sessionGet, () => authSession.get())
+  ipc.handle(IpcChannel.authStart, () => startAuthConnection.execute())
+  ipc.handle(IpcChannel.authSubmitCode, (_event, code: unknown) => {
     // Renderer input is untrusted; the domain ignores a malformed code, but not a non-string.
     if (typeof code !== 'string') throw new TypeError('auth code must be a string')
     return submitAuthCode.execute(code)
   })
-  ipcMain.handle(IpcChannel.authEnterKey, () => startAuthKeyEntry.execute())
-  ipcMain.handle(IpcChannel.authSubmitApiKey, (_event, apiKey: unknown) => {
+  ipc.handle(IpcChannel.authEnterKey, () => startAuthKeyEntry.execute())
+  ipc.handle(IpcChannel.authSubmitApiKey, (_event, apiKey: unknown) => {
     if (typeof apiKey !== 'string') throw new TypeError('API key must be a string')
     return submitAuthApiKey.execute(apiKey)
   })
-  ipcMain.handle(IpcChannel.authStepBack, () => stepBackAuthConnection.execute())
-  ipcMain.handle(IpcChannel.authSignOut, () => signOutOfAuth.execute())
-  ipcMain.handle(IpcChannel.authCopyKey, () => copyAuthApiKey.execute((apiKey) => clipboard.writeText(apiKey)))
+  ipc.handle(IpcChannel.authStepBack, () => stepBackAuthConnection.execute())
+  ipc.handle(IpcChannel.authSignOut, () => signOutOfAuth.execute())
+  ipc.handle(IpcChannel.authCopyKey, () => copyAuthApiKey.execute((apiKey) => writeClipboard(apiKey)))
 
-  authSession.subscribe((session) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.send(IpcChannel.sessionChanged, session)
-    }
-  })
+  authSession.subscribe((session) => ipc.broadcast(IpcChannel.sessionChanged, session))
 }

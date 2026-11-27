@@ -1,14 +1,7 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { FeedsCacheDirectory, FeedsSubscriptionFile, FeedsUrlCipher } from '@anytype-calendar/feeds/infrastructure'
-import { safeStorage } from 'electron'
+import type { FeedsCacheDirectory, FeedsSubscriptionFile } from '@anytype-calendar/feeds/infrastructure'
 import { atomicFileAt } from '../atomic-file'
-
-/** Only usable once the app is ready. Sealed bytes are kept as Base64, which JSON can hold. */
-export const safeStorageUrlCipher: FeedsUrlCipher = {
-  seal: (plain) => safeStorage.encryptString(plain).toString('base64'),
-  open: (sealed) => safeStorage.decryptString(Buffer.from(sealed, 'base64')),
-}
 
 /** Owner-only, like the credential: the addresses are sealed, but the names say what is followed. */
 export function subscriptionFileAt(path: string): FeedsSubscriptionFile {
