@@ -1,11 +1,12 @@
 import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, clipboard, ipcMain, safeStorage, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { registerAuthIpc } from './auth/auth-ipc'
 import { composeServices } from './composition'
 import { registerEventsIpc } from './events/events-ipc'
 import { registerFeedsIpc } from './feeds/feeds-ipc'
+import type { CalendarIpcRegistrar, CalendarPlatform } from './platform'
 import { registerPreferencesIpc } from './preferences/preference-ipc'
 import { registerSchemaIpc } from './schema/schema-ipc'
 import { registerShellIpc } from './shell/shell-ipc'
@@ -46,20 +47,46 @@ function createWindow(): void {
   }
 }
 
+/** Read once the app is ready: safeStorage needs that. */
+function electronPlatform(): CalendarPlatform {
+  return {
+    userDataPath: app.getPath('userData'),
+    appVersion: app.getVersion(),
+    os: process.platform,
+    encryption: {
+      isAvailable: () => safeStorage.isEncryptionAvailable(),
+      selectedBackend: () => safeStorage.getSelectedStorageBackend(),
+      encrypt: (plain) => safeStorage.encryptString(plain),
+      decrypt: (sealed) => safeStorage.decryptString(sealed),
+    },
+  }
+}
+
+function electronIpcRegistrar(): CalendarIpcRegistrar {
+  return {
+    handle: (channel, handler) => ipcMain.handle(channel, handler),
+    broadcast: (channel, payload) => {
+      for (const window of BrowserWindow.getAllWindows()) window.webContents.send(channel, payload)
+    },
+    onWindowFocus: (listener) => app.on('browser-window-focus', listener),
+  }
+}
+
 app.whenReady().then(async () => {
   // The app is only quitting once Update.exe has done its shortcuts.
   if (isSquirrelEvent) return
 
   electronApp.setAppUserModelId(squirrelAppUserModelId)
 
-  const { auth, schema, events, feeds, preferences, updates } = composeServices()
-  registerAuthIpc(auth)
-  registerSchemaIpc(schema)
-  registerEventsIpc(events, { ...auth, ...schema })
-  registerFeedsIpc(feeds)
-  registerPreferencesIpc(preferences)
-  registerShellIpc()
-  registerUpdateIpc(updates)
+  const { auth, schema, events, feeds, preferences, updates } = composeServices(electronPlatform())
+  const ipc = electronIpcRegistrar()
+  registerAuthIpc(ipc, (text) => clipboard.writeText(text), auth)
+  registerSchemaIpc(ipc, schema)
+  registerEventsIpc(ipc, events, { ...auth, ...schema })
+  registerFeedsIpc(ipc, feeds)
+  registerPreferencesIpc(ipc, preferences)
+  registerShellIpc(ipc, (url) => shell.openExternal(url))
+  registerUpdateIpc(ipc, (url) => shell.openExternal(url), updates)
   // The span a launch opens on is read from these three, and restoring the session is what
   // starts that first load, so they have to be in place before it runs. The feeds are drawn
   // over that span too, before Anytype has been asked anything.

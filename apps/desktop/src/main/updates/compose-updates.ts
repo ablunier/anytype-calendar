@@ -1,13 +1,12 @@
-import { app } from 'electron'
 import type { AppConfigStore } from '../app-config-file'
-import { fetchLatestRelease } from './auto-update'
 import { CheckForUpdate, DismissUpdateNotice } from './check-for-update'
+import { fetchLatestRelease } from './latest-release'
 import { UpdateNoticeStore } from './update-notice-store'
 
 export type Updates = ReturnType<typeof composeUpdates>
 
-export function composeUpdates(appConfig: AppConfigStore) {
-  const updateNotice = new UpdateNoticeStore(app.getVersion())
+export function composeUpdates(appConfig: AppConfigStore, appVersion: string) {
+  const updateNotice = new UpdateNoticeStore(appVersion)
   return {
     updateNotice,
     checkForUpdate: new CheckForUpdate({ config: appConfig, store: updateNotice, fetchLatest: fetchLatestRelease }),

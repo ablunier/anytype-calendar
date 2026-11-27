@@ -23,15 +23,16 @@ import {
   InMemoryFeedsSubscriptionRepository,
   LocalFeedsTimeZone,
 } from '@anytype-calendar/feeds/infrastructure'
-import { app, safeStorage } from 'electron'
 import type { Anytype } from '../anytype/compose-anytype'
-import { cacheDirectoryAt, safeStorageUrlCipher, subscriptionFileAt } from './feeds-storage'
+import { type CalendarPlatform, feedsUrlCipherOf } from '../platform'
+import { cacheDirectoryAt, subscriptionFileAt } from './feeds-storage'
 
 /** A feed comes from anywhere on the internet, and a big one takes a while to send. */
 const FEED_REQUEST_TIMEOUT_MS = 30_000
 
 export interface FeedsDeps {
   anytype: Anytype
+  platform: CalendarPlatform
   /** The feeds follow the span the calendar shows, which events holds. */
   shownWindow: () => FeedsWindow
 }
@@ -43,10 +44,10 @@ export type Feeds = ReturnType<typeof composeFeeds>
  * fake account gets its own files, like the credential, so a sample feed added in fake mode
  * never shows against the real one.
  */
-export function composeFeeds({ anytype, shownWindow }: FeedsDeps) {
+export function composeFeeds({ anytype, platform, shownWindow }: FeedsDeps) {
   const fake = anytype.kind === 'fake'
   const feedsState = new FeedsStore()
-  const { repository, cache } = feedsStorageFor(fake ? 'feeds-fake' : 'feeds')
+  const { repository, cache } = feedsStorageFor(platform, fake ? 'feeds-fake' : 'feeds')
   const gateway = fake ? inMemoryFeedsGateway() : httpFeedsGateway()
   const parser = new IcalFeedsCalendarParser(new LocalFeedsTimeZone())
   const save = new SaveFeedsSubscriptions({ repository, store: feedsState })
@@ -88,20 +89,22 @@ function inMemoryFeedsGateway(): FeedsGateway {
  * `<name>-cache/` the last good copy of each feed. Without OS encryption neither is written:
  * a secret address is a credential, and its copy as private as it.
  */
-function feedsStorageFor(name: string): { repository: FeedsSubscriptionRepository; cache: FeedsCache } {
-  if (!safeStorage.isEncryptionAvailable()) {
+function feedsStorageFor(
+  { encryption, os, userDataPath }: CalendarPlatform,
+  name: string,
+): { repository: FeedsSubscriptionRepository; cache: FeedsCache } {
+  if (!encryption.isAvailable()) {
     console.warn('[feeds] OS encryption is unavailable; subscriptions will not survive a restart')
     return { repository: new InMemoryFeedsSubscriptionRepository(), cache: new InMemoryFeedsCache() }
   }
-  if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text') {
+  if (os === 'linux' && encryption.selectedBackend() === 'basic_text') {
     console.warn('[feeds] No keyring found; feed addresses are stored obfuscated, not encrypted')
   }
-  const userData = app.getPath('userData')
   return {
     repository: new EncryptedFileFeedsSubscriptionRepository({
-      cipher: safeStorageUrlCipher,
-      file: subscriptionFileAt(join(userData, `${name}.json`)),
+      cipher: feedsUrlCipherOf(encryption),
+      file: subscriptionFileAt(join(userDataPath, `${name}.json`)),
     }),
-    cache: new FileFeedsCache(cacheDirectoryAt(join(userData, `${name}-cache`))),
+    cache: new FileFeedsCache(cacheDirectoryAt(join(userDataPath, `${name}-cache`))),
   }
 }

@@ -1,11 +1,9 @@
 import { app } from 'electron'
 import { UpdateSourceType, updateElectronApp } from 'update-electron-app'
 import type { CheckForUpdate } from './check-for-update'
-import { type LatestRelease, toLatestRelease } from './release-version'
+import { RELEASE_REPO } from './latest-release'
 
-const REPO = 'ablunier/anytype-calendar'
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
-const CHECK_TIMEOUT_MS = 15_000
 
 /**
  * Windows updates itself through update.electronjs.org. That service serves Squirrel only, so
@@ -20,7 +18,7 @@ export function startUpdates(checkForUpdate: CheckForUpdate): void {
 
   if (process.platform === 'win32' && !forced) {
     updateElectronApp({
-      updateSource: { type: UpdateSourceType.ElectronPublicUpdateService, repo: REPO },
+      updateSource: { type: UpdateSourceType.ElectronPublicUpdateService, repo: RELEASE_REPO },
     })
     return
   }
@@ -32,21 +30,4 @@ export function startUpdates(checkForUpdate: CheckForUpdate): void {
   }
   check()
   setInterval(check, CHECK_INTERVAL_MS)
-}
-
-/**
- * GitHub's latest release, which is never a draft or a prerelease. Unauthenticated, this is
- * allowed 60 requests an hour per address, far more than a check every few hours needs.
- */
-export async function fetchLatestRelease(): Promise<LatestRelease | null> {
-  try {
-    const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'anytype-calendar' },
-      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
-    })
-    if (!response.ok) return null
-    return toLatestRelease(await response.json())
-  } catch {
-    return null
-  }
 }

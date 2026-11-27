@@ -1,5 +1,4 @@
 import { join } from 'node:path'
-import { app } from 'electron'
 import { composeAnytype } from './anytype/compose-anytype'
 import { appConfigStore } from './app-config-file'
 import { atomicFileAt } from './atomic-file'
@@ -10,6 +9,7 @@ import { composeEvents } from './events/compose-events'
 import { defaultEventsSpan } from './events/default-span'
 import { eventsSourcesFor } from './events/event-sources'
 import { composeFeeds } from './feeds/compose-feeds'
+import type { CalendarPlatform } from './platform'
 import { composePreferences } from './preferences/compose-preferences'
 import { composeSchema } from './schema/compose-schema'
 import { composeUpdates } from './updates/compose-updates'
@@ -18,9 +18,9 @@ import { composeUpdates } from './updates/compose-updates'
  * Each context's module chooses its adapters; this calls them all, once the app is ready:
  * safeStorage needs that.
  */
-export function composeServices() {
+export function composeServices(platform: CalendarPlatform) {
   const anytype = composeAnytype()
-  const auth = composeAuth(anytype)
+  const auth = composeAuth(anytype, platform)
   const { apiKeys } = auth
 
   // One file holds every non-secret setting: the schema selection, the preferences, and
@@ -28,7 +28,7 @@ export function composeServices() {
   // file, like the credential.
   const appConfig = appConfigStore(
     atomicFileAt(
-      join(app.getPath('userData'), anytype.kind === 'fake' ? 'app-config-fake.json' : 'app-config.json'),
+      join(platform.userDataPath, anytype.kind === 'fake' ? 'app-config-fake.json' : 'app-config.json'),
       0o644,
     ),
   )
@@ -49,8 +49,8 @@ export function composeServices() {
       ),
   })
   followAgendaLength({ agendaDays: preferences.agendaDays.state, ...events })
-  const feeds = composeFeeds({ anytype, shownWindow: events.shownWindow })
-  const updates = composeUpdates(appConfig)
+  const feeds = composeFeeds({ anytype, platform, shownWindow: events.shownWindow })
+  const updates = composeUpdates(appConfig, platform.appVersion)
 
   linkContexts({ ...auth, ...schema, ...events, showFeedsForSpan: feeds.showFeedsForSpan })
 

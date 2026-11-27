@@ -1,5 +1,5 @@
 import { IpcChannel, type UpdateSnapshot } from '@shared/ipc'
-import { BrowserWindow, ipcMain, shell } from 'electron'
+import type { CalendarIpcRegistrar } from '../platform'
 import type { Updates } from './compose-updates'
 import type { UpdateNotice } from './update-notice-store'
 
@@ -8,17 +8,17 @@ function snapshotOf({ current, available, dismissed }: UpdateNotice): UpdateSnap
   return { current, available: available?.version ?? null, dismissed }
 }
 
-export function registerUpdateIpc({ updateNotice, dismissUpdateNotice }: Updates): void {
-  ipcMain.handle(IpcChannel.updateGet, () => snapshotOf(updateNotice.get()))
-  ipcMain.handle(IpcChannel.updateDismiss, () => dismissUpdateNotice.execute())
-  ipcMain.handle(IpcChannel.updateOpenRelease, async () => {
+export function registerUpdateIpc(
+  ipc: CalendarIpcRegistrar,
+  openExternal: (url: string) => Promise<void>,
+  { updateNotice, dismissUpdateNotice }: Updates,
+): void {
+  ipc.handle(IpcChannel.updateGet, () => snapshotOf(updateNotice.get()))
+  ipc.handle(IpcChannel.updateDismiss, () => dismissUpdateNotice.execute())
+  ipc.handle(IpcChannel.updateOpenRelease, async () => {
     const release = updateNotice.get().available
-    if (release) await shell.openExternal(release.url)
+    if (release) await openExternal(release.url)
   })
 
-  updateNotice.subscribe((notice) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.send(IpcChannel.updateChanged, snapshotOf(notice))
-    }
-  })
+  updateNotice.subscribe((notice) => ipc.broadcast(IpcChannel.updateChanged, snapshotOf(notice)))
 }

@@ -9,7 +9,14 @@ Standard electron-vite three-process layout:
   all, builds the `app-config.json` they share, and must run after `app` is ready
   (`safeStorage` needs that). It returns `{ auth, schema, events, feeds, preferences, updates }`,
   each group's type inferred from its compose function, and each `register*Ipc` takes only its
-  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus). Auth
+  own group (`registerEventsIpc` also the session and schema sync it refreshes on focus).
+  Nothing under `src/main` but `index.ts` (and `squirrel-startup.ts`, `updates/auto-update.ts`,
+  which only it calls) imports Electron. `composeServices(platform)` takes a `CalendarPlatform`
+  (`platform.ts`: the `userData` path, app version, OS and a `CalendarEncryption` over
+  `safeStorage`), and each `register*Ipc` takes a `CalendarIpcRegistrar` (`handle`, `broadcast`
+  to every window, `onWindowFocus`), plus `clipboard.writeText` or `shell.openExternal` where it
+  needs one. `index.ts` adapts the real Electron objects to them, so composition can be built
+  in a test with a plain directory, a fake cipher and a recording registrar. Auth
   uses `AnytypeAuthGateway` against `http://127.0.0.1:31009` — it pairs through v2 (the user
   then picks the spaces and read/write access in Anytype) — and keeps the key in
   `<userData>/credential.bin`, encrypted with `safeStorage`

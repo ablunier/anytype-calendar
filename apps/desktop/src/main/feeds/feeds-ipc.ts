@@ -1,6 +1,6 @@
 import { IpcChannel } from '@shared/ipc'
-import { app, BrowserWindow, ipcMain } from 'electron'
 import { FOCUS_REFRESH_INTERVAL_MS, throttled } from '../events/focus-refresh'
+import type { CalendarIpcRegistrar } from '../platform'
 import type { Feeds } from './compose-feeds'
 import { isFeedsId, toFeedsAddRequest, toFeedsEditRequest, toFeedsOrder } from './feeds-requests'
 
@@ -15,45 +15,44 @@ const FEEDS_REFRESH_INTERVAL_MS = 30 * 60_000
  * read at launch, each is read again every half hour, and when a window gains focus, at most
  * once per 30 seconds, like Anytype's objects.
  */
-export function registerFeedsIpc({
-  feedsState,
-  addFeedsSubscription,
-  editFeedsSubscription,
-  removeFeedsSubscription,
-  reorderFeedsSubscriptions,
-  refreshFeeds,
-}: Feeds): void {
-  ipcMain.handle(IpcChannel.feedsGet, () => feedsState.get())
-  ipcMain.handle(IpcChannel.feedsAdd, (_event, value: unknown) => {
+export function registerFeedsIpc(
+  ipc: CalendarIpcRegistrar,
+  {
+    feedsState,
+    addFeedsSubscription,
+    editFeedsSubscription,
+    removeFeedsSubscription,
+    reorderFeedsSubscriptions,
+    refreshFeeds,
+  }: Feeds,
+): void {
+  ipc.handle(IpcChannel.feedsGet, () => feedsState.get())
+  ipc.handle(IpcChannel.feedsAdd, (_event, value: unknown) => {
     const request = toFeedsAddRequest(value)
     if (!request) throw new TypeError('not a subscription to add')
     return addFeedsSubscription.execute(request)
   })
-  ipcMain.handle(IpcChannel.feedsEdit, (_event, value: unknown) => {
+  ipc.handle(IpcChannel.feedsEdit, (_event, value: unknown) => {
     const request = toFeedsEditRequest(value)
     if (!request) throw new TypeError('not a subscription edit')
     return editFeedsSubscription.execute(request)
   })
-  ipcMain.handle(IpcChannel.feedsRemove, (_event, id: unknown) => {
+  ipc.handle(IpcChannel.feedsRemove, (_event, id: unknown) => {
     if (!isFeedsId(id)) throw new TypeError('not a subscription id')
     return removeFeedsSubscription.execute(id)
   })
-  ipcMain.handle(IpcChannel.feedsReorder, (_event, value: unknown) => {
+  ipc.handle(IpcChannel.feedsReorder, (_event, value: unknown) => {
     const ids = toFeedsOrder(value)
     if (!ids) throw new TypeError('not an order of subscriptions')
     return reorderFeedsSubscriptions.execute(ids)
   })
-  ipcMain.handle(IpcChannel.feedsRefresh, () => refreshFeeds.execute())
+  ipc.handle(IpcChannel.feedsRefresh, () => refreshFeeds.execute())
 
-  feedsState.subscribe((state) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.send(IpcChannel.feedsChanged, state)
-    }
-  })
+  feedsState.subscribe((state) => ipc.broadcast(IpcChannel.feedsChanged, state))
 
   const refresh = (): void => void refreshFeeds.execute()
   setInterval(refresh, FEEDS_REFRESH_INTERVAL_MS)
   // Counted from now: the launch reads every feed already.
   const refreshOnFocus = throttled(refresh, FOCUS_REFRESH_INTERVAL_MS, Date.now, Date.now())
-  app.on('browser-window-focus', refreshOnFocus)
+  ipc.onWindowFocus(refreshOnFocus)
 }
